@@ -103,6 +103,8 @@ These recur on every module regardless of framework. Read them once here, then t
 
 6. **i18n files auto-register via `import.meta.glob` — do not manually register them.** Adding a new locale JSON under the right folder is enough. But the *route menu title* lives in a separate `routes.json` (react/vue-element) or `menu.json` (vue-vben), and route `meta.title` must point at it with the correct prefix (`'routes:xxx'` for react/vue-element, `$t('menu.xxx')` for vue-vben).
 
+7. **No error swallowing — in any framework.** Every `catch` must either log the **original error object** (`console.error(...)`/`console.warn(...)`) or rethrow it. A user-visible notification/Message is NOT logging (it carries only translated text; debugging needs the raw error in the console). Bare `catch {}` is acceptable only for pure local best-effort fallbacks, with a comment explaining why. The composables/mutation layer generated for a new module must not swallow mutation errors — surface them via notification + console, or rethrow.
+
 ## When to read which reference
 
 | Situation | Read |

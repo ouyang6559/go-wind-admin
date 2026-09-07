@@ -112,7 +112,8 @@ async function login(
   params: Record<string, any>,
   onSuccess?: () => Promise<void> | void
 ): Promise<{ userInfo: null | UserInfo } | null> {
-  let userInfo: null | UserInfo = null;
+  // catch 分支必然 return，无需初始化为 null（no-useless-assignment）
+  let userInfo: null | UserInfo;
   // MFA 分支要在请求后透传 redirect 到挑战页；请求返回后路由可能被副作用
   // 先行更新（响应式时序竞态）丢掉 query，故必须在发起请求前捕获。
   const redirectAtEntry = (router.currentRoute.value.query.redirect as string) || "";
@@ -236,7 +237,8 @@ async function completeMfaChallenge(
   totpCode: string,
   onSuccess?: () => Promise<void> | void
 ): Promise<{ userInfo: null | UserInfo } | null> {
-  let userInfo: null | UserInfo = null;
+  // catch 分支必然 return，无需初始化为 null（no-useless-assignment）
+  let userInfo: null | UserInfo;
   const accessStore = useAccessStore();
   const opId = accessStore.mfaOperationId;
   if (!opId) {
@@ -326,10 +328,7 @@ async function getUserPermissionCodes() {
         fetchAccessCodes(),
       ]);
       if (fetchUserInfoResult === null || fetchAccessCodeResult === null) {
-        console.warn(
-          "getUserPermissionCodes: 获取用户信息/权限码返回空",
-          fetchUserInfoResult,
-        );
+        console.warn("getUserPermissionCodes: 获取用户信息/权限码返回空", fetchUserInfoResult);
         return false;
       }
       userStore.setUserInfo(fetchUserInfoResult);

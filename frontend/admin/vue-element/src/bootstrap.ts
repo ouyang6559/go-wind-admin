@@ -126,7 +126,7 @@ async function bootstrap(namespace: string) {
       "[AppErrorHandler]",
       info,
       err,
-      instance?.$options?.name || instance?.$options?.__name,
+      instance?.$options?.name || instance?.$options?.__name
     );
   };
 
@@ -139,18 +139,11 @@ async function bootstrap(namespace: string) {
     // 表现为懒加载路由动态导入失败+白屏，手动刷新即可恢复——这里自动化该恢复。
     // 按"目标路由"做一次性防抖（sessionStorage），chunk 真坏掉时不会无限刷新循环。
     const msg = String((error as Error)?.message ?? error);
-    if (
-      /Failed to fetch dynamically imported module|Importing a module script failed/.test(
-        msg,
-      )
-    ) {
+    if (/Failed to fetch dynamically imported module|Importing a module script failed/.test(msg)) {
       const key = `router:import-failure-reloaded:${to?.fullPath ?? ""}`;
       if (!sessionStorage.getItem(key)) {
         sessionStorage.setItem(key, "1");
-        console.warn(
-          "[RouterError] 动态导入失败，整页刷新自愈:",
-          to?.fullPath,
-        );
+        console.warn("[RouterError] 动态导入失败，整页刷新自愈:", to?.fullPath);
         window.location.reload();
       }
     }

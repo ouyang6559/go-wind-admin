@@ -15,6 +15,15 @@ import { fetchUserProfile } from '@/api/hooks/user-profile';
 export async function bootstrap() {
   await _initI18n();
 
+  // 全局错误观测：未处理的 promise 拒绝/运行时异常若无人接管会静默丢失，
+  // 统一加 [GlobalError] 前缀落 console，保证浏览器端排查有迹可循。
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[GlobalError] unhandled rejection:', event.reason);
+  });
+  window.addEventListener('error', (event) => {
+    console.error('[GlobalError] uncaught error:', event.error ?? event.message);
+  });
+
   // 可放全局初始化逻辑
   console.log('✅ 应用启动初始化完成');
 }
@@ -89,8 +98,9 @@ async function _initI18n() {
           console.log('[Bootstrap] session silently restored via refresh cookie');
         }
       } catch (e) {
-        // refresh cookie 无效/过期/后端拒验 → 保持登出态，静默忽略
-        console.log('[Bootstrap] silent restore skipped: refresh cookie invalid or expired');
+        // 必须带出真实错误：固定话术会把 refresh 端点 500/网络错等真因
+        // 掩盖成"cookie 无效"（认证链路排查教训，三端同款问题一并清理）
+        console.error('[Bootstrap] silent restore failed (refresh cookie 可能无效或过期):', e);
       }
     }
   }

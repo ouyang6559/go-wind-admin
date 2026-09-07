@@ -43,6 +43,20 @@ async function bootstrap(namespace: string) {
   // 配置 pinia-store
   await initStores(app, { namespace });
 
+  // 全局错误观测：渲染函数/守卫抛出的异常若无人接管会静默吞掉，表现为
+  // 视图塌空且零控制台输出。强制落到 console，保证任何异常有迹可循。
+  app.config.errorHandler = (err, instance, info) => {
+    console.error(
+      '[AppErrorHandler]',
+      info,
+      err,
+      (instance as any)?.$options?.name || (instance as any)?.$options?.__name,
+    );
+  };
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[GlobalError] unhandled rejection:', event.reason);
+  });
+
   // 注入 RequestClient 回调（业务层 → 基础设施层）
   // 必须在 initStores 之后，因为 getToken 依赖 accessStore
   const accessStore = useAccessStore();

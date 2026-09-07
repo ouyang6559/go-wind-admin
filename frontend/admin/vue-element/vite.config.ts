@@ -33,34 +33,33 @@ function elementPlusStyleDeps(): string[] {
  * 限制：meta 不支持 frame-ancestors 等，点击劫持防护仍需部署侧 header。
  */
 function cspMetaPlugin(): PluginOption {
-    let isBuild = false;
-    // vite 对 transformIndexHtml.handler 返回 undefined 的联合类型展开存在版本间
-    // 类型摩擦，手写插件的形状是稳定的，直接断言为 PluginOption
-    return {
-        name: "gowind-csp-meta",
-        configResolved(config: any) {
-            isBuild = config.command === "build";
-        },
-        transformIndexHtml: {
-            order: "post" as const,
-            handler() {
-                if (!isBuild) return;
-                return {
-                    tags: [
-                        {
-                            tag: "meta",
-                            attrs: {
-                                "http-equiv": "Content-Security-Policy",
-                                content:
-                                    "script-src 'self'; base-uri 'self'; object-src 'none'",
-                            },
-                            injectTo: "head-prepend" as const,
-                        },
-                    ],
-                };
+  let isBuild = false;
+  // vite 对 transformIndexHtml.handler 返回 undefined 的联合类型展开存在版本间
+  // 类型摩擦，手写插件的形状是稳定的，直接断言为 PluginOption
+  return {
+    name: "gowind-csp-meta",
+    configResolved(config: any) {
+      isBuild = config.command === "build";
+    },
+    transformIndexHtml: {
+      order: "post" as const,
+      handler() {
+        if (!isBuild) return;
+        return {
+          tags: [
+            {
+              tag: "meta",
+              attrs: {
+                "http-equiv": "Content-Security-Policy",
+                content: "script-src 'self'; base-uri 'self'; object-src 'none'",
+              },
+              injectTo: "head-prepend" as const,
             },
-        },
-    } as PluginOption;
+          ],
+        };
+      },
+    },
+  } as PluginOption;
 }
 
 // Vite配置  https://cn.vitejs.dev/config
@@ -95,8 +94,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       // 开发态安全响应头。X-Frame-Options/HSTS/CSP 仅在生产 nginx 生效——
       // DENY 会阻断 vue-devtools 等开发期同源 iframe，HSTS/CSP 依赖 HTTPS。
       headers: {
-        'X-Content-Type-Options': 'nosniff',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
       },
     },
     plugins: [
@@ -209,7 +208,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
             if (id.includes("@tiptap") || id.includes("tiptap")) return "tiptap";
 
             // 工具库
-            if (id.includes("lodash") || id.includes("dayjs") || id.includes("axios")) return "utils-vendor";
+            if (id.includes("lodash") || id.includes("dayjs") || id.includes("axios"))
+              return "utils-vendor";
           },
           // 用于从入口点创建的块的打包输出格式[name]表示文件名,[hash]表示该文件内容hash值
           entryFileNames: "js/[name].[hash].js",
