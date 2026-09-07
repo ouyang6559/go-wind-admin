@@ -246,7 +246,10 @@ export const useAuthStore = create<AuthState>()(
         stopRefreshTimer();
         disconnectSSEServer();
         try {
-          await logoutMutation.execute({}).catch(() => {}); // 忽略接口错误
+          // 服务端登出失败不影响本地清理，但必须留痕（token 失效/网络/权限问题的线索）
+          await logoutMutation.execute({}).catch((error) => {
+            console.error('服务端登出请求失败（已继续本地清理）:', error);
+          });
         } finally {
           // 清除 queryClient 缓存，防止登出期间被缓存污染的查询结果
           // （如 getMe 因 401 返回 null 被 fetchQuery 缓存）导致重新登录时命中脏数据

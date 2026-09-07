@@ -68,8 +68,9 @@ async function downloadFile(
       let binary: string;
       try {
         binary = atob(base64);
-      } catch {
-        // 如果仍然失败，返回空 Blob（也可以改为抛错或走异步 fetch fallback）
+      } catch (error) {
+        // base64 非法时兜底返回空 Blob（下载产物损坏对用户不可见，必须留痕）
+        console.error('toBlob: base64 解码失败，返回空 Blob:', error);
         return new Blob([], { type });
       }
 

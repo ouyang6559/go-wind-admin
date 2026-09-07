@@ -83,7 +83,9 @@ async function bootstrap(namespace: string) {
           console.log('[Bootstrap] session silently restored via refresh cookie');
         }
       } catch (e) {
-        console.log('[Bootstrap] silent restore skipped: refresh cookie invalid or expired');
+        // 必须带出真实错误：固定话术会把 refresh 端点 500/网络错等真因
+        // 掩盖成"cookie 无效"（vue-element 同位置的四层回归排查教训）
+        console.warn('[Bootstrap] 静默恢复失败（refresh cookie 可能无效或过期）:', e);
       }
     }
   }

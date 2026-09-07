@@ -76,8 +76,18 @@ export const authenticateResponseInterceptor = ({
 
       // 如果正在刷新 token，则将请求加入队列，等待刷新完成
       if (client.isRefreshing) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           client.refreshTokenQueue.push((newToken: string) => {
+            // 刷新失败时队列会以空串唤醒：此时重发注定再吃 401，
+            // 直接以已处理的认证错误拒绝，交由调用方与 doReAuthenticate 收尾
+            if (!newToken) {
+              reject(
+                Object.assign(new Error('Authentication required'), {
+                  __handledByAuthInterceptor: true,
+                }),
+              );
+              return;
+            }
             config.headers.Authorization = formatToken(newToken);
             resolve(client.request(config.url, { ...config }));
           });
@@ -105,7 +115,8 @@ export const authenticateResponseInterceptor = ({
 
         return client.request(error.config.url, { ...error.config });
       } catch (refreshError) {
-        // 如果刷新 token 失败，处理错误（如强制登出或跳转登录页面）
+        // 刷新失败：队列中的请求以空串唤醒（回调内会拒绝而非重发），
+        // 由 doReAuthenticate 统一收尾跳登录
         client.refreshTokenQueue.forEach((callback) => callback(''));
         client.refreshTokenQueue = [];
 

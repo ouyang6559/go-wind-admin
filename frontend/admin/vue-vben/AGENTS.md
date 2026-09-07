@@ -110,6 +110,7 @@ import { notification } from 'ant-design-vue';
 14. **消息提示用 `notification`** — 从 `ant-design-vue` 导入，不要用 `alert()` 或 `ElMessage`
 15. **国际化文本不硬编码** — 使用 `$t()` 引用 locales 文件中的 key
 16. **使用严格相等运算符 `===`** — 禁止使用 `==`
+17. **错误处理铁律（不吞错）** — 任何 catch 至少二选一：`console.error/warn` 带出**原始错误对象**，或重新抛出。`notification` 用户提示不等于日志（只有翻译文案，排查靠控制台原始错误）。合法裸 catch 仅限纯本地 best-effort 兜底且注释写明原因。历史教训：静默吞错曾让认证链路 bug 排查数日
 
 ---
 

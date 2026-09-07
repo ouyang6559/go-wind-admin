@@ -269,6 +269,7 @@ i18n.t('key', { ns: 'common' });
 9. **ProTable scroll.y**: 初始值必须是像素值（数字），不能是百分比
 10. **角色码和权限码分离存储**: `userRoles` + `accessCodes`，不混合
 11. **不要使用 `userInfo?.permissions`**: 该字段不存在
+12. **错误处理铁律（不吞错）**: 任何 catch 至少二选一——`console.error/warn` 带出**原始错误对象**，或重新抛出。用户可见的 message/notification 不等于日志（只有翻译文案，排查靠控制台原始错误）。合法裸 catch 仅限纯本地 best-effort 兜底且注释写明原因。历史教训：静默吞错曾让认证链路 bug 排查数日（每层都被上一层话术掩盖）
 
 ## 新增完整功能模块清单
 
