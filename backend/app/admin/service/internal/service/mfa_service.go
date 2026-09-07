@@ -299,6 +299,9 @@ func (s *MfaService) VerifyMFAChallenge(ctx context.Context, req *authentication
 		return nil, err
 	}
 
+	// 记录会话元数据（在线会话列表展示用）；失败不阻断登录
+	recordSessionMeta(ctx, s.log, s.authenticator, challengeCtx.ClientType, payload)
+
 	return &authenticationV1.LoginResponse{
 		TokenType:        authenticationV1.TokenType_bearer,
 		AccessToken:      accessToken,

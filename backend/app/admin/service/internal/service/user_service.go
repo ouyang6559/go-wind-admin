@@ -40,6 +40,8 @@ type UserService struct {
 	tenantRepo   *data.TenantRepo
 
 	membershipRepo *data.MembershipRepo
+
+	authenticator *data.Authenticator
 }
 
 func NewUserService(
@@ -51,6 +53,7 @@ func NewUserService(
 	orgUnitRepo *data.OrgUnitRepo,
 	tenantRepo *data.TenantRepo,
 	membershipRepo *data.MembershipRepo,
+	authenticator *data.Authenticator,
 ) *UserService {
 	svc := &UserService{
 		log:                ctx.NewLoggerHelper("user/service/admin-service"),
@@ -61,6 +64,7 @@ func NewUserService(
 		orgUnitRepo:        orgUnitRepo,
 		tenantRepo:         tenantRepo,
 		membershipRepo:     membershipRepo,
+		authenticator:      authenticator,
 	}
 
 	svc.init()
@@ -570,6 +574,12 @@ func (s *UserService) Update(ctx context.Context, req *identityV1.UpdateUserRequ
 		}); err != nil {
 			return nil, err
 		}
+
+		// 重置密码成功后吊销目标用户全部令牌，强制其重新登录，
+		// 防止凭据已泄露的场景下旧令牌继续可用。
+		if err = s.authenticator.RevokeUserTokenAllClientTypes(ctx, req.GetId()); err != nil {
+			s.log.Errorf(ctx, "revoke tokens after password reset failed for user [%d]: %v", req.GetId(), err)
+		}
 	}
 
 	return &emptypb.Empty{}, nil
@@ -660,6 +670,11 @@ func (s *UserService) EditUserPassword(ctx context.Context, req *identityV1.Edit
 	}); err != nil {
 		s.log.Errorf(ctx, "reset user password err: %v", err)
 		return nil, err
+	}
+
+	// 重置密码成功后吊销目标用户全部令牌，强制其重新登录。
+	if err = s.authenticator.RevokeUserTokenAllClientTypes(ctx, u.GetId()); err != nil {
+		s.log.Errorf(ctx, "revoke tokens after password reset failed for user [%d]: %v", u.GetId(), err)
 	}
 
 	return &emptypb.Empty{}, nil

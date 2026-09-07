@@ -581,6 +581,9 @@ func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *au
 		return nil, err
 	}
 
+	// 记录会话元数据（在线会话列表展示用）；失败不阻断登录
+	recordSessionMeta(ctx, s.log, s.authenticator, req.GetClientType(), tokenPayload)
+
 	// H5：登录成功后清零失败计数
 	if s.rateLimiter != nil {
 		s.rateLimiter.Reset(ctx, clientIP, username)
@@ -657,8 +660,8 @@ func (s *AuthenticationService) verifyLoginCaptcha(ctx context.Context) bool {
 // doGrantTypeRefreshToken 处理授权类型 - 刷新令牌
 func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req *authenticationV1.LoginRequest, refreshToken string) (*authenticationV1.LoginResponse, error) {
 	// refresh token 为自描述 JWT，VerifyRefreshToken 验签并原子吊销旧令牌对，返回 uid/jti。
-	// 不再依赖 access token 的 auth.FromContext 提供身份信息。
-	userId, _, err := s.authenticator.VerifyRefreshToken(ctx, req.GetClientType(), refreshToken)
+	// 不再依赖 access token 提供的身份信息。旧 jti 用于继承会话元数据的登录时间。
+	userId, oldJti, err := s.authenticator.VerifyRefreshToken(ctx, req.GetClientType(), refreshToken)
 	if err != nil {
 		s.log.Errorf(ctx, "verify refresh token failed: [%s]", err)
 		return nil, authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
@@ -700,6 +703,18 @@ func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+
+	// 记录新令牌对的会话元数据：刷新轮换是同一客户端续期而非重新登录，
+	// 登录时间继承旧会话（旧元数据已随旧令牌对在 Lua 脚本中原子删除）。
+	oldMeta, gerr := s.authenticator.GetSessionMeta(ctx, req.GetClientType(), userId, oldJti)
+	if gerr != nil {
+		s.log.Errorf(ctx, "get old session meta failed for user [%d]: %v", userId, gerr)
+	}
+	var loginAt int64
+	if oldMeta != nil {
+		loginAt = oldMeta.LoginAt
+	}
+	recordSessionMetaAt(ctx, s.log, s.authenticator, req.GetClientType(), tokenPayload, loginAt)
 
 	// refresh token 通过 HttpOnly Cookie 下发，不再放入响应体
 	refreshExpiresIn := int64(s.authenticator.GetRefreshTokenExpires(req.GetClientType()).Seconds())

@@ -6,7 +6,6 @@ import {
   type authenticationservicev1_StartEnrollMethodResponse,
   type authenticationservicev1_ConfirmEnrollMethodRequest,
   type authenticationservicev1_ConfirmEnrollMethodResponse,
-  type authenticationservicev1_DisableMFARequest,
 } from '@/api/generated/admin/service/v1';
 import { apiClient } from '@/api/client';
 

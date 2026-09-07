@@ -72,6 +72,17 @@ export const systemRoutes: AppRouteObject[] = [
           // permission: 'sys:platform_admin', // 仅平台管理员权限（开发阶段暂时注释）
         },
       },
+      {
+        name: 'online-sessions',
+        path: 'online-sessions', // 相对路径，最终为 /system/online-sessions
+        element: createLazyRoute(() => import('@/pages/app/system/online-session')),
+        meta: {
+          title: 'routes:online-sessions',
+          icon: 'lucide:monitor', // Iconify 格式
+          order: 8,
+          // permission: 'sys:platform_admin', // 仅平台管理员权限（开发阶段暂时注释）
+        },
+      },
     ],
   },
 ];

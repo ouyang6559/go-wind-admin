@@ -45,7 +45,7 @@
   "requiredConfirmPassword": "Please re-enter new password",
   "passwordMismatch": "Passwords do not match",
   "changePassword": "Change Password",
-  "changePasswordSuccess": "Password changed successfully",
+  "changePasswordSuccess": "Password changed, please sign in again",
   "changePasswordFailed": "Failed to change password",
   "genderMap": {
     "MALE": "Male",

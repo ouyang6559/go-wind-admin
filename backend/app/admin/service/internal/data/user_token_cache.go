@@ -2,8 +2,10 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,17 +30,22 @@ const (
 	// BlacklistKeyFormat 访问令牌黑名单键格式 bl:{jti}
 	BlacklistKeyFormat = "bl:%s"
 
+	// UserSessionKeyFormat 用户会话元数据键格式 us:{ct}:{uid}:{jti}
+	UserSessionKeyFormat = "us:%d:%d:%s"
+
 	// scanCount 每次 SCAN 返回的键数量提示（仅是建议值，非强制）
 	scanCount = 100
 )
 
 // verifyAndRevokeRefreshTokenScript 原子验证并吊销刷新令牌的 Lua 脚本。
-// 在单次 Redis 调用中完成「验证 RT → 删除 RT → 删除 AT」，避免 TOCTOU 竞态。
-// 注意：迁移到 String key 后，rtKey/atKey 均为含 jti 的完整 key，使用 GET/DEL 操作。
-// 返回值: 1=验证成功, 0=令牌不存在或值不匹配
+// 在单次 Redis 调用中完成「验证 RT → 删除 RT → 删除 AT → 删除会话元数据」，
+// 避免 TOCTOU 竞态。KEYS[3] 为可选的会话元数据键（us:{ct}:{uid}:{jti}），
+// 传空串表示不删除。注意：迁移到 String key 后，rtKey/atKey 均为含 jti 的
+// 完整 key，使用 GET/DEL 操作。返回值: 1=验证成功, 0=令牌不存在或值不匹配
 var verifyAndRevokeRefreshTokenScript = redis.NewScript(`
 	local rtKey = KEYS[1]
 	local atKey = KEYS[2]
+	local usKey = KEYS[3]
 	local refreshToken = ARGV[1]
 
 	local stored = redis.call('GET', rtKey)
@@ -48,6 +55,9 @@ var verifyAndRevokeRefreshTokenScript = redis.NewScript(`
 
 	redis.call('DEL', rtKey)
 	redis.call('DEL', atKey)
+	if usKey and usKey ~= '' then
+		redis.call('DEL', usKey)
+	end
 	return 1
 `)
 
@@ -134,7 +144,7 @@ func (r *UserTokenCache) GetRefreshTokens(ctx context.Context, clientType authen
 	return r.scanValues(ctx, pattern)
 }
 
-// RevokeToken 移除所有令牌
+// RevokeToken 移除所有令牌（含会话元数据）
 func (r *UserTokenCache) RevokeToken(ctx context.Context, clientType authenticationV1.ClientType, userId uint32) error {
 	var err error
 	if err = r.RevokeUserAllAccessToken(ctx, clientType, userId); err != nil {
@@ -143,6 +153,11 @@ func (r *UserTokenCache) RevokeToken(ctx context.Context, clientType authenticat
 
 	if err = r.RevokeUserAllRefreshToken(ctx, clientType, userId); err != nil {
 		r.log.Errorf(ctx, "remove user refresh token failed: [%v]", err)
+	}
+
+	// 会话元数据随令牌一并清理，保持「无令牌即无会话记录」的一致性
+	if err = r.DeleteUserSessionMetas(ctx, clientType, userId); err != nil {
+		r.log.Errorf(ctx, "remove user session metas failed: [%v]", err)
 	}
 
 	return err
@@ -156,6 +171,10 @@ func (r *UserTokenCache) RevokeTokenByJti(ctx context.Context, clientType authen
 
 	if err = r.RevokeRefreshToken(ctx, clientType, userId, jti); err != nil {
 		r.log.Errorf(ctx, "remove user refresh token failed: [%v]", err)
+	}
+
+	if err = r.DeleteSessionMeta(ctx, clientType, userId, jti); err != nil {
+		r.log.Errorf(ctx, "remove user session meta failed: [%v]", err)
 	}
 
 	return err
@@ -309,8 +328,10 @@ func (r *UserTokenCache) VerifyAndRevokeTokenPair(
 ) (bool, error) {
 	rtKey := r.makeRefreshTokenFieldKey(clientType, userId, jti)
 	atKey := r.makeAccessTokenFieldKey(clientType, userId, jti)
+	// 会话元数据随旧令牌对一并原子删除（刷新轮换后旧会话记录即失效）
+	usKey := r.makeUserSessionKey(clientType, userId, jti)
 
-	result, err := verifyAndRevokeRefreshTokenScript.Run(ctx, r.rdb, []string{rtKey, atKey}, refreshToken).Int64()
+	result, err := verifyAndRevokeRefreshTokenScript.Run(ctx, r.rdb, []string{rtKey, atKey, usKey}, refreshToken).Int64()
 	if err != nil {
 		r.log.Errorf(ctx, "verifyAndRevokeTokenPair failed for user [%d] jti [%s]: %v", userId, jti, err)
 		return false, err
@@ -485,4 +506,167 @@ func (r *UserTokenCache) extractJtiFromKey(key string) string {
 		return ""
 	}
 	return parts[len(parts)-1]
+}
+
+// ==============================
+// 用户会话元数据（在线用户功能）
+// ==============================
+
+// SessionMeta 会话元数据：令牌签发时记录的客户端信息，
+// 供在线会话列表展示。生命周期与 refresh token 对齐（TTL 同步设置），
+// 过期或吊销即从 Redis 消失，无需额外清理。
+type SessionMeta struct {
+	Username  string `json:"username,omitempty"`
+	TenantId  uint32 `json:"tenantId,omitempty"`
+	Ip        string `json:"ip,omitempty"`
+	UserAgent string `json:"ua,omitempty"`
+	DeviceId  string `json:"dev,omitempty"`
+	// LoginAt 登录时间（unix 秒）。刷新轮换继承首次登录时间，不重置。
+	LoginAt int64 `json:"loginAt"`
+}
+
+// SessionEntry 一次会话扫描得到的完整条目（键定位信息 + 元数据）。
+type SessionEntry struct {
+	ClientType authenticationV1.ClientType
+	UserId     uint32
+	Jti        string
+	Meta       *SessionMeta
+}
+
+// SaveSessionMeta 记录会话元数据，TTL 与 refresh token 一致。
+func (r *UserTokenCache) SaveSessionMeta(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	jti string,
+	meta *SessionMeta,
+	expires time.Duration,
+) error {
+	if jti == "" || meta == nil {
+		return nil
+	}
+	raw, err := json.Marshal(meta)
+	if err != nil {
+		r.log.Errorf(ctx, "marshal session meta failed for user [%d]: %v", userId, err)
+		return err
+	}
+	key := r.makeUserSessionKey(clientType, userId, jti)
+	return r.set(ctx, key, string(raw), expires)
+}
+
+// GetSessionMeta 读取单个会话元数据；会话不存在（已过期/被吊销）返回 nil。
+func (r *UserTokenCache) GetSessionMeta(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	jti string,
+) (*SessionMeta, error) {
+	key := r.makeUserSessionKey(clientType, userId, jti)
+	raw, err := r.rdb.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, nil
+	}
+	if err != nil {
+		r.log.Errorf(ctx, "get session meta failed for user [%d]: %v", userId, err)
+		return nil, err
+	}
+	return decodeSessionMeta(raw)
+}
+
+// DeleteSessionMeta 删除会话元数据（令牌吊销/轮换后清理）。
+func (r *UserTokenCache) DeleteSessionMeta(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	jti string,
+) error {
+	if jti == "" {
+		return nil
+	}
+	key := r.makeUserSessionKey(clientType, userId, jti)
+	return r.del(ctx, key)
+}
+
+// DeleteUserSessionMetas 删除某用户全部会话元数据（全端踢下线后清理）。
+func (r *UserTokenCache) DeleteUserSessionMetas(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+) error {
+	pattern := fmt.Sprintf(UserSessionKeyFormat, clientType.Number(), userId, "*")
+	return r.delByPattern(ctx, pattern)
+}
+
+// ListSessionEntries 扫描全部会话元数据。
+// 按 us:{ct}:{uid}:{jti} 键名拆出定位信息，MGET 取值，
+// 已过期键在 MGET 中返回 nil 自动跳过，无需额外 TTL 判断。
+func (r *UserTokenCache) ListSessionEntries(ctx context.Context) ([]SessionEntry, error) {
+	keys, err := r.scanKeys(ctx, "us:*")
+	if err != nil {
+		return nil, err
+	}
+	if len(keys) == 0 {
+		return []SessionEntry{}, nil
+	}
+
+	values, err := r.rdb.MGet(ctx, keys...).Result()
+	if err != nil {
+		r.log.Errorf(ctx, "mget session metas failed: %v", err)
+		return nil, err
+	}
+
+	entries := make([]SessionEntry, 0, len(keys))
+	for i, v := range values {
+		s, ok := v.(string)
+		if !ok {
+			continue // key 已过期
+		}
+		meta, err := decodeSessionMeta(s)
+		if err != nil || meta == nil {
+			r.log.Warnf(ctx, "decode session meta failed for key [%s]: %v", keys[i], err)
+			continue
+		}
+		entry, ok := parseUserSessionKey(keys[i])
+		if !ok {
+			continue
+		}
+		entry.Meta = meta
+		entries = append(entries, *entry)
+	}
+
+	return entries, nil
+}
+
+// makeUserSessionKey 生成会话元数据键 us:{ct}:{uid}:{jti}
+func (r *UserTokenCache) makeUserSessionKey(clientType authenticationV1.ClientType, userId uint32, jti string) string {
+	return fmt.Sprintf(UserSessionKeyFormat, clientType.Number(), userId, jti)
+}
+
+// parseUserSessionKey 从键名 us:{ct}:{uid}:{jti} 拆出定位信息。
+func parseUserSessionKey(key string) (*SessionEntry, bool) {
+	parts := strings.SplitN(key, ":", 4)
+	if len(parts) != 4 || parts[3] == "" {
+		return nil, false
+	}
+	ct, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return nil, false
+	}
+	uid, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return nil, false
+	}
+	return &SessionEntry{
+		ClientType: authenticationV1.ClientType(ct),
+		UserId:     uint32(uid),
+		Jti:        parts[3],
+	}, true
+}
+
+func decodeSessionMeta(raw string) (*SessionMeta, error) {
+	var meta SessionMeta
+	if err := json.Unmarshal([]byte(raw), &meta); err != nil {
+		return nil, err
+	}
+	return &meta, nil
 }

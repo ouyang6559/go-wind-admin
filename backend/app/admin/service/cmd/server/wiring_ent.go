@@ -149,8 +149,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	loginPolicyService := service.NewLoginPolicyService(ctx, loginPolicyRepo)
 
 	// 身份与组织
-	userService := service.NewUserService(ctx, userRepo, roleRepo, userCredentialRepo, positionRepo, orgUnitRepo, tenantRepo, membershipRepo)
-	userProfileService := service.NewUserProfileService(ctx, userRepo, roleRepo, userCredentialRepo, minioClient)
+	userService := service.NewUserService(ctx, userRepo, roleRepo, userCredentialRepo, positionRepo, orgUnitRepo, tenantRepo, membershipRepo, authenticator)
+	userProfileService := service.NewUserProfileService(ctx, userRepo, roleRepo, userCredentialRepo, authenticator, minioClient)
 	positionService := service.NewPositionService(ctx, positionRepo, orgUnitRepo)
 	orgUnitService := service.NewOrgUnitService(ctx, orgUnitRepo, userRepo)
 
@@ -187,6 +187,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// 运维观测与门户
 	redisCacheMonitorService := service.NewRedisCacheMonitorService(ctx, redisCacheMonitorRepo)
+	onlineSessionService := service.NewOnlineSessionService(ctx, authenticator)
 	dashboardService := service.NewDashboardService(ctx, dashboardRepo)
 	adminPortalService := service.NewAdminPortalService(ctx, menuRepo, roleRepo, userRepo, permissionRepo, planModuleRepo, tenantRepo)
 
@@ -212,7 +213,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		menuService, apiService, permissionService, permissionGroupService,
 		permissionAuditLogService, policyEvaluationLogService,
 		loginAuditLogService, apiAuditLogService, operationAuditLogService, dataAccessAuditLogService,
-		redisCacheMonitorService, dashboardService,
+		redisCacheMonitorService, onlineSessionService, dashboardService,
 		internalMessageService, internalMessageCategoryService, internalMessageRecipientService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
 	)

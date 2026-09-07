@@ -4483,6 +4483,101 @@ export type authenticationservicev1_VerifyMFAChallengeRequest = {
   webauthn?: authenticationservicev1_WebAuthnAssertion;
 };
 
+// 在线会话管理服务（在线用户列表 + 强制下线）
+export interface OnlineSessionService {
+  // 查询在线会话列表
+  ListOnlineSession(
+    request: online_sessionservicev1_ListOnlineSessionRequest,
+  ): Promise<online_sessionservicev1_ListOnlineSessionResponse>;
+  // 强制下线指定会话
+  ForceLogoutSession(
+    request: online_sessionservicev1_ForceLogoutSessionRequest,
+  ): Promise<online_sessionservicev1_ForceLogoutSessionResponse>;
+}
+
+export function createOnlineSessionServiceClient(
+  transport: ClientTransport,
+): OnlineSessionService {
+  return {
+    ListOnlineSession(request) {
+      const path = `admin/v1/online-session/sessions`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.keyword) {
+        queryParams.push(
+          `keyword=${encodeURIComponent(request.keyword.toString())}`,
+        );
+      }
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'OnlineSessionService',
+        method: 'ListOnlineSession',
+      }) as Promise<online_sessionservicev1_ListOnlineSessionResponse>;
+    },
+    ForceLogoutSession(request) {
+      const path = `admin/v1/online-session/force-logout`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'OnlineSessionService',
+        method: 'ForceLogoutSession',
+      }) as Promise<online_sessionservicev1_ForceLogoutSessionResponse>;
+    },
+  };
+}
+// 查询在线会话列表 - 请求
+export type online_sessionservicev1_ListOnlineSessionRequest = {
+  // 关键词过滤（模糊匹配用户名 / IP），留空返回全部
+  keyword?: string;
+  // 页码（从 1 开始）
+  page?: number;
+  // 每页数量
+  pageSize?: number;
+};
+
+// 查询在线会话列表 - 回应
+export type online_sessionservicev1_ListOnlineSessionResponse = {
+  items: online_sessionservicev1_OnlineSession[] | undefined;
+  total: number | undefined;
+};
+
+// 在线会话
+export type online_sessionservicev1_OnlineSession = {
+  clientType?: authenticationservicev1_ClientType;
+  deviceId?: string;
+  ipAddress?: string;
+  // 会话令牌对 ID（JWT jti，唯一标识一次令牌签发）
+  jti?: string;
+  loginAt?: wellKnownTimestamp;
+  tenantId?: number;
+  userAgent?: string;
+  userId?: number;
+  username?: string;
+};
+
+// 强制下线指定会话 - 请求
+export type online_sessionservicev1_ForceLogoutSessionRequest = {
+  clientType?: authenticationservicev1_ClientType;
+  jti?: string;
+  userId?: number;
+};
+
+// 强制下线指定会话 - 回应
+export type online_sessionservicev1_ForceLogoutSessionResponse = {
+};
+
 // 操作审计日志管理服务
 export interface OperationAuditLogService {
   // 查询操作审计日志列表
@@ -8545,6 +8640,7 @@ export class ApiClient {
   private _loginPolicyService?: LoginPolicyService;
   private _menuService?: MenuService;
   private _mfaService?: MfaService;
+  private _onlineSessionService?: OnlineSessionService;
   private _operationAuditLogService?: OperationAuditLogService;
   private _orgUnitService?: OrgUnitService;
   private _permissionAuditLogService?: PermissionAuditLogService;
@@ -8637,6 +8733,10 @@ export class ApiClient {
 
   get mfaService(): MfaService {
     return this._mfaService ??= createMfaServiceClient(this._transport);
+  }
+
+  get onlineSessionService(): OnlineSessionService {
+    return this._onlineSessionService ??= createOnlineSessionServiceClient(this._transport);
   }
 
   get operationAuditLogService(): OperationAuditLogService {

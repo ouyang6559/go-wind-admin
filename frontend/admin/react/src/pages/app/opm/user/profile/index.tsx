@@ -76,10 +76,13 @@ const UserProfile = () => {
   });
 
   // 修改密码
+  // 后端在改密成功后已吊销本人全部会话令牌（含当前会话），
+  // 这里前端同步 forceLogout（不调已失效的 logout API），由路由守卫重定向到登录页。
   const changePwdMutation = useChangePassword({
     onSuccess: () => {
-      message.success(t('changePasswordSuccess'));
+      message.success(t('passwordChangedReLogin'));
       pwdForm.resetFields();
+      useAuthStore.getState().forceLogout();
     },
     onError: (err: Error) => {
       message.error(err.message || t('changePasswordFailed'));

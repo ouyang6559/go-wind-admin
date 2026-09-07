@@ -32,6 +32,7 @@
   "tasks": "任务管理",
   "login-policies": "登录策略",
   "languages": "语言管理",
+  "online-sessions": "在线用户",
   "auth": "认证",
   "login": "登录",
   "mfaChallenge": "MFA 验证",

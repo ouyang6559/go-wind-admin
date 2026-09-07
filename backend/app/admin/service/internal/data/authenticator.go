@@ -573,6 +573,50 @@ func (a *Authenticator) UnblockToken(
 	return a.userTokenCache.RevokeTokenByJti(ctx, req.GetClientType(), req.GetUserId(), jti)
 }
 
+// ==============================
+// 会话元数据（在线用户功能）
+// ==============================
+
+// SaveSessionMeta 记录会话元数据，TTL 与 refresh token 对齐。
+// 在登录 / 刷新轮换 / MFA 验证通过签发新令牌对后由 service 层调用。
+func (a *Authenticator) SaveSessionMeta(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	jti string,
+	meta *SessionMeta,
+	expires time.Duration,
+) error {
+	return a.userTokenCache.SaveSessionMeta(ctx, clientType, userId, jti, meta, expires)
+}
+
+// GetSessionMeta 读取单个会话元数据；会话不存在返回 nil（不视为错误）。
+func (a *Authenticator) GetSessionMeta(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	jti string,
+) (*SessionMeta, error) {
+	return a.userTokenCache.GetSessionMeta(ctx, clientType, userId, jti)
+}
+
+// ListSessionEntries 扫描全部在线会话。
+func (a *Authenticator) ListSessionEntries(ctx context.Context) ([]SessionEntry, error) {
+	return a.userTokenCache.ListSessionEntries(ctx)
+}
+
+// RevokeUserTokenAllClientTypes 吊销用户全部客户端类型的所有令牌与会话记录。
+// 用于改密 / 重置密码后的强制下线：被改密用户的所有已签发令牌立即失效。
+func (a *Authenticator) RevokeUserTokenAllClientTypes(ctx context.Context, userId uint32) error {
+	for _, ct := range authenticationV1.ClientType_value {
+		if err := a.RevokeUserToken(ctx, authenticationV1.ClientType(ct), userId); err != nil {
+			a.log.Errorf(ctx, "revoke user [%d] tokens of client type [%d] failed: %v", userId, ct, err)
+			return err
+		}
+	}
+	return nil
+}
+
 // getAuthenticator 根据客户端类型获取认证器
 func (a *Authenticator) getAuthenticator(clientType authenticationV1.ClientType) (authnEngine.Authenticator, error) {
 	var authenticator authnEngine.Authenticator

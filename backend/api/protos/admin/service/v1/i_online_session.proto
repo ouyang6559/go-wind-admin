@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+
+import "online_session/service/v1/online_session.proto";
+
+// 在线会话管理服务（在线用户列表 + 强制下线）
+service OnlineSessionService {
+  // 查询在线会话列表
+  rpc ListOnlineSession(online_session.service.v1.ListOnlineSessionRequest) returns (online_session.service.v1.ListOnlineSessionResponse) {
+    option (google.api.http) = {
+      get: "/admin/v1/online-session/sessions"
+    };
+  }
+
+  // 强制下线指定会话
+  rpc ForceLogoutSession(online_session.service.v1.ForceLogoutSessionRequest) returns (online_session.service.v1.ForceLogoutSessionResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/online-session/force-logout"
+      body: "*"
+    };
+  }
+}

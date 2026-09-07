@@ -26,6 +26,7 @@ type UserProfileService struct {
 	userRepo           data.UserRepo
 	roleRepo           *data.RoleRepo
 	userCredentialRepo *data.UserCredentialRepo
+	authenticator      *data.Authenticator
 	mc                 *oss.MinIOClient
 
 	log *bLogger.Helper
@@ -36,6 +37,7 @@ func NewUserProfileService(
 	userRepo data.UserRepo,
 	roleRepo *data.RoleRepo,
 	userCredentialRepo *data.UserCredentialRepo,
+	authenticator *data.Authenticator,
 	mc *oss.MinIOClient,
 ) *UserProfileService {
 	return &UserProfileService{
@@ -43,6 +45,7 @@ func NewUserProfileService(
 		userRepo:           userRepo,
 		roleRepo:           roleRepo,
 		userCredentialRepo: userCredentialRepo,
+		authenticator:      authenticator,
 		mc:                 mc,
 	}
 }
@@ -108,7 +111,17 @@ func (s *UserProfileService) ChangePassword(ctx context.Context, req *identityV1
 		NewCredential: req.GetNewPassword(),
 		NeedDecrypt:   true,
 	})
-	return &emptypb.Empty{}, err
+	if err != nil {
+		return nil, err
+	}
+
+	// 改密成功后吊销本人全部客户端类型的令牌（含当前会话），
+	// 防止凭据泄露后旧令牌继续可用；前端在成功回调中引导重新登录。
+	if err = s.authenticator.RevokeUserTokenAllClientTypes(ctx, operator.GetUserId()); err != nil {
+		s.log.Errorf(ctx, "revoke tokens after password change failed for user [%d]: %v", operator.GetUserId(), err)
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 // DeleteAvatar 删除头像

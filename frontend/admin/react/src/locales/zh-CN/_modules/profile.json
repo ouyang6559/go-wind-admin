@@ -45,7 +45,7 @@
   "requiredConfirmPassword": "请再次输入新密码",
   "passwordMismatch": "两次输入的密码不一致",
   "changePassword": "修改密码",
-  "changePasswordSuccess": "密码修改成功",
+  "changePasswordSuccess": "密码修改成功，请重新登录",
   "changePasswordFailed": "密码修改失败",
   "genderMap": {
     "MALE": "男",

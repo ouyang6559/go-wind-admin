@@ -32,6 +32,7 @@
   "tasks": "Task Management",
   "login-policies": "Login Policies",
   "languages": "Language Management",
+  "online-sessions": "Online Users",
   "auth": "Authentication",
   "login": "Login",
   "mfaChallenge": "MFA Verification",
