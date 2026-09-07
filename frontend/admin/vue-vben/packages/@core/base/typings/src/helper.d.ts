@@ -1,13 +1,17 @@
 import { type ComputedRef, type MaybeRef } from 'vue';
 
 /**
- * 深层递归所有属性为可选
+ * 深层递归所有属性为可选。
+ * 带深度上限（6 层，足够覆盖 vxe/表单等任意真实配置的嵌套深度）：
+ * 无界版本对 vxe-table 这类巨型递归类型做结构比较时会让 TS 实例化超深直接报 TS2589。
  */
-type DeepPartial<T> = T extends object
-  ? {
-      [P in keyof T]?: DeepPartial<T[P]>;
-    }
-  : T;
+type DeepPartial<T, D extends readonly unknown[] = []> = D['length'] extends 6
+  ? T
+  : T extends object
+    ? {
+        [P in keyof T]?: DeepPartial<T[P], [...D, unknown]>;
+      }
+    : T;
 
 /**
  * 深层递归所有属性为只读

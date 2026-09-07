@@ -11,6 +11,32 @@ packages:
   - apps/*
   - scripts/*
 
+# 这些依赖的 postinstall 从未参与构建（pnpm 10 时代即被默认拦截），显式 false 保持行为一致。
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: false
+  esbuild: false
+  json-editor-vue: false
+  unrs-resolver: false
+  vue-demi: false
+
+# pnpm ≥11 不再读取 package.json 的 pnpm 字段，overrides 等配置移到此处（对齐上游）。
+# overrides 的 vue 跟随 catalog（精确版本），保证全仓单实例。
+overrides:
+  '@ast-grep/napi': 'catalog:'
+  '@ctrl/tinycolor': 'catalog:'
+  clsx: 'catalog:'
+  pinia: 'catalog:'
+  vue: 'catalog:'
+
+neverBuiltDependencies:
+  - canvas
+  - node-gyp
+
+peerDependencyRules:
+  allowedVersions:
+    eslint: '*'
+
 catalog:
   '@ast-grep/napi': ^0.31.1
   '@changesets/changelog-github': ^0.5.0
@@ -172,12 +198,16 @@ catalog:
   vitepress: ^1.5.0
   vitepress-plugin-group-icons: ^1.3.1
   vitest: ^2.1.8
-  vue: ^3.5.13
+  # 必须锁定精确版本：若用 ^ 范围，apps 与 packages 的 lockfile 解析可能落在
+  # 两个不同的 vue patch 版本上（如 3.5.13 与 3.5.38），vue-router 等带 peer 的
+  # 包会随之产生两份实例，类型系统视为互不兼容，typecheck 出现大批
+  # "Two different types with this name exist" 假错。升级 vue 时整仓统一升并回归。
+  vue: 3.5.13
   vue-eslint-parser: ^9.4.3
   vue-i18n: ^10.0.5
   vue-json-viewer: ^3.0.4
   vue-router: ^4.5.0
-  vue-tsc: ^2.1.10
+  vue-tsc: 2.1.10
   vxe-pc-ui: ^4.3.27
   vxe-table: ^4.9.23
   watermark-js-plus: ^1.5.7

@@ -404,7 +404,46 @@ export default routes;
 
 预定义 i18n key：`ui.notification.create/update/delete_success` 及 `_failed` 版本。
 
+## 工具链与已知坑（改动前必读）
+
+### 版本钉死（不要改回 ^ 范围）
+
+`pnpm-workspace.yaml` catalog 中以下包为**精确版本钉死**，禁止改回 `^` 范围：
+
+- `vue: 3.5.13` — `^` 范围会让 apps 与 packages 解析出两个 vue patch 版本，vue-router 等 peer 包随之产生两份实例，typecheck 出现大批 `Two different types with this name exist` 假错。
+- `typescript: 5.6.3` / `vue-tsc: 2.1.10` — 此配对经全量验证；`^` 会因镜像源元数据漂移解析到不可预期的组合（vue-tsc 2.1.x 与 TS 5.7 不兼容，会崩 `Search string not found`）。
+
+`packageManager: pnpm@11.18.0` 必须与本机 pnpm 主版本一致：pnpm 的版本自举切换在 npmmirror 下会下载残缺的 `@pnpm/exe`（缺 pnpm.exe），导致 turbo 嵌套的 `pnpm run` 报 `ERR_PNPM_ENGINE_BIN_MISSING` 且项目级 `.npmrc` 无法阻止（切换决策只读用户/全局配置）。
+
+### TS2589（Type instantiation is excessively deep）
+
+vxe-table 的巨型递归类型与 `DeepPartial` 展开做结构比较时极易超深。已做两层防御：
+
+1. `DeepPartial`（`@vben-core/typings/helper.d.ts`）已改为**深度 6 层封顶**，请勿改回无界递归。
+2. `use-vxe-grid.vue` 中向 `setState`/`mergeWithArrayOverride` 传 vxe 大类型处有显式断言截断。
+
+新增页面若再遇 TS2589：优先在调用点按目标类型断言收窄，**不要**升级 TS/vue-tsc 去碰运气。
+
+### 离线图标（lucide）
+
+菜单 `meta.icon` 与图标选择器统一用 lucide。`@iconify/vue` 默认从 api.iconify.design **在线**加载，网络差时图标渲染失败。`bootstrap.ts` 启动时已 `addCollection(lucide)` 离线注册完整集合——不要删除；新增图标只管用 `lucide:xxx`，无需额外注册。
+
+### 构建目标
+
+`build.target` 必须 **es2022+**（`internal/vite-config/src/config/application.ts`）。降到 es2015 会因依赖中 jiti 的顶层 await 直接断构建。
+
+### `$t()` 空键崩溃
+
+`$t(undefined)` 或不存在的 key 会直接抛错崩页面（曾致菜单页白屏崩溃）。用 `$t()` 前确认 key 已在 `locales/langs/`（zh-CN + en-US 同步）登记；key 来自变量时先保证非空。
+
+### 开发策略：移植优先
+
+新功能/新模块以 **react 端为行为基准先做**，再移植到 vben。vben 框架变体（vben 5.x monorepo）在训练语料中占比低，AI 直接首创容易产出框架级错误（`$t` 误用、忘记离线图标、component 未用注册名等）；移植是有参照的翻译，便宜得多。
+
+---
+
 ## 常见错误与纠正
+
 
 | 错误做法 | 正确做法 |
 |---|---|

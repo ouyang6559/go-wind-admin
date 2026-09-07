@@ -147,7 +147,9 @@ const options = computed(() => {
     mergeWithArrayOverride(
       {},
       toolbarOptions.value,
-      toRaw(gridOptions.value),
+      // vxe 递归大类型会使 defu 泛型实例化超深（TS2589），按 Record 截断入参，
+      // 合并结果仍由下方 VxeTableGridProps 注解约束。
+      toRaw(gridOptions.value) as Record<string, any>,
       globalGridConfig,
     ),
   );
@@ -255,7 +257,11 @@ async function init() {
       '[Vben Vxe Table]: The formConfig in the grid is not supported, please use the `formOptions` props',
     );
   }
-  props.api?.setState?.({ gridOptions: defaultGridOptions });
+  // vxe-table 递归大类型与 DeepPartial 展开相容性检查在部分 TS 版本下触发 TS2589，
+  // 直接按目标成员类型断言，避免结构展开（与 api.ts setGridOptions 的传入方式等价）。
+  props.api?.setState?.({
+    gridOptions: defaultGridOptions as VxeGridProps['gridOptions'],
+  });
   // form 由 vben-form 代替，所以需要保证query相关事件可以拿到参数
   extendProxyOptions(props.api, defaultGridOptions, () =>
     formApi.getLatestSubmissionValues(),

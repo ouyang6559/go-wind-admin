@@ -85,12 +85,15 @@ export function useCreateUser(
   options?: UseMutationOptions<
     object,
     Error,
-    { data: identityservicev1_User; password?: string }
+    { data: Record<string, any>; password?: string }
   >,
 ) {
   return useMutation({
     mutationFn: ({ data, password }) =>
-      apiClient.userService.Create({ data, password }),
+      apiClient.userService.Create({
+        data: data as identityservicev1_User,
+        password,
+      }),
     ...options,
   });
 }

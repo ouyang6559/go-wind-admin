@@ -14,7 +14,6 @@ import {
   useCreatePlanQuota,
   useUpdatePlanQuota,
 } from '#/api';
-import { type identityservicev1_Plan as Plan } from '#/api';
 import { usePlanViewStore } from '#/views/app/tenant/plan/plan-view.state';
 
 const { mutateAsync: createPlanQuota } = useCreatePlanQuota();
