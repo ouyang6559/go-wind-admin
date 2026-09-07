@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Windows 开发环境自动配置脚本（Scoop/Docker/Go）
+Windows dev environment auto-setup script (Scoop/Docker/Go)
 #>
 
 param(
@@ -9,13 +9,13 @@ param(
 )
 
 #Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Continue'  # 改为Continue，避免非致命错误直接退出
+$ErrorActionPreference = 'Continue'  # Use Continue to avoid exiting on non-fatal errors
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# 显示版本信息
+# Show version info
 Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
 
-# ========== 导入函数库（先加载，再配置） ==========
+# ========== Import function libraries (load first, then configure) ==========
 $libFiles = @(
     'common-utils.ps1',
     'scoop-utils.ps1', 
@@ -35,17 +35,17 @@ foreach ($lib in $libFiles) {
     }
 }
 
-Log "库加载测试"
+Log "Library load test"
 Initialize-ErrorHandling
 
-# 检测管理员权限
+# Check administrator privileges
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 $IsAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $IsAdmin) {
     Warn "Not running as administrator! Docker auto-start and hosts configuration will be skipped."
 }
 
-# ========== Hosts 配置（需要管理员权限）
+# ========== Hosts configuration (requires administrator privileges)
 if ($IsAdmin) {
     $services = @('postgres', 'mysql', 'redis', 'minio')
     Initialize-Hosts -Services $services -IP "127.0.0.1" -DomainSuffix ".local"
@@ -53,16 +53,16 @@ if ($IsAdmin) {
     Warn "Skipping hosts configuration (requires administrator privileges)"
 }
 
-# ========== Scoop 安装
+# ========== Scoop installation
 Initialize-Scoop -Buckets @('main', 'extras') -Packages @('wget', 'unzip', 'git', 'jq', 'make', 'grep', 'gawk', 'sed', 'touch', 'mingw', 'nodejs', 'go')
 
-# ========== Docker 安装
+# ========== Docker installation
 Initialize-Docker -SkipDocker $SkipDocker -IsAdmin $IsAdmin
 
-# ========== Go 环境配置
+# ========== Go environment configuration
 Initialize-GoEnvironment -GoPath (Join-Path $env:USERPROFILE "go") -GoProxy "https://goproxy.io,direct" -SkipPlugins $false -SkipCliTools $false
 
-# ========== 手动配置提示
+# ========== Manual configuration tips
 $goPathValue = $env:GOPATH
 if (-not $goPathValue) { $goPathValue = Join-Path $env:USERPROFILE "go" }
 Log "Environment setup completed (current session only)!"

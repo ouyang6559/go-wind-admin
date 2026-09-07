@@ -1,30 +1,30 @@
 ﻿<#
 .SYNOPSIS
-Docker Desktop 工具函数库
+Docker Desktop utility function library
 .DESCRIPTION
-提供 Docker 安装、配置和验证的通用函数，安装前自动检测避免重复
+Provides common functions for Docker installation, configuration, and verification, with automatic pre-install detection to avoid duplicates
 .NOTES
-编码: UTF-8 (NO BOM) | 兼容: PowerShell 5.1+
+Encoding: UTF-8 (NO BOM) | Compatible: PowerShell 5.1+
 #>
 
-# 导入通用工具库（如果尚未导入）
+# Import the common utility library (if not already imported)
 if (-not $global:CommonUtilsLoaded) {
     $LibDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
     . (Join-Path $LibDir "common-utils.ps1")
 }
 
-# ========== 检测函数 ==========
+# ========== Detection functions ==========
 function Test-DockerDesktopInstalled {
     <#
     .SYNOPSIS
-    检测 Docker Desktop 是否已安装
+    Detect whether Docker Desktop is installed
     .DESCRIPTION
-    通过多种方式检测：命令、注册表、文件路径、包管理器
+    Detects via multiple methods: commands, registry, file paths, package managers
     .OUTPUTS
-    [bool] 已安装返回 $true，否则 $false
+    [bool] Returns $true if installed, otherwise $false
     #>
     
-    # 1. 检查 docker 命令是否可用（最快）
+    # 1. Check whether the docker command is available (fastest)
     if (Get-Command docker -ErrorAction SilentlyContinue) {
         try {
             $null = & docker --version 2>$null
@@ -33,7 +33,7 @@ function Test-DockerDesktopInstalled {
         } catch {}
     }
     
-    # 2. 检查注册表（Winget/官方安装器）
+    # 2. Check the registry (Winget/official installer)
     $regPaths = @(
         "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
         "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
@@ -49,7 +49,7 @@ function Test-DockerDesktopInstalled {
         }
     }
     
-    # 3. 检查安装目录
+    # 3. Check the installation directories
     $installPaths = @(
         "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
         "${env:ProgramFiles(x86)}\Docker\Docker\Docker Desktop.exe",
@@ -63,7 +63,7 @@ function Test-DockerDesktopInstalled {
         }
     }
     
-    # 4. 检查 Scoop 是否已安装
+    # 4. Check whether it is already installed via Scoop
     if (Get-Command scoop -ErrorAction SilentlyContinue) {
         $scoopList = & scoop list 2>$null
         if ($scoopList -match '\bdocker\b') {
@@ -72,7 +72,7 @@ function Test-DockerDesktopInstalled {
         }
     }
     
-    # 5. 检查 Winget 是否已安装
+    # 5. Check whether it is already installed via Winget
     if (Get-Command winget -ErrorAction SilentlyContinue) {
         try {
             $wingetList = & winget list --id Docker.DockerDesktop --exact 2>$null
@@ -86,18 +86,18 @@ function Test-DockerDesktopInstalled {
     return $false
 }
 
-# ========== 安装函数（增强版） ==========
+# ========== Installation function (enhanced) ==========
 function Install-DockerDesktop {
     <#
     .SYNOPSIS
-    安装 Docker Desktop（先检测，避免重复）
+    Install Docker Desktop (detect first to avoid duplicates)
     .DESCRIPTION
-    1. 先检查是否已安装
-    2. 已安装则跳过
-    3. 未安装则优先 Winget，失败则尝试 Scoop
+    1. Check whether it is already installed first
+    2. Skip if already installed
+    3. If not installed, prefer Winget; fall back to Scoop on failure
     #>
     
-    # 🔍 先检测是否已安装
+    # 🔍 Detect whether it is already installed first
     Log "Checking if Docker Desktop is already installed..."
     if (Test-DockerDesktopInstalled) {
         SuccessLog "Docker Desktop is already installed, skip installation"
@@ -106,11 +106,11 @@ function Install-DockerDesktop {
     
     Log "Docker Desktop not detected, starting installation..."
 
-    # 🚀 尝试 Winget 安装
+    # 🚀 Try installing via Winget
     if (Get-Command winget -ErrorAction SilentlyContinue) {
         Log "  Using Winget to install Docker Desktop"
         try {
-            # Winget 安装需要交互确认，添加 --silent 减少提示
+            # Winget installation normally requires interactive confirmation; add --silent to reduce prompts
             $wingetArgs = @(
                 'install', '--id', 'Docker.DockerDesktop',
                 '-e', '--accept-package-agreements', '--accept-source-agreements',
@@ -118,7 +118,7 @@ function Install-DockerDesktop {
             )
             & winget @wingetArgs 2>&1 | Out-Null
             
-            # Winget 返回 0 表示成功，-1 表示需要重启/用户交互
+            # Winget returns 0 for success, -1 for restart/user interaction required
             if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq -1) {
                 SuccessLog "Docker Desktop install submitted via Winget"
                 Log "  Note: Docker Desktop may require manual completion or system restart"
@@ -131,7 +131,7 @@ function Install-DockerDesktop {
         }
     }
 
-    # 🔁 Winget 失败/不可用，尝试 Scoop
+    # 🔁 Winget failed/unavailable, try Scoop
     Log "  Winget not available or failed, trying Scoop..."
     if (Get-Command scoop -ErrorAction SilentlyContinue) {
         try {
@@ -148,12 +148,12 @@ function Install-DockerDesktop {
         }
     }
 
-    # ❌ 所有方式都失败
+    # ❌ All methods failed
     ErrorLog "All installation methods failed. Please install Docker Desktop manually from: https://www.docker.com/products/docker-desktop"
     return $false
 }
 
-# ========== 配置服务函数（保持不变，略优化） ==========
+# ========== Service configuration function (unchanged, slightly optimized) ==========
 function Configure-DockerService {
     param([bool]$IsAdmin = $false)
 
@@ -165,7 +165,7 @@ function Configure-DockerService {
     Log "Configuring Docker service..."
     $dockerServiceName = $null
     
-    # 优先查找 Docker Desktop 服务
+    # Look for the Docker Desktop service first
     $services = @('com.docker.service', 'docker', 'dockerd')
     foreach ($svc in $services) {
         if (Get-Service -Name $svc -ErrorAction SilentlyContinue) {
@@ -191,7 +191,7 @@ function Configure-DockerService {
     }
 }
 
-# ========== 验证函数（保持不变） ==========
+# ========== Verification function (unchanged) ==========
 function Verify-DockerInstallation {
     Log "Verifying Docker installation..."
     if (Get-Command docker -ErrorAction SilentlyContinue) {
@@ -209,7 +209,7 @@ function Verify-DockerInstallation {
     }
 }
 
-# ========== 初始化函数（保持不变） ==========
+# ========== Initialization function (unchanged) ==========
 function Initialize-Docker {
     param(
         [bool]$SkipDocker = $false,

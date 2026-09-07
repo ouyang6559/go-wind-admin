@@ -1,25 +1,25 @@
 ﻿<#
 .SYNOPSIS
-Scoop 包管理器工具函数库
+Scoop package manager utility library
 .DESCRIPTION
-提供 Scoop 安装、配置和包管理的通用函数
+Provides common functions for Scoop installation, configuration, and package management
 .NOTES
-保存编码：UTF-8 with BOM | 兼容：PowerShell 5.1+
+Saved encoding: UTF-8 with BOM | Compatible: PowerShell 5.1+
 #>
 
-# 导入通用工具库（如果尚未导入）
+# Import the common utility library (if not already imported)
 if (-not $global:CommonUtilsLoaded) {
     $LibDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
     . (Join-Path $LibDir "common-utils.ps1")
 }
 
-# ========== Scoop 安装函数 ==========
+# ========== Scoop installation function ==========
 function Install-Scoop {
     <#
     .SYNOPSIS
-    安装 Scoop 包管理器
+    Install the Scoop package manager
     .DESCRIPTION
-    安装 Scoop 并配置基本设置
+    Install Scoop and configure basic settings
     #>
     Log "Installing Scoop..."
     try {
@@ -34,13 +34,13 @@ function Install-Scoop {
     return $true
 }
 
-# Scoop 配置函数
+# Scoop configuration function
 function Add-ScoopBuckets {
     <#
     .SYNOPSIS
-    添加 Scoop Buckets
+    Add Scoop buckets
     .PARAMETER Buckets
-    要添加的 Bucket 列表（数组）
+    List of buckets to add (array)
     #>
     param(
         [string[]]$Buckets = @('main', 'extras')
@@ -69,9 +69,9 @@ function Add-ScoopBuckets {
 function Install-ScoopPackages {
     <#
     .SYNOPSIS
-    通过 Scoop 安装包
+    Install packages via Scoop
     .PARAMETER Packages
-    要安装的包列表（数组）
+    List of packages to install (array)
     #>
     param(
         [Parameter(Mandatory=$true)]
@@ -80,7 +80,7 @@ function Install-ScoopPackages {
 
     Log "Installing Scoop packages..."
     foreach ($pkg in $Packages) {
-        # 检查包是否已安装
+        # Check whether the package is already installed
         if (Get-Command $pkg -ErrorAction SilentlyContinue) {
             Log "  [SKIP] $pkg already installed"
             continue
@@ -100,22 +100,22 @@ function Install-ScoopPackages {
     }
 }
 
-# Scoop 初始化函数
+# Scoop initialization function
 function Initialize-Scoop {
     <#
     .SYNOPSIS
-    初始化 Scoop（安装 Scoop 和基础包）
+    Initialize Scoop (install Scoop and base packages)
     .PARAMETER Buckets
-    要添加的 Bucket 列表
+    List of buckets to add
     .PARAMETER Packages
-    要安装的包列表
+    List of packages to install
     #>
     param(
         [string[]]$Buckets = @('main', 'extras'),
         [string[]]$Packages = @('wget', 'unzip', 'git', 'jq', 'make', 'grep', 'gawk', 'sed', 'touch', 'mingw', 'nodejs', 'go')
     )
 
-    # 1. 检查并安装 Scoop
+    # 1. Check and install Scoop
     if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
         if (-not (Install-Scoop)) {
             return $false
@@ -124,10 +124,10 @@ function Initialize-Scoop {
         Log "Scoop already installed, skip installation"
     }
 
-    # 2. 配置 Buckets
+    # 2. Configure buckets
     Add-ScoopBuckets -Buckets $Buckets
 
-    # 3. 安装包
+    # 3. Install packages
     Install-ScoopPackages -Packages $Packages
 
     return $true

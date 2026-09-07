@@ -1,57 +1,57 @@
 ﻿<#
 .SYNOPSIS
-Docker Compose 启动脚本 - 完整应用版本（应用 + 依赖）（Windows PowerShell 版）
+Docker Compose startup script - full application version (app + dependencies) (Windows PowerShell edition)
 
 .DESCRIPTION
-启动完整的 Docker Compose 应用，包括主应用服务和所有依赖
+Starts the full Docker Compose application, including the main app service and all dependencies
 
 .PARAMETER AppRoot
-数据卷根目录路径 (默认: C:\app)
-目录结构: APP_ROOT\postgres, APP_ROOT\redis 等
+Data volume root directory (default: C:\app)
+Directory layout: APP_ROOT\postgres, APP_ROOT\redis, etc.
 
 .PARAMETER ComposeFile
-Compose 文件路径 (默认: docker-compose.yml)
-指向完整应用的 Compose 配置
+Compose file path (default: docker-compose.yml)
+Points to the full-application Compose config
 
 .EXAMPLE
-# 启动完整应用（使用默认配置）
+# Start the full application (default config)
 .\full_deploy.ps1
 
-# 自定义数据目录
+# Custom data directory
 .\full_deploy.ps1 -AppRoot "D:\app"
 
-# 自定义 Compose 文件
+# Custom Compose file
 .\full_deploy.ps1 -ComposeFile "docker-compose.yaml"
 
-# 完整自定义
+# Fully customized
 .\full_deploy.ps1 -AppRoot "D:\myapp" -ComposeFile "custom-compose.yaml"
 
 .NOTES
-启动的服务（完整）：
-  - 主应用服务（根据 docker-compose.yml 定义）
-  - PostgreSQL 数据库
-  - Redis 缓存
-  - MinIO 对象存储
-  - Jaeger 分布式追踪
+Services started (full):
+  - Main application service (as defined in docker-compose.yml)
+  - PostgreSQL database
+  - Redis cache
+  - MinIO object storage
+  - Jaeger distributed tracing
 
-使用 Compose 文件：
-  - 使用 docker-compose.yml 或 docker-compose.yaml（项目根目录）
+Compose file:
+  - Uses docker-compose.yml or docker-compose.yaml (repo root)
 
-使用场景：
-  1. 完整的本地开发环境
-  2. 快速验收测试
-  3. 生产环境部署
-  4. 一键启动所有服务
+Use cases:
+  1. Full local development environment
+  2. Quick acceptance testing
+  3. Production deployment
+  4. One-click startup of all services
 
-工作流示例：
-  # 启动完整应用
+Workflow example:
+  # Start the full application
   .\full_deploy.ps1
 
-  # 查看日志
+  # View logs
   docker logs -f <container-name>
 
-相关脚本：
-  - libs_only.ps1  仅启动依赖（不启动应用）
+Related scripts:
+  - libs_only.ps1  Dependencies only (no application)
 
 #>
 
@@ -64,7 +64,7 @@ param(
 )
 
 # ============================================================================
-# 函数定义
+# Function definitions
 # ============================================================================
 
 function Log {
@@ -74,12 +74,12 @@ function Log {
 
 function Warn {
     param([string]$Message)
-    Write-Host "⚠ WARNING: $Message" -ForegroundColor Yellow
+    Write-Host "WARNING: $Message" -ForegroundColor Yellow
 }
 
 function ErrorLog {
     param([string]$Message)
-    Write-Host "❌ ERROR: $Message" -ForegroundColor Red
+    Write-Host "ERROR: $Message" -ForegroundColor Red
 }
 
 function EnsureDirectoryExists {
@@ -97,29 +97,29 @@ function EnsureDirectoryExists {
 function Get-DockerComposeCommand {
     <#
     .SYNOPSIS
-    检测和获取 Docker Compose 命令
+    Detect and resolve the Docker Compose command
     #>
 
     try {
-        # 尝试 docker compose 插件（推荐）
+        # Try the docker compose plugin (preferred)
         $version = docker compose version 2>$null
         if ($LASTEXITCODE -eq 0) {
             Log "Found Docker Compose plugin: docker compose"
             return "docker"
         }
     } catch {
-        # 继续尝试下一个方法
+        # Fall through to the next method
     }
 
     try {
-        # 尝试独立的 docker-compose 命令
+        # Try the standalone docker-compose command
         $version = docker-compose --version 2>$null
         if ($LASTEXITCODE -eq 0) {
             Log "Found docker-compose command: docker-compose"
             return "docker-compose"
         }
     } catch {
-        # 继续
+        # Continue
     }
 
     ErrorLog "Neither 'docker compose' plugin nor 'docker-compose' found"
@@ -130,7 +130,7 @@ function Get-DockerComposeCommand {
 function Find-ComposeFile {
     <#
     .SYNOPSIS
-    查找 Compose 文件
+    Locate the Compose file
     #>
     param([string]$RepoRoot)
 
@@ -150,18 +150,18 @@ function Find-ComposeFile {
 }
 
 # ============================================================================
-# 主程序开始
+# Main program
 # ============================================================================
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
 
 Log "========================================"
-Log "  Docker Compose - Full Deploy（完整）"
+Log "  Docker Compose - Full Deploy"
 Log "========================================"
 Log ""
 
-# 获取项目根目录（脚本在 backend/scripts/docker/ 下，需上溯两级到 backend/）
+# Repo root: the script lives in backend/scripts/docker/, go up two levels to backend/
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
 
@@ -169,7 +169,7 @@ Log "Script dir: $scriptDir"
 Log "Repo root: $repoRoot"
 Log "App root: $AppRoot"
 
-# 进入项目根目录
+# Change to the repo root
 try {
     Push-Location $repoRoot
     Log "Changed to repo root: $repoRoot"
@@ -178,7 +178,7 @@ try {
     exit 1
 }
 
-# 确定 Compose 文件
+# Resolve the Compose file
 if ([string]::IsNullOrEmpty($ComposeFile)) {
     Log "Searching for Compose file..."
     $ComposeFile = Find-ComposeFile $repoRoot
@@ -201,7 +201,7 @@ if ([string]::IsNullOrEmpty($ComposeFile)) {
 
 Log ""
 
-# 创建数据卷目录
+# Create data volume directories
 Log "Creating data directories..."
 $dependencies = @('postgres', 'redis', 'etcd', 'minio', 'jaeger')
 
@@ -212,7 +212,7 @@ foreach ($dep in $dependencies) {
 
 Log ""
 
-# 获取 Docker Compose 命令
+# Resolve the Docker Compose command
 Log "Checking Docker Compose availability..."
 $dockerComposeCmd = Get-DockerComposeCommand
 
@@ -223,7 +223,7 @@ if ($null -eq $dockerComposeCmd) {
 
 Log ""
 
-# 构建命令
+# Build the command line
 if ($dockerComposeCmd -eq "docker") {
     $command = "docker compose -f $ComposeFile up -d --force-recreate"
 } else {
@@ -234,18 +234,18 @@ Log "Executing: $command"
 Log ""
 
 try {
-    # 执行 Docker Compose 命令
+    # Run the Docker Compose command
     Invoke-Expression $command
 
     if ($LASTEXITCODE -eq 0) {
         Log ""
         Log "========================================"
-        Log "  启动成功！"
+        Log "  Started successfully!"
         Log "========================================"
         Log ""
-        Log "运行中的服务："
+        Log "Running services:"
 
-        # 显示运行中的容器
+        # Show running containers
         if ($dockerComposeCmd -eq "docker") {
             docker compose -f $ComposeFile ps
         } else {
@@ -253,10 +253,10 @@ try {
         }
 
         Log ""
-        Log "查看日志："
+        Log "View logs:"
         Log "  docker logs -f <container-name>"
         Log ""
-        Log "停止所有服务："
+        Log "Stop all services:"
         Log "  docker-compose -f $ComposeFile down"
         Log ""
     } else {
@@ -270,8 +270,7 @@ try {
     exit 1
 }
 
-# 返回之前的目录
+# Return to the previous directory
 Pop-Location
 
 Log "========================================" -ForegroundColor Green
-

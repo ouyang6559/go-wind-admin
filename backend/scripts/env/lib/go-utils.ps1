@@ -1,41 +1,41 @@
 ﻿<#
 .SYNOPSIS
-Go 环境配置工具函数库（增强检测版）
+Go environment configuration utility library (enhanced detection)
 .DESCRIPTION
-提供 Go 运行时安装、环境变量配置、插件和 CLI 工具安装的通用函数，支持智能跳过已安装项
+Provides common functions for Go runtime installation, environment variable configuration, and plugin/CLI tool installation, with smart skipping of already-installed items
 .NOTES
-编码: UTF-8 (NO BOM) | 兼容: PowerShell 5.1+
+Encoding: UTF-8 (NO BOM) | Compatible: PowerShell 5.1+
 #>
 
-# ========== 导入通用工具库 ==========
+# ========== Import the common utility library ==========
 if (-not $global:CommonUtilsLoaded) {
     $LibDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
     . (Join-Path $LibDir "common-utils.ps1")
 }
 
-# ========== 检测函数 ==========
+# ========== Detection functions ==========
 function Test-GoToolInstalled {
     <#
     .SYNOPSIS
-    检测 Go 工具是否已安装
+    Detect whether a Go tool is installed
     .PARAMETER ToolName
-    工具的可执行文件名（不含 .exe），如 'kratos', 'protoc-gen-go'
+    Executable file name of the tool (without .exe), e.g. 'kratos', 'protoc-gen-go'
     .OUTPUTS
-    [bool] 已安装返回 $true
+    [bool] Returns $true if installed
     #>
     param([string]$ToolName)
     
-    # 1. 优先检查 GOBIN
+    # 1. Check GOBIN first
     if ($env:GOBIN -and (Test-Path (Join-Path $env:GOBIN "$ToolName.exe"))) {
         return $true
     }
     
-    # 2. 检查 GOPATH/bin
+    # 2. Check GOPATH/bin
     if ($env:GOPATH -and (Test-Path (Join-Path $env:GOPATH "bin\$ToolName.exe"))) {
         return $true
     }
     
-    # 3. 检查 PATH 中是否有该命令
+    # 3. Check whether the command exists in PATH
     if (Get-Command $ToolName -ErrorAction SilentlyContinue) {
         return $true
     }
@@ -46,21 +46,21 @@ function Test-GoToolInstalled {
 function Test-GoProxyConfigured {
     <#
     .SYNOPSIS
-    检测 Go 代理配置是否符合预期
+    Detect whether the Go proxy configuration matches the expected value
     .PARAMETER ExpectedProxy
-    期望的 GOPROXY 值
+    The expected GOPROXY value
     .OUTPUTS
-    [bool] 配置匹配返回 $true
+    [bool] Returns $true if the configuration matches
     #>
     param([string]$ExpectedProxy)
     
     try {
         $currentProxy = & go env GOPROXY 2>$null
-        # 支持逗号分隔的多个代理，顺序不重要
+        # Supports multiple comma-separated proxies; order does not matter
         $expectedList = $ExpectedProxy -split ',' | ForEach-Object { $_.Trim() }
         $currentList = $currentProxy -split ',' | ForEach-Object { $_.Trim() }
         
-        # 检查期望的代理是否都在当前配置中
+        # Check whether all expected proxies are present in the current configuration
         $allMatch = $true
         foreach ($exp in $expectedList) {
             if ($currentList -notcontains $exp) {
@@ -78,11 +78,11 @@ function Test-GoProxyConfigured {
     return $false
 }
 
-# ========== Go 运行时安装（带检测） ==========
+# ========== Go runtime installation (with detection) ==========
 function Install-GoRuntime {
     Log "Checking Go runtime..."
     
-    # 🔍 检测是否已安装
+    # 🔍 Detect whether Go is already installed
     if (Get-Command go -ErrorAction SilentlyContinue) {
         try {
             $goVersion = & go version 2>&1
@@ -108,7 +108,7 @@ function Install-GoRuntime {
     }
 }
 
-# ========== 环境变量配置（修复返回值） ==========
+# ========== Environment variable configuration (fixed return value) ==========
 function Set-GoEnvironment {
     param(
         [string]$GoPath = (Join-Path $env:USERPROFILE "go"),
@@ -117,37 +117,37 @@ function Set-GoEnvironment {
 
     Log "Configuring Go environment..."
     
-    # 创建 GOPATH
+    # Create GOPATH
     if (-not (Test-Path $GoPath)) {
         Log "  Creating GOPATH: $GoPath"
         New-Item -Path $GoPath -ItemType Directory -Force | Out-Null
     }
     
-    # 配置当前会话
+    # Configure the current session
     $env:GOPATH = $GoPath
     Log "  [OK] GOPATH = $GoPath (current session)"
     
-    # 配置 GOBIN
+    # Configure GOBIN
     $goBinPath = Join-Path $GoPath "bin"
     if (-not (Test-Path $goBinPath)) {
         New-Item -Path $goBinPath -ItemType Directory -Force | Out-Null
     }
     $env:GOBIN = $goBinPath
     
-    # 添加到 PATH（避免重复）
+    # Add to PATH (avoid duplicates)
     if ($env:PATH -notlike "*$goBinPath*") {
         $env:PATH = "$goBinPath;$env:PATH"
         Log "  [OK] Added to PATH: $goBinPath"
     }
     
-    # ✅ 返回哈希表，调用更清晰
+    # ✅ Return a hashtable for clearer call sites
     return @{
         GoPath = $GoPath
         GoBin = $goBinPath
     }
 }
 
-# ========== Go 代理配置（带检测） ==========
+# ========== Go proxy configuration (with detection) ==========
 function Set-GoProxy {
     param(
         [string]$GoProxy = "https://goproxy.io,direct",
@@ -156,11 +156,11 @@ function Set-GoProxy {
 
     Log "Configuring Go proxy..."
     
-    # 🔍 先检测是否已配置
+    # 🔍 Detect whether it is already configured first
     if (Test-GoProxyConfigured -ExpectedProxy $GoProxy) {
         SuccessLog "GOPROXY already matches expected value, skip configuration"
         
-        # 但仍检查 GO111MODULE
+        # But still check GO111MODULE
         if ($GoModuleOn) {
             $currentModule = & go env GO111MODULE 2>$null
             if ($currentModule -ne 'on') {
@@ -172,17 +172,17 @@ function Set-GoProxy {
     }
     
     try {
-        # 配置 GOPROXY
+        # Configure GOPROXY
         Log "  Setting GOPROXY: $GoProxy"
         & go env -w GOPROXY=$GoProxy 2>&1 | Out-Null
         
-        # 配置 GO111MODULE
+        # Configure GO111MODULE
         if ($GoModuleOn) {
             Log "  Enabling GO111MODULE..."
             & go env -w GO111MODULE=on 2>&1 | Out-Null
         }
         
-        # 显示结果
+        # Show the result
         $envInfo = & go env GOPROXY, GO111MODULE 2>&1
         Log "  [OK] Current config: GOPROXY=$($envInfo[0]), GO111MODULE=$($envInfo[1])"
         return $true
@@ -192,12 +192,12 @@ function Set-GoProxy {
     }
 }
 
-# ========== 批量安装 Go 包（智能跳过） ==========
+# ========== Batch install Go packages (smart skip) ==========
 function Install-GoPackages {
     param(
         [Parameter(Mandatory=$true)]
         [string[]]$Packages,
-        [switch]$Force  # 强制重新安装
+        [switch]$Force  # Force reinstallation
     )
 
     if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
@@ -206,10 +206,10 @@ function Install-GoPackages {
     }
 
     foreach ($pkg in $Packages) {
-        # 提取工具名：google.golang.org/protobuf/cmd/protoc-gen-go@latest → protoc-gen-go
+        # Extract tool name: google.golang.org/protobuf/cmd/protoc-gen-go@latest → protoc-gen-go
         $toolName = ($pkg -split '/' | Select-Object -Last 1) -replace '@.*$', ''
         
-        # 🔍 检测是否已安装（除非强制）
+        # 🔍 Detect whether already installed (unless forced)
         if (-not $Force -and (Test-GoToolInstalled -ToolName $toolName)) {
             Log "  [SKIP] $toolName already installed"
             continue
@@ -229,7 +229,7 @@ function Install-GoPackages {
     }
 }
 
-# ========== 插件安装（保持不变，调用上述函数） ==========
+# ========== Plugin installation (unchanged, calls the functions above) ==========
 function Install-GoPlugins {
     Log "Installing Protobuf compiler plugins..."
     
@@ -247,7 +247,7 @@ function Install-GoPlugins {
     Install-GoPackages -Packages $plugins
 }
 
-# ========== CLI 工具安装（保持不变） ==========
+# ========== CLI tool installation (unchanged) ==========
 function Install-GoCliTools {
     Log "Installing CLI scaffold tools..."
     
@@ -267,7 +267,7 @@ function Install-GoCliTools {
     }
 }
 
-# ========== 初始化函数（修复函数名调用） ==========
+# ========== Initialization function (fixed function name calls) ==========
 function Initialize-GoEnvironment {
     param(
         [string]$GoPath = (Join-Path $env:USERPROFILE "go"),
@@ -278,26 +278,26 @@ function Initialize-GoEnvironment {
 
     Log "========== Initializing Go Environment =========="
     
-    # 1. 安装 Go 运行时
+    # 1. Install the Go runtime
     $runtimeSuccess = Install-GoRuntime
     if (-not $runtimeSuccess) {
         Warn "Go runtime installation failed, skipping further setup"
         return $false
     }
     
-    # 2. 配置环境变量 ✅ 修复：函数名改为 Set-GoEnvironment
+    # 2. Configure environment variables ✅ Fixed: function renamed to Set-GoEnvironment
     Log ""
     $envConfig = Set-GoEnvironment -GoPath $GoPath
-    $GoPath = $envConfig.GoPath  # 使用哈希表取值，更清晰
+    $GoPath = $envConfig.GoPath  # Read from the hashtable for clarity
     
-    # 3. 配置代理 ✅ 修复：函数名改为 Set-GoProxy
+    # 3. Configure proxy ✅ Fixed: function renamed to Set-GoProxy
     Log ""
     $proxySuccess = Set-GoProxy -GoProxy $GoProxy -GoModuleOn $true
     if (-not $proxySuccess) {
         Warn "Go proxy configuration failed"
     }
     
-    # 4. 安装插件
+    # 4. Install plugins
     if (-not $SkipPlugins) {
         Log ""
         Install-GoPlugins
@@ -305,7 +305,7 @@ function Initialize-GoEnvironment {
         Log "Skipping Go plugins installation per -SkipPlugins"
     }
     
-    # 5. 安装 CLI 工具
+    # 5. Install CLI tools
     if (-not $SkipCliTools) {
         Log ""
         Install-GoCliTools

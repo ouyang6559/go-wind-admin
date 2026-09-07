@@ -1,13 +1,13 @@
 ﻿<#
 .SYNOPSIS
-Hosts 文件管理工具函数库
+Hosts file management utility library
 .DESCRIPTION
-提供 hosts 文件的增删改查功能
+Provides add, remove, modify, and query operations for the hosts file
 .NOTES
-保存编码：UTF-8 with BOM | 需要管理员权限 | 兼容：PowerShell 5.1+
+Saved encoding: UTF-8 with BOM | Requires administrator privileges | Compatible: PowerShell 5.1+
 #>
 
-# 导入通用工具库（如果尚未导入）
+# Import the common utility library (if not already imported)
 if (-not (Test-Path variable:global:CommonUtilsLoaded)) {
     $LibDir = Split-Path -Parent $MyInvocation.MyCommand.Path
     . "$LibDir\common-utils.ps1"
@@ -17,15 +17,15 @@ if (-not (Test-Path variable:global:CommonUtilsLoaded)) {
 function Edit-Hosts {
     <#
     .SYNOPSIS
-    编辑 hosts 文件（添加或删除记录）
+    Edit the hosts file (add or remove records)
     .DESCRIPTION
-    在系统 hosts 文件中添加或删除 IP 与域名的映射关系
+    Add or remove IP-to-domain mappings in the system hosts file
     .PARAMETER IP
-    IP 地址
+    IP address
     .PARAMETER Domain
-    域名
+    Domain name
     .PARAMETER Operate
-    操作类型：Add（添加）或 Remove（删除）
+    Operation type: Add or Remove
     .EXAMPLE
     Edit-Hosts -IP "127.0.0.1" -Domain "postgres.local" -Operate "Add"
     .EXAMPLE
@@ -43,10 +43,10 @@ function Edit-Hosts {
 
     $hostsFile = "$env:SystemRoot\System32\drivers\etc\hosts"
 
-    # 校验管理员权限
+    # Verify administrator privileges
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
     if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        ErrorLog "请以管理员身份运行脚本"
+        ErrorLog "Please run this script as administrator"
         return $false
     }
 
@@ -57,34 +57,34 @@ function Edit-Hosts {
             $content = Get-Content -Path $hostsFile -Raw -Encoding UTF8
             
             if ($content -match $pattern) {
-                Log "记录已存在，无需重复添加: $IP $Domain"
+                Log "Record already exists, skipping duplicate add: $IP $Domain"
                 return $true
             }
             
             Add-Content -Path $hostsFile -Value "`n$IP $Domain" -Encoding UTF8
-            SuccessLog "成功添加: $IP $Domain"
+            SuccessLog "Added successfully: $IP $Domain"
         }
         else {
             $lines = Get-Content -Path $hostsFile -Encoding UTF8
             $newLines = $lines | Where-Object { $_ -notmatch $pattern }
             
             if ($lines.Count -eq $newLines.Count) {
-                Warn "记录不存在，无需删除: $IP $Domain"
+                Warn "Record does not exist, nothing to remove: $IP $Domain"
                 return $true
             }
             
             Set-Content -Path $hostsFile -Value $newLines -Encoding UTF8
-            SuccessLog "成功移除: $IP $Domain"
+            SuccessLog "Removed successfully: $IP $Domain"
         }
 
-        # 刷新 DNS 缓存
+        # Flush the DNS cache
         ipconfig /flushdns | Out-Null
-        Log "DNS 缓存已刷新"
+        Log "DNS cache flushed"
         
         return $true
     }
     catch {
-        ErrorLog "操作失败: $($_.Exception.Message)"
+        ErrorLog "Operation failed: $($_.Exception.Message)"
         return $false
     }
 }
@@ -92,15 +92,15 @@ function Edit-Hosts {
 function Initialize-Hosts {
     <#
     .SYNOPSIS
-    批量初始化 hosts 记录
+    Initialize hosts records in batch
     .DESCRIPTION
-    为多个服务批量添加 hosts 记录
+    Add hosts records in batch for multiple services
     .PARAMETER Services
-    服务名称数组
+    Array of service names
     .PARAMETER IP
-    IP 地址（默认 127.0.0.1）
+    IP address (default 127.0.0.1)
     .PARAMETER DomainSuffix
-    域名后缀（默认 .local）
+    Domain suffix (default .local)
     .EXAMPLE
     Initialize-Hosts -Services @("postgres", "mysql", "redis") -IP "127.0.0.1"
     #>
@@ -111,7 +111,7 @@ function Initialize-Hosts {
         [string]$DomainSuffix = ".local"
     )
 
-    Log "========== 初始化 Hosts 记录 =========="
+    Log "========== Initializing Hosts Records =========="
     
     $successCount = 0
     $failCount = 0
@@ -128,7 +128,7 @@ function Initialize-Hosts {
     }
     
     Log ""
-    Log "完成: 成功 $successCount, 失败 $failCount"
+    Log "Done: $successCount succeeded, $failCount failed"
     
     return ($failCount -eq 0)
 }

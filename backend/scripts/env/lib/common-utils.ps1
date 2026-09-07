@@ -1,10 +1,10 @@
 ﻿<#
 .SYNOPSIS
-通用工具函数库
+Common utility function library
 .DESCRIPTION
-提供日志记录、错误处理等通用函数
+Provides common functions such as logging and error handling
 .NOTES
-编码: UTF-8 (NO BOM) | 兼容: PowerShell 5.1+
+Encoding: UTF-8 (NO BOM) | Compatible: PowerShell 5.1+
 #>
 
 function Log {
@@ -35,9 +35,9 @@ function InfoLog {
 function Initialize-ErrorHandling {
     <#
     .SYNOPSIS
-    配置错误处理偏好
+    Configure error handling preferences
     .DESCRIPTION
-    设置为 Continue，避免非致命错误中断脚本
+    Set to Continue to prevent non-fatal errors from interrupting the script
     #>
     $script:ErrorActionPreference = 'Continue'
 }
