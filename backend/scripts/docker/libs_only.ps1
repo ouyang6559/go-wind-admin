@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Docker Compose 启动脚本 - 仅依赖版本（不包含应用）（Windows PowerShell 版）
 
@@ -145,9 +145,9 @@ Log "  Docker Compose - Libs Only（仅依赖）"
 Log "========================================"
 Log ""
 
-# 获取项目根目录
+# 获取项目根目录（脚本在 backend/scripts/docker/ 下，需上溯两级到 backend/）
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptDir
+$repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
 
 Log "Script dir: $scriptDir"
 Log "Repo root: $repoRoot"

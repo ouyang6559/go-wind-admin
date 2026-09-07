@@ -26,8 +26,13 @@ docker-compose*.yaml
 
 # Build artifacts
 bin/
+**/bin/
 dist/
 build/
+
+# Windows / local build binaries (hundreds of MB each, keep out of build context)
+*.exe
+**/*.exe
 
 # Test files
 *_test.go
@@ -45,4 +50,10 @@ Thumbs.db
 
 # Dependencies (will be downloaded during build)
 vendor/
+
+# Secrets / env (compose reads .env on the host; never baked into image layers)
+.env
+
+# SQL seed/migration dumps (not needed for image build)
+sql/
 

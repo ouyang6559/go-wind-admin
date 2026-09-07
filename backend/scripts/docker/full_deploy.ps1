@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Docker Compose 启动脚本 - 完整应用版本（应用 + 依赖）（Windows PowerShell 版）
 
@@ -161,9 +161,9 @@ Log "  Docker Compose - Full Deploy（完整）"
 Log "========================================"
 Log ""
 
-# 获取项目根目录
+# 获取项目根目录（脚本在 backend/scripts/docker/ 下，需上溯两级到 backend/）
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptDir
+$repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
 
 Log "Script dir: $scriptDir"
 Log "Repo root: $repoRoot"
