@@ -176,10 +176,11 @@ async function handleSubmit() {
     await formRef.value.validate();
     submitLoading.value = true;
 
-    const values = { ...formData };
+    // 标注为索引签名类型使 targetId 可 delete（表单字段类型上非可选）
+    const values: Record<string, any> = { ...formData };
 
     // proto target_id 是 uint32：空串/undefined 会触发 protojson 400，留空不传
-    if (values.targetId === "" || values.targetId === undefined || values.targetId === null) {
+    if (!values.targetId) {
       delete values.targetId;
     }
 

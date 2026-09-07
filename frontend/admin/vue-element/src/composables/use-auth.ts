@@ -279,8 +279,9 @@ async function logout(redirect: boolean = true) {
     if (accessStore.accessToken !== null && accessStore.accessToken !== "") {
       await authLogout();
     }
-  } catch {
-    // 忽略错误
+  } catch (error) {
+    // 本地清理照常执行，但服务端登出失败必须留痕（可能是 token 失效/网络/权限问题）
+    console.error("服务端登出请求失败（已继续本地清理）:", error);
   }
   await _doLogout(redirect);
 }
@@ -322,7 +323,10 @@ async function getUserPermissionCodes() {
         fetchAccessCodes(),
       ]);
       if (fetchUserInfoResult === null || fetchAccessCodeResult === null) {
-        console.warn("setupAccessGuard failed fetch user info:", fetchUserInfoResult);
+        console.warn(
+          "getUserPermissionCodes: 获取用户信息/权限码返回空",
+          fetchUserInfoResult,
+        );
         return false;
       }
       userStore.setUserInfo(fetchUserInfoResult);
@@ -335,7 +339,9 @@ async function getUserPermissionCodes() {
       if (isNetworkError(error)) {
         throw new NetworkError();
       }
-      // 其他错误（如 401/403）：标记为认证失败
+      // 其他错误（如 401/403）：标记为认证失败。错误本体必须留痕，
+      // 否则守卫只看到"认证失败"跳登录页，真因（500/权限配置错等）无从排查
+      console.error("getUserPermissionCodes: 获取用户信息/权限码失败:", error);
       return false;
     }
   }

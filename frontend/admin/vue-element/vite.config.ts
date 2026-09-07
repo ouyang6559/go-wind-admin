@@ -18,6 +18,8 @@ import pkg from "./package.json" with { type: "json" };
  */
 function cspMetaPlugin(): PluginOption {
     let isBuild = false;
+    // vite 对 transformIndexHtml.handler 返回 undefined 的联合类型展开存在版本间
+    // 类型摩擦，手写插件的形状是稳定的，直接断言为 PluginOption
     return {
         name: "gowind-csp-meta",
         configResolved(config: any) {
@@ -42,7 +44,7 @@ function cspMetaPlugin(): PluginOption {
                 };
             },
         },
-    };
+    } as PluginOption;
 }
 
 // Vite配置  https://cn.vitejs.dev/config
