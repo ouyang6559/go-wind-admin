@@ -38,7 +38,8 @@
     "file": "File Management",
     "task": "Task Management",
     "loginPolicy": "Login Policy",
-    "language": "Language Management"
+    "language": "Language Management",
+    "onlineSessions": "Online Users"
   },
   "tenant": {
     "moduleName": "Tenant Management",

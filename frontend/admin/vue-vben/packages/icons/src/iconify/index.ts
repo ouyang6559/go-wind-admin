@@ -25,6 +25,7 @@ export const LucideChevronLeft = createIconifyIcon('lucide:chevron-left');
 export const LucideTrash = createIconifyIcon('lucide:trash');
 export const LucideTrash2 = createIconifyIcon('lucide:trash-2');
 export const LucideShieldOff = createIconifyIcon('lucide:shield-off');
+export const LucideLogOut = createIconifyIcon('lucide:log-out');
 
 export const LucidePencil = createIconifyIcon('lucide:pencil');
 export const LucidePencilOff = createIconifyIcon('lucide:pencil-off');

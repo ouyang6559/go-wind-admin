@@ -45,6 +45,9 @@ export * from './policy-evaluation-log';
 export * from './position';
 export * from './plan';
 export * from './redis-cache-monitor';
+
+// 在线会话
+export * from './online-session';
 export * from './role';
 // 通用枚举与工具函数
 export * from './shared';

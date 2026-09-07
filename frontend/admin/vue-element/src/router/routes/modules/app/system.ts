@@ -74,6 +74,18 @@ const system: RouteRecordRaw[] = [
         },
         component: () => import("@/pages/app/system/language/index.vue"),
       },
+
+      {
+        path: "online-sessions",
+        name: "OnlineSessionManagement",
+        meta: {
+          order: 8,
+          icon: "lucide:monitor",
+          title: "routes.system.onlineSessions",
+          authority: ["sys:platform_admin"],
+        },
+        component: () => import("@/pages/app/system/online_session/index.vue"),
+      },
     ],
   },
 ];

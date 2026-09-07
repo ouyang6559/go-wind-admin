@@ -39,7 +39,8 @@
     "dict": "Data Dictionary",
     "task": "Task Scheduler",
     "file": "File Management",
-    "loginPolicy": "Login Policy"
+    "loginPolicy": "Login Policy",
+    "onlineSessions": "Online Users"
   },
   "log": {
     "moduleName": "Audit Logs",
