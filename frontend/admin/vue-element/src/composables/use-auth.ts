@@ -151,6 +151,8 @@ async function login(
 
     // 使用 i18n 翻译错误消息（与 RequestClient 的 getErrorMsg 一致）
     const errorMsg = getErrorMsg(error);
+    // 通知给用户的只是翻译后的文案，原始错误对象必须同步落控制台供排查
+    console.error("login 失败:", error);
     ElNotification({
       title: t("core.authentication.loginFailed"),
       message: errorMsg,
@@ -251,6 +253,7 @@ async function completeMfaChallenge(
   } catch (error) {
     await _doLogout();
     const errorMsg = getErrorMsg(error);
+    console.error("MFA 验证失败:", error);
     ElNotification({
       title: t("core.authentication.loginFailed"),
       message: errorMsg,

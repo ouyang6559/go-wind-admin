@@ -9,6 +9,22 @@ import { mockDevServerPlugin } from "vite-plugin-mock-dev-server";
 
 import tailwindcss from "@tailwindcss/vite";
 import pkg from "./package.json" with { type: "json" };
+import { existsSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+
+/**
+ * 枚举 element-plus 全部组件样式模块。ElementPlusResolver 按需生成的
+ * "element-plus/es/components/{name}/style/css" 导入只会在页面首次用到
+ * 该组件时才被发现，每发现一个就触发一次 vite 依赖再优化 + 整页强刷
+ * ——dev 白屏竞态的主要来源。启动时全部预纳入 optimizeDeps，令其无从晚发现。
+ */
+function elementPlusStyleDeps(): string[] {
+  const base = resolve(process.cwd(), "node_modules/element-plus/es/components");
+  if (!existsSync(base)) return [];
+  return readdirSync(base)
+    .filter((name) => existsSync(resolve(base, name, "style", "css.mjs")))
+    .map((name) => `element-plus/es/components/${name}/style/css`);
+}
 
 /**
  * 生产构建期向 index.html 注入 CSP meta。
@@ -133,8 +149,17 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         "path-browserify",
         "path-to-regexp",
         "@element-plus/icons-vue",
+        "element-plus/es",
         "element-plus/es/locale/lang/en",
         "element-plus/es/locale/lang/zh-cn",
+        // 懒加载路由页才引入的重依赖：不预打包会在会话中途触发依赖再优化，
+        // 使已加载 chunk 失效（dev 白屏竞态的主要来源），全部提前纳入
+        "@tanstack/vue-query",
+        "echarts",
+        "echarts/core",
+        "vxe-table",
+        // element-plus 组件样式全量预纳入（见 elementPlusStyleDeps 注释）
+        ...elementPlusStyleDeps(),
       ],
     },
     // 构建配置

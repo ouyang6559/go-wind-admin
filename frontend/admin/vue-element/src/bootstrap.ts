@@ -134,6 +134,33 @@ async function bootstrap(namespace: string) {
   // 记录失败路由与原因，便于与白屏现象对账。
   router.onError((error, to) => {
     console.error("[RouterError]", to?.fullPath, error);
+
+    // vite dev 依赖再优化 / 生产换部署版本后，页面持有的旧 chunk 名会失效，
+    // 表现为懒加载路由动态导入失败+白屏，手动刷新即可恢复——这里自动化该恢复。
+    // 按"目标路由"做一次性防抖（sessionStorage），chunk 真坏掉时不会无限刷新循环。
+    const msg = String((error as Error)?.message ?? error);
+    if (
+      /Failed to fetch dynamically imported module|Importing a module script failed/.test(
+        msg,
+      )
+    ) {
+      const key = `router:import-failure-reloaded:${to?.fullPath ?? ""}`;
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        console.warn(
+          "[RouterError] 动态导入失败，整页刷新自愈:",
+          to?.fullPath,
+        );
+        window.location.reload();
+      }
+    }
+  });
+
+  // vite 对动态导入的预取（preload）失败默认只派发事件不处理，同样自愈刷新。
+  // 这是 vite 官方推荐姿势，与上面 router.onError 覆盖两个不同失败阶段。
+  window.addEventListener("vite:preloadError", (event) => {
+    console.warn("[VitePreloadError] 预取失败，整页刷新自愈:", event);
+    window.location.reload();
   });
 
   // 挂载应用

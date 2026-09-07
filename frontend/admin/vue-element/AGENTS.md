@@ -515,6 +515,27 @@ import { statusList, statusToName, statusToColor, enableList } from "@/api/compo
 | `IconifyIcon` 组件不显示 | 需显式导入 `import { IconifyIcon } from "@iconify/vue"` |
 | 删除 API 字段名混淆 | 参数字段注意是 `ids` 还是 `id`（需查看生成类型） |
 
+## 错误处理铁律（不吞错）
+
+历史教训：静默失败曾让"刷新丢登录"四层叠加 bug 排查数日（每层都被上一层的话术掩盖）。**任何 catch 至少二选一**：
+
+1. `console.error/warn` 带出**原始错误对象**（不是只打固定话术或翻译后文案）；
+2. 重新抛出/向上传递。
+
+用户可见的 ElNotification/ElMessage **不等于**日志——通知只有翻译文案，排查要靠控制台里的原始错误。合法的裸 catch 仅限：纯本地 best-effort 兜底（JSON.parse 校验、structuredClone 回退、storage 脏数据清理），且应在注释里写明兜底原因。
+
+已知的"固定话术掩盖真因"高危点：`bootstrap.ts` 静默恢复、`use-auth.ts` 登录/MFA/登出/权限码获取——这些位置的 catch 均已改为带错误对象留痕，改动时不要回退。
+
+## dev 白屏（vite 依赖优化竞态）处置
+
+dev 模式偶发 router-view 塌空、生产构建零复现，属 vite 8 dev 依赖再优化/HMR 竞态而非产品缺陷。已装三层防御，**判回归前先重启 dev server**（多文件改动/stash 污染 HMR 状态是常见诱因，见"零报错非确定性塌空"）：
+
+1. `app.config.errorHandler` + `router.onError` 全局观测（[AppErrorHandler]/[RouterError] 前缀）；
+2. 懒加载路由"动态导入失败"自动一次性整页刷新自愈（按目标路由防抖，chunk 真坏不会死循环）；
+3. `vite:preloadError` 事件自愈刷新（vite 官方推荐）。
+
+重依赖（echarts/vxe-table/@tanstack/vue-query）已进 `optimizeDeps.include` 预打包，收窄会话中途再优化窗口；新增大体量依赖时按实际导入字面量同步加入。
+
 ## 构建命令
 
 ```bash
