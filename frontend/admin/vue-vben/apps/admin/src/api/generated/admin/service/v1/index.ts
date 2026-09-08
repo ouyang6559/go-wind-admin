@@ -4483,6 +4483,274 @@ export type authenticationservicev1_VerifyMFAChallengeRequest = {
   webauthn?: authenticationservicev1_WebAuthnAssertion;
 };
 
+// 通知渠道管理服务（平台级配置）
+export interface NotificationChannelService {
+  // 查询通知渠道列表
+  ListNotificationChannel(
+    request: pagination_PagingRequest,
+  ): Promise<notification_channelservicev1_ListNotificationChannelResponse>;
+  // 查询通知渠道详情
+  GetNotificationChannel(
+    request: notification_channelservicev1_GetNotificationChannelRequest,
+  ): Promise<notification_channelservicev1_NotificationChannel>;
+  // 创建通知渠道
+  CreateNotificationChannel(
+    request: notification_channelservicev1_CreateNotificationChannelRequest,
+  ): Promise<notification_channelservicev1_NotificationChannel>;
+  // 更新通知渠道
+  UpdateNotificationChannel(
+    request: notification_channelservicev1_UpdateNotificationChannelRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除通知渠道
+  DeleteNotificationChannel(
+    request: notification_channelservicev1_DeleteNotificationChannelRequest,
+  ): Promise<wellKnownEmpty>;
+  // 发送测试邮件（验证渠道配置）
+  SendTestEmail(
+    request: notification_channelservicev1_SendTestEmailRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createNotificationChannelServiceClient(
+  transport: ClientTransport,
+): NotificationChannelService {
+  return {
+    ListNotificationChannel(request) {
+      const path = `admin/v1/notification-channels`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'NotificationChannelService',
+        method: 'ListNotificationChannel',
+      }) as Promise<notification_channelservicev1_ListNotificationChannelResponse>;
+    },
+    GetNotificationChannel(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-channels/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'NotificationChannelService',
+        method: 'GetNotificationChannel',
+      }) as Promise<notification_channelservicev1_NotificationChannel>;
+    },
+    CreateNotificationChannel(request) {
+      const path = `admin/v1/notification-channels`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationChannelService',
+        method: 'CreateNotificationChannel',
+      }) as Promise<notification_channelservicev1_NotificationChannel>;
+    },
+    UpdateNotificationChannel(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-channels/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'NotificationChannelService',
+        method: 'UpdateNotificationChannel',
+      }) as Promise<wellKnownEmpty>;
+    },
+    DeleteNotificationChannel(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-channels/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'NotificationChannelService',
+        method: 'DeleteNotificationChannel',
+      }) as Promise<wellKnownEmpty>;
+    },
+    SendTestEmail(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-channels/${request.id}/send-test-email`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationChannelService',
+        method: 'SendTestEmail',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询通知渠道列表 - 回应
+export type notification_channelservicev1_ListNotificationChannelResponse = {
+  items: notification_channelservicev1_NotificationChannel[] | undefined;
+  total: number | undefined;
+};
+
+// 通知渠道
+export type notification_channelservicev1_NotificationChannel = {
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  enabled?: boolean;
+  // 密码不回传：仅创建/更新时写入；hasPassword 标识是否已配置
+  hasPassword?: boolean;
+  id?: number;
+  name?: string;
+  remark?: string;
+  smtpFrom?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpTls?: notification_channelservicev1_NotificationChannel_TlsMode;
+  smtpUsername?: string;
+  type?: notification_channelservicev1_NotificationChannel_Type;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+};
+
+// 渠道类型
+export type notification_channelservicev1_NotificationChannel_Type =
+  | 'EMAIL'
+  | 'WEBHOOK';
+// SMTP 加密方式
+export type notification_channelservicev1_NotificationChannel_TlsMode =
+  | 'NONE'
+  | 'SSL'
+  | 'START_TLS';
+// 查询通知渠道详情 - 请求
+export type notification_channelservicev1_GetNotificationChannelRequest = {
+  id: number | undefined;
+};
+
+// 创建通知渠道 - 请求
+export type notification_channelservicev1_CreateNotificationChannelRequest = {
+  data: notification_channelservicev1_NotificationChannel | undefined;
+  // 明文密码（服务端加密存储，不落日志）
+  password?: string;
+};
+
+// 更新通知渠道 - 请求
+export type notification_channelservicev1_UpdateNotificationChannelRequest = {
+  data: notification_channelservicev1_NotificationChannel | undefined;
+  id: number | undefined;
+  // 明文密码；留空表示不修改已存密码
+  password?: string;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除通知渠道 - 请求
+export type notification_channelservicev1_DeleteNotificationChannelRequest = {
+  id: number | undefined;
+};
+
+// 发送测试邮件 - 请求
+export type notification_channelservicev1_SendTestEmailRequest = {
+  id: number | undefined;
+  recipient: string | undefined;
+};
+
 // 在线会话管理服务（在线用户列表 + 强制下线）
 export interface OnlineSessionService {
   // 查询在线会话列表
@@ -8744,6 +9012,7 @@ export class ApiClient {
   private _loginPolicyService?: LoginPolicyService;
   private _menuService?: MenuService;
   private _mfaService?: MfaService;
+  private _notificationChannelService?: NotificationChannelService;
   private _onlineSessionService?: OnlineSessionService;
   private _operationAuditLogService?: OperationAuditLogService;
   private _orgUnitService?: OrgUnitService;
@@ -8838,6 +9107,10 @@ export class ApiClient {
 
   get mfaService(): MfaService {
     return this._mfaService ??= createMfaServiceClient(this._transport);
+  }
+
+  get notificationChannelService(): NotificationChannelService {
+    return this._notificationChannelService ??= createNotificationChannelServiceClient(this._transport);
   }
 
   get onlineSessionService(): OnlineSessionService {
