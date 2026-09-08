@@ -38,7 +38,8 @@
     },
     "originOptions": {
       "current": "Current Data (current page data)",
-      "selected": "Selected Data (selected data on current page)"
+      "selected": "Selected Data (selected data on current page)",
+      "all": "All Data (current filters)"
     },
     "fileTypeOptions": {
       "csv": "CSV (Comma Separated)(*.csv)",

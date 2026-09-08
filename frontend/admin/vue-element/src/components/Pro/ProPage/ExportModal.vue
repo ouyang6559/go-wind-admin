@@ -44,6 +44,11 @@
               value="selected"
               :disabled="selectionData.length === 0"
             />
+            <ElOption
+              v-if="props.exportsAction"
+              :label="t('pages.curd.export.originOptions.all')"
+              value="all"
+            />
           </ElSelect>
         </ElFormItem>
 
@@ -161,7 +166,7 @@ const state = reactive<{
     filename: string;
     fileType: "csv" | "html" | "xml" | "txt";
     fields: string[];
-    origin: "current" | "selected";
+    origin: "current" | "selected" | "all";
     showHeader: boolean;
     showFooter: boolean;
     showRawData: boolean;
@@ -228,8 +233,32 @@ const handleSubmit = useThrottleFn(() => {
   });
 }, 3000);
 
-function doExport() {
+async function doExport() {
   const filename = state.form.filename || props.defaultFilename || "export";
+
+  // 「全部数据」范围：经页面注册的 exportsAction 聚合拉取（异步），
+  // 页面未提供 exportsAction 时不显示该选项
+  if (state.form.origin === "all" && props.exportsAction) {
+    const allRows = await props.exportsAction(props.searchParams ?? {});
+    const selectedFields = exportableColumns.value.filter(
+      (col: any) => col.prop && col.label && state.form.fields.includes(col.prop)
+    );
+    switch (state.form.fileType) {
+      case "csv":
+        exportCSV(filename, selectedFields, allRows);
+        break;
+      case "html":
+        exportHTML(filename, selectedFields, allRows);
+        break;
+      case "xml":
+        exportXML(filename, selectedFields, allRows);
+        break;
+      default:
+        exportTXT(filename, selectedFields, allRows);
+    }
+    return;
+  }
+
   const rows = state.form.origin === "selected" ? props.selectionData : (props.tableData ?? []);
 
   // 获取选中的字段

@@ -62,6 +62,7 @@ import {
   successToColor,
   successToNameWithStatusCode,
   fetchListDataAccessAuditLogs,
+  createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
@@ -162,6 +163,8 @@ const pageConfig = computed<ProPageConfig>(() => ({
   },
 
   table: {
+    exportsAction: createPagedExportAction(fetchListDataAccessAuditLogs),
+
     listAction: async (query: any) => {
       const { page, pageSize, createdAt, ...queryParams } = query;
 
