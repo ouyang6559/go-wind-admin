@@ -2,7 +2,8 @@
   "pageTitle": "Profile",
   "tab": {
     "basicInfo": "Basic Info",
-    "security": "Security"
+    "security": "Security",
+    "sessions": "Active Sessions"
   },
   "avatar": "Avatar",
   "username": "Username",

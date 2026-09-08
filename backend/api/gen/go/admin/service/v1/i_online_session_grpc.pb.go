@@ -20,8 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OnlineSessionService_ListOnlineSession_FullMethodName  = "/admin.service.v1.OnlineSessionService/ListOnlineSession"
-	OnlineSessionService_ForceLogoutSession_FullMethodName = "/admin.service.v1.OnlineSessionService/ForceLogoutSession"
+	OnlineSessionService_ListOnlineSession_FullMethodName     = "/admin.service.v1.OnlineSessionService/ListOnlineSession"
+	OnlineSessionService_ForceLogoutSession_FullMethodName    = "/admin.service.v1.OnlineSessionService/ForceLogoutSession"
+	OnlineSessionService_ListMyOnlineSession_FullMethodName   = "/admin.service.v1.OnlineSessionService/ListMyOnlineSession"
+	OnlineSessionService_RevokeMyOnlineSession_FullMethodName = "/admin.service.v1.OnlineSessionService/RevokeMyOnlineSession"
 )
 
 // OnlineSessionServiceClient is the client API for OnlineSessionService service.
@@ -34,6 +36,10 @@ type OnlineSessionServiceClient interface {
 	ListOnlineSession(ctx context.Context, in *v1.ListOnlineSessionRequest, opts ...grpc.CallOption) (*v1.ListOnlineSessionResponse, error)
 	// 强制下线指定会话
 	ForceLogoutSession(ctx context.Context, in *v1.ForceLogoutSessionRequest, opts ...grpc.CallOption) (*v1.ForceLogoutSessionResponse, error)
+	// 查询当前登录用户的在线会话（个人中心自助视图）
+	ListMyOnlineSession(ctx context.Context, in *v1.ListMyOnlineSessionRequest, opts ...grpc.CallOption) (*v1.ListOnlineSessionResponse, error)
+	// 当前用户强制下线自己的指定会话
+	RevokeMyOnlineSession(ctx context.Context, in *v1.RevokeMyOnlineSessionRequest, opts ...grpc.CallOption) (*v1.RevokeMyOnlineSessionResponse, error)
 }
 
 type onlineSessionServiceClient struct {
@@ -64,6 +70,26 @@ func (c *onlineSessionServiceClient) ForceLogoutSession(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *onlineSessionServiceClient) ListMyOnlineSession(ctx context.Context, in *v1.ListMyOnlineSessionRequest, opts ...grpc.CallOption) (*v1.ListOnlineSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListOnlineSessionResponse)
+	err := c.cc.Invoke(ctx, OnlineSessionService_ListMyOnlineSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *onlineSessionServiceClient) RevokeMyOnlineSession(ctx context.Context, in *v1.RevokeMyOnlineSessionRequest, opts ...grpc.CallOption) (*v1.RevokeMyOnlineSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.RevokeMyOnlineSessionResponse)
+	err := c.cc.Invoke(ctx, OnlineSessionService_RevokeMyOnlineSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OnlineSessionServiceServer is the server API for OnlineSessionService service.
 // All implementations must embed UnimplementedOnlineSessionServiceServer
 // for forward compatibility.
@@ -74,6 +100,10 @@ type OnlineSessionServiceServer interface {
 	ListOnlineSession(context.Context, *v1.ListOnlineSessionRequest) (*v1.ListOnlineSessionResponse, error)
 	// 强制下线指定会话
 	ForceLogoutSession(context.Context, *v1.ForceLogoutSessionRequest) (*v1.ForceLogoutSessionResponse, error)
+	// 查询当前登录用户的在线会话（个人中心自助视图）
+	ListMyOnlineSession(context.Context, *v1.ListMyOnlineSessionRequest) (*v1.ListOnlineSessionResponse, error)
+	// 当前用户强制下线自己的指定会话
+	RevokeMyOnlineSession(context.Context, *v1.RevokeMyOnlineSessionRequest) (*v1.RevokeMyOnlineSessionResponse, error)
 	mustEmbedUnimplementedOnlineSessionServiceServer()
 }
 
@@ -89,6 +119,12 @@ func (UnimplementedOnlineSessionServiceServer) ListOnlineSession(context.Context
 }
 func (UnimplementedOnlineSessionServiceServer) ForceLogoutSession(context.Context, *v1.ForceLogoutSessionRequest) (*v1.ForceLogoutSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ForceLogoutSession not implemented")
+}
+func (UnimplementedOnlineSessionServiceServer) ListMyOnlineSession(context.Context, *v1.ListMyOnlineSessionRequest) (*v1.ListOnlineSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMyOnlineSession not implemented")
+}
+func (UnimplementedOnlineSessionServiceServer) RevokeMyOnlineSession(context.Context, *v1.RevokeMyOnlineSessionRequest) (*v1.RevokeMyOnlineSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeMyOnlineSession not implemented")
 }
 func (UnimplementedOnlineSessionServiceServer) mustEmbedUnimplementedOnlineSessionServiceServer() {}
 func (UnimplementedOnlineSessionServiceServer) testEmbeddedByValue()                              {}
@@ -147,6 +183,42 @@ func _OnlineSessionService_ForceLogoutSession_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OnlineSessionService_ListMyOnlineSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListMyOnlineSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OnlineSessionServiceServer).ListMyOnlineSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OnlineSessionService_ListMyOnlineSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OnlineSessionServiceServer).ListMyOnlineSession(ctx, req.(*v1.ListMyOnlineSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OnlineSessionService_RevokeMyOnlineSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.RevokeMyOnlineSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OnlineSessionServiceServer).RevokeMyOnlineSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OnlineSessionService_RevokeMyOnlineSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OnlineSessionServiceServer).RevokeMyOnlineSession(ctx, req.(*v1.RevokeMyOnlineSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OnlineSessionService_ServiceDesc is the grpc.ServiceDesc for OnlineSessionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -161,6 +233,14 @@ var OnlineSessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ForceLogoutSession",
 			Handler:    _OnlineSessionService_ForceLogoutSession_Handler,
+		},
+		{
+			MethodName: "ListMyOnlineSession",
+			Handler:    _OnlineSessionService_ListMyOnlineSession_Handler,
+		},
+		{
+			MethodName: "RevokeMyOnlineSession",
+			Handler:    _OnlineSessionService_RevokeMyOnlineSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

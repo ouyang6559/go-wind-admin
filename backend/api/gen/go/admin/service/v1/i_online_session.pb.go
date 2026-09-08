@@ -26,25 +26,34 @@ var File_admin_service_v1_i_online_session_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_online_session_proto_rawDesc = "" +
 	"\n" +
-	"'admin/service/v1/i_online_session.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a.online_session/service/v1/online_session.proto2\xf8\x02\n" +
+	"'admin/service/v1/i_online_session.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a.online_session/service/v1/online_session.proto2\xf0\x05\n" +
 	"\x14OnlineSessionService\x12\xa9\x01\n" +
 	"\x11ListOnlineSession\x123.online_session.service.v1.ListOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\")\x82\xd3\xe4\x93\x02#\x12!/admin/v1/online-session/sessions\x12\xb3\x01\n" +
-	"\x12ForceLogoutSession\x124.online_session.service.v1.ForceLogoutSessionRequest\x1a5.online_session.service.v1.ForceLogoutSessionResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/admin/v1/online-session/force-logoutB\xc0\x01\n" +
+	"\x12ForceLogoutSession\x124.online_session.service.v1.ForceLogoutSessionRequest\x1a5.online_session.service.v1.ForceLogoutSessionResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/admin/v1/online-session/force-logout\x12\xb0\x01\n" +
+	"\x13ListMyOnlineSession\x125.online_session.service.v1.ListMyOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\",\x82\xd3\xe4\x93\x02&\x12$/admin/v1/online-session/my-sessions\x12\xc2\x01\n" +
+	"\x15RevokeMyOnlineSession\x127.online_session.service.v1.RevokeMyOnlineSessionRequest\x1a8.online_session.service.v1.RevokeMyOnlineSessionResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/admin/v1/online-session/my-sessions/revokeB\xc0\x01\n" +
 	"\x14com.admin.service.v1B\x13IOnlineSessionProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_online_session_proto_goTypes = []any{
-	(*v1.ListOnlineSessionRequest)(nil),   // 0: online_session.service.v1.ListOnlineSessionRequest
-	(*v1.ForceLogoutSessionRequest)(nil),  // 1: online_session.service.v1.ForceLogoutSessionRequest
-	(*v1.ListOnlineSessionResponse)(nil),  // 2: online_session.service.v1.ListOnlineSessionResponse
-	(*v1.ForceLogoutSessionResponse)(nil), // 3: online_session.service.v1.ForceLogoutSessionResponse
+	(*v1.ListOnlineSessionRequest)(nil),      // 0: online_session.service.v1.ListOnlineSessionRequest
+	(*v1.ForceLogoutSessionRequest)(nil),     // 1: online_session.service.v1.ForceLogoutSessionRequest
+	(*v1.ListMyOnlineSessionRequest)(nil),    // 2: online_session.service.v1.ListMyOnlineSessionRequest
+	(*v1.RevokeMyOnlineSessionRequest)(nil),  // 3: online_session.service.v1.RevokeMyOnlineSessionRequest
+	(*v1.ListOnlineSessionResponse)(nil),     // 4: online_session.service.v1.ListOnlineSessionResponse
+	(*v1.ForceLogoutSessionResponse)(nil),    // 5: online_session.service.v1.ForceLogoutSessionResponse
+	(*v1.RevokeMyOnlineSessionResponse)(nil), // 6: online_session.service.v1.RevokeMyOnlineSessionResponse
 }
 var file_admin_service_v1_i_online_session_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.OnlineSessionService.ListOnlineSession:input_type -> online_session.service.v1.ListOnlineSessionRequest
 	1, // 1: admin.service.v1.OnlineSessionService.ForceLogoutSession:input_type -> online_session.service.v1.ForceLogoutSessionRequest
-	2, // 2: admin.service.v1.OnlineSessionService.ListOnlineSession:output_type -> online_session.service.v1.ListOnlineSessionResponse
-	3, // 3: admin.service.v1.OnlineSessionService.ForceLogoutSession:output_type -> online_session.service.v1.ForceLogoutSessionResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 2: admin.service.v1.OnlineSessionService.ListMyOnlineSession:input_type -> online_session.service.v1.ListMyOnlineSessionRequest
+	3, // 3: admin.service.v1.OnlineSessionService.RevokeMyOnlineSession:input_type -> online_session.service.v1.RevokeMyOnlineSessionRequest
+	4, // 4: admin.service.v1.OnlineSessionService.ListOnlineSession:output_type -> online_session.service.v1.ListOnlineSessionResponse
+	5, // 5: admin.service.v1.OnlineSessionService.ForceLogoutSession:output_type -> online_session.service.v1.ForceLogoutSessionResponse
+	4, // 6: admin.service.v1.OnlineSessionService.ListMyOnlineSession:output_type -> online_session.service.v1.ListOnlineSessionResponse
+	6, // 7: admin.service.v1.OnlineSessionService.RevokeMyOnlineSession:output_type -> online_session.service.v1.RevokeMyOnlineSessionResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

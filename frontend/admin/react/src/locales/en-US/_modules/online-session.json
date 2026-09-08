@@ -19,5 +19,14 @@
   "forceLogoutFailed": "Failed to force logout",
   "keywordPlaceholder": "Username or IP keyword",
   "fetchFailed": "Failed to load online sessions",
-  "pollingHint": "The list refreshes every 30 seconds"
+  "pollingHint": "The list refreshes every 30 seconds",
+  "mySessionsTitle": "My Active Sessions",
+  "mySessionsHint": "All sessions you are currently signed in with. Sign out any unfamiliar device or location below; the current session cannot be signed out here.",
+  "status": "Status",
+  "currentSession": "Current",
+  "revoke": "Sign Out",
+  "revokeConfirm": "Sign out this session?",
+  "revokeSuccess": "Session signed out",
+  "revokeFailed": "Failed to sign out",
+  "noSessions": "No active sessions"
 }

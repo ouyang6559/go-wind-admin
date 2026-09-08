@@ -61,6 +61,10 @@ func (m *OnlineSession) validate(all bool) error {
 
 	var errors []error
 
+	if m.Current != nil {
+		// no validation rules for Current
+	}
+
 	if m.Jti != nil {
 		// no validation rules for Jti
 	}
@@ -671,3 +675,319 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ForceLogoutSessionResponseValidationError{}
+
+// Validate checks the field values on ListMyOnlineSessionRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListMyOnlineSessionRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListMyOnlineSessionRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListMyOnlineSessionRequestMultiError, or nil if none found.
+func (m *ListMyOnlineSessionRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListMyOnlineSessionRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ListMyOnlineSessionRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListMyOnlineSessionRequestMultiError is an error wrapping multiple
+// validation errors returned by ListMyOnlineSessionRequest.ValidateAll() if
+// the designated constraints aren't met.
+type ListMyOnlineSessionRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListMyOnlineSessionRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListMyOnlineSessionRequestMultiError) AllErrors() []error { return m }
+
+// ListMyOnlineSessionRequestValidationError is the validation error returned
+// by ListMyOnlineSessionRequest.Validate if the designated constraints aren't met.
+type ListMyOnlineSessionRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListMyOnlineSessionRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListMyOnlineSessionRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListMyOnlineSessionRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListMyOnlineSessionRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListMyOnlineSessionRequestValidationError) ErrorName() string {
+	return "ListMyOnlineSessionRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListMyOnlineSessionRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListMyOnlineSessionRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListMyOnlineSessionRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListMyOnlineSessionRequestValidationError{}
+
+// Validate checks the field values on RevokeMyOnlineSessionRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RevokeMyOnlineSessionRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RevokeMyOnlineSessionRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RevokeMyOnlineSessionRequestMultiError, or nil if none found.
+func (m *RevokeMyOnlineSessionRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RevokeMyOnlineSessionRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.ClientType != nil {
+		// no validation rules for ClientType
+	}
+
+	if m.Jti != nil {
+		// no validation rules for Jti
+	}
+
+	if len(errors) > 0 {
+		return RevokeMyOnlineSessionRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RevokeMyOnlineSessionRequestMultiError is an error wrapping multiple
+// validation errors returned by RevokeMyOnlineSessionRequest.ValidateAll() if
+// the designated constraints aren't met.
+type RevokeMyOnlineSessionRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RevokeMyOnlineSessionRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RevokeMyOnlineSessionRequestMultiError) AllErrors() []error { return m }
+
+// RevokeMyOnlineSessionRequestValidationError is the validation error returned
+// by RevokeMyOnlineSessionRequest.Validate if the designated constraints
+// aren't met.
+type RevokeMyOnlineSessionRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RevokeMyOnlineSessionRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RevokeMyOnlineSessionRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RevokeMyOnlineSessionRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RevokeMyOnlineSessionRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RevokeMyOnlineSessionRequestValidationError) ErrorName() string {
+	return "RevokeMyOnlineSessionRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RevokeMyOnlineSessionRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRevokeMyOnlineSessionRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RevokeMyOnlineSessionRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RevokeMyOnlineSessionRequestValidationError{}
+
+// Validate checks the field values on RevokeMyOnlineSessionResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RevokeMyOnlineSessionResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RevokeMyOnlineSessionResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// RevokeMyOnlineSessionResponseMultiError, or nil if none found.
+func (m *RevokeMyOnlineSessionResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RevokeMyOnlineSessionResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return RevokeMyOnlineSessionResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// RevokeMyOnlineSessionResponseMultiError is an error wrapping multiple
+// validation errors returned by RevokeMyOnlineSessionResponse.ValidateAll()
+// if the designated constraints aren't met.
+type RevokeMyOnlineSessionResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RevokeMyOnlineSessionResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RevokeMyOnlineSessionResponseMultiError) AllErrors() []error { return m }
+
+// RevokeMyOnlineSessionResponseValidationError is the validation error
+// returned by RevokeMyOnlineSessionResponse.Validate if the designated
+// constraints aren't met.
+type RevokeMyOnlineSessionResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RevokeMyOnlineSessionResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RevokeMyOnlineSessionResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RevokeMyOnlineSessionResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RevokeMyOnlineSessionResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RevokeMyOnlineSessionResponseValidationError) ErrorName() string {
+	return "RevokeMyOnlineSessionResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RevokeMyOnlineSessionResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRevokeMyOnlineSessionResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RevokeMyOnlineSessionResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RevokeMyOnlineSessionResponseValidationError{}

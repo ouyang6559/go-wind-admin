@@ -2,7 +2,8 @@
   "pageTitle": "个人中心",
   "tab": {
     "basicInfo": "基本信息",
-    "security": "安全设置"
+    "security": "安全设置",
+    "sessions": "活跃会话"
   },
   "avatar": "头像",
   "username": "用户名",

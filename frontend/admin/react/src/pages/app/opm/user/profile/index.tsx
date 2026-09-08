@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 import { getGenderOptions } from '../constants';
 import MfaManagement from './MfaManagement';
+import MySessions from './MySessions';
 
 /** 格式化 wellKnownTimestamp */
 function formatTimestamp(ts: any): string {
@@ -287,6 +288,11 @@ const UserProfile = () => {
                   <MfaManagement />
                 </div>
               ),
+            },
+            {
+              key: 'sessions',
+              label: t('tab.sessions'),
+              children: <MySessions />,
             },
           ]}
         />

@@ -27,6 +27,8 @@ const (
 // 在线会话
 type OnlineSession struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// 是否为当前请求所属会话（仅 ListMyOnlineSession 场景有意义）
+	Current *bool `protobuf:"varint,10,opt,name=current,proto3,oneof" json:"current,omitempty"` // 是否为当前会话
 	// 会话令牌对 ID（JWT jti，唯一标识一次令牌签发）
 	Jti           *string                `protobuf:"bytes,1,opt,name=jti,proto3,oneof" json:"jti,omitempty"`
 	UserId        *uint32                `protobuf:"varint,2,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`                                                       // 用户ID
@@ -69,6 +71,13 @@ func (x *OnlineSession) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OnlineSession.ProtoReflect.Descriptor instead.
 func (*OnlineSession) Descriptor() ([]byte, []int) {
 	return file_online_session_service_v1_online_session_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *OnlineSession) GetCurrent() bool {
+	if x != nil && x.Current != nil {
+		return *x.Current
+	}
+	return false
 }
 
 func (x *OnlineSession) GetJti() string {
@@ -349,24 +358,155 @@ func (*ForceLogoutSessionResponse) Descriptor() ([]byte, []int) {
 	return file_online_session_service_v1_online_session_proto_rawDescGZIP(), []int{4}
 }
 
+// 查询当前登录用户的在线会话 - 请求（无参数，用户身份取自认证上下文）
+type ListMyOnlineSessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMyOnlineSessionRequest) Reset() {
+	*x = ListMyOnlineSessionRequest{}
+	mi := &file_online_session_service_v1_online_session_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMyOnlineSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMyOnlineSessionRequest) ProtoMessage() {}
+
+func (x *ListMyOnlineSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_online_session_service_v1_online_session_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMyOnlineSessionRequest.ProtoReflect.Descriptor instead.
+func (*ListMyOnlineSessionRequest) Descriptor() ([]byte, []int) {
+	return file_online_session_service_v1_online_session_proto_rawDescGZIP(), []int{5}
+}
+
+// 当前用户强制下线自己的指定会话 - 请求
+type RevokeMyOnlineSessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClientType    *v1.ClientType         `protobuf:"varint,1,opt,name=client_type,json=clientType,proto3,enum=authentication.service.v1.ClientType,oneof" json:"client_type,omitempty"` // 客户端类型
+	Jti           *string                `protobuf:"bytes,2,opt,name=jti,proto3,oneof" json:"jti,omitempty"`                                                                            // 会话令牌对ID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeMyOnlineSessionRequest) Reset() {
+	*x = RevokeMyOnlineSessionRequest{}
+	mi := &file_online_session_service_v1_online_session_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeMyOnlineSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeMyOnlineSessionRequest) ProtoMessage() {}
+
+func (x *RevokeMyOnlineSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_online_session_service_v1_online_session_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeMyOnlineSessionRequest.ProtoReflect.Descriptor instead.
+func (*RevokeMyOnlineSessionRequest) Descriptor() ([]byte, []int) {
+	return file_online_session_service_v1_online_session_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RevokeMyOnlineSessionRequest) GetClientType() v1.ClientType {
+	if x != nil && x.ClientType != nil {
+		return *x.ClientType
+	}
+	return v1.ClientType(0)
+}
+
+func (x *RevokeMyOnlineSessionRequest) GetJti() string {
+	if x != nil && x.Jti != nil {
+		return *x.Jti
+	}
+	return ""
+}
+
+// 当前用户强制下线自己的指定会话 - 回应
+type RevokeMyOnlineSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeMyOnlineSessionResponse) Reset() {
+	*x = RevokeMyOnlineSessionResponse{}
+	mi := &file_online_session_service_v1_online_session_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeMyOnlineSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeMyOnlineSessionResponse) ProtoMessage() {}
+
+func (x *RevokeMyOnlineSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_online_session_service_v1_online_session_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeMyOnlineSessionResponse.ProtoReflect.Descriptor instead.
+func (*RevokeMyOnlineSessionResponse) Descriptor() ([]byte, []int) {
+	return file_online_session_service_v1_online_session_proto_rawDescGZIP(), []int{7}
+}
+
 var File_online_session_service_v1_online_session_proto protoreflect.FileDescriptor
 
 const file_online_session_service_v1_online_session_proto_rawDesc = "" +
 	"\n" +
-	".online_session/service/v1/online_session.proto\x12\x19online_session.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.authentication/service/v1/authentication.proto\"\xdc\x05\n" +
-	"\rOnlineSession\x12.\n" +
-	"\x03jti\x18\x01 \x01(\tB\x17\xbaG\x14\x92\x02\x11会话令牌对IDH\x00R\x03jti\x88\x01\x01\x12,\n" +
-	"\auser_id\x18\x02 \x01(\rB\x0e\xbaG\v\x92\x02\b用户IDH\x01R\x06userId\x88\x01\x01\x120\n" +
-	"\busername\x18\x03 \x01(\tB\x0f\xbaG\f\x92\x02\t用户名H\x02R\busername\x88\x01\x01\x12@\n" +
-	"\ttenant_id\x18\x04 \x01(\rB\x1e\xbaG\x1b\x92\x02\x18租户ID，0代表平台H\x03R\btenantId\x88\x01\x01\x12b\n" +
-	"\vclient_type\x18\x05 \x01(\x0e2%.authentication.service.v1.ClientTypeB\x15\xbaG\x12\x92\x02\x0f客户端类型H\x04R\n" +
+	".online_session/service/v1/online_session.proto\x12\x19online_session.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.authentication/service/v1/authentication.proto\"\xa4\x06\n" +
+	"\rOnlineSession\x12:\n" +
+	"\acurrent\x18\n" +
+	" \x01(\bB\x1b\xbaG\x18\x92\x02\x15是否为当前会话H\x00R\acurrent\x88\x01\x01\x12.\n" +
+	"\x03jti\x18\x01 \x01(\tB\x17\xbaG\x14\x92\x02\x11会话令牌对IDH\x01R\x03jti\x88\x01\x01\x12,\n" +
+	"\auser_id\x18\x02 \x01(\rB\x0e\xbaG\v\x92\x02\b用户IDH\x02R\x06userId\x88\x01\x01\x120\n" +
+	"\busername\x18\x03 \x01(\tB\x0f\xbaG\f\x92\x02\t用户名H\x03R\busername\x88\x01\x01\x12@\n" +
+	"\ttenant_id\x18\x04 \x01(\rB\x1e\xbaG\x1b\x92\x02\x18租户ID，0代表平台H\x04R\btenantId\x88\x01\x01\x12b\n" +
+	"\vclient_type\x18\x05 \x01(\x0e2%.authentication.service.v1.ClientTypeB\x15\xbaG\x12\x92\x02\x0f客户端类型H\x05R\n" +
 	"clientType\x88\x01\x01\x122\n" +
 	"\n" +
-	"ip_address\x18\x06 \x01(\tB\x0e\xbaG\v\x92\x02\b登录IPH\x05R\tipAddress\x88\x01\x01\x12=\n" +
+	"ip_address\x18\x06 \x01(\tB\x0e\xbaG\v\x92\x02\b登录IPH\x06R\tipAddress\x88\x01\x01\x12=\n" +
 	"\n" +
-	"user_agent\x18\a \x01(\tB\x19\xbaG\x16\x92\x02\x13浏览器User-AgentH\x06R\tuserAgent\x88\x01\x01\x120\n" +
-	"\tdevice_id\x18\b \x01(\tB\x0e\xbaG\v\x92\x02\b设备IDH\aR\bdeviceId\x88\x01\x01\x12x\n" +
-	"\blogin_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampB<\xbaG9\x92\x026登录时间（刷新轮换继承首次登录时间）H\bR\aloginAt\x88\x01\x01B\x06\n" +
+	"user_agent\x18\a \x01(\tB\x19\xbaG\x16\x92\x02\x13浏览器User-AgentH\aR\tuserAgent\x88\x01\x01\x120\n" +
+	"\tdevice_id\x18\b \x01(\tB\x0e\xbaG\v\x92\x02\b设备IDH\bR\bdeviceId\x88\x01\x01\x12x\n" +
+	"\blogin_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampB<\xbaG9\x92\x026登录时间（刷新轮换继承首次登录时间）H\tR\aloginAt\x88\x01\x01B\n" +
+	"\n" +
+	"\b_currentB\x06\n" +
 	"\x04_jtiB\n" +
 	"\n" +
 	"\b_user_idB\v\n" +
@@ -400,7 +540,15 @@ const file_online_session_service_v1_online_session_proto_rawDesc = "" +
 	"\n" +
 	"\b_user_idB\x06\n" +
 	"\x04_jti\"\x1c\n" +
-	"\x1aForceLogoutSessionResponse2\x89\x02\n" +
+	"\x1aForceLogoutSessionResponse\"\x1c\n" +
+	"\x1aListMyOnlineSessionRequest\"\xca\x01\n" +
+	"\x1cRevokeMyOnlineSessionRequest\x12b\n" +
+	"\vclient_type\x18\x01 \x01(\x0e2%.authentication.service.v1.ClientTypeB\x15\xbaG\x12\x92\x02\x0f客户端类型H\x00R\n" +
+	"clientType\x88\x01\x01\x12.\n" +
+	"\x03jti\x18\x02 \x01(\tB\x17\xbaG\x14\x92\x02\x11会话令牌对IDH\x01R\x03jti\x88\x01\x01B\x0e\n" +
+	"\f_client_typeB\x06\n" +
+	"\x04_jti\"\x1f\n" +
+	"\x1dRevokeMyOnlineSessionResponse2\x89\x02\n" +
 	"\x14OnlineSessionService\x12s\n" +
 	"\x04List\x123.online_session.service.v1.ListOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\"\x00\x12|\n" +
 	"\vForceLogout\x124.online_session.service.v1.ForceLogoutSessionRequest\x1a5.online_session.service.v1.ForceLogoutSessionResponse\"\x00B\xf3\x01\n" +
@@ -418,30 +566,34 @@ func file_online_session_service_v1_online_session_proto_rawDescGZIP() []byte {
 	return file_online_session_service_v1_online_session_proto_rawDescData
 }
 
-var file_online_session_service_v1_online_session_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_online_session_service_v1_online_session_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_online_session_service_v1_online_session_proto_goTypes = []any{
-	(*OnlineSession)(nil),              // 0: online_session.service.v1.OnlineSession
-	(*ListOnlineSessionRequest)(nil),   // 1: online_session.service.v1.ListOnlineSessionRequest
-	(*ListOnlineSessionResponse)(nil),  // 2: online_session.service.v1.ListOnlineSessionResponse
-	(*ForceLogoutSessionRequest)(nil),  // 3: online_session.service.v1.ForceLogoutSessionRequest
-	(*ForceLogoutSessionResponse)(nil), // 4: online_session.service.v1.ForceLogoutSessionResponse
-	(v1.ClientType)(0),                 // 5: authentication.service.v1.ClientType
-	(*timestamppb.Timestamp)(nil),      // 6: google.protobuf.Timestamp
+	(*OnlineSession)(nil),                 // 0: online_session.service.v1.OnlineSession
+	(*ListOnlineSessionRequest)(nil),      // 1: online_session.service.v1.ListOnlineSessionRequest
+	(*ListOnlineSessionResponse)(nil),     // 2: online_session.service.v1.ListOnlineSessionResponse
+	(*ForceLogoutSessionRequest)(nil),     // 3: online_session.service.v1.ForceLogoutSessionRequest
+	(*ForceLogoutSessionResponse)(nil),    // 4: online_session.service.v1.ForceLogoutSessionResponse
+	(*ListMyOnlineSessionRequest)(nil),    // 5: online_session.service.v1.ListMyOnlineSessionRequest
+	(*RevokeMyOnlineSessionRequest)(nil),  // 6: online_session.service.v1.RevokeMyOnlineSessionRequest
+	(*RevokeMyOnlineSessionResponse)(nil), // 7: online_session.service.v1.RevokeMyOnlineSessionResponse
+	(v1.ClientType)(0),                    // 8: authentication.service.v1.ClientType
+	(*timestamppb.Timestamp)(nil),         // 9: google.protobuf.Timestamp
 }
 var file_online_session_service_v1_online_session_proto_depIdxs = []int32{
-	5, // 0: online_session.service.v1.OnlineSession.client_type:type_name -> authentication.service.v1.ClientType
-	6, // 1: online_session.service.v1.OnlineSession.login_at:type_name -> google.protobuf.Timestamp
+	8, // 0: online_session.service.v1.OnlineSession.client_type:type_name -> authentication.service.v1.ClientType
+	9, // 1: online_session.service.v1.OnlineSession.login_at:type_name -> google.protobuf.Timestamp
 	0, // 2: online_session.service.v1.ListOnlineSessionResponse.items:type_name -> online_session.service.v1.OnlineSession
-	5, // 3: online_session.service.v1.ForceLogoutSessionRequest.client_type:type_name -> authentication.service.v1.ClientType
-	1, // 4: online_session.service.v1.OnlineSessionService.List:input_type -> online_session.service.v1.ListOnlineSessionRequest
-	3, // 5: online_session.service.v1.OnlineSessionService.ForceLogout:input_type -> online_session.service.v1.ForceLogoutSessionRequest
-	2, // 6: online_session.service.v1.OnlineSessionService.List:output_type -> online_session.service.v1.ListOnlineSessionResponse
-	4, // 7: online_session.service.v1.OnlineSessionService.ForceLogout:output_type -> online_session.service.v1.ForceLogoutSessionResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	8, // 3: online_session.service.v1.ForceLogoutSessionRequest.client_type:type_name -> authentication.service.v1.ClientType
+	8, // 4: online_session.service.v1.RevokeMyOnlineSessionRequest.client_type:type_name -> authentication.service.v1.ClientType
+	1, // 5: online_session.service.v1.OnlineSessionService.List:input_type -> online_session.service.v1.ListOnlineSessionRequest
+	3, // 6: online_session.service.v1.OnlineSessionService.ForceLogout:input_type -> online_session.service.v1.ForceLogoutSessionRequest
+	2, // 7: online_session.service.v1.OnlineSessionService.List:output_type -> online_session.service.v1.ListOnlineSessionResponse
+	4, // 8: online_session.service.v1.OnlineSessionService.ForceLogout:output_type -> online_session.service.v1.ForceLogoutSessionResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_online_session_service_v1_online_session_proto_init() }
@@ -452,13 +604,14 @@ func file_online_session_service_v1_online_session_proto_init() {
 	file_online_session_service_v1_online_session_proto_msgTypes[0].OneofWrappers = []any{}
 	file_online_session_service_v1_online_session_proto_msgTypes[1].OneofWrappers = []any{}
 	file_online_session_service_v1_online_session_proto_msgTypes[3].OneofWrappers = []any{}
+	file_online_session_service_v1_online_session_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_online_session_service_v1_online_session_proto_rawDesc), len(file_online_session_service_v1_online_session_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

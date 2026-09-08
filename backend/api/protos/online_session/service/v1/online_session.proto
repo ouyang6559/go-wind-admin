@@ -21,6 +21,12 @@ service OnlineSessionService {
 
 // 在线会话
 message OnlineSession {
+  // 是否为当前请求所属会话（仅 ListMyOnlineSession 场景有意义）
+  optional bool current = 10 [
+    json_name = "current",
+    (gnostic.openapi.v3.property) = { description: "是否为当前会话" }
+  ]; // 是否为当前会话
+
   // 会话令牌对 ID（JWT jti，唯一标识一次令牌签发）
   optional string jti = 1 [
     json_name = "jti",
@@ -115,3 +121,22 @@ message ForceLogoutSessionRequest {
 
 // 强制下线指定会话 - 回应
 message ForceLogoutSessionResponse {}
+
+// 查询当前登录用户的在线会话 - 请求（无参数，用户身份取自认证上下文）
+message ListMyOnlineSessionRequest {}
+
+// 当前用户强制下线自己的指定会话 - 请求
+message RevokeMyOnlineSessionRequest {
+  optional authentication.service.v1.ClientType client_type = 1 [
+    json_name = "clientType",
+    (gnostic.openapi.v3.property) = { description: "客户端类型" }
+  ]; // 客户端类型
+
+  optional string jti = 2 [
+    json_name = "jti",
+    (gnostic.openapi.v3.property) = { description: "会话令牌对ID" }
+  ]; // 会话令牌对ID
+}
+
+// 当前用户强制下线自己的指定会话 - 回应
+message RevokeMyOnlineSessionResponse {}
