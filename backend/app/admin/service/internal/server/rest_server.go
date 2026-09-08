@@ -156,6 +156,7 @@ func NewRestServer(
 	dataAccessAuditLogService *service.DataAccessAuditLogService,
 	redisCacheMonitorService *service.RedisCacheMonitorService,
 	serverMonitorService *service.ServerMonitorService,
+	notificationChannelService *service.NotificationChannelService,
 	onlineSessionService *service.OnlineSessionService,
 	dashboardService *service.DashboardService,
 
@@ -216,6 +217,7 @@ func NewRestServer(
 	adminV1.RegisterDataAccessAuditLogServiceHTTPServer(srv, dataAccessAuditLogService)
 	adminV1.RegisterRedisCacheMonitorServiceHTTPServer(srv, redisCacheMonitorService)
 	adminV1.RegisterServerMonitorServiceHTTPServer(srv, serverMonitorService)
+	adminV1.RegisterNotificationChannelServiceHTTPServer(srv, notificationChannelService)
 	adminV1.RegisterOnlineSessionServiceHTTPServer(srv, onlineSessionService)
 	adminV1.RegisterDashboardServiceHTTPServer(srv, dashboardService)
 

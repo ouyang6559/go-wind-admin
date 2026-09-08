@@ -543,6 +543,30 @@ func (f MenuMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.MenuMutation", m)
 }
 
+// The NotificationChannelQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type NotificationChannelQueryRuleFunc func(context.Context, *ent.NotificationChannelQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f NotificationChannelQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.NotificationChannelQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.NotificationChannelQuery", q)
+}
+
+// The NotificationChannelMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type NotificationChannelMutationRuleFunc func(context.Context, *ent.NotificationChannelMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f NotificationChannelMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.NotificationChannelMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.NotificationChannelMutation", m)
+}
+
 // The OperationAuditLogQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type OperationAuditLogQueryRuleFunc func(context.Context, *ent.OperationAuditLogQuery) error
@@ -1190,6 +1214,8 @@ func queryFilter(q ent.Query) (Filter, error) {
 		return q.Filter(), nil
 	case *ent.MenuQuery:
 		return q.Filter(), nil
+	case *ent.NotificationChannelQuery:
+		return q.Filter(), nil
 	case *ent.OperationAuditLogQuery:
 		return q.Filter(), nil
 	case *ent.OrgUnitQuery:
@@ -1280,6 +1306,8 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	case *ent.MembershipRoleMutation:
 		return m.Filter(), nil
 	case *ent.MenuMutation:
+		return m.Filter(), nil
+	case *ent.NotificationChannelMutation:
 		return m.Filter(), nil
 	case *ent.OperationAuditLogMutation:
 		return m.Filter(), nil

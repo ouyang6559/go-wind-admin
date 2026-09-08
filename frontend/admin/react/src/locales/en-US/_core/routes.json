@@ -45,5 +45,6 @@
   "coming-soon": "Coming Soon",
   "not-found": "404",
   "home": "Home",
-  "server-monitor": "Server Monitor"
+  "server-monitor": "Server Monitor",
+  "notification-channels": "Notification Channels"
 }

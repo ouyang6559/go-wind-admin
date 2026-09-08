@@ -127,6 +127,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	fileRepo := data.NewFileRepo(ctx, entClient)
 	redisCacheMonitorRepo := data.NewRedisCacheMonitorRepo(ctx, redisClient)
 	serverMonitorRepo := data.NewServerMonitorRepo(ctx, entClient)
+	notificationChannelRepo := data.NewNotificationChannelRepo(ctx, entClient)
 	dashboardRepo := data.NewDashboardRepo(ctx, entClient)
 
 	// 站内信
@@ -189,6 +190,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 运维观测与门户
 	redisCacheMonitorService := service.NewRedisCacheMonitorService(ctx, redisCacheMonitorRepo)
 	serverMonitorService := service.NewServerMonitorService(ctx, serverMonitorRepo)
+	notificationChannelService := service.NewNotificationChannelService(ctx, notificationChannelRepo)
 	onlineSessionService := service.NewOnlineSessionService(ctx, authenticator)
 	dashboardService := service.NewDashboardService(ctx, dashboardRepo)
 	adminPortalService := service.NewAdminPortalService(ctx, menuRepo, roleRepo, userRepo, permissionRepo, planModuleRepo, tenantRepo)
@@ -215,7 +217,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		menuService, apiService, permissionService, permissionGroupService,
 		permissionAuditLogService, policyEvaluationLogService,
 		loginAuditLogService, apiAuditLogService, operationAuditLogService, dataAccessAuditLogService,
-		redisCacheMonitorService, serverMonitorService, onlineSessionService, dashboardService,
+		redisCacheMonitorService, serverMonitorService, notificationChannelService,
+		onlineSessionService, dashboardService,
 		internalMessageService, internalMessageCategoryService, internalMessageRecipientService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
 	)
