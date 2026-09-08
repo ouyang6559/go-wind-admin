@@ -64,7 +64,7 @@ const PlanQuotaList: React.FC<PlanQuotaListProps> = ({ planId }) => {
         options: getQuotaTypeOptions(t),
       },
       render: (_, record) => {
-        const item = quotaTypeMap[record.quotaType as string];
+        const item = (quotaTypeMap as Record<string, { text: string; color: string }>)[record.quotaType as string];
         return item ? <Tag color={item.color}>{item.text}</Tag> : '-';
       },
     },

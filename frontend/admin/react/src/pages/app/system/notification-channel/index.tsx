@@ -80,6 +80,8 @@ const NotificationChannelManagement = () => {
           id: selected.id,
           data,
           password: password || undefined,
+          updateMask:
+            'name,type,smtpHost,smtpPort,smtpUsername,smtpFrom,smtpTls,enabled,remark',
         };
         await updateMutation.mutateAsync(req);
         message.success(t('updateSuccess'));

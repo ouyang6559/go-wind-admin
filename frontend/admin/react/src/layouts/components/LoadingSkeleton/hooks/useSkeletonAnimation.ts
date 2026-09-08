@@ -22,7 +22,7 @@ export const useSkeletonAnimation = ({
   delay = 0,
 }: UseSkeletonAnimationOptions) => {
   const [visible, setVisible] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 延迟显示（避免快速加载时的闪烁）
   useEffect(() => {

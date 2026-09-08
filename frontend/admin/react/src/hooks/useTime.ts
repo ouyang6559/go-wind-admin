@@ -10,7 +10,7 @@ const timeFormat = (language: string | undefined) =>
  * @description 获取本地时间
  */
 export const useTimes = () => {
-    const timer = useRef<NodeJS.Timeout | null>(null);
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const {i18n} = useTranslation();
     const [time, setTime] = useState(() => dayjs().format(timeFormat(i18n.language)));
 

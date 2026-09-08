@@ -97,7 +97,7 @@ export const darkThemeComponents: ThemeConfig['components'] = {
     paddingLG: 24,
   },
   Table: {
-    colorHeaderBg: '#1F2937',
+    // colorHeaderBg 非合法 antd Token（Table 表头色由 colorBgContainer/colorFillAlter 派生），原值 '#1F2937' 移除
     // 行悬停/选中用主色微底，行状态一眼可辨（默认派生的 5% 白在暗色下不可察）
     rowHoverBg: 'rgba(0, 107, 230, 0.08)',
     rowSelectedBg: 'rgba(0, 107, 230, 0.15)',

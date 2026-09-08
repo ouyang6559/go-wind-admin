@@ -16,6 +16,7 @@ import MainLayout from '@/layouts/MainLayout';
 import { AuthGuard } from '@/router/guards';
 
 import { errorRoutes } from './config/error-routes';
+import Loading from '@/components/common/Loading';
 import { authRoutes } from './config/auth';
 import { staticRoutes } from './config/static';
 

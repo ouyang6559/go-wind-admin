@@ -10,7 +10,6 @@ import {
   type permissionservicev1_GetPermissionGroupRequest,
   type permissionservicev1_ListPermissionGroupResponse,
   type permissionservicev1_PermissionGroup,
-  type permissionservicev1_UpdatePermissionGroupRequest,
 } from '@/api/generated/admin/service/v1';
 import { makeUpdateMask, type PaginationQuery, queryClient } from '@/core';
 import { apiClient } from '@/api/client';
@@ -65,7 +64,7 @@ export function useUpdatePermissionGroup(
     mutationFn: ({ id, values }: { id: number; values: Record<string, any> }) =>
       apiClient.permissionGroupService.Update({
         id,
-        data: { ...values },
+        data: { ...values, children: [] } as any,
         updateMask: makeUpdateMask(Object.keys(values ?? {})),
       }),
     ...options,

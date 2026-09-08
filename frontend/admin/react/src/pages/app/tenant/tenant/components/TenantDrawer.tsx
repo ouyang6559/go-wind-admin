@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { DrawerForm, ProFormText, ProFormSelect, ProFormTextArea, ProFormDateTimePicker } from '@ant-design/pro-components';
 import type { ProFormInstance } from '@ant-design/pro-components';
-import { Button, message, Divider, Popconfirm, Descriptions, Tag, Progress } from 'antd';
+import { Button, message, Divider, Popconfirm, Descriptions,  Progress } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useUpdateTenant, useCreateTenantWithAdminUser, useGetTenantUsage, useCleanupTenantData } from '@/api/hooks/tenant';
@@ -306,13 +306,13 @@ const TenantDrawer: React.FC<TenantDrawerProps> = ({
                 let label = q.quotaType?.toString() ?? '';
                 let current = 0;
                 let limit = q.quotaValue ?? 0;
-                if (q.quotaType === 1) {
+                if (q.quotaType === 'USER_LIMIT') {
                   label = t('usageUserCount');
                   current = usageQuery.data.userCount ?? 0;
-                } else if (q.quotaType === 2) {
+                } else if (q.quotaType === 'STORAGE') {
                   label = t('usageStorage');
                   current = usageQuery.data.storageUsedBytes ?? 0;
-                } else if (q.quotaType === 3) {
+                } else if (q.quotaType === 'API_CALL') {
                   label = t('usageApiCalls');
                   current = usageQuery.data.apiCallCount ?? 0;
                 }

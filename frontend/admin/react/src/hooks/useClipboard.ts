@@ -8,7 +8,7 @@ export function useClipboard(): [boolean, string, CopyHandler] {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        let timer: NodeJS.Timeout;
+        let timer: ReturnType<typeof setTimeout>;
         if (isCopied) {
             timer = setTimeout(() => setIsCopied(false), 1000);
         }

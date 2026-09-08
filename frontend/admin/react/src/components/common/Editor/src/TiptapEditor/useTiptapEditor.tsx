@@ -70,7 +70,7 @@ export const useTiptapEditor = ({
   // 粘贴/拖拽图片：上传并经 ProseMirror view 插入编辑器
   const uploadAndInsertImages = useCallback(
     async (files: File[], view: unknown) => {
-      const pmView = view as { state: { schema: { nodes: Record<string, { create: (attrs: unknown) => unknown }> } }; dispatch: (tr: unknown) => void } | null;
+      const pmView = view as { state: { schema: { nodes: Record<string, { create: (attrs: unknown) => unknown }> }; tr: { replaceSelectionWith: (node: unknown) => unknown } }; dispatch: (tr: unknown) => void } | null;
       if (!pmView) return;
       for (const file of files) {
         try {
@@ -99,18 +99,18 @@ export const useTiptapEditor = ({
       editorProps: {
         attributes: { class: 'focus:outline-none min-h-full' },
         // 粘贴图片：拦截默认 base64 插入，走上传后插入签名 URL
-        handlePaste: (_view: unknown, event: ClipboardEvent) => {
+        handlePaste: (view: unknown, event: ClipboardEvent) => {
           const files = Array.from(event.clipboardData?.files ?? []).filter((f) =>
             f.type.startsWith('image/'),
           );
           if (files.length === 0) return false;
           event.preventDefault();
-          void uploadAndInsertImages(files, editor);
+          void uploadAndInsertImages(files, view);
           return true;
         },
         // 拖拽图片文件：拦截默认行为，走上传
         handleDrop: (
-          _view: unknown,
+          view: unknown,
           event: DragEvent,
           _slice: unknown,
           moved: boolean,
@@ -121,7 +121,7 @@ export const useTiptapEditor = ({
           );
           if (files.length === 0) return false;
           event.preventDefault();
-          void uploadAndInsertImages(files, editor);
+          void uploadAndInsertImages(files, view);
           return true;
         },
       },

@@ -22,6 +22,7 @@ export const ControlPanel = ({
   onToggleExpandOnHover,
   onToggleCollapse,
 }: ControlPanelProps) => {
+  void isDark;
   const { t } = useI18n('common');
 
   return (

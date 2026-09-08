@@ -112,25 +112,6 @@ const ApiAuditLog = () => {
           HEAD: 'default',
           OPTIONS: 'default',
         };
-        // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
-  const handleExport = async () => {
-    const exportColumns = columns
-      .filter((c) => c.dataIndex && !c.hideInTable)
-      .map((c) => ({
-        key: String(c.dataIndex),
-        title: typeof c.title === 'string' ? c.title : String(c.dataIndex),
-      }));
-    try {
-      await exportAuditLogsToCsv({
-        fetcher: (q) => fetchListApiAuditLogs(q),
-        filename: `api-audit-logs-${Date.now()}.csv`,
-        columns: exportColumns,
-        params: latestParamsRef.current,
-      });
-    } catch (error: any) {
-      message.error(error?.message || 'Export failed');
-    }
-  };
 
   return (
           <span style={{ color: colorMap[record.httpMethod || ''] || '#666' }}>
@@ -180,6 +161,25 @@ const ApiAuditLog = () => {
     },
   ];
 
+        // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
+  const handleExport = async () => {
+    const exportColumns = columns
+      .filter((c) => c.dataIndex && !c.hideInTable)
+      .map((c) => ({
+        key: String(c.dataIndex),
+        title: typeof c.title === 'string' ? c.title : String(c.dataIndex),
+      }));
+    try {
+      await exportAuditLogsToCsv({
+        fetcher: (q) => fetchListApiAuditLogs(q),
+        filename: `api-audit-logs-${Date.now()}.csv`,
+        columns: exportColumns,
+        params: latestParamsRef.current,
+      });
+    } catch (error: any) {
+      message.error(error?.message || 'Export failed');
+    }
+  };
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">

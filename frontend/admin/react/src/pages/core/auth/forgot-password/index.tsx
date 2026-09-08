@@ -1,4 +1,3 @@
-import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button, Form, Input, App } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -56,10 +55,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <AuthLayout>
-      <h2 className="text-2xl font-semibold mb-2">{t('title')}</h2>
-      <p className="text-sm opacity-60 mb-6">{t('subtitle')}</p>
-
+    <AuthLayout title={t('title')} description={t('subtitle')}>
       {step === 1 ? (
         <Form form={form} layout="vertical" onFinish={sendCode}>
           <Form.Item

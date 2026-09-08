@@ -41,13 +41,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ title, description, children, f
     toggleTheme();
   };
 
-  // 根据主题模式判断当前是否为亮色模式
-  const isLightMode = React.useMemo(() => {
-    if (theme.mode === 'auto') {
-      return window.matchMedia('(prefers-color-scheme: light)').matches;
-    }
-    return theme.mode === 'light';
-  }, [theme.mode]);
 
   // 监听系统主题变化
   React.useEffect(() => {

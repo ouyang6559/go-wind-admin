@@ -40,35 +40,16 @@ export const Index = () => {
   const tabbarConfig = preferences.tabbar;
   const widgetConfig = preferences.widget;
 
-  // 计算实际的暗色模式（支持 auto 模式）
-  const [isDark, setIsDark] = useState(() => {
+  // 计算实际的暗色模式（支持 auto 模式）——当前未消费，保留供后续 UI 使用
+  const isDarkModeComputed = (() => {
     const { theme } = preferences;
     if (theme.mode === 'dark') return true;
     if (theme.mode === 'light') return false;
-    // auto 模式：跟随系统
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  })();
+  void isDarkModeComputed;
 
-  // 监听系统主题变化
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => {
-      const { theme } = preferences;
-      if (theme.mode === 'auto') {
-        setIsDark(mediaQuery.matches);
-      }
-    };
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, [preferences.theme.mode]);
-
-  // 监听偏好设置变化
-  useEffect(() => {
-    const { theme } = preferences;
-    if (theme.mode === 'dark') setIsDark(true);
-    else if (theme.mode === 'light') setIsDark(false);
-    else setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-  }, [preferences.theme.mode]);
+  void preferences;
 
   const { t } = useI18n('common');
   const { t: tRoutes, i18n } = useTranslation('routes');

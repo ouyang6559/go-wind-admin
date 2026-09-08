@@ -10,7 +10,7 @@ import { apiClient } from '@/api/client';
 const MONITOR_QUERY_KEY = 'getServerMonitorInfo';
 
 export function useServerMonitorInfo(
-  options?: UseQueryOptions<server_monitorservicev1_ServerMonitorInfo, Error>,
+  options?: Omit<UseQueryOptions<server_monitorservicev1_ServerMonitorInfo, Error, server_monitorservicev1_ServerMonitorInfo, readonly unknown[]>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
     queryKey: [MONITOR_QUERY_KEY],

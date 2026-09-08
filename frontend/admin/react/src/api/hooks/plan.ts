@@ -152,7 +152,7 @@ export function useDeletePlanQuota(
 
 export function useListPlanModules(
   query: PaginationQuery,
-  options?: UseQueryOptions<identityservicev1_ListPlanModuleResponse, Error>,
+  options?: Omit<UseQueryOptions<identityservicev1_ListPlanModuleResponse, Error, identityservicev1_ListPlanModuleResponse, readonly unknown[]>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
     queryKey: ['listPlanModules', query],

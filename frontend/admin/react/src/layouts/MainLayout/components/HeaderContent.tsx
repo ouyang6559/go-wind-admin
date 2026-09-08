@@ -224,7 +224,7 @@ export const HeaderContent = ({
   const appLocale = usePreferencesStore((state) => state.preferences.app.locale);
 
   // 未读数（独立 COUNT）：badge 数字来源
-  const { data: inboxUnread, isLoading: inboxLoading } = useQuery({
+  const { data: inboxUnread } = useQuery({
     queryKey: ['inboxPreview', userInfo?.id],
     queryFn: async () => {
       const query = new PaginationQuery({
@@ -671,7 +671,7 @@ export const HeaderContent = ({
             content={inboxContent}
             trigger="click"
             placement="bottomRight"
-            styles={{ body: { padding: '10px 10px 6px' } }}
+            styles={{ body: { padding: '10px 10px 6px' } } as any}
           >
             <Badge count={unreadCount} size="small" offset={[0, 4]}>
               <Tooltip title={t('header.notification')}>

@@ -113,7 +113,7 @@ export function useCreateTenantWithAdminUser(
 // ==============================
 export function useGetTenantUsage(
   req: identityservicev1_GetTenantUsageRequest,
-  options?: UseQueryOptions<identityservicev1_TenantUsage, Error>,
+  options?: Omit<UseQueryOptions<identityservicev1_TenantUsage, Error, identityservicev1_TenantUsage, readonly unknown[]>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery({
     queryKey: ['getTenantUsage', req],

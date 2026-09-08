@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Card, Input, Modal, Spin, Tag, App } from 'antd';
+import { Alert, Button, Input, Modal, Spin, Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -132,7 +132,7 @@ const MfaManagement = () => {
                     <Button
                       key={m.id}
                       danger
-                      onClick={() => handleUnbind(m.id)}
+                      onClick={() => handleUnbind(m.id as string)}
                       loading={disableMfa.isPending}
                     >
                       {t('mfa.unbind')}

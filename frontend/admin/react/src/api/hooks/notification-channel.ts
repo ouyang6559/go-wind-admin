@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient, type UseMutationOptions, type Us
 import {
   type notification_channelservicev1_CreateNotificationChannelRequest,
   type notification_channelservicev1_DeleteNotificationChannelRequest,
-  type notification_channelservicev1_GetNotificationChannelRequest,
   type notification_channelservicev1_ListNotificationChannelResponse,
   type notification_channelservicev1_NotificationChannel,
   type notification_channelservicev1_SendTestEmailRequest,

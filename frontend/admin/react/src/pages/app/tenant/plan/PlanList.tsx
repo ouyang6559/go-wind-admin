@@ -70,7 +70,7 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
         options: getPlanVersionOptions(t),
       },
       render: (_, record) => {
-        const item = versionMap[record.version as string];
+        const item = (versionMap as Record<string, { text: string; color: string }>)[record.version as string];
         return item ? <Tag color={item.color}>{item.text}</Tag> : '-';
       },
     },
@@ -83,7 +83,7 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
         options: getExpiryPolicyOptions(t),
       },
       render: (_, record) => {
-        const item = expiryPolicyMap[record.expiryPolicy as string];
+        const item = (expiryPolicyMap as Record<string, { text: string; color: string }>)[record.expiryPolicy as string];
         return item ? <Tag color={item.color}>{item.text}</Tag> : '-';
       },
     },

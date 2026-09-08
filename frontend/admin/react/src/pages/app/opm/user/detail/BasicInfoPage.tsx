@@ -80,8 +80,8 @@ const BasicInfoPage: React.FC<BasicInfoPageProps> = ({ userId }) => {
         <Descriptions.Item label={t('desc.mobile')}>{user.mobile || '-'}</Descriptions.Item>
         <Descriptions.Item label={t('desc.tenantName')}>{user.tenantName || '-'}</Descriptions.Item>
         <Descriptions.Item label={t('desc.orgUnitName')}>
-          {(user.orgUnitNames || []).length > 0
-            ? user.orgUnitNames.map((org) => (
+          {(user.orgUnitNames ?? []).length > 0
+            ? (user.orgUnitNames ?? []).map((org) => (
                 <Tag key={org} style={{ backgroundColor: getRandomColor(org), color: '#333', border: 'none' }}>
                   {org}
                 </Tag>
@@ -89,8 +89,8 @@ const BasicInfoPage: React.FC<BasicInfoPageProps> = ({ userId }) => {
             : '-'}
         </Descriptions.Item>
         <Descriptions.Item label={t('desc.positionName')}>
-          {(user.positionNames || []).length > 0
-            ? user.positionNames.map((pos) => (
+          {(user.positionNames ?? []).length > 0
+            ? (user.positionNames ?? []).map((pos) => (
                 <Tag key={pos} color="blue">{pos}</Tag>
               ))
             : '-'}

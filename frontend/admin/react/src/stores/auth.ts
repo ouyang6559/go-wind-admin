@@ -276,7 +276,7 @@ export const useAuthStore = create<AuthState>()(
       // 前端无需（也无法）读取 refresh token 值。
       refreshToken: async () => {
         try {
-          const response = await refreshTokenMutation.execute();
+          const response = await refreshTokenMutation.execute(undefined);
 
           const now = Date.now();
           set({
