@@ -5,7 +5,8 @@
       "editPassword": "Edit Password",
       "basicSettings": "Basic Settings",
       "securitySettings": "Security Settings",
-      "accountBind": "Account Bind"
+      "accountBind": "Account Bind",
+      "activeSessions": "Active Sessions"
     }
   },
   "detail": {

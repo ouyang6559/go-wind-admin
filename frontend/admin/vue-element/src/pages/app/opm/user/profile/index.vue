@@ -41,6 +41,7 @@ import BaseSettingPage from "./base-setting-page.vue";
 import EditPasswordPage from "./edit-password-page.vue";
 import AccountBindPage from "./account-bind-page.vue";
 import SecureSettingPage from "./secure-setting-page.vue";
+import MySessionsPage from "./my-sessions-page.vue";
 
 import { $t } from "@/core/i18n";
 
@@ -73,6 +74,11 @@ const settingList = [
     key: "4",
     name: $t("pages.user.profile.tab.accountBind"),
     component: AccountBindPage,
+  },
+  {
+    key: "5",
+    name: $t("pages.user.profile.tab.activeSessions"),
+    component: MySessionsPage,
   },
 ];
 </script>

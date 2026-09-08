@@ -94,7 +94,8 @@
         "basicSettings": "Basic Settings",
         "securitySettings": "Security Settings",
         "editPassword": "Change Password",
-        "accountBind": "Account Bindings"
+        "accountBind": "Account Bindings",
+        "activeSessions": "Active Sessions"
       },
       "security": {
         "password": "Login Password",
@@ -614,6 +615,14 @@
     "forceLogoutConfirmTitle": "Force logout this session?",
     "forceLogoutConfirmDesc": "The session of {user} will be revoked immediately; the user must sign in again to continue.",
     "forceLogoutSuccess": "Session force logged out",
-    "forceLogoutFailed": "Failed to force logout"
+    "forceLogoutFailed": "Failed to force logout",
+    "mySessionsHint": "All sessions you are currently signed in with. Sign out any unfamiliar device or location below; the current session cannot be signed out here.",
+    "currentSession": "Current",
+    "status": "Status",
+    "revoke": "Sign Out",
+    "revokeConfirm": "Sign out this session?",
+    "revokeSuccess": "Session signed out",
+    "revokeFailed": "Failed to sign out",
+    "noSessions": "No active sessions"
   }
 }

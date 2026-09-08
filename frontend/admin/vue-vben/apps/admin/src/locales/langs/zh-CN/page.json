@@ -94,7 +94,8 @@
         "basicSettings": "基本设置",
         "securitySettings": "安全设置",
         "editPassword": "修改密码",
-        "accountBind": "账号绑定"
+        "accountBind": "账号绑定",
+        "activeSessions": "活跃会话"
       },
       "security": {
         "password": "登录密码",
@@ -626,6 +627,14 @@
     "forceLogoutConfirmTitle": "确认强制下线？",
     "forceLogoutConfirmDesc": "用户 {user} 的这个会话将被立即吊销，需重新登录才能继续操作。",
     "forceLogoutSuccess": "会话已强制下线",
-    "forceLogoutFailed": "强制下线失败"
+    "forceLogoutFailed": "强制下线失败",
+    "mySessionsHint": "以下是你当前登录的全部会话。若发现陌生设备或地点，可将其下线；当前会话不可下线。",
+    "currentSession": "当前会话",
+    "status": "状态",
+    "revoke": "下线",
+    "revokeConfirm": "下线这个会话？",
+    "revokeSuccess": "会话已下线",
+    "revokeFailed": "下线失败",
+    "noSessions": "暂无活跃会话"
   }
 }

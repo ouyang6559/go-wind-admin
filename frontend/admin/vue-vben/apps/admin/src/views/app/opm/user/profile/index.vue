@@ -10,6 +10,7 @@ import AccountBindPage from './account-bind-page.vue';
 import BaseSettingPage from './base-setting-page.vue';
 import EditPasswordPage from './edit-password-page.vue';
 import SecureSettingPage from './secure-setting-page.vue';
+import MySessionsPage from './my-sessions-page.vue';
 
 const settingList: { component: Component; key: string; name: string }[] = [
   {
@@ -31,6 +32,11 @@ const settingList: { component: Component; key: string; name: string }[] = [
     key: '4',
     name: $t('page.user.profile.tab.accountBind'),
     component: AccountBindPage,
+  },
+  {
+    key: '5',
+    name: $t('page.user.profile.tab.activeSessions'),
+    component: MySessionsPage,
   },
 ];
 
