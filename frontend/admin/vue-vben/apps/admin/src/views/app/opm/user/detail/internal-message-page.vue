@@ -87,7 +87,6 @@ const gridOptions: VxeGridProps<InternalMessageRecipient> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        console.log('query:', formValues);
 
         let startTime: any;
         let endTime: any;
@@ -101,7 +100,6 @@ const gridOptions: VxeGridProps<InternalMessageRecipient> = {
           endTime = dayjs(formValues.createdAt[1]).format(
             'YYYY-MM-DD HH:mm:ss',
           );
-          console.log(startTime, endTime);
         }
 
         return await fetchListUserInbox(

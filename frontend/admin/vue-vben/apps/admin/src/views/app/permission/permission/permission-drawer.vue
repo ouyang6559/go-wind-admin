@@ -180,7 +180,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
   },
 
   async onConfirm() {
-    console.log('onConfirm');
 
     // 校验输入的数据
     const validate = await baseFormApi.validate();
@@ -216,7 +215,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
       finalValues.menuIds = extractLeafIds(values.menuIds, menuTreeData.value);
     }
 
-    console.log(getTitle.value, finalValues);
 
     try {
       await (data.value?.create

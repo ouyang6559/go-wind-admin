@@ -100,7 +100,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
   },
 
   async onConfirm() {
-    console.log('onConfirm');
 
     // 校验输入的数据
     const validate = await baseFormApi.validate();
@@ -116,7 +115,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
     // InternalMessageCategory proto 没有 remark 字段，残留会进 updateMask 触发 invalid field mask 500
     const { remark: _ignoredRemark, ...categoryValues } = values;
 
-    console.log(getTitle.value, categoryValues);
 
     try {
       await (data.value?.create
@@ -151,7 +149,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
 
       setLoading(false);
 
-      console.log('onOpenChange', data.value, data.value?.create);
     }
   },
 });

@@ -181,7 +181,6 @@ const gridOptions: VxeGridProps<User> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        // console.log('query:', filters, form, formValues);
         return userViewStore.fetchUserList(
           page.currentPage,
           page.pageSize,
@@ -251,7 +250,6 @@ const gridOptions: VxeGridProps<User> = {
 
 const gridEvents: VxeGridListeners<User> = {
   cellDblclick: ({ row }) => {
-    // console.log(`cell-click: ${row.id}`);
     handleDetail(row);
   },
 };
@@ -286,13 +284,11 @@ function openDrawer(create: boolean, row?: any) {
 
 /* 创建 */
 function handleCreate() {
-  console.log('创建');
   openDrawer(true);
 }
 
 /* 编辑 */
 function handleEdit(row: any) {
-  console.log('编辑', row);
   openDrawer(false, row);
 }
 
@@ -311,7 +307,6 @@ async function handleResetMfa(row: any) {
 }
 
 async function handleDelete(row: any) {
-  console.log('删除', row);
 
   try {
     await deleteUser(row.id);
@@ -339,7 +334,6 @@ watch(
     if (isEqual(newValues, oldValue)) {
       return;
     }
-    console.log(newValues, oldValue);
     gridApi.reload();
   },
 );

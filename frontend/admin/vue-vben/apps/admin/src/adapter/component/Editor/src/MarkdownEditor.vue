@@ -164,7 +164,6 @@ const handleChange = (value: string) => {
 };
 
 async function doUploadImage(file: File): Promise<string> {
-  console.log('Uploading image:', file);
 
   if (!file || !props.uploadImage) {
     emit('imageUpload', file!);

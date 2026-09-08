@@ -51,7 +51,6 @@ const [Modal, modalApi] = useVbenModal({
   },
 
   async onConfirm() {
-    console.log('onConfirm');
 
     // 校验输入的数据
     const validate = await baseFormApi.validate();
@@ -102,7 +101,6 @@ const [Modal, modalApi] = useVbenModal({
 
       setLoading(false);
 
-      console.log('onOpenChange', data.value?.create, data.value?.userId);
     }
   },
 });

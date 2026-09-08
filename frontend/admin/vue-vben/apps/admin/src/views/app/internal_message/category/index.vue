@@ -72,7 +72,6 @@ const gridOptions: VxeGridProps<InternalMessageCategory> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        console.log('query:', formValues);
         return await fetchListMessageCategories(
           new PaginationQuery({
             paging: {
@@ -145,20 +144,17 @@ function openDrawer(create: boolean, row?: any) {
 
 /* 创建 */
 function handleCreate() {
-  console.log('创建');
 
   openDrawer(true);
 }
 
 /* 编辑 */
 function handleEdit(row: any) {
-  console.log('编辑', row);
   openDrawer(false, row);
 }
 
 /* 删除 */
 async function handleDelete(row: any) {
-  console.log('删除', row);
 
   try {
     await deleteMessageCategory({ id: row.id });

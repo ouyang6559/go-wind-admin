@@ -118,7 +118,6 @@ watch(
     if (newVal !== localValue.value) {
       const { parsed, formatted } = validateAndFormat(newVal);
       localValue.value = formatted || newVal || props.placeholder;
-      console.log('props.modelValue');
       try {
         jsonData.value = parsed || JSON.parse(props.placeholder);
       } catch {

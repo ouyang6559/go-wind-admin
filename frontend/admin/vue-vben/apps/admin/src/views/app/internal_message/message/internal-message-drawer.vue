@@ -178,7 +178,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
   },
 
   async onConfirm() {
-    console.log('onConfirm');
 
     // 校验输入的数据
     const validate = await baseFormApi.validate();
@@ -192,7 +191,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
     // 不随报文提交（protojson 对未知字段报错）
     const { sendScope, targetUserIds, ...rest } = await baseFormApi.getValues();
 
-    console.log(getTitle.value, rest);
 
     try {
       await (data.value?.create
@@ -243,7 +241,6 @@ function onOpenDrawer() {
 
   setLoading(false);
 
-  console.log('onOpenDrawer', data.value);
 }
 
 async function onCloseDrawer() {
@@ -258,8 +255,7 @@ function setLoading(loading: boolean) {
   drawerApi.setState({ confirmLoading: loading });
 }
 
-async function handleUploadImage(file: File): Promise<string> {
-  console.log('Upload image:', file);
+async function handleUploadImage(_file: File): Promise<string> {
 
   try {
     return '';

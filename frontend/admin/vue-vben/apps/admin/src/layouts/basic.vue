@@ -207,9 +207,8 @@ function hasMessage(data: InternalMessageRecipient): boolean {
 
 function handleSseNotification(
   data: InternalMessageRecipient,
-  event: MessageEvent,
+  _event: MessageEvent,
 ) {
-  console.log('SSE', event, data);
 
   if (!hasMessage(data)) {
     notifications.value.unshift(convertInternalMessageRecipient(data));

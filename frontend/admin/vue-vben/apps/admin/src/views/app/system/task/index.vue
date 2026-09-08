@@ -123,7 +123,6 @@ const gridOptions: VxeGridProps<Task> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        console.log('query:', formValues);
 
         return await fetchListTasks(
           new PaginationQuery({
@@ -193,13 +192,11 @@ function openModal(create: boolean, row?: any) {
 
 /* 创建 */
 function handleCreate() {
-  console.log('创建');
 
   openModal(true);
 }
 
 async function handleRestartAllTask() {
-  console.log('重启所有任务');
 
   try {
     await restartAllTask();
@@ -217,7 +214,6 @@ async function handleRestartAllTask() {
 }
 
 async function handleStartAllTask() {
-  console.log('启动所有任务');
 
   try {
     await startAllTask();
@@ -235,7 +231,6 @@ async function handleStartAllTask() {
 }
 
 async function handleStopAllTask() {
-  console.log('停止所有任务');
 
   try {
     await stopAllTask();
@@ -290,13 +285,11 @@ async function handleRestartTask(row: any) {
 
 /* 编辑 */
 function handleEdit(row: any) {
-  console.log('编辑', row);
   openModal(false, row);
 }
 
 /* 删除 */
 async function handleDelete(row: any) {
-  console.log('删除', row);
 
   try {
     await deleteTask({ id: row.id });
@@ -315,7 +308,6 @@ async function handleDelete(row: any) {
 
 /* 修改状态 */
 async function handleEnableChanged(row: any, checked: boolean) {
-  console.log('handleStatusChanged', row.enable, checked);
 
   row.pending = true;
   row.enable = checked;

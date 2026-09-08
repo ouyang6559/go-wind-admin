@@ -65,7 +65,6 @@ const gridOptions: VxeGridProps<Plan> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        // console.log('query:', filters, form, formValues);
         return await planViewStore.fetchPlanList(
           page.currentPage,
           page.pageSize,

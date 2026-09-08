@@ -88,7 +88,6 @@ const [BaseForm, baseFormApi] = useVbenForm({
 });
 
 async function handleSubmit() {
-  console.log('submit');
 
   // 校验输入的数据
   const validate = await baseFormApi.validate();

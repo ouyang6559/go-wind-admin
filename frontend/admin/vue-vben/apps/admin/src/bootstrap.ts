@@ -94,7 +94,6 @@ async function bootstrap(namespace: string) {
           // getUserPermissionCodes 内部会 fetchUserInfo + fetchAccessCodes，
           // 并启动定时器 + 连接 SSE。返回权限码供路由守卫使用。
           await authStore.getUserPermissionCodes();
-          console.log('[Bootstrap] session silently restored via refresh cookie');
         }
       } catch (e) {
         // 必须带出真实错误：固定话术会把 refresh 端点 500/网络错等真因

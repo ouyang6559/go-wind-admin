@@ -40,7 +40,6 @@ const gridOptions: VxeGridProps<PlanQuota> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        // console.log('query:', filters, form, formValues);
         return await planViewStore.fetchPlanQuotaList(
           planViewStore.currentPlanId,
           page.currentPage,

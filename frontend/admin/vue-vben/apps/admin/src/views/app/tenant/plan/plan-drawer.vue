@@ -133,7 +133,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
   },
 
   async onConfirm() {
-    console.log('onConfirm');
 
     // 校验输入的数据
     const validate = await baseFormApi.validate();
@@ -153,7 +152,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
       ? moduleWhitelist
       : [];
 
-    console.log(getTitle.value, Object.keys(planValues));
 
     try {
       // useCreatePlan 内部已包 { data: {...} }，这里再包一层会让后端解析出空 Plan
@@ -252,7 +250,6 @@ const [Drawer, drawerApi] = useVbenDrawer({
 
       setLoading(false);
 
-      console.log('onOpenChange', data.value, data.value?.create);
     }
   },
 });

@@ -169,7 +169,6 @@ export class SSEClient {
         // 该数值会被用作下一次重试的 setTimeout 间隔（ms）。
         // 默认不返回时库使用 DefaultRetryInterval=1000ms，这里返回配置的
         // reconnectDelay，避免服务端持续断开时形成紧密重连风暴。
-        console.log(`[SSE] ${this.config.reconnectDelay}ms 后重试...`);
         return this.config.reconnectDelay;
       },
 

@@ -83,7 +83,6 @@ const gridOptions: VxeGridProps<LoginPolicy> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        // console.log('query:', filters, form, formValues);
 
         return await fetchListLoginPolicies(
           new PaginationQuery({
@@ -155,19 +154,16 @@ function openDrawer(create: boolean, row?: any) {
 
 /* 创建 */
 function handleCreate() {
-  console.log('创建');
   openDrawer(true);
 }
 
 /* 编辑 */
 function handleEdit(row: any) {
-  console.log('编辑', row);
   openDrawer(false, row);
 }
 
 /* 删除 */
 async function handleDelete(row: any) {
-  console.log('删除', row);
 
   try {
     await deleteLoginPolicy({ id: row.id });
