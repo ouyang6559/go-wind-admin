@@ -526,15 +526,13 @@ import { statusList, statusToName, statusToColor, enableList } from "@/api/compo
 
 已知的"固定话术掩盖真因"高危点：`bootstrap.ts` 静默恢复、`use-auth.ts` 登录/MFA/登出/权限码获取——这些位置的 catch 均已改为带错误对象留痕，改动时不要回退。
 
-## dev 白屏（vite 依赖优化竞态）处置
+## 白屏（router-view 塌空）真因与处置
 
-dev 模式偶发 router-view 塌空、生产构建零复现，属 vite 8 dev 依赖再优化/HMR 竞态而非产品缺陷。已装三层防御，**判回归前先重启 dev server**（多文件改动/stash 污染 HMR 状态是常见诱因，见"零报错非确定性塌空"）：
+2026-09-08 已定位真因：**`<transition mode="out-in">` + vue-router 5 懒加载路由的竞态**，与 vite 依赖优化/HMR 无关（此前归因有误）。懒 chunk 在导航期间解析完成时，旧页被直接移除而新页永不挂载，且此后 router-view 整体僵死（零报错、dev/prod 均可复现，dev 因 chunk 解析慢数百倍而高发；连续导航 5~7 次必现，vue 3.5.34/3.5.42 均复现）。修复：`LayoutMain.vue` 去掉 `mode="out-in"` 改同帧交叉淡入淡出（150ms 时长不变）；顺带修复 wrapper 闭包固化 vue-router 5 slot vnode（v5 的 `Component` 是预构建 vnode 而非 v4 的组件定义，闭包缓存会渲染过期 vnode）。验证：连续 ~100 次导航零塌空 + keep-alive 状态保留正常。
 
-1. `app.config.errorHandler` + `router.onError` 全局观测（[AppErrorHandler]/[RouterError] 前缀）；
-2. 懒加载路由"动态导入失败"自动一次性整页刷新自愈（按目标路由防抖，chunk 真坏不会死循环）；
-3. `vite:preloadError` 事件自愈刷新（vite 官方推荐）。
+仍保留的防御（别删）：`app.config.errorHandler` + `router.onError` 全局观测（[AppErrorHandler]/[RouterError] 前缀）；懒加载路由动态导入失败自动一次性整页刷新自愈；`vite:preloadError` 事件自愈刷新。重依赖（echarts/vxe-table/@tanstack/vue-query）已进 `optimizeDeps.include` 预打包。
 
-重依赖（echarts/vxe-table/@tanstack/vue-query）已进 `optimizeDeps.include` 预打包，收窄会话中途再优化窗口；新增大体量依赖时按实际导入字面量同步加入。
+**判回归前先重启 dev server**（多文件改动/stash 污染 HMR 状态是常见干扰源）；若再现白页，用连续菜单导航循环复现后按上述方向排查，勿再归因 vite 竞态。
 
 ## 构建命令
 
