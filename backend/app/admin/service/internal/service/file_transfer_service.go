@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"path"
 	"strings"
 	"time"
@@ -22,6 +23,9 @@ import (
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	storageV1 "go-wind-admin/api/gen/go/storage/service/v1"
+
+	"go-wind-admin/pkg/crypto"
+	"net/url"
 
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/netutil"
@@ -197,7 +201,7 @@ func (s *FileTransferService) directUploadFile(ctx context.Context, req *storage
 		)
 	}
 
-	info, _, downloadUrl, err := s.mc.UploadFile(
+	info, storagePath, downloadUrl, err := s.mc.UploadFile(
 		ctx,
 		req.GetStorageObject().GetBucketName(),
 		req.GetStorageObject().GetObjectName(),
@@ -221,9 +225,79 @@ func (s *FileTransferService) directUploadFile(ctx context.Context, req *storage
 		return nil, err
 	}
 
+	// 生成签名公开访问 URL（1 年有效期）：供富文本等场景直接以 <img> 引用。
+	// 签名即凭证（HMAC-SHA256），需配置 GOWIND_CRYPTO_KEY；未配置时返回空，
+	// 前端编辑器将无法内嵌预览（下载仍走鉴权 API）。
+	expiresAt := time.Now().Add(mediaURLTTL).Unix()
+	mediaPath := storagePath
+	publicUrl := ""
+	if sig, sigErr := crypto.SignData(mediaPath + "|" + itoa64(expiresAt)); sigErr == nil {
+		publicUrl = "/admin/v1/file/image?path=" + urlQueryEscape(mediaPath) +
+			"&expires=" + itoa64(expiresAt) + "&sig=" + sig
+	} else {
+		s.log.Warnf(ctx, "generate public media url failed (GOWIND_CRYPTO_KEY unset?): %s", sigErr.Error())
+	}
+
 	return &storageV1.UploadFileResponse{
 		ObjectName: trans.Ptr(downloadUrl),
+		PublicUrl:  trans.Ptr(publicUrl),
 	}, err
+}
+
+// mediaURLTTL 签名图片 URL 有效期：1 年。历史富文本中的图片链接需在该期限内可访问。
+const mediaURLTTL = 365 * 24 * time.Hour
+
+func itoa64(v int64) string {
+	return strconv.FormatInt(v, 10)
+}
+
+func urlQueryEscape(s string) string {
+	return url.Values{"p": {s}}.Encode()[2:]
+}
+
+// ServeImageHandler 签名图片代理（免鉴权，签名即凭证）：
+// GET /admin/v1/file/image?path={bucket}/{object}&expires={unix}&sig={hmac}
+// 签名 = HMAC-SHA256(secret, path|expires)。流式回源 MinIO。
+func (s *FileTransferService) ServeImageHandler(w http.ResponseWriter, r *http.Request) error {
+	q := r.URL.Query()
+	mediaPath := q.Get("path")
+	expiresStr := q.Get("expires")
+	sig := q.Get("sig")
+
+	if mediaPath == "" || expiresStr == "" || sig == "" {
+		http.Error(w, "missing parameters", http.StatusBadRequest)
+		return nil
+	}
+	expires, err := strconv.ParseInt(expiresStr, 10, 64)
+	if err != nil || time.Now().Unix() > expires {
+		http.Error(w, "url expired", http.StatusForbidden)
+		return nil
+	}
+	if !crypto.VerifyData(mediaPath+"|"+expiresStr, sig) {
+		http.Error(w, "invalid signature", http.StatusForbidden)
+		return nil
+	}
+
+	// storagePath 可能带前导斜杠（JoinObjectUrl 生成形如 /bucket/object）
+	mediaPath = strings.TrimPrefix(mediaPath, "/")
+	parts := strings.SplitN(mediaPath, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		http.Error(w, "invalid path", http.StatusBadRequest)
+		return nil
+	}
+
+	reader, contentType, size, err := s.mc.GetObjectReader(r.Context(), parts[0], parts[1])
+	if err != nil {
+		http.Error(w, "object not found", http.StatusNotFound)
+		return nil
+	}
+	defer func() { _ = reader.Close() }()
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	_, _ = io.Copy(w, reader)
+	return nil
 }
 
 // presignedUploadFile 预签名上传文件

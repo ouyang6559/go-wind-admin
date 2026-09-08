@@ -2466,6 +2466,8 @@ export type storageservicev1_PresignOption = {
 export type storageservicev1_UploadFileResponse = {
   objectName?: string;
   presignedUrl?: string;
+  // 公开访问 URL（HMAC 签名 + 有效期的图片代理链接；需配置 GOWIND_CRYPTO_KEY）
+  publicUrl?: string;
 };
 
 // 站内信消息管理服务

@@ -28,6 +28,13 @@ func registerFileTransferServiceHandler(srv *http.Server, svc *service.FileTrans
 	r.PUT("admin/v1/file/upload", _FileTransferService_PutUploadFile_HTTP_Handler(svc))
 
 	r.GET("admin/v1/file/download", _FileTransferService_DownloadFile_HTTP_Handler(svc))
+
+	// 签名图片代理（免鉴权：签名即凭证）。手动注册的路由未设置 Operation，
+	// selector 按 Operation 匹配的 auth 中间件天然不应用；安全性由
+	// HMAC 签名 + 过期时间在 handler 内校验保证。
+	r.GET("admin/v1/file/image", func(ctx http.Context) error {
+		return svc.ServeImageHandler(ctx.Response(), ctx.Request())
+	})
 }
 
 const OperationFileTransferServicePostUploadFile = "/admin.service.v1.FileTransferService/PostUploadFile"

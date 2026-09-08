@@ -115,7 +115,7 @@ export async function uploadFile(
     fileDirectory,
   });
 
-  await RequestClient.getInstance().upload(
+  return await RequestClient.getInstance().upload(
     'admin/v1/file/upload',
     {
       file: fileData,
@@ -179,7 +179,7 @@ export function useUploadFile(
       method = 'post',
       onUploadProgress,
     }) => {
-      return uploadFile(
+      await uploadFile(
         bucketName,
         fileDirectory,
         file,

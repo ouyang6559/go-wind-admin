@@ -160,4 +160,10 @@ message UploadFileResponse {
     json_name = "presignedUrl",
     (gnostic.openapi.v3.property) = { description: "预签名上传链接" }
   ]; // 预签名上传链接
+
+  // 公开访问 URL（HMAC 签名 + 有效期的图片代理链接；需配置 GOWIND_CRYPTO_KEY）
+  optional string public_url = 3 [
+    json_name = "publicUrl",
+    (gnostic.openapi.v3.property) = { description: "签名公开访问 URL" }
+  ]; // 签名公开访问 URL
 }

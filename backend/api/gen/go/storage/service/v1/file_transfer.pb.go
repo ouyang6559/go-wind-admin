@@ -420,9 +420,11 @@ func (*UploadFileRequest_File) isUploadFileRequest_Source() {}
 func (*UploadFileRequest_Presign) isUploadFileRequest_Source() {}
 
 type UploadFileResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ObjectName    *string                `protobuf:"bytes,1,opt,name=object_name,json=objectName,proto3,oneof" json:"object_name,omitempty"`       // OSS 对象键
-	PresignedUrl  *string                `protobuf:"bytes,2,opt,name=presigned_url,json=presignedUrl,proto3,oneof" json:"presigned_url,omitempty"` // 预签名上传链接
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ObjectName   *string                `protobuf:"bytes,1,opt,name=object_name,json=objectName,proto3,oneof" json:"object_name,omitempty"`       // OSS 对象键
+	PresignedUrl *string                `protobuf:"bytes,2,opt,name=presigned_url,json=presignedUrl,proto3,oneof" json:"presigned_url,omitempty"` // 预签名上传链接
+	// 公开访问 URL（HMAC 签名 + 有效期的图片代理链接；需配置 GOWIND_CRYPTO_KEY）
+	PublicUrl     *string `protobuf:"bytes,3,opt,name=public_url,json=publicUrl,proto3,oneof" json:"public_url,omitempty"` // 签名公开访问 URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -467,6 +469,13 @@ func (x *UploadFileResponse) GetObjectName() string {
 func (x *UploadFileResponse) GetPresignedUrl() string {
 	if x != nil && x.PresignedUrl != nil {
 		return *x.PresignedUrl
+	}
+	return ""
+}
+
+func (x *UploadFileResponse) GetPublicUrl() string {
+	if x != nil && x.PublicUrl != nil {
+		return *x.PublicUrl
 	}
 	return ""
 }
@@ -519,13 +528,16 @@ const file_storage_service_v1_file_transfer_proto_rawDesc = "" +
 	"\x06sourceB\x13\n" +
 	"\x11_source_file_nameB\a\n" +
 	"\x05_mimeB\a\n" +
-	"\x05_size\"\xb8\x01\n" +
+	"\x05_size\"\x89\x02\n" +
 	"\x12UploadFileResponse\x129\n" +
 	"\vobject_name\x18\x01 \x01(\tB\x13\xbaG\x10\x92\x02\rOSS 对象键H\x00R\n" +
 	"objectName\x88\x01\x01\x12E\n" +
-	"\rpresigned_url\x18\x02 \x01(\tB\x1b\xbaG\x18\x92\x02\x15预签名上传链接H\x01R\fpresignedUrl\x88\x01\x01B\x0e\n" +
+	"\rpresigned_url\x18\x02 \x01(\tB\x1b\xbaG\x18\x92\x02\x15预签名上传链接H\x01R\fpresignedUrl\x88\x01\x01\x12@\n" +
+	"\n" +
+	"public_url\x18\x03 \x01(\tB\x1c\xbaG\x19\x92\x02\x16签名公开访问 URLH\x02R\tpublicUrl\x88\x01\x01B\x0e\n" +
 	"\f_object_nameB\x10\n" +
-	"\x0e_presigned_url2\x8f\x02\n" +
+	"\x0e_presigned_urlB\r\n" +
+	"\v_public_url2\x8f\x02\n" +
 	"\x13FileTransferService\x12Q\n" +
 	"\fDownloadFile\x12'.storage.service.v1.DownloadFileRequest\x1a\x14.google.api.HttpBody\"\x000\x01\x12Q\n" +
 	"\rPutUploadFile\x12\x14.google.api.HttpBody\x1a&.storage.service.v1.UploadFileResponse\"\x00(\x01\x12R\n" +

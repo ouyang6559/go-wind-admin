@@ -6,6 +6,7 @@ import { preferences } from '@vben/preferences';
 import { type EditorProps, MdEditor } from 'md-editor-v3';
 
 import { $t } from '#/locales';
+import { uploadFile } from '#/api';
 
 import { isDarkMode } from './utils';
 
@@ -164,14 +165,22 @@ const handleChange = (value: string) => {
 };
 
 async function doUploadImage(file: File): Promise<string> {
+  if (!file) return '';
 
-  if (!file || !props.uploadImage) {
-    emit('imageUpload', file!);
-    return '';
+  // 外部注入了上传回调则优先使用；否则走内置文件上传，
+  // 取后端生成的签名公开 URL（publicUrl）内嵌预览
+  if (props.uploadImage) {
+    try {
+      return await props.uploadImage(file);
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return '';
+    }
   }
 
   try {
-    return await props.uploadImage(file);
+    const resp = (await uploadFile('', '', file)) as any;
+    return resp?.publicUrl || '';
   } catch (error) {
     console.error('Image upload failed:', error);
     return '';
