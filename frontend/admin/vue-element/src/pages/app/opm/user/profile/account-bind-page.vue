@@ -17,27 +17,61 @@
               <span class="item-description">{{ item.description }}</span>
             </div>
           </div>
-          <!-- 右侧：跳转基本设置修改 -->
-          <ElLink type="primary" underline="never" class="item-link" @click="emit('switchTab', '1')">
-            {{ $t("pages.user.accountBind.modify") }}
-          </ElLink>
+          <!-- 右侧：操作 -->
+          <div class="item-actions">
+            <template v-if="item.key === 'email'">
+              <ElLink type="primary" underline="never" class="item-link" @click="openBind">
+                {{ user?.email ? $t("pages.user.accountBind.rebind") : $t("pages.user.accountBind.bindNow") }}
+              </ElLink>
+            </template>
+            <ElLink type="primary" underline="never" class="item-link" @click="emit('switchTab', '1')">
+              {{ $t("pages.user.accountBind.modify") }}
+            </ElLink>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 绑定邮箱对话框：发送验证码 → 输入验证码完成绑定 -->
+    <el-dialog
+      v-model="bindOpen"
+      :title="$t('pages.user.accountBind.bindEmailTitle')"
+      width="440px"
+      destroy-on-close
+    >
+      <el-form label-width="110px">
+        <el-form-item :label="$t('pages.user.accountBind.newEmail')" required>
+          <el-input v-model="bindEmail" :placeholder="$t('pages.user.accountBind.newEmailPlaceholder')" />
+        </el-form-item>
+        <el-form-item :label="$t('pages.user.accountBind.vcode')" required>
+          <div class="vcode-row">
+            <el-input v-model="bindCode" :placeholder="$t('pages.user.accountBind.vcodePlaceholder')" />
+            <el-button :disabled="codeSent" @click="handleSendCode">
+              {{ codeSent ? $t("pages.user.accountBind.codeSent") : $t("pages.user.accountBind.sendVcode") }}
+            </el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="bindOpen = false">{{ $t("common.button.cancel") }}</el-button>
+        <el-button type="primary" :loading="verifying" @click="handleVerify">
+          {{ $t("pages.user.accountBind.confirmBind") }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { Icon as IconifyIcon } from "@iconify/vue";
+import { ElMessage } from "element-plus";
 
 import { useGetUserProfile } from "@/api/composables";
+import { apiClient } from "@/api/client";
+import { queryClient } from "@/plugins/vue-query";
 import { $t } from "@/core/i18n";
 
-// 第三方账号（GitHub/微信/微博等）绑定条目已移除：
-// 后端社交登录未实现，BindContact/VerifyContact 换绑接口亦为占位实现。
-// 邮箱/手机展示当前账号的真实绑定状态，修改入口跳转基本设置
-// （该页经 UpdateUser 直接更新联系方式，为现行产品行为）。
 const emit = defineEmits<{ switchTab: [key: string] }>();
 
 const { data: user } = useGetUserProfile();
@@ -83,6 +117,57 @@ const bindList = computed<BindItem[]>(() => {
     },
   ];
 });
+
+// ===== 绑定邮箱（发送验证码 → 校验并写入 EMAIL 凭证）=====
+const bindOpen = ref(false);
+const bindEmail = ref("");
+const bindCode = ref("");
+const codeSent = ref(false);
+const verifying = ref(false);
+
+function openBind() {
+  bindEmail.value = user.value?.email ?? "";
+  bindCode.value = "";
+  codeSent.value = false;
+  bindOpen.value = true;
+}
+
+async function handleSendCode() {
+  const email = bindEmail.value.trim();
+  if (!email) {
+    ElMessage.error($t("pages.user.accountBind.newEmailRequired"));
+    return;
+  }
+  try {
+    await apiClient.userProfileService.BindContact({ email: { email } });
+    codeSent.value = true;
+    ElMessage.success($t("pages.user.accountBind.vcodeSent"));
+  } catch (error: any) {
+    ElMessage.error(error?.message || $t("pages.user.accountBind.vcodeSendFailed"));
+  }
+}
+
+async function handleVerify() {
+  const email = bindEmail.value.trim();
+  if (!email || !bindCode.value) {
+    ElMessage.error($t("pages.user.accountBind.vcodeRequired"));
+    return;
+  }
+  verifying.value = true;
+  try {
+    await apiClient.userProfileService.VerifyContact({
+      email: { email, code: bindCode.value },
+    });
+    ElMessage.success($t("pages.user.accountBind.bindSuccess"));
+    bindOpen.value = false;
+    // 刷新用户信息以更新绑定状态展示
+    queryClient.invalidateQueries({ queryKey: ["getMe"] });
+  } catch (error: any) {
+    ElMessage.error(error?.message || $t("pages.user.accountBind.bindFailed"));
+  } finally {
+    verifying.value = false;
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -146,8 +231,21 @@ const bindList = computed<BindItem[]>(() => {
   line-height: 1.5;
 }
 
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
 .item-link {
   flex-shrink: 0;
   font-size: 14px;
+}
+
+.vcode-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
 }
 </style>

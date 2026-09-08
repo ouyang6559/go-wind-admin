@@ -109,7 +109,22 @@
         "phoneDesc": "用于身份验证",
         "bound": "已绑定：{value}",
         "unbound": "未绑定，可在基本设置中填写",
-        "modify": "修改"
+        "modify": "修改",
+        "bindNow": "立即绑定",
+        "rebind": "换绑",
+        "bindEmailTitle": "绑定邮箱",
+        "newEmail": "新邮箱",
+        "newEmailPlaceholder": "请输入新邮箱地址",
+        "vcode": "验证码",
+        "vcodePlaceholder": "请输入邮箱验证码",
+        "sendVcode": "发送验证码",
+        "codeSent": "已发送，请查收",
+        "vcodeSendFailed": "验证码发送失败",
+        "newEmailRequired": "请输入新邮箱地址",
+        "vcodeRequired": "请输入验证码",
+        "confirmBind": "确认绑定",
+        "bindSuccess": "邮箱绑定成功",
+        "bindFailed": "绑定失败"
       }
     },
     "detail": {
