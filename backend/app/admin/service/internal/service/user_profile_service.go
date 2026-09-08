@@ -209,12 +209,14 @@ func (s *UserProfileService) UploadAvatar(ctx context.Context, req *identityV1.U
 	}, nil
 }
 
-// BindContact 绑定手机号码/邮箱
+// BindContact 绑定手机号码/邮箱。
+// 依赖短信/邮件验证码通道，尚未实现。必须返回 501 而非 nil,nil——
+// 假成功会让调用方以为绑定完成，属于最危险的占位形态。
 func (s *UserProfileService) BindContact(context.Context, *identityV1.BindContactRequest) (*emptypb.Empty, error) {
-	return nil, nil
+	return nil, identityV1.ErrorNotImplemented("contact binding is not implemented yet")
 }
 
-// VerifyContact 验证手机号码/邮箱
+// VerifyContact 验证手机号码/邮箱。未实现说明同 BindContact。
 func (s *UserProfileService) VerifyContact(context.Context, *identityV1.VerifyContactRequest) (*emptypb.Empty, error) {
-	return nil, nil
+	return nil, identityV1.ErrorNotImplemented("contact verification is not implemented yet")
 }

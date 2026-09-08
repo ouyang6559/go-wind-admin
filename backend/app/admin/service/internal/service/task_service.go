@@ -416,9 +416,13 @@ func (s *TaskService) stopTask(t *taskV1.Task) error {
 	case taskV1.Task_PERIODIC:
 		return s.taskScheduler.RemovePeriodicTask(t.GetTypeName())
 
+	// DELAY/WAIT_RESULT 是已投递到 asynq 队列的一次性任务，底层 transport
+	// 未暴露 Inspector（删除排队任务/取消在途任务的能力），无法安全停止。
+	// 此前空 case 静默返回成功，用户会以为已停止——必须诚实报错。
 	case taskV1.Task_DELAY:
-
+		return errors.New("queued one-shot task cannot be stopped, it will run at its scheduled time")
 	case taskV1.Task_WAIT_RESULT:
+		return errors.New("in-flight task cannot be stopped, please wait for it to finish")
 	}
 
 	return nil
