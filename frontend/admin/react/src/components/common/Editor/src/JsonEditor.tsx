@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18next from 'i18next';
 
+declare const require: (id: string) => unknown;
+
 // We need to handle the CSS import separately
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports

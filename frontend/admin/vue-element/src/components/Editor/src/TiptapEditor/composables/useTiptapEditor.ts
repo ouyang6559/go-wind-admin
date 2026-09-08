@@ -3,6 +3,7 @@ import type { Ref } from "vue";
 import { ref, watch } from "vue";
 
 import { preferences } from "@/core/preferences";
+import { uploadFile } from "@/api/composables";
 
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
@@ -48,7 +49,7 @@ interface UseTiptapEditorOptions {
 }
 
 export function useTiptapEditor(options: UseTiptapEditorOptions) {
-  const { modelValue, disabled, placeholder, emit } = options;
+  const { modelValue, disabled, placeholder, uploadImage, emit } = options;
 
   // 内部内容追踪，防止循环更新
   const contentRef = ref(modelValue.value);
@@ -56,6 +57,37 @@ export function useTiptapEditor(options: UseTiptapEditorOptions) {
 
   // 创建 lowlight 实例
   const lowlight = createLowlight(all);
+
+  // 上传并插入图片：外部 uploadImage 优先，否则内置走文件上传 API 取 publicUrl
+  const uploadAndInsertImages = async (files: File[], view: unknown) => {
+    const pmView = view as {
+      state: {
+        schema: { nodes: Record<string, { create: (attrs: unknown) => unknown }> };
+        tr: {
+          replaceSelectionWith: (node: unknown) => unknown;
+        };
+      };
+      dispatch: (tr: unknown) => void;
+    } | null;
+    if (!pmView) return;
+    for (const file of files) {
+      try {
+        const url = uploadImage.value
+          ? await uploadImage.value(file)
+          : ((await uploadFile("", "", file)) as any)?.publicUrl || "";
+        if (!url) {
+          console.error("image upload returned empty url");
+          continue;
+        }
+        const node = pmView.state.schema.nodes.image?.create({ src: url });
+        if (node) {
+          pmView.dispatch(pmView.state.tr.replaceSelectionWith(node));
+        }
+      } catch (error) {
+        console.error("Image upload failed:", error);
+      }
+    }
+  };
 
   // 初始化编辑器
   const editor = useEditor({
@@ -93,6 +125,32 @@ export function useTiptapEditor(options: UseTiptapEditorOptions) {
     editorProps: {
       attributes: {
         class: "prose dark:prose-invert focus:outline-none min-h-full",
+      },
+      // 粘贴图片：拦截默认 base64 插入，走上传后插入签名 URL
+      handlePaste: (view: unknown, event: ClipboardEvent) => {
+        const files = Array.from(event.clipboardData?.files ?? []).filter((f) =>
+          f.type.startsWith("image/")
+        );
+        if (files.length === 0) return false;
+        event.preventDefault();
+        void uploadAndInsertImages(files, view);
+        return true;
+      },
+      // 拖拽图片文件：拦截默认行为，走上传
+      handleDrop: (
+        view: unknown,
+        event: DragEvent,
+        _slice: unknown,
+        moved: boolean
+      ) => {
+        if (moved) return false;
+        const files = Array.from(event.dataTransfer?.files ?? []).filter((f) =>
+          f.type.startsWith("image/")
+        );
+        if (files.length === 0) return false;
+        event.preventDefault();
+        void uploadAndInsertImages(files, view);
+        return true;
       },
     },
     onCreate: ({ editor }) => {

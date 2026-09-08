@@ -59,7 +59,7 @@ const Editor: React.FC<EditorProps> = ({
     <div className="editor-container">
       <Suspense fallback={<div style={{ padding: 16, textAlign: 'center', color: 'var(--ant-color-text-secondary)' }}>Loading editor...</div>}>
         <EditorComponent
-          value={value}
+          value={value ?? ''}
           height={height}
           disabled={disabled}
           placeholder={placeholder}

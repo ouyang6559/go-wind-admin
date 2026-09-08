@@ -105,7 +105,7 @@ async function downloadFile(
  * @param method 上传方法，支持 'post' 和 'put'
  * @param onUploadProgress 上传进度回调函数
  */
-async function uploadFile(
+export async function uploadFile(
   bucketName: string,
   fileDirectory: string,
   fileData: File,
@@ -117,7 +117,7 @@ async function uploadFile(
     fileDirectory,
   });
 
-  await RequestClient.getInstance().upload(
+  return await RequestClient.getInstance().upload(
     'admin/v1/file/upload',
     {
       file: fileData,
@@ -171,7 +171,7 @@ export function useUploadFile(
 ) {
   return useMutation({
     mutationFn: async ({ bucketName, fileDirectory, file, method = 'post', onUploadProgress }) => {
-      return uploadFile(bucketName, fileDirectory, file, method, onUploadProgress);
+      await uploadFile(bucketName, fileDirectory, file, method, onUploadProgress);
     },
     ...options,
   });

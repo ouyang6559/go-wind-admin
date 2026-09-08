@@ -83,7 +83,7 @@ async function downloadFile(bucketName: string, objectName: string, preferPresig
 /**
  * 上传文件到MinIO
  */
-async function uploadFile(
+export async function uploadFile(
   bucketName: string,
   fileDirectory: string,
   fileData: File,
@@ -95,7 +95,7 @@ async function uploadFile(
     fileDirectory,
   });
 
-  await RequestClient.getInstance().upload(
+  return await RequestClient.getInstance().upload(
     "admin/v1/file/upload",
     {
       file: fileData,
@@ -149,7 +149,7 @@ export function useUploadFile(
 ) {
   return useMutation({
     mutationFn: async ({ bucketName, fileDirectory, file, method = "post", onUploadProgress }) => {
-      return uploadFile(bucketName, fileDirectory, file, method, onUploadProgress);
+      await uploadFile(bucketName, fileDirectory, file, method, onUploadProgress);
     },
     ...options,
   });

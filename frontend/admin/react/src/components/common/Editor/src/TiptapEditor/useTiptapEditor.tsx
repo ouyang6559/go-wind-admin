@@ -5,6 +5,7 @@ import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { marked } from 'marked';
 import { isDarkMode } from '../utils';
+import { defaultImageUpload } from './defaultImageUpload';
 
 interface UseTiptapEditorProps {
   value: string;
@@ -63,6 +64,33 @@ export const useTiptapEditor = ({
   }, []);
 
   // Editor config
+  // 生效的图片上传函数：外部注入优先，否则走内置文件上传（publicUrl）
+  const resolveImageUpload = uploadImage ?? defaultImageUpload;
+
+  // 粘贴/拖拽图片：上传并经 ProseMirror view 插入编辑器
+  const uploadAndInsertImages = useCallback(
+    async (files: File[], view: unknown) => {
+      const pmView = view as { state: { schema: { nodes: Record<string, { create: (attrs: unknown) => unknown }> } }; dispatch: (tr: unknown) => void } | null;
+      if (!pmView) return;
+      for (const file of files) {
+        try {
+          const url = await resolveImageUpload(file);
+          if (!url) {
+            console.error('image upload returned empty url');
+            continue;
+          }
+          const node = pmView.state.schema.nodes.image?.create({ src: url });
+          if (node) {
+            pmView.dispatch(pmView.state.tr.replaceSelectionWith(node));
+          }
+        } catch (error) {
+          console.error('Image upload failed:', error);
+        }
+      }
+    },
+    [resolveImageUpload],
+  );
+
   const editorConfig = useMemo(
     () => ({
       content: value,
@@ -70,6 +98,32 @@ export const useTiptapEditor = ({
       autofocus: 'end' as const,
       editorProps: {
         attributes: { class: 'focus:outline-none min-h-full' },
+        // 粘贴图片：拦截默认 base64 插入，走上传后插入签名 URL
+        handlePaste: (_view: unknown, event: ClipboardEvent) => {
+          const files = Array.from(event.clipboardData?.files ?? []).filter((f) =>
+            f.type.startsWith('image/'),
+          );
+          if (files.length === 0) return false;
+          event.preventDefault();
+          void uploadAndInsertImages(files, editor);
+          return true;
+        },
+        // 拖拽图片文件：拦截默认行为，走上传
+        handleDrop: (
+          _view: unknown,
+          event: DragEvent,
+          _slice: unknown,
+          moved: boolean,
+        ) => {
+          if (moved) return false;
+          const files = Array.from(event.dataTransfer?.files ?? []).filter((f) =>
+            f.type.startsWith('image/'),
+          );
+          if (files.length === 0) return false;
+          event.preventDefault();
+          void uploadAndInsertImages(files, editor);
+          return true;
+        },
       },
       onCreate: ({ editor: e }: { editor: any }) => {
         onReady?.(e);
@@ -84,7 +138,7 @@ export const useTiptapEditor = ({
         onChange?.(html);
       },
     }),
-    [value, disabled, onReady, onChange],
+    [value, disabled, onReady, onChange, uploadImage, uploadAndInsertImages],
   );
 
   // Sync external value
