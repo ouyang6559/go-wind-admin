@@ -181,6 +181,9 @@ type AuthenticationService struct {
 
 	mfaFactorRepo     *data.UserMfaFactorRepo
 	mfaChallengeCache *data.MfaChallengeCache
+	
+	vcodeCache                 *data.VCodeCache
+	notificationChannelRepo    *data.NotificationChannelRepo
 }
 
 func NewAuthenticationService(
@@ -199,6 +202,8 @@ func NewAuthenticationService(
 	loginPolicyRepo *data.LoginPolicyRepo,
 	mfaFactorRepo *data.UserMfaFactorRepo,
 	mfaChallengeCache *data.MfaChallengeCache,
+	vcodeCache *data.VCodeCache,
+	notificationChannelRepo *data.NotificationChannelRepo,
 ) *AuthenticationService {
 	return &AuthenticationService{
 		log:                ctx.NewLoggerHelper("authn/service/admin-service"),
@@ -216,6 +221,8 @@ func NewAuthenticationService(
 		loginPolicyRepo:    loginPolicyRepo,
 		mfaFactorRepo:      mfaFactorRepo,
 		mfaChallengeCache:  mfaChallengeCache,
+		vcodeCache:              vcodeCache,
+		notificationChannelRepo: notificationChannelRepo,
 	}
 }
 

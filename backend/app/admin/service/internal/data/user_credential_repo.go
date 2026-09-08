@@ -645,6 +645,8 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 		Query().
 		Select(
 			usercredential.FieldCredentialType,
+			usercredential.FieldCredential,
+			usercredential.FieldExtraInfo,
 		).
 		Where(tenantWhere...).
 		Only(ctx)

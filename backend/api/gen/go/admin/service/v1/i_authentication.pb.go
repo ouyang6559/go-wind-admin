@@ -28,41 +28,49 @@ var File_admin_service_v1_i_authentication_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_authentication_proto_rawDesc = "" +
 	"\n" +
-	"'admin/service/v1/i_authentication.proto\x12\x10admin.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.authentication/service/v1/authentication.proto2\xa7\x06\n" +
+	"'admin/service/v1/i_authentication.proto\x12\x10admin.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.authentication/service/v1/authentication.proto2\xc8\b\n" +
 	"\x15AuthenticationService\x12{\n" +
 	"\x05Login\x12'.authentication.service.v1.LoginRequest\x1a(.authentication.service.v1.LoginResponse\"\x1f\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/admin/v1/login\x12U\n" +
 	"\x06Logout\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/admin/v1/logout\x12\x93\x01\n" +
 	"\fRegisterUser\x12..authentication.service.v1.RegisterUserRequest\x1a/.authentication.service.v1.RegisterUserResponse\"\"\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/admin/v1/register\x12\x85\x01\n" +
+	"\x0eForgotPassword\x120.authentication.service.v1.ForgotPasswordRequest\x1a\x16.google.protobuf.Empty\")\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/admin/v1/forgot-password\x12\x96\x01\n" +
+	"\x13ResetPasswordByCode\x125.authentication.service.v1.ResetPasswordByCodeRequest\x1a\x16.google.protobuf.Empty\"0\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02%:\x01*\" /admin/v1/reset-password-by-code\x12\x85\x01\n" +
 	"\fRefreshToken\x12'.authentication.service.v1.LoginRequest\x1a(.authentication.service.v1.LoginResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/admin/v1/refresh-token\x12}\n" +
 	"\x0fGenerateCaptcha\x12\x16.google.protobuf.Empty\x1a2.authentication.service.v1.GenerateCaptchaResponse\"\x1e\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x13\x12\x11/admin/v1/captcha\x12\x9c\x01\n" +
 	"\rVerifyCaptcha\x12/.authentication.service.v1.VerifyCaptchaRequest\x1a0.authentication.service.v1.VerifyCaptchaResponse\"(\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/admin/v1/captcha/verifyB\xc1\x01\n" +
 	"\x14com.admin.service.v1B\x14IAuthenticationProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_authentication_proto_goTypes = []any{
-	(*v1.LoginRequest)(nil),            // 0: authentication.service.v1.LoginRequest
-	(*emptypb.Empty)(nil),              // 1: google.protobuf.Empty
-	(*v1.RegisterUserRequest)(nil),     // 2: authentication.service.v1.RegisterUserRequest
-	(*v1.VerifyCaptchaRequest)(nil),    // 3: authentication.service.v1.VerifyCaptchaRequest
-	(*v1.LoginResponse)(nil),           // 4: authentication.service.v1.LoginResponse
-	(*v1.RegisterUserResponse)(nil),    // 5: authentication.service.v1.RegisterUserResponse
-	(*v1.GenerateCaptchaResponse)(nil), // 6: authentication.service.v1.GenerateCaptchaResponse
-	(*v1.VerifyCaptchaResponse)(nil),   // 7: authentication.service.v1.VerifyCaptchaResponse
+	(*v1.LoginRequest)(nil),               // 0: authentication.service.v1.LoginRequest
+	(*emptypb.Empty)(nil),                 // 1: google.protobuf.Empty
+	(*v1.RegisterUserRequest)(nil),        // 2: authentication.service.v1.RegisterUserRequest
+	(*v1.ForgotPasswordRequest)(nil),      // 3: authentication.service.v1.ForgotPasswordRequest
+	(*v1.ResetPasswordByCodeRequest)(nil), // 4: authentication.service.v1.ResetPasswordByCodeRequest
+	(*v1.VerifyCaptchaRequest)(nil),       // 5: authentication.service.v1.VerifyCaptchaRequest
+	(*v1.LoginResponse)(nil),              // 6: authentication.service.v1.LoginResponse
+	(*v1.RegisterUserResponse)(nil),       // 7: authentication.service.v1.RegisterUserResponse
+	(*v1.GenerateCaptchaResponse)(nil),    // 8: authentication.service.v1.GenerateCaptchaResponse
+	(*v1.VerifyCaptchaResponse)(nil),      // 9: authentication.service.v1.VerifyCaptchaResponse
 }
 var file_admin_service_v1_i_authentication_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.AuthenticationService.Login:input_type -> authentication.service.v1.LoginRequest
 	1, // 1: admin.service.v1.AuthenticationService.Logout:input_type -> google.protobuf.Empty
 	2, // 2: admin.service.v1.AuthenticationService.RegisterUser:input_type -> authentication.service.v1.RegisterUserRequest
-	0, // 3: admin.service.v1.AuthenticationService.RefreshToken:input_type -> authentication.service.v1.LoginRequest
-	1, // 4: admin.service.v1.AuthenticationService.GenerateCaptcha:input_type -> google.protobuf.Empty
-	3, // 5: admin.service.v1.AuthenticationService.VerifyCaptcha:input_type -> authentication.service.v1.VerifyCaptchaRequest
-	4, // 6: admin.service.v1.AuthenticationService.Login:output_type -> authentication.service.v1.LoginResponse
-	1, // 7: admin.service.v1.AuthenticationService.Logout:output_type -> google.protobuf.Empty
-	5, // 8: admin.service.v1.AuthenticationService.RegisterUser:output_type -> authentication.service.v1.RegisterUserResponse
-	4, // 9: admin.service.v1.AuthenticationService.RefreshToken:output_type -> authentication.service.v1.LoginResponse
-	6, // 10: admin.service.v1.AuthenticationService.GenerateCaptcha:output_type -> authentication.service.v1.GenerateCaptchaResponse
-	7, // 11: admin.service.v1.AuthenticationService.VerifyCaptcha:output_type -> authentication.service.v1.VerifyCaptchaResponse
-	6, // [6:12] is the sub-list for method output_type
-	0, // [0:6] is the sub-list for method input_type
+	3, // 3: admin.service.v1.AuthenticationService.ForgotPassword:input_type -> authentication.service.v1.ForgotPasswordRequest
+	4, // 4: admin.service.v1.AuthenticationService.ResetPasswordByCode:input_type -> authentication.service.v1.ResetPasswordByCodeRequest
+	0, // 5: admin.service.v1.AuthenticationService.RefreshToken:input_type -> authentication.service.v1.LoginRequest
+	1, // 6: admin.service.v1.AuthenticationService.GenerateCaptcha:input_type -> google.protobuf.Empty
+	5, // 7: admin.service.v1.AuthenticationService.VerifyCaptcha:input_type -> authentication.service.v1.VerifyCaptchaRequest
+	6, // 8: admin.service.v1.AuthenticationService.Login:output_type -> authentication.service.v1.LoginResponse
+	1, // 9: admin.service.v1.AuthenticationService.Logout:output_type -> google.protobuf.Empty
+	7, // 10: admin.service.v1.AuthenticationService.RegisterUser:output_type -> authentication.service.v1.RegisterUserResponse
+	1, // 11: admin.service.v1.AuthenticationService.ForgotPassword:output_type -> google.protobuf.Empty
+	1, // 12: admin.service.v1.AuthenticationService.ResetPasswordByCode:output_type -> google.protobuf.Empty
+	6, // 13: admin.service.v1.AuthenticationService.RefreshToken:output_type -> authentication.service.v1.LoginResponse
+	8, // 14: admin.service.v1.AuthenticationService.GenerateCaptcha:output_type -> authentication.service.v1.GenerateCaptchaResponse
+	9, // 15: admin.service.v1.AuthenticationService.VerifyCaptcha:output_type -> authentication.service.v1.VerifyCaptchaResponse
+	8, // [8:16] is the sub-list for method output_type
+	0, // [0:8] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

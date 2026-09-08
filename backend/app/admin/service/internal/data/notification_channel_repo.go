@@ -249,6 +249,46 @@ type SmtpAccount struct {
 	Enabled  bool
 }
 
+// GetFirstEnabledEmailChannel 取第一个启用的 EMAIL 渠道（找回密码/验证码发送用）。
+func (r *NotificationChannelRepo) GetFirstEnabledEmailChannel(ctx context.Context) (*SmtpAccount, error) {
+	entities, err := r.entClient.Client().NotificationChannel.Query().
+		Where(
+			notificationchannel.TypeEQ(notificationchannel.TypeEmail),
+			notificationchannel.StatusEQ(notificationchannel.StatusOn),
+		).
+		Order(ent.Asc(notificationchannel.FieldID)).
+		Limit(1).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query enabled email channel failed: %s", err.Error())
+		return nil, adminV1.ErrorInternalServerError("query email channel failed")
+	}
+	if len(entities) == 0 {
+		return nil, adminV1.ErrorNotFound("no enabled email channel")
+	}
+	e := entities[0]
+
+	password := ""
+	if e.SMTPPassword != nil {
+		decrypted, decErr := crypto.DecryptIfNeeded(*e.SMTPPassword)
+		if decErr != nil {
+			r.log.Errorf(ctx, "decrypt smtp password failed for channel [%d]: %s", e.ID, decErr.Error())
+			return nil, adminV1.ErrorInternalServerError("decrypt password failed")
+		}
+		password = decrypted
+	}
+
+	return &SmtpAccount{
+		Host:     derefStr(e.SMTPHost),
+		Port:     derefUint32(e.SMTPPort),
+		Username: derefStr(e.SMTPUsername),
+		Password: password,
+		From:     derefStr(e.SMTPFrom),
+		TlsMode:  string(*e.SMTPTLS),
+		Enabled:  true,
+	}, nil
+}
+
 // GetDecryptedSmtpAccount 取渠道的解密 SMTP 配置。
 func (r *NotificationChannelRepo) GetDecryptedSmtpAccount(ctx context.Context, id uint32) (*SmtpAccount, error) {
 	entity, err := r.entClient.Client().NotificationChannel.Query().

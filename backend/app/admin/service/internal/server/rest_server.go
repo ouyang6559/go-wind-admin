@@ -91,6 +91,10 @@ func NewRestMiddleware(
 		// MFA 登录挑战验证免鉴权：operation_id 由登录流程签发，见 doGrantTypePassword 的 MFA 闸门。
 		// 仅此一个 MFA RPC 免鉴权；管理侧 RPC（GetMFAStatus 等）走正常 auth+authz。
 		adminV1.OperationMfaServiceVerifyMFAChallenge,
+		// 找回密码两个端点免鉴权：验证码发送与凭码重置，
+		// 重置成功后会吊销该用户全部会话。
+		adminV1.OperationAuthenticationServiceForgotPassword,
+		adminV1.OperationAuthenticationServiceResetPasswordByCode,
 		//OperationFileTransferServiceDownloadFile,
 		//OperationFileTransferServicePostUploadFile,
 		//OperationFileTransferServicePutUploadFile,
