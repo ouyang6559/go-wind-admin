@@ -4493,6 +4493,14 @@ export interface OnlineSessionService {
   ForceLogoutSession(
     request: online_sessionservicev1_ForceLogoutSessionRequest,
   ): Promise<online_sessionservicev1_ForceLogoutSessionResponse>;
+  // 查询当前登录用户的在线会话（个人中心自助视图）
+  ListMyOnlineSession(
+    request: online_sessionservicev1_ListMyOnlineSessionRequest,
+  ): Promise<online_sessionservicev1_ListOnlineSessionResponse>;
+  // 当前用户强制下线自己的指定会话
+  RevokeMyOnlineSession(
+    request: online_sessionservicev1_RevokeMyOnlineSessionRequest,
+  ): Promise<online_sessionservicev1_RevokeMyOnlineSessionResponse>;
 }
 
 export function createOnlineSessionServiceClient(
@@ -4535,6 +4543,22 @@ export function createOnlineSessionServiceClient(
         method: 'ForceLogoutSession',
       }) as Promise<online_sessionservicev1_ForceLogoutSessionResponse>;
     },
+    ListMyOnlineSession(_request) {
+      const path = `admin/v1/online-session/my-sessions`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'OnlineSessionService',
+        method: 'ListMyOnlineSession',
+      }) as Promise<online_sessionservicev1_ListOnlineSessionResponse>;
+    },
+    RevokeMyOnlineSession(request) {
+      const path = `admin/v1/online-session/my-sessions/revoke`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'OnlineSessionService',
+        method: 'RevokeMyOnlineSession',
+      }) as Promise<online_sessionservicev1_RevokeMyOnlineSessionResponse>;
+    },
   };
 }
 // 查询在线会话列表 - 请求
@@ -4556,6 +4580,8 @@ export type online_sessionservicev1_ListOnlineSessionResponse = {
 // 在线会话
 export type online_sessionservicev1_OnlineSession = {
   clientType?: authenticationservicev1_ClientType;
+  // 是否为当前请求所属会话（仅 ListMyOnlineSession 场景有意义）
+  current?: boolean;
   deviceId?: string;
   ipAddress?: string;
   // 会话令牌对 ID（JWT jti，唯一标识一次令牌签发）
@@ -4576,6 +4602,20 @@ export type online_sessionservicev1_ForceLogoutSessionRequest = {
 
 // 强制下线指定会话 - 回应
 export type online_sessionservicev1_ForceLogoutSessionResponse = {
+};
+
+// 查询当前登录用户的在线会话 - 请求（无参数，用户身份取自认证上下文）
+export type online_sessionservicev1_ListMyOnlineSessionRequest = {
+};
+
+// 当前用户强制下线自己的指定会话 - 请求
+export type online_sessionservicev1_RevokeMyOnlineSessionRequest = {
+  clientType?: authenticationservicev1_ClientType;
+  jti?: string;
+};
+
+// 当前用户强制下线自己的指定会话 - 回应
+export type online_sessionservicev1_RevokeMyOnlineSessionResponse = {
 };
 
 // 操作审计日志管理服务
