@@ -96,7 +96,7 @@ export const Index = ({
     : sidebarCollapsed; // 手动模式：看 collapsed 状态
 
   // 计算侧边栏宽度
-  const sidebarWidth = isCollapsed ? 60 : (sidebarConfig?.width ?? 224);
+  const sidebarWidth = isCollapsed ? 48 : (sidebarConfig?.width ?? 224);
 
   // 鼠标进入/离开事件处理（仅 expandOnHover=true 时生效）
   const handleMouseEnter = () => {

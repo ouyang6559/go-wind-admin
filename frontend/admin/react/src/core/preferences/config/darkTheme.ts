@@ -8,7 +8,7 @@ import type { ThemeConfig } from 'antd';
  *   L2 #161F33  二楼：输入框/下拉框（比卡片微亮，"浮起"式，避免黑洞感）
  *   L3 #1F2937  表头独立次级深色；#1C2128 下拉/弹窗浮层
  *
- * 主色 #3B82F6（科技蓝）；文字基色 #F8FAFC；placeholder #64748B
+ * 主色 hsl(212 100% 45%)（#006BE6，见 docs/design-language.md）；文字基色 #F8FAFC；placeholder #64748B
  */
 export const DARK_PALETTE = {
   bgLayout: '#0B0F19',
@@ -24,12 +24,12 @@ export const DARK_PALETTE = {
   textSecondary: '#8B949E',
   textTertiary: '#6E7681',
   placeholder: '#64748B',
-  accentBlue: '#3B82F6',
+  accentBlue: '#006BE6',
 } as const;
 
 /**
  * 暗黑模式扩展 token —— 叠加在 theme.darkAlgorithm 之上的精调
- * （用户 2026-08-24 定稿：暗夜蓝黑大底 + gray 一楼 + 科技蓝主色）
+ * （用户 2026-08-24 定稿：暗夜蓝黑大底 + gray 一楼；主色 2026-09-08 起对齐设计语言规范）
  */
 export const darkThemeTokens: ThemeConfig['token'] = {
   // 地面：最暗的暗夜蓝黑大底
@@ -83,8 +83,8 @@ const inputLike = {
   colorBorder: 'rgba(148, 163, 184, 0.22)',
   borderRadius: 6,
   hoverBorderColor: 'rgba(148, 163, 184, 0.4)',
-  activeBorderColor: '#3B82F6',
-  activeShadow: '0 0 0 3px rgba(59, 130, 246, 0.12)',
+  activeBorderColor: '#006BE6',
+  activeShadow: '0 0 0 3px rgba(0, 107, 230, 0.12)',
 };
 
 export const darkThemeComponents: ThemeConfig['components'] = {
@@ -100,9 +100,9 @@ export const darkThemeComponents: ThemeConfig['components'] = {
   Table: {
     colorHeaderBg: '#1F2937',
     // 行悬停/选中用主色微底，行状态一眼可辨（默认派生的 5% 白在暗色下不可察）
-    rowHoverBg: 'rgba(59, 130, 246, 0.08)',
-    rowSelectedBg: 'rgba(59, 130, 246, 0.15)',
-    rowSelectedHoverBg: 'rgba(59, 130, 246, 0.2)',
+    rowHoverBg: 'rgba(0, 107, 230, 0.08)',
+    rowSelectedBg: 'rgba(0, 107, 230, 0.15)',
+    rowSelectedHoverBg: 'rgba(0, 107, 230, 0.2)',
     headerSplitColor: 'transparent',
   },
 };

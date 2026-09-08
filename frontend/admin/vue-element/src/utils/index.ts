@@ -8,6 +8,7 @@ export { isExternal, isValidURL, isEmail, isMobile, VALIDATORS } from "./validat
 // 文件下载
 export { downloadFile } from "./download";
 
+export * from "./crypto";
 export * from "./color";
 export * from "./format";
 export * from "./theme";

@@ -52,9 +52,11 @@ import { reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 
 import { useChangePassword } from "@/api/composables";
+import { useAuth } from "@/composables/use-auth";
 import { $t } from "@/core/i18n";
 
 const { mutateAsync: changePassword } = useChangePassword();
+const { forceLogout } = useAuth();
 
 const submitLoading = ref(false);
 const formRef = ref();
@@ -94,15 +96,11 @@ async function handleSubmit() {
   try {
     await changePassword({ oldPassword: formData.oldPassword, newPassword: formData.newPassword });
 
-    ElMessage.success($t("common.notification.updateSuccess"));
-
-    // 清空表单
-    Object.assign(formData, {
-      oldPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    formRef.value?.clearValidate();
+    // 后端改密成功即吊销本人全部会话（含当前会话），前端同步 forceLogout
+    // （不调已失效的 logout API），由路由守卫重定向到登录页。
+    ElMessage.success($t("common.notification.passwordChanged"));
+    forceLogout();
+    return;
   } catch {
     ElMessage.error($t("common.notification.updateFailed"));
   } finally {

@@ -139,7 +139,7 @@ export function positionTypeToName(status: Position_Status) {
 
 const POSITION_TYPE_COLOR_THEME: Record<string, Record<string, string>> = {
   light: {
-    REGULAR: "#165DFF",
+    REGULAR: "#006BE6",
     LEADER: "#722ED1",
     MANAGER: "#FF7D00",
     INTERN: "#52C41A",

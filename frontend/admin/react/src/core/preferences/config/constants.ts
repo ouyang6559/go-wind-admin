@@ -9,7 +9,7 @@ interface BuiltinThemePreset {
 
 const BUILT_IN_THEME_PRESETS: BuiltinThemePreset[] = [
   {
-    color: '#3B82F6',
+    color: '#006BE6',
     type: 'default',
   },
   {

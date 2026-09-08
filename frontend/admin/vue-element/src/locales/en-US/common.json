@@ -130,7 +130,8 @@
     "syncSuccess": "Sync successful",
     "syncFailed": "Sync failed",
     "password_mismatch": "The two passwords do not match",
-    "update_status_success": "Status updated successfully"
+    "update_status_success": "Status updated successfully",
+    "passwordChanged": "Password changed, please sign in again"
   },
   "title": {
     "confirm": "Confirm",

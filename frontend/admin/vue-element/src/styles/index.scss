@@ -42,12 +42,12 @@
 :root {
   --el-font-family: 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR',
     sans-serif !important;
-  // 统一正文 500（明暗一致，消除非标准字重导致的中文渲染差异）
-  --el-font-weight-primary: 500;
+  // 正文 400（设计语言规范 2.5：正文 400 / 标题 600）
+  --el-font-weight-primary: 400;
   // 亮色文字加深，不用浅灰，避免发虚
   --el-text-color-primary: #1F2937;
   --el-text-color-regular: #374151;
-  --el-text-color-secondary: #525966; // 辅助文字（创建时间、发送人等）加深，避免浅色页面过淡发飘
+  --el-text-color-secondary: #6B7280; // 辅助文字（创建时间、发送人等）加深，避免浅色页面过淡发飘
   --el-font-weight-bold: 600;
 }
 

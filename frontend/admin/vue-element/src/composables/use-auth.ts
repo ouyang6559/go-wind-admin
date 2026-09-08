@@ -3,13 +3,13 @@
  * 替代 authentication.store.ts，提供登录/登出/注册/验证码/获取用户信息/权限码等功能
  */
 import { ref } from "vue";
+import { encryptPassword } from "@/utils";
 import { router } from "@/router";
 
 import { DEFAULT_HOME_PATH } from "@/constants";
 import { resetAllStores, useAccessStore, useAppUserStore } from "@/stores";
 
 import { ElNotification } from "element-plus";
-import CryptoJS from "crypto-js";
 
 import {
   login as authLogin,
@@ -52,29 +52,6 @@ export { NetworkError };
 // ==============================
 
 const loginLoading = ref(false);
-
-// ==============================
-// 加密工具
-// ==============================
-
-function encryptData(data: string, key: string, iv: string): string {
-  const keyHex = CryptoJS.enc.Utf8.parse(key);
-  const ivHex = CryptoJS.enc.Utf8.parse(iv);
-  const encrypted = CryptoJS.AES.encrypt(data, keyHex, {
-    iv: ivHex,
-    mode: CryptoJS.mode.CBC,
-    padding: CryptoJS.pad.Pkcs7,
-  });
-  return encrypted.toString();
-}
-
-function encryptPassword(password: string): string {
-  const key = import.meta.env.VITE_AES_KEY;
-  if (!key) {
-    throw new Error("VITE_AES_KEY is not set in environment");
-  }
-  return encryptData(password, key, key);
-}
 
 // ==============================
 // 常量
@@ -365,6 +342,9 @@ export function useAuth() {
     login,
     completeMfaChallenge,
     logout,
+    // 强制登出：纯前端清理+跳转，不调后端 logout API。
+    // 用于改密成功等 token 已被后端吊销的场景，避免登出请求再吃 401。
+    forceLogout: () => _doLogout(true),
     register,
     getCaptcha,
     fetchUserInfo,

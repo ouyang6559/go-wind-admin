@@ -286,7 +286,7 @@ export const MainLayout = ({ routes: dynamicRoutes }: MainLayoutProps) => {
           {/* 顶部栏 */}
           <div
             style={{
-              height: 56,
+              height: 50,
               backgroundColor: 'var(--app-bg-nav, var(--ant-color-bg-container))',
               borderBottom: '1px solid var(--ant-color-border)',
               padding: '0 12px',

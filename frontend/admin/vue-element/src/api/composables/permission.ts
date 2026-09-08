@@ -98,7 +98,7 @@ export const roleDataScopeList = computed(() => [
 
 const DATA_SCOPE_COLOR_MAP: Record<string, string> = {
   ALL: "#F53F3F",
-  UNIT_AND_CHILD: "#165DFF",
+  UNIT_AND_CHILD: "#006BE6",
   UNIT_ONLY: "#FF7D00",
   SELECTED_UNITS: "#722ED1",
   SELF: "#86909C",

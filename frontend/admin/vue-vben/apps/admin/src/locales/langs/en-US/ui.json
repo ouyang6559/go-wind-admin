@@ -90,7 +90,8 @@
     "upload_failed": "Upload failed",
     "download_success": "Downloaded successfully",
     "download_failed": "Download failed",
-    "password_mismatch": "Passwords do not match"
+    "password_mismatch": "Passwords do not match",
+    "password_changed": "Password changed, please sign in again"
   },
   "text": {
     "do_you_want_delete": "Do you want to delete this {moduleName}?",

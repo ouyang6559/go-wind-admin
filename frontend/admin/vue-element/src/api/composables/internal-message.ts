@@ -282,7 +282,7 @@ const INTERNAL_MESSAGE_STATUS_COLOR_MAP: Record<string, string> = {
   DRAFT: "#9CA3AF",
   PUBLISHED: "#00B42A",
   REVOKED: "#F53F3F",
-  SCHEDULED: "#165DFF",
+  SCHEDULED: "#006BE6",
   DEFAULT: "#E5E7EB",
 };
 
@@ -300,7 +300,7 @@ export function internalMessageTypeLabel(value: InternalMessage_Type): string {
 
 const INTERNAL_MESSAGE_TYPE_COLOR_MAP: Record<string, string> = {
   GROUP: "#00B42A",
-  NOTIFICATION: "#165DFF",
+  NOTIFICATION: "#006BE6",
   PRIVATE: "#722ED1",
   DEFAULT: "#C9CDD4",
 };
@@ -321,7 +321,7 @@ const INTERNAL_MESSAGE_RECIPIENT_COLOR_THEME: Record<string, Record<string, stri
   light: {
     DELETED: "#C9CDD4",
     READ: "#86909C",
-    RECEIVED: "#165DFF",
+    RECEIVED: "#006BE6",
     REVOKED: "#F53F3F",
     SENT: "#4096FF",
     DEFAULT: "#E5E7EB",

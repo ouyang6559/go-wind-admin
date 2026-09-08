@@ -1,4 +1,5 @@
 import type { Recordable, UserInfo } from '@vben/types';
+import { encryptPassword } from '#/utils';
 
 import { ref } from 'vue';
 
@@ -7,7 +8,6 @@ import { preferences } from '@vben/preferences';
 import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 
 import { notification } from 'ant-design-vue';
-import CryptoJS from 'crypto-js';
 import { defineStore } from 'pinia';
 
 import { fetchMyPermissionCode, fetchUserProfile, loginMutation, logoutMutation, refreshTokenMutation, verifyMfaMutation } from '#/api/composables';
@@ -52,35 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
   const userStore = useUserStore();
 
   const loginLoading = ref(false);
-
-  /**
-   * 加密数据
-   * @param data 待加密数据
-   * @param key 密钥
-   * @param iv 初始向量
-   */
-  function encryptData(data: string, key: string, iv: string): string {
-    const keyHex = CryptoJS.enc.Utf8.parse(key);
-    const ivHex = CryptoJS.enc.Utf8.parse(iv);
-    const encrypted = CryptoJS.AES.encrypt(data, keyHex, {
-      iv: ivHex,
-      mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7,
-    });
-    return encrypted.toString();
-  }
-
-  /**
-   * 加密密码
-   * @param password 明文密码
-   */
-  function encryptPassword(password: string): string {
-    const key = import.meta.env.VITE_AES_KEY;
-    if (!key) {
-      throw new Error('VITE_AES_KEY is not set in environment');
-    }
-    return encryptData(password, key, key);
-  }
 
   /**
    * 异步处理登录操作
@@ -563,6 +534,9 @@ export const useAuthStore = defineStore('auth', () => {
     fetchAccessCodes,
     loginLoading,
     logout,
+    // 强制登出：纯前端清理+跳转，不调后端 logout API。
+    // 用于改密成功等 token 已被后端吊销的场景，避免登出请求再吃 401。
+    forceLogout: () => _doLogout(true),
     refreshToken,
     reauthenticate,
     startRefreshTimer,

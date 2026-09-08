@@ -8,6 +8,8 @@ import type {
   identityservicev1_VerifyContactRequest,
 } from '#/api/generated/admin/service/v1';
 
+import { encryptPassword } from '#/utils';
+
 import {
   useMutation,
   type UseMutationOptions,
@@ -33,7 +35,11 @@ export async function updateMyUserInfo(
 export async function changeMyPassword(
   request: identityservicev1_ChangePasswordRequest,
 ) {
-  return apiClient.userProfileService.ChangePassword(request);
+  // 后端 NeedDecrypt 要求 AES 密文传输（与登录同规），明文会被当密文解密导致校验必败
+  return apiClient.userProfileService.ChangePassword({
+    oldPassword: encryptPassword(request.oldPassword ?? ''),
+    newPassword: encryptPassword(request.newPassword ?? ''),
+  });
 }
 
 export async function uploadMyAvatar(

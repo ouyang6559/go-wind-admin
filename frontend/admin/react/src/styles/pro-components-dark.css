@@ -262,7 +262,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 html[data-theme='dark'] .ant-pro-table-search .ant-input:not(.ant-input-affix-wrapper .ant-input):focus,
 html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-input):focus {
   border-color: var(--ant-color-primary) !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(0, 107, 230, 0.12) !important;
 }
 
 /* ========== 搜索按钮与输入框等高（通用） ========== */

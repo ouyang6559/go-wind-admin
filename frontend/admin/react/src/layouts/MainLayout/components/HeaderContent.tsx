@@ -317,7 +317,7 @@ export const HeaderContent = ({
                 padding: '0 8px',
                 borderRadius: 10,
                 color: 'var(--ant-color-primary)',
-                background: 'rgba(59, 130, 246, 0.12)',
+                background: 'rgba(0, 107, 230, 0.12)',
               }}
             >
               {tInbox('unreadCount', { count: unreadCount })}

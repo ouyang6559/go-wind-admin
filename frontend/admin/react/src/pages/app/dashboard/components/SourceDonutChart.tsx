@@ -18,9 +18,9 @@ export const SourceDonutChart = ({ data }: SourceDonutChartProps) => {
   const { t } = useI18n('dashboard');
   const { t: tAuditLog } = useI18n('operation-audit-log');
 
-  // 主色系扩展调色板：以 #3B82F6 为核心的低饱和暗色友好序列（蓝→青→靛→绿→紫…）
+  // 主色系扩展调色板：以 #006BE6 为核心的低饱和暗色友好序列（蓝→青→靛→绿→紫…）
   const palette = [
-    '#3B82F6',
+    '#006BE6',
     '#22D3EE',
     '#818CF8',
     '#34D399',

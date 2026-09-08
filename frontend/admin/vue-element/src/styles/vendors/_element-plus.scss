@@ -9,24 +9,24 @@
 @forward "element-plus/theme-chalk/src/common/var.scss" with (
   $colors: (
     "primary": (
-      // 现代蓝 — 高级感拉满
-      "base": #165DFF,
+      // 规范主色 hsl(212 100% 45%)（docs/design-language.md）
+      "base": #006BE6,
     ),
     "success": (
-      "base": #00B42A,
+      "base": #57D1A0,
     ),
     "warning": (
-      "base": #FF7D00,
+      "base": #EF7A48,
     ),
     "danger": (
-      "base": #F53F3F,
+      "base": #FF3860,
     ),
     "info": (
       "base": #86909C,
     ),
   ),
   $bg-color: (
-    "page": #F7F8FA,
+    "page": #F1F3F6,
   ),
   // 圆角 — 现代大圆角
   $border-radius: (
@@ -44,10 +44,10 @@
   ),
   // 表格更清爽
   $table: (
-    "header-font-color": #1D2129,
+    "header-font-color": #1F2937,
     "header-bg-color": #F0F2F5,
     "row-hover-bg-color": #F2F3F5,
-    "border-color": #E5E6EB,
+    "border-color": #E4E4E7,
   ),
   // 填充色优化
   $fill-color: (

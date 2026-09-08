@@ -27,17 +27,18 @@ html.dark {
   // letter-spacing: 0.02em !important;
   
   // 1. 核心对比度优化(先解决”看得见”的问题)
-  --dark-bg-primary: #0C0E13;      // 页面主背景(微压暗基底,暗黑质感更高级)
-  --dark-bg-page: #14171C;          // 内容区画布底色(比侧边栏亮 2 个灰度层级，拉开视觉层次)
-  --dark-bg-table: #14171C;         // 表格容器/输入框背景(与画布底色一致，保持统一)
-  --dark-bg-hover: #1A1E26;         // 悬浮态/展开态/表头/行 hover(hover 态微高亮,给用户明确的交互反馈)
-  --dark-border: #2e3440;           // 输入框边框/分割线/表格边框(柔化降燥——旧值 #3a3f4a 过硬,纯黑背景下显得粗糙刺眼)
+  --dark-bg-primary: #111827;      // 页面主背景(微压暗基底,暗黑质感更高级)
+  --dark-bg-page: #0B0F19;          // 内容区画布底色(比侧边栏亮 2 个灰度层级，拉开视觉层次)
+  --dark-bg-table: #111827;         // 表格容器/输入框背景(与画布底色一致，保持统一)
+  --dark-bg-input: #161F33;        // 输入类控件底（L2，比表面微亮，浮起式）
+  --dark-bg-hover: rgba(255, 255, 255, 0.08);         // 悬浮态/展开态/表头/行 hover(hover 态微高亮,给用户明确的交互反馈)
+  --dark-border: rgba(148, 163, 184, 0.28);           // 输入框边框/分割线/表格边框(柔化降燥——旧值 #3a3f4a 过硬,纯黑背景下显得粗糙刺眼)
     
   // Drawer 专属层级（比页面主背景亮 3 个灰度层级，配合环境光投影，让抽屉「浮」起来）
-  --dark-bg-drawer: #1e2026;         // Drawer 主背景（偏暖色调，比页面底色明显提亮，拉开层级距离）
-  --dark-bg-drawer-header: #1a1c22;  // Drawer Header 背景（微暗于 body，标题区与内容区形成自然分割）
-  --dark-bg-drawer-footer: #1a1c22;  // Drawer Footer 背景（与 header 统一，锚定操作区）
-  --dark-bg-drawer-input: #14161a;   // Drawer 内输入框背景（比 body 暗，形成「凹入」深度感）
+  --dark-bg-drawer: #111827;         // Drawer 主背景（偏暖色调，比页面底色明显提亮，拉开层级距离）
+  --dark-bg-drawer-header: #111827;  // Drawer Header 背景（微暗于 body，标题区与内容区形成自然分割）
+  --dark-bg-drawer-footer: #111827;  // Drawer Footer 背景（与 header 统一，锚定操作区）
+  --dark-bg-drawer-input: #161F33;   // Drawer 内输入框背景（比 body 暗，形成「凹入」深度感）
   --dark-drawer-border: rgba(255, 255, 255, 0.06); // Drawer 分割线（微透明白，现代半透明分割感）
   --dark-drawer-input-border: #313540; // Drawer 内输入框边框（比全局边框更亮，提升可辨识度）
   --dark-drawer-shadow: 
@@ -48,7 +49,7 @@ html.dark {
   // 奇偶行背景色(核心解决生硬割裂问题)
   --dark-row-odd: #0F1218;          // 奇数行背景(微提亮,和偶数行形成 1 个灰度级区分,不破坏暗黑基底)
   --dark-row-even: #161A23;         // 偶数行背景(用深灰替代纯白,既保留奇偶区分,又完全融入暗黑体系)
-  --dark-header: #14171C;           // 表头背景(微提亮,和数据行层级更清晰)
+  --dark-header: #1F2937;           // 表头背景(微提亮,和数据行层级更清晰)
     
   // 文本色层级体系（背景越深，文本越亮）
   --dark-text-primary: #ffffff;       // 一级文本：表头主文本/选中菜单项/核心标题（纯白，最强对比）
@@ -66,7 +67,7 @@ html.dark {
   // 3. Element Plus 组件变量覆盖
   --el-bg-color: var(--dark-bg-primary);
   --el-bg-color-page: var(--dark-bg-page);
-  --el-bg-color-overlay: var(--dark-bg-table);
+  --el-bg-color-overlay: #1C2128;
   --el-fill-color-blank: var(--dark-bg-table);
   --el-border-color: var(--dark-border);
   --el-border-color-light: var(--dark-border);
@@ -109,7 +110,7 @@ html.dark {
       .el-select,
       .el-date-editor {
         .el-input__wrapper {
-          background-color: var(--dark-bg-table) !important;
+          background-color: var(--dark-bg-input) !important;
           border-color: var(--dark-border) !important;
           box-shadow: 0 0 0 1px var(--dark-border) inset !important;
 
@@ -374,7 +375,7 @@ html.dark {
   .el-date-editor {
     .el-input__wrapper,
     .el-textarea__inner {
-      background-color: var(--dark-bg-table) !important; // 输入框背景比主背景亮 2 个灰度层级
+      background-color: var(--dark-bg-input) !important; // 输入框背景比主背景亮 2 个灰度层级
       border-color: var(--dark-border) !important;       // 加深边框
       box-shadow: 0 0 0 1px var(--dark-border) inset, 
                   inset 0 1px 2px rgba(255, 255, 255, 0.05) !important; // 1px 内阴影，替代纯边框，更有“浮起”的层级感
@@ -397,7 +398,7 @@ html.dark {
       &.is-focus {
         border-color: var(--dark-primary) !important;
         box-shadow: 0 0 0 1px var(--dark-primary) inset,
-                    0 0 0 3px rgba(22, 93, 255, 0.15) !important;
+                    0 0 0 3px rgba(0, 107, 230, 0.15) !important;
         background-color: var(--dark-bg-hover) !important;
       }
   
@@ -428,7 +429,7 @@ html.dark {
     
     // select 内部的所有可能背景元素
     .el-input__wrapper {
-      background-color: var(--dark-bg-table) !important;
+      background-color: var(--dark-bg-input) !important;
       border-color: var(--dark-border) !important;
       box-shadow: 0 0 0 1px var(--dark-border) inset, 
                   inset 0 1px 2px rgba(255, 255, 255, 0.05) !important;
@@ -468,7 +469,7 @@ html.dark {
   .el-tree-select,
   .el-cascader {
     .el-input__wrapper {
-      background-color: var(--dark-bg-table) !important;
+      background-color: var(--dark-bg-input) !important;
     }
   }
 
@@ -492,7 +493,7 @@ html.dark {
 
       &.hover,
       &:hover {
-        background-color: var(--dark-bg-table) !important;
+        background-color: var(--dark-bg-hover) !important;
       }
 
       &.selected {
@@ -589,21 +590,21 @@ html.dark {
   // 表格容器
   .el-table {
     // 内容区背景色，和整体深色主题对齐
-    --el-table-bg-color: #1a1d24 !important;
-    --el-table-tr-bg-color: #1a1d24 !important;
-    // 表头背景色：比内容区亮一阶，形成结构锚点（与 vxe-table 表头 #1f2329 对齐）。
+    --el-table-bg-color: #111827 !important;
+    --el-table-tr-bg-color: #111827 !important;
+    // 表头背景色：比内容区亮一阶，形成结构锚点（与 vxe-table 表头 #1F2937 对齐）。
     // 旧值 #12151a 比表体还暗，导致表头与表体/空态区融合、边界消失。
-    --el-table-header-bg-color: #1f2329 !important;
+    --el-table-header-bg-color: #1F2937 !important;
     // 表头文字：加粗、提高对比度，标题感拉满
     --el-table-header-text-color: #e5eaf3 !important;
     // 表头分割线：跟随全局边框变量，保持可见轮廓
     --el-table-header-border-color: var(--dark-border) !important;
     // 内容区 hover 态：和表头形成柔和过渡
-    --el-table-row-hover-bg-color: #21252d !important;
+    --el-table-row-hover-bg-color: rgba(0, 107, 230, 0.08) !important;
     --el-table-border-color: var(--dark-border) !important;
     --el-table-text-color: var(--dark-text-data) !important;
 
-    background-color: #1a1d24 !important;
+    background-color: #111827 !important;
     border-color: var(--dark-border) !important;
 
     // 表头样式优化：固定表头，增加字重，用高亮色突出。
@@ -627,11 +628,11 @@ html.dark {
       .el-table__row {
         // 奇数行背景
         &:nth-child(odd) {
-          background-color: #1a1d24 !important;
+          background-color: #111827 !important;
 
           td {
             color: var(--dark-text-data) !important;
-            background-color: #1a1d24 !important;
+            background-color: #111827 !important;
             border-color: var(--dark-border) !important;
             padding-top: 8px !important;
             padding-bottom: 8px !important;
@@ -640,11 +641,11 @@ html.dark {
 
         // 偶数行背景
         &:nth-child(even) {
-          background-color: #1e2128 !important;
+          background-color: rgba(255, 255, 255, 0.03) !important;
 
           td {
             color: var(--dark-text-data) !important;
-            background-color: #1e2128 !important;
+            background-color: rgba(255, 255, 255, 0.03) !important;
             border-color: var(--dark-border) !important;
             padding-top: 8px !important;
             padding-bottom: 8px !important;
@@ -653,21 +654,21 @@ html.dark {
 
         // hover 态
         &:hover {
-          background-color: #21252d !important;
+          background-color: rgba(0, 107, 230, 0.08) !important;
 
           > td {
-            background-color: #21252d !important;
+            background-color: rgba(0, 107, 230, 0.08) !important;
             color: var(--dark-text-primary) !important;
           }
         }
 
         // 选中行
         &.current-row {
-          background-color: #21252d !important;
+          background-color: rgba(0, 107, 230, 0.08) !important;
           outline: 1px solid var(--dark-primary) !important;
 
           > td {
-            background-color: #21252d !important;
+            background-color: rgba(0, 107, 230, 0.08) !important;
             color: var(--dark-text-primary) !important;
           }
         }
@@ -687,24 +688,24 @@ html.dark {
     // 固定列样式
     .el-table__fixed,
     .el-table__fixed-right {
-      background-color: #1a1d24 !important;
+      background-color: #111827 !important;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3) !important;
 
       .el-table__row {
         &:nth-child(odd) > td {
-          background-color: #1a1d24 !important;
+          background-color: #111827 !important;
         }
 
         &:nth-child(even) > td {
-          background-color: #1e2128 !important;
+          background-color: rgba(255, 255, 255, 0.03) !important;
         }
 
         &:hover > td {
-          background-color: #21252d !important;
+          background-color: rgba(0, 107, 230, 0.08) !important;
         }
 
         &.current-row > td {
-          background-color: #21252d !important;
+          background-color: rgba(0, 107, 230, 0.08) !important;
         }
       }
     }
@@ -857,7 +858,7 @@ html.dark {
 
       &.hover,
       &:hover {
-        background-color: var(--dark-bg-table) !important;
+        background-color: var(--dark-bg-hover) !important;
       }
 
       &.selected {
@@ -873,15 +874,15 @@ html.dark {
   // ============================================
 
   // ---- 3. 表头视觉统治力重塑（vxe-table 暗色模式） ----
-  // 表头背景需比表体亮一阶以形成结构层级（表体 #14161a，表头 #1f2329），
+  // 表头背景需比表体亮一阶以形成结构层级（表体 #161F33，表头 #1F2937），
   // 与 _vxe-table.scss 暗色块保持一致；此处仅统一字体色与边框色。
   // 旧值 #111419 比表体还暗，导致表头与表体/空态区融合。
   [data-vxe-ui-theme="dark"] {
-    --vxe-ui-table-header-background-color: #1f2329 !important;
+    --vxe-ui-table-header-background-color: #1F2937 !important;
     --vxe-ui-table-header-font-color: #8a94a6 !important;
     --vxe-ui-table-header-border-color: var(--dark-border) !important;
     // vxe-table v3 兼容
-    --vxe-table-header-background-color: #1f2329 !important;
+    --vxe-table-header-background-color: #1F2937 !important;
     --vxe-table-header-font-color: #8a94a6 !important;
   }
 

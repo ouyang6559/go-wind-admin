@@ -61,7 +61,7 @@ body {
 
 /* 文本选中：主色微底，替代浏览器默认高亮蓝 */
 [data-theme='dark'] ::selection {
-    background: rgba(59, 130, 246, 0.35);
+    background: rgba(0, 107, 230, 0.35);
     color: #f8fafc;
 }
 

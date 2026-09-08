@@ -130,7 +130,8 @@
     "syncSuccess": "同步成功",
     "syncFailed": "同步失败",
     "password_mismatch": "两次输入的密码不一致",
-    "update_status_success": "状态更新成功"
+    "update_status_success": "状态更新成功",
+    "passwordChanged": "密码修改成功，请重新登录"
   },
   "title": {
     "confirm": "确认",

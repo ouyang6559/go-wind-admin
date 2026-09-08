@@ -4,10 +4,14 @@ import { $t } from '@vben/locales';
 
 import { notification } from 'ant-design-vue';
 
+import { useAuthStore } from '#/stores';
+
 import { useVbenForm } from '#/adapter/form';
 import { getMe, useChangePassword } from '#/api';
 
 const { mutateAsync: changePassword } = useChangePassword();
+
+const authStore = useAuthStore();
 
 const [BaseForm, baseFormApi] = useVbenForm({
   showDefaultActions: false,
@@ -80,9 +84,12 @@ async function handleSubmit() {
       newPassword: values.newPassword,
     });
 
+    // 后端改密成功即吊销本人全部会话（含当前会话），前端同步 forceLogout
+    // （不调已失效的 logout API），由路由守卫重定向到登录页。
     notification.success({
-      message: $t('ui.notification.update_success'),
+      message: $t('ui.notification.password_changed'),
     });
+    authStore.forceLogout();
   } catch {
     notification.error({
       message: $t('ui.notification.update_failed'),

@@ -158,7 +158,7 @@ export function orgUnitTypeToName(orgUnitType: OrgUnit_Type) {
 const ORG_UNIT_COLOR_MAP: Record<string, string> = {
   BRANCH: "#4096FF",
   COMMITTEE: "#00B42A",
-  COMPANY: "#165DFF",
+  COMPANY: "#006BE6",
   DEPARTMENT: "#722ED1",
   DIVISION: "#FF7D00",
   OTHER: "#86909C",

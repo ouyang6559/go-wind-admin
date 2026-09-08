@@ -8,7 +8,7 @@ import './AppearancePanel.style.less';
 
 /** 内置主题色配置 */
 const BUILTIN_THEMES: { nameKey: string; color: string; type: BuiltinThemeType }[] = [
-  { nameKey: 'appearance.themes.default', color: '#3B82F6', type: 'default' },
+  { nameKey: 'appearance.themes.default', color: '#006BE6', type: 'default' },
   { nameKey: 'appearance.themes.violet', color: '#722ed1', type: 'violet' },
   { nameKey: 'appearance.themes.pink', color: '#eb2f96', type: 'pink' },
   { nameKey: 'appearance.themes.yellow', color: '#fadb14', type: 'yellow' },

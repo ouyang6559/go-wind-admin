@@ -47,3 +47,4 @@ docs/                       后端部署/开发环境/前端权限等专题文�
 - 后端：`docs/backend_project_struct.md`、`docs/backend_deploy.md`、`docs/audit-log-producer-design.md`
 - 前端权限模型：`docs/frontend_authority.md`
 - 查询/分页规则：`docs/list_query_rule.md`
+- 设计语言规范：`docs/design-language.md`（三端视觉唯一权威值表，改颜色/圆角/布局尺寸先改这里再同步三端）

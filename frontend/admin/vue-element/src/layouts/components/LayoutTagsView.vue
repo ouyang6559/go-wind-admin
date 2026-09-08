@@ -1200,10 +1200,10 @@ $chrome-radius: 7px;
 <style lang="scss">
 // ==================== 暗黑模式适配（非 scoped，确保选择器优先级稳定） ====================
 html.dark .tabs-bar {
-  --tabs-bar-border-color: rgba(255, 255, 255, 0.06);
-  --tabs-bar-hover-bg: rgba(255, 255, 255, 0.05);
+  --tabs-bar-border-color: rgba(255, 255, 255, 0.08);
+  --tabs-bar-hover-bg: rgba(255, 255, 255, 0.08);
   --tabs-bar-hover-color: #e5eaf3;
-  --tabs-bar-active-bg: #1a1d24;
+  --tabs-bar-active-bg: #111827;
 
   // 未激活文字：亮灰色，清晰可读
   .tabs-bar__item {

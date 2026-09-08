@@ -115,7 +115,7 @@ export function menuTypeToColor(menuType: Menu_Type) {
     case "LINK":
       return "#9B59B6";
     case "MENU":
-      return "#165DFF";
+      return "#006BE6";
     default:
       return "#86909C";
   }
