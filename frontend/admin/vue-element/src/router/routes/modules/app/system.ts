@@ -86,6 +86,30 @@ const system: RouteRecordRaw[] = [
         },
         component: () => import("@/pages/app/system/online_session/index.vue"),
       },
+
+      {
+        path: "server-monitor",
+        name: "ServerMonitor",
+        meta: {
+          order: 9,
+          icon: "lucide:activity",
+          title: "routes.system.serverMonitor",
+          authority: ["sys:platform_admin"],
+        },
+        component: () => import("@/pages/app/system/server_monitor/index.vue"),
+      },
+
+      {
+        path: "notification-channels",
+        name: "NotificationChannelManagement",
+        meta: {
+          order: 10,
+          icon: "lucide:mail",
+          title: "routes.system.notificationChannels",
+          authority: ["sys:platform_admin"],
+        },
+        component: () => import("@/pages/app/system/notification_channel/index.vue"),
+      },
     ],
   },
 ];

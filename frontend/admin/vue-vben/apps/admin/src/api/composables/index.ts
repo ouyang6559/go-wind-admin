@@ -48,6 +48,12 @@ export * from './redis-cache-monitor';
 
 // 在线会话
 export * from './online-session';
+
+// 服务监控
+export * from './server-monitor';
+
+// 通知渠道
+export * from './notification-channel';
 export * from './role';
 // 通用枚举与工具函数
 export * from './shared';

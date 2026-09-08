@@ -40,7 +40,9 @@
     "task": "Task Scheduler",
     "file": "File Management",
     "loginPolicy": "Login Policy",
-    "onlineSessions": "Online Users"
+    "onlineSessions": "Online Users",
+    "serverMonitor": "Server Monitor",
+    "notificationChannels": "Notification Channels"
   },
   "log": {
     "moduleName": "Audit Logs",

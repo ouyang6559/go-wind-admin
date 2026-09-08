@@ -58,6 +58,12 @@ export * from "./redis-cache-monitor";
 // 在线会话
 export * from "./online-session";
 
+// 服务监控
+export * from "./server-monitor";
+
+// 通知渠道
+export * from "./notification-channel";
+
 // 首页分析概览
 export * from "./dashboard";
 

@@ -39,7 +39,9 @@
     "task": "任务管理",
     "loginPolicy": "登录策略",
     "language": "语言管理",
-    "onlineSessions": "在线用户"
+    "onlineSessions": "在线用户",
+    "serverMonitor": "服务监控",
+    "notificationChannels": "通知渠道"
   },
   "tenant": {
     "moduleName": "租户管理",

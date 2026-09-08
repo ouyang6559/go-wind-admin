@@ -39,7 +39,9 @@
     "task": "Task Management",
     "loginPolicy": "Login Policy",
     "language": "Language Management",
-    "onlineSessions": "Online Users"
+    "onlineSessions": "Online Users",
+    "serverMonitor": "Server Monitor",
+    "notificationChannels": "Notification Channels"
   },
   "tenant": {
     "moduleName": "Tenant Management",
