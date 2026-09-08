@@ -1,21 +1,23 @@
 .dark,
 .dark[data-theme='custom'],
 .dark[data-theme='default'] {
+  /* 2026-09-08：暗色中性色对齐设计语言规范（docs/design-language.md §2.3，
+     近黑蓝系，与 react 端定稿一致）：大底 #0B0F19 / 表面 #111827 / 浮层 #1C2128 */
   /* Default background color of <body />...etc */
-  --background: 222.34deg 10.43% 12.27%;
+  --background: 220.91deg 39.29% 10.98%;
 
   /* 主体区域背景色 */
-  --background-deep: 220deg 13.06% 9%;
-  --foreground: 0 0% 95%;
+  --background-deep: 222.86deg 38.89% 7.06%;
+  --foreground: 210 40% 98%;
 
   /* Background color for <Card /> */
-  --card: 222.34deg 10.43% 12.27%;
+  --card: 220.91deg 39.29% 10.98%;
 
   /* --card: 222.2 84% 4.9%; */
   --card-foreground: 210 40% 98%;
 
   /* Background color for popovers such as <DropdownMenu />, <HoverCard />, <Popover /> */
-  --popover: 222.82deg 8.43% 12.27%;
+  --popover: 215deg 17.65% 13.33%;
   --popover-foreground: 210 40% 98%;
 
   /* Muted backgrounds such as <TabsList />, <Skeleton /> and <Switch /> */
@@ -93,12 +95,12 @@
 
   /* =============component & UI============= */
 
-  --sidebar: 222.34deg 10.43% 12.27%;
-  --sidebar-deep: 220deg 13.06% 9%;
+  --sidebar: 220.91deg 39.29% 10.98%;
+  --sidebar-deep: 222.86deg 38.89% 7.06%;
   --menu: var(--sidebar);
 
   /* header */
-  --header: 222.34deg 10.43% 12.27%;
+  --header: 220.91deg 39.29% 10.98%;
 
   color-scheme: dark;
 }
