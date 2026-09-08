@@ -7364,6 +7364,70 @@ export type permissionservicev1_DeleteRoleRequest = {
   id?: number;
 };
 
+// 服务监控管理服务（只读）
+export interface ServerMonitorService {
+  // 查询服务监控信息
+  Get(
+    request: server_monitorservicev1_GetServerMonitorRequest,
+  ): Promise<server_monitorservicev1_ServerMonitorInfo>;
+}
+
+export function createServerMonitorServiceClient(
+  transport: ClientTransport,
+): ServerMonitorService {
+  return {
+    Get(_request) {
+      const path = `admin/v1/server-monitor`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'ServerMonitorService',
+        method: 'Get',
+      }) as Promise<server_monitorservicev1_ServerMonitorInfo>;
+    },
+  };
+}
+// 查询服务监控信息 - 请求（空）
+export type server_monitorservicev1_GetServerMonitorRequest = {
+};
+
+// 服务监控聚合信息
+export type server_monitorservicev1_ServerMonitorInfo = {
+  collectedAt: undefined | wellKnownTimestamp;
+  database: server_monitorservicev1_DatabaseInfo | undefined;
+  go: server_monitorservicev1_GoRuntimeInfo | undefined;
+  host: server_monitorservicev1_HostInfo | undefined;
+};
+
+// Go 运行时信息
+export type server_monitorservicev1_GoRuntimeInfo = {
+  gcCycles?: number;
+  memAllocBytes?: number;
+  memSysBytes?: number;
+  numGoroutine?: number;
+  startedAt?: wellKnownTimestamp;
+  uptimeSeconds?: number;
+  version?: string;
+};
+
+// 数据库信息
+export type server_monitorservicev1_DatabaseInfo = {
+  driver?: string;
+  idleConnections?: number;
+  inUseConnections?: number;
+  maxOpenConnections?: number;
+  openConnections?: number;
+  pingError?: string;
+  pingOk?: boolean;
+};
+
+// 主机信息
+export type server_monitorservicev1_HostInfo = {
+  arch?: string;
+  hostname?: string;
+  numCpu?: number;
+  os?: string;
+};
+
 // 调度任务管理服务
 export interface TaskService {
   // 查询调度任务列表
@@ -8693,6 +8757,7 @@ export class ApiClient {
   private _positionService?: PositionService;
   private _redisCacheMonitorService?: RedisCacheMonitorService;
   private _roleService?: RoleService;
+  private _serverMonitorService?: ServerMonitorService;
   private _taskService?: TaskService;
   private _tenantService?: TenantService;
   private readonly _transport: ClientTransport;
@@ -8825,6 +8890,10 @@ export class ApiClient {
 
   get roleService(): RoleService {
     return this._roleService ??= createRoleServiceClient(this._transport);
+  }
+
+  get serverMonitorService(): ServerMonitorService {
+    return this._serverMonitorService ??= createServerMonitorServiceClient(this._transport);
   }
 
   get taskService(): TaskService {

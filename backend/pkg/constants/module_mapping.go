@@ -42,6 +42,8 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"PermissionAuditLogService":      identityV1.Module_LOG,
 	"PolicyEvaluationLogService":     identityV1.Module_LOG,
 	"RedisCacheMonitorService":       identityV1.Module_LOG,
+	"ServerMonitorService":           identityV1.Module_SYSTEM,
+	"OnlineSessionService":           identityV1.Module_SYSTEM,
 
 	"InternalMessageService":         identityV1.Module_INTERNAL_MESSAGE,
 	"InternalMessageCategoryService": identityV1.Module_INTERNAL_MESSAGE,
