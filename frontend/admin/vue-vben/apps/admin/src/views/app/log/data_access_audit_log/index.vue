@@ -23,6 +23,7 @@ import {
 } from '#/api';
 import { type auditservicev1_DataAccessAuditLog as DataAccessAuditLog } from '#/api';
 import { $t } from '#/locales';
+import { downloadCsv } from '#/utils/csv';
 
 import DataAccessAuditLogDetailDrawer from './data-access-audit-log-detail-drawer.vue';
 
@@ -239,11 +240,37 @@ function handleView(row: DataAccessAuditLog) {
   drawerApi.setData({ row });
   drawerApi.open();
 }
+
+// 导出全部：按当前条件聚合拉取（上限 1 万行）生成 CSV
+async function handleExportAll() {
+  const pageSize = 1000;
+  const maxRows = 10000;
+  const rows: any[] = [];
+  for (let p = 1; rows.length < maxRows; p++) {
+    const resp = await fetchListDataAccessAuditLogs(
+      new PaginationQuery({ paging: { page: p, pageSize } }),
+    );
+    const items = (resp.items ?? []) as any[];
+    rows.push(...items);
+    if (items.length < pageSize) break;
+  }
+  const gridColumns = (gridOptions.columns ?? []) as any[];
+  const cols = gridColumns
+    .filter((c) => c.field)
+    .map((c) => ({ title: c.title as string, key: c.field as string }));
+  downloadCsv(`data-access-audit-logs-${Date.now()}.csv`, cols, rows.slice(0, maxRows));
+}
+
 </script>
 
 <template>
   <Page auto-content-height>
     <Grid :table-title="$t('menu.log.dataAccessAuditLog')">
+      <template #toolbar-tools>
+        <a-button class="mr-2" @click="handleExportAll">
+          {{ $t('ui.button.exportAll') }}
+        </a-button>
+      </template>
       <template #success="{ row }">
         <a-tag :color="successToColor(row.success)">
           {{ successToNameWithStatusCode(row.success, row.statusCode) }}

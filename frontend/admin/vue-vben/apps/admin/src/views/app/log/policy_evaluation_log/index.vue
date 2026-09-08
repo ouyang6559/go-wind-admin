@@ -19,6 +19,7 @@ import {
 } from '#/api';
 import { type permissionservicev1_PolicyEvaluationLog as PolicyEvaluationLog } from '#/api';
 import { $t } from '#/locales';
+import { downloadCsv } from '#/utils/csv';
 
 import PolicyEvaluationLogDetailDrawer from './policy-evaluation-log-detail-drawer.vue';
 
@@ -266,11 +267,37 @@ function handleView(row: PolicyEvaluationLog) {
   drawerApi.setData({ row });
   drawerApi.open();
 }
+
+// 导出全部：按当前条件聚合拉取（上限 1 万行）生成 CSV
+async function handleExportAll() {
+  const pageSize = 1000;
+  const maxRows = 10000;
+  const rows: any[] = [];
+  for (let p = 1; rows.length < maxRows; p++) {
+    const resp = await fetchListPolicyEvaluationLogs(
+      new PaginationQuery({ paging: { page: p, pageSize } }),
+    );
+    const items = (resp.items ?? []) as any[];
+    rows.push(...items);
+    if (items.length < pageSize) break;
+  }
+  const gridColumns = (gridOptions.columns ?? []) as any[];
+  const cols = gridColumns
+    .filter((c) => c.field)
+    .map((c) => ({ title: c.title as string, key: c.field as string }));
+  downloadCsv(`policy-evaluation-logs-${Date.now()}.csv`, cols, rows.slice(0, maxRows));
+}
+
 </script>
 
 <template>
   <Page auto-content-height>
     <Grid :table-title="$t('menu.log.policyEvaluationLog')">
+      <template #toolbar-tools>
+        <a-button class="mr-2" @click="handleExportAll">
+          {{ $t('ui.button.exportAll') }}
+        </a-button>
+      </template>
       <template #result="{ row }">
         <a-tag :color="successToColor(row.result)">
           {{ successToName(row.result) }}
