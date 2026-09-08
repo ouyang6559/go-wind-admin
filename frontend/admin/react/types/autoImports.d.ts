@@ -91,8 +91,10 @@ declare global {
   const createRef: typeof import('react').createRef
   const dayjs2String: typeof import('../src/components/common/Dates/utils/helper').dayjs2String
   const dayjsRang2StringRang: typeof import('../src/components/common/Dates/utils/helper').dayjsRang2StringRang
+  const defaultImageUpload: typeof import('../src/components/common/Editor/src/TiptapEditor/defaultImageUpload').defaultImageUpload
   const deleteComponent: typeof import('../src/components/common/Form/utils/componentMap').deleteComponent
   const disconnectSSEServer: typeof import('../src/hooks/useTokenRefresh').disconnectSSEServer
+  const extractImageFiles: typeof import('../src/components/common/Editor/src/TiptapEditor/defaultImageUpload').extractImageFiles
   const fetchAllDictEntries: typeof import('../src/hooks/useDictCache').fetchAllDictEntries
   const filterDayjs: typeof import('../src/components/common/Dates/utils/helper').filterDayjs
   const filterEmptyStr: typeof import('../src/components/common/Form/utils/helper').filterEmptyStr

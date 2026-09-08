@@ -25,6 +25,7 @@ const (
 	InternalMessageRecipientService_ListUserInbox_FullMethodName               = "/admin.service.v1.InternalMessageRecipientService/ListUserInbox"
 	InternalMessageRecipientService_DeleteNotificationFromInbox_FullMethodName = "/admin.service.v1.InternalMessageRecipientService/DeleteNotificationFromInbox"
 	InternalMessageRecipientService_MarkNotificationAsRead_FullMethodName      = "/admin.service.v1.InternalMessageRecipientService/MarkNotificationAsRead"
+	InternalMessageRecipientService_MarkNotificationsStatus_FullMethodName     = "/admin.service.v1.InternalMessageRecipientService/MarkNotificationsStatus"
 )
 
 // InternalMessageRecipientServiceClient is the client API for InternalMessageRecipientService service.
@@ -39,6 +40,8 @@ type InternalMessageRecipientServiceClient interface {
 	DeleteNotificationFromInbox(ctx context.Context, in *v11.DeleteNotificationFromInboxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 将通知标记为已读
 	MarkNotificationAsRead(ctx context.Context, in *v11.MarkNotificationAsReadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 标记通知投递回执（SENT→RECEIVED；服务端写入即 RECEIVED，此端点为回执补偿通道）
+	MarkNotificationsStatus(ctx context.Context, in *v11.MarkNotificationsStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type internalMessageRecipientServiceClient struct {
@@ -79,6 +82,16 @@ func (c *internalMessageRecipientServiceClient) MarkNotificationAsRead(ctx conte
 	return out, nil
 }
 
+func (c *internalMessageRecipientServiceClient) MarkNotificationsStatus(ctx context.Context, in *v11.MarkNotificationsStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, InternalMessageRecipientService_MarkNotificationsStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // InternalMessageRecipientServiceServer is the server API for InternalMessageRecipientService service.
 // All implementations must embed UnimplementedInternalMessageRecipientServiceServer
 // for forward compatibility.
@@ -91,6 +104,8 @@ type InternalMessageRecipientServiceServer interface {
 	DeleteNotificationFromInbox(context.Context, *v11.DeleteNotificationFromInboxRequest) (*emptypb.Empty, error)
 	// 将通知标记为已读
 	MarkNotificationAsRead(context.Context, *v11.MarkNotificationAsReadRequest) (*emptypb.Empty, error)
+	// 标记通知投递回执（SENT→RECEIVED；服务端写入即 RECEIVED，此端点为回执补偿通道）
+	MarkNotificationsStatus(context.Context, *v11.MarkNotificationsStatusRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedInternalMessageRecipientServiceServer()
 }
 
@@ -109,6 +124,9 @@ func (UnimplementedInternalMessageRecipientServiceServer) DeleteNotificationFrom
 }
 func (UnimplementedInternalMessageRecipientServiceServer) MarkNotificationAsRead(context.Context, *v11.MarkNotificationAsReadRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkNotificationAsRead not implemented")
+}
+func (UnimplementedInternalMessageRecipientServiceServer) MarkNotificationsStatus(context.Context, *v11.MarkNotificationsStatusRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method MarkNotificationsStatus not implemented")
 }
 func (UnimplementedInternalMessageRecipientServiceServer) mustEmbedUnimplementedInternalMessageRecipientServiceServer() {
 }
@@ -186,6 +204,24 @@ func _InternalMessageRecipientService_MarkNotificationAsRead_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InternalMessageRecipientService_MarkNotificationsStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v11.MarkNotificationsStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InternalMessageRecipientServiceServer).MarkNotificationsStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InternalMessageRecipientService_MarkNotificationsStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InternalMessageRecipientServiceServer).MarkNotificationsStatus(ctx, req.(*v11.MarkNotificationsStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // InternalMessageRecipientService_ServiceDesc is the grpc.ServiceDesc for InternalMessageRecipientService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -204,6 +240,10 @@ var InternalMessageRecipientService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkNotificationAsRead",
 			Handler:    _InternalMessageRecipientService_MarkNotificationAsRead_Handler,
+		},
+		{
+			MethodName: "MarkNotificationsStatus",
+			Handler:    _InternalMessageRecipientService_MarkNotificationsStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -365,19 +365,22 @@ const statusInfo = computed(() => {
   return { chars, words, cursor: `${line}:${col}` };
 });
 
-// 图片上传处理
+// 图片上传处理：外部注入 uploadImage 优先；未注入时走内置文件上传（publicUrl）
 const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-  if (!file || !props.uploadImage) {
-    emit("imageUpload", file!);
+  if (!file) {
     return;
   }
 
   try {
-    const url = await props.uploadImage(file);
+    const url = props.uploadImage
+      ? await props.uploadImage(file)
+      : ((await uploadFile("", "", file)) as any)?.publicUrl || "";
     if (url && editor.value) {
       editor.value.chain().focus().setImage({ src: url }).run();
+    } else if (!url) {
+      ElMessage.error($t("common.editor.image_upload_failed"));
     }
   } catch (error) {
     console.error("Image upload failed:", error);

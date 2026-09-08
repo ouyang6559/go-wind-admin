@@ -33,4 +33,12 @@ service InternalMessageRecipientService {
       body: "*"
     };
   }
+
+  // 标记通知投递回执（SENT→RECEIVED；服务端写入即 RECEIVED，此端点为回执补偿通道）
+  rpc MarkNotificationsStatus(internal_message.service.v1.MarkNotificationsStatusRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/admin/v1/internal-message/status"
+      body: "*"
+    };
+  }
 }

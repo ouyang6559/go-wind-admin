@@ -28,29 +28,33 @@ var File_admin_service_v1_i_internal_message_recipient_proto protoreflect.FileDe
 
 const file_admin_service_v1_i_internal_message_recipient_proto_rawDesc = "" +
 	"\n" +
-	"3admin/service/v1/i_internal_message_recipient.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a<internal_message/service/v1/internal_message_recipient.proto2\xf4\x03\n" +
+	"3admin/service/v1/i_internal_message_recipient.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a<internal_message/service/v1/internal_message_recipient.proto2\x93\x05\n" +
 	"\x1fInternalMessageRecipientService\x12\x88\x01\n" +
 	"\rListUserInbox\x12\x19.pagination.PagingRequest\x1a2.internal_message.service.v1.ListUserInboxResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /admin/v1/internal-message/inbox\x12\xaa\x01\n" +
 	"\x1bDeleteNotificationFromInbox\x12?.internal_message.service.v1.DeleteNotificationFromInboxRequest\x1a\x16.google.protobuf.Empty\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/admin/v1/internal-message/inbox/delete\x12\x98\x01\n" +
-	"\x16MarkNotificationAsRead\x12:.internal_message.service.v1.MarkNotificationAsReadRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/admin/v1/internal-message/readB\xcb\x01\n" +
+	"\x16MarkNotificationAsRead\x12:.internal_message.service.v1.MarkNotificationAsReadRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/admin/v1/internal-message/read\x12\x9c\x01\n" +
+	"\x17MarkNotificationsStatus\x12;.internal_message.service.v1.MarkNotificationsStatusRequest\x1a\x16.google.protobuf.Empty\",\x82\xd3\xe4\x93\x02&:\x01*\"!/admin/v1/internal-message/statusB\xcb\x01\n" +
 	"\x14com.admin.service.v1B\x1eIInternalMessageRecipientProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_internal_message_recipient_proto_goTypes = []any{
 	(*v1.PagingRequest)(nil),                       // 0: pagination.PagingRequest
 	(*v11.DeleteNotificationFromInboxRequest)(nil), // 1: internal_message.service.v1.DeleteNotificationFromInboxRequest
 	(*v11.MarkNotificationAsReadRequest)(nil),      // 2: internal_message.service.v1.MarkNotificationAsReadRequest
-	(*v11.ListUserInboxResponse)(nil),              // 3: internal_message.service.v1.ListUserInboxResponse
-	(*emptypb.Empty)(nil),                          // 4: google.protobuf.Empty
+	(*v11.MarkNotificationsStatusRequest)(nil),     // 3: internal_message.service.v1.MarkNotificationsStatusRequest
+	(*v11.ListUserInboxResponse)(nil),              // 4: internal_message.service.v1.ListUserInboxResponse
+	(*emptypb.Empty)(nil),                          // 5: google.protobuf.Empty
 }
 var file_admin_service_v1_i_internal_message_recipient_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.InternalMessageRecipientService.ListUserInbox:input_type -> pagination.PagingRequest
 	1, // 1: admin.service.v1.InternalMessageRecipientService.DeleteNotificationFromInbox:input_type -> internal_message.service.v1.DeleteNotificationFromInboxRequest
 	2, // 2: admin.service.v1.InternalMessageRecipientService.MarkNotificationAsRead:input_type -> internal_message.service.v1.MarkNotificationAsReadRequest
-	3, // 3: admin.service.v1.InternalMessageRecipientService.ListUserInbox:output_type -> internal_message.service.v1.ListUserInboxResponse
-	4, // 4: admin.service.v1.InternalMessageRecipientService.DeleteNotificationFromInbox:output_type -> google.protobuf.Empty
-	4, // 5: admin.service.v1.InternalMessageRecipientService.MarkNotificationAsRead:output_type -> google.protobuf.Empty
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	3, // 3: admin.service.v1.InternalMessageRecipientService.MarkNotificationsStatus:input_type -> internal_message.service.v1.MarkNotificationsStatusRequest
+	4, // 4: admin.service.v1.InternalMessageRecipientService.ListUserInbox:output_type -> internal_message.service.v1.ListUserInboxResponse
+	5, // 5: admin.service.v1.InternalMessageRecipientService.DeleteNotificationFromInbox:output_type -> google.protobuf.Empty
+	5, // 6: admin.service.v1.InternalMessageRecipientService.MarkNotificationAsRead:output_type -> google.protobuf.Empty
+	5, // 7: admin.service.v1.InternalMessageRecipientService.MarkNotificationsStatus:output_type -> google.protobuf.Empty
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

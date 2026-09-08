@@ -3019,6 +3019,10 @@ export interface InternalMessageRecipientService {
   MarkNotificationAsRead(
     request: internal_messageservicev1_MarkNotificationAsReadRequest,
   ): Promise<wellKnownEmpty>;
+  // 标记通知投递回执（SENT→RECEIVED；服务端写入即 RECEIVED，此端点为回执补偿通道）
+  MarkNotificationsStatus(
+    request: internal_messageservicev1_MarkNotificationsStatusRequest,
+  ): Promise<wellKnownEmpty>;
 }
 
 export function createInternalMessageRecipientServiceClient(
@@ -3156,6 +3160,14 @@ export function createInternalMessageRecipientServiceClient(
         method: 'MarkNotificationAsRead',
       }) as Promise<wellKnownEmpty>;
     },
+    MarkNotificationsStatus(request) {
+      const path = `admin/v1/internal-message/status`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'InternalMessageRecipientService',
+        method: 'MarkNotificationsStatus',
+      }) as Promise<wellKnownEmpty>;
+    },
   };
 }
 export type internal_messageservicev1_ListUserInboxResponse = {
@@ -3201,6 +3213,12 @@ export type internal_messageservicev1_DeleteNotificationFromInboxRequest = {
 export type internal_messageservicev1_MarkNotificationAsReadRequest = {
   // 收件箱记录ID列表；为空表示标记该用户全部未读通知（服务端按用户维度兜底，
   // 前端"全部已读"入口只加载了当前页数据，无法枚举全部ID）。
+  recipientIds: number[] | undefined;
+  userId: number | undefined;
+};
+
+export type internal_messageservicev1_MarkNotificationsStatusRequest = {
+  newStatus: internal_messageservicev1_InternalMessageRecipient_Status | undefined;
   recipientIds: number[] | undefined;
   userId: number | undefined;
 };
