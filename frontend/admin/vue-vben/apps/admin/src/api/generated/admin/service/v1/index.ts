@@ -1004,6 +1004,14 @@ export interface AuthenticationService {
   RegisterUser(
     request: authenticationservicev1_RegisterUserRequest,
   ): Promise<authenticationservicev1_RegisterUserResponse>;
+  // 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
+  ForgotPassword(
+    request: authenticationservicev1_ForgotPasswordRequest,
+  ): Promise<wellKnownEmpty>;
+  // 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
+  ResetPasswordByCode(
+    request: authenticationservicev1_ResetPasswordByCodeRequest,
+  ): Promise<wellKnownEmpty>;
   // 刷新认证令牌
   RefreshToken(
     request: authenticationservicev1_LoginRequest,
@@ -1045,6 +1053,22 @@ export function createAuthenticationServiceClient(
         service: 'AuthenticationService',
         method: 'RegisterUser',
       }) as Promise<authenticationservicev1_RegisterUserResponse>;
+    },
+    ForgotPassword(request) {
+      const path = `admin/v1/forgot-password`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AuthenticationService',
+        method: 'ForgotPassword',
+      }) as Promise<wellKnownEmpty>;
+    },
+    ResetPasswordByCode(request) {
+      const path = `admin/v1/reset-password-by-code`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AuthenticationService',
+        method: 'ResetPasswordByCode',
+      }) as Promise<wellKnownEmpty>;
     },
     RefreshToken(request) {
       const path = `admin/v1/refresh-token`;
@@ -1134,6 +1158,19 @@ export type authenticationservicev1_RegisterUserRequest = {
 
 export type authenticationservicev1_RegisterUserResponse = {
   userId: number | undefined;
+};
+
+// 忘记密码 - 请求（identifier 为已绑定的邮箱）
+export type authenticationservicev1_ForgotPasswordRequest = {
+  identifier?: string;
+};
+
+// 凭验证码重置密码 - 请求
+export type authenticationservicev1_ResetPasswordByCodeRequest = {
+  code?: string;
+  identifier?: string;
+  // 新密码（AES 密文传输，与登录同规）
+  new_password?: string;
 };
 
 export type authenticationservicev1_GenerateCaptchaResponse = {

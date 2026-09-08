@@ -46,5 +46,6 @@
   "not-found": "404",
   "home": "Home",
   "server-monitor": "Server Monitor",
-  "notification-channels": "Notification Channels"
+  "notification-channels": "Notification Channels",
+  "forgot-password": "Forgot Password"
 }

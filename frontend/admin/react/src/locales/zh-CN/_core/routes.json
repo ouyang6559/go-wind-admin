@@ -46,5 +46,6 @@
   "not-found": "404",
   "home": "首页",
   "server-monitor": "服务监控",
-  "notification-channels": "通知渠道"
+  "notification-channels": "通知渠道",
+  "forgot-password": "找回密码"
 }

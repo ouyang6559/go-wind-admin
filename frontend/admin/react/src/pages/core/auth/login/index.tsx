@@ -236,6 +236,14 @@ const Login: React.FC = () => {
           {t('noAccount')}{' '}
         </span>
         <a
+          href="/auth/forgot-password"
+          className="text-[color:var(--ant-color-primary)] hover:opacity-80"
+          style={{ fontSize: 13 }}
+        >
+          {t('forgotPassword')}
+        </a>
+        <span style={{ opacity: 0.4 }}>|</span>
+        <a
           href="/auth/register"
           className="text-[color:var(--ant-color-primary)] hover:opacity-80"
         >

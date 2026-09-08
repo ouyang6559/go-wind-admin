@@ -7,6 +7,7 @@ import RouteErrorFallback from '@/layouts/components/ErrorFallback/RouteErrorFal
 import Login from '@/pages/core/auth/login';
 import Register from '@/pages/core/auth/register';
 import MfaChallenge from '@/pages/core/auth/mfa-challenge';
+import ForgotPassword from '@/pages/core/auth/forgot-password';
 
 /**
  * 认证相关路由配置
@@ -46,6 +47,16 @@ export const authRoutes: AppRouteObject[] = [
           </GuestGuard>
         ),
         meta: { title: 'routes:register', ignoreAccess: true },
+      },
+      {
+        name: 'forgot-password',
+        path: 'forgot-password',
+        element: (
+          <GuestGuard>
+            <ForgotPassword />
+          </GuestGuard>
+        ),
+        meta: { title: 'routes:forgot-password', ignoreAccess: true, hideInMenu: true },
       },
     ],
   },
