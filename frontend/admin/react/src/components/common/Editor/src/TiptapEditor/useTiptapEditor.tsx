@@ -240,9 +240,11 @@ export const useTiptapEditor = ({
   const handleImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>, editor: any) => {
       const file = event.target.files?.[0];
-      if (!file || !uploadImage) return;
+      if (!file) return;
+      // 外部注入 uploadImage 优先；未注入时走内置文件上传（publicUrl）
+      const uploadFn = uploadImage ?? defaultImageUpload;
       try {
-        const url = await uploadImage(file);
+        const url = await uploadFn(file);
         if (url && editor) {
           editor.chain().focus().setImage({ src: url }).run();
         }

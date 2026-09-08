@@ -226,6 +226,7 @@
 import { computed, onUnmounted, ref, toRef } from "vue";
 
 import { $t } from "@/core/i18n";
+import { uploadFile } from "@/api/composables";
 
 import { EditorContent } from "@tiptap/vue-3";
 import { marked } from "marked";

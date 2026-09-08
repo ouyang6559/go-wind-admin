@@ -387,6 +387,7 @@
     "importMarkdown": "导入Markdown",
     "json_parse_error": "JSON解析错误",
     "json_serialize_error": "JSON序列化错误",
-    "unknown_error": "未知错误"
+    "unknown_error": "未知错误",
+    "image_upload_failed": "图片上传失败"
   }
 }

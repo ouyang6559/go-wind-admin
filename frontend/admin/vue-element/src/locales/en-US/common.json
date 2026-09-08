@@ -387,6 +387,7 @@
     "importMarkdown": "Import Markdown",
     "json_parse_error": "JSON parse error",
     "json_serialize_error": "JSON serialization error",
-    "unknown_error": "Unknown error"
+    "unknown_error": "Unknown error",
+    "image_upload_failed": "Image upload failed"
   }
 }
