@@ -21,5 +21,6 @@
   "effectDetails": "Effect Details",
   "scopeSql": "Scope SQL",
   "createdAt": "Logged At",
-  "fetchFailed": "Failed to fetch data"
+  "fetchFailed": "Failed to fetch data",
+  "export": "Export CSV"
 }

@@ -21,5 +21,6 @@
   "effectDetails": "生效详情",
   "scopeSql": "范围SQL",
   "createdAt": "日志时间",
-  "fetchFailed": "获取数据失败"
+  "fetchFailed": "获取数据失败",
+  "export": "导出 CSV"
 }

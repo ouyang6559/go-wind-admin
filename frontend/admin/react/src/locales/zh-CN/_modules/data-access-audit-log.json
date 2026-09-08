@@ -40,5 +40,6 @@
   "success.false": "失败",
   "geoLocation": "地理位置",
   "createdAt": "创建时间",
-  "fetchFailed": "获取数据失败"
+  "fetchFailed": "获取数据失败",
+  "export": "导出 CSV"
 }

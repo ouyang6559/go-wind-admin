@@ -46,5 +46,6 @@
   "sectionOther": "Other Information",
   "action": "Action",
   "detail": "Detail",
-  "fetchFailed": "Failed to fetch data"
+  "fetchFailed": "Failed to fetch data",
+  "export": "Export CSV"
 }

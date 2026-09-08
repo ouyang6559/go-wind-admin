@@ -1,12 +1,14 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Tag, App } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
+import { Button, Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { auditservicev1_PermissionAuditLog as PermissionAuditLog } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
 import { TABLE } from '@/config/constants';
 import { fetchListPermissionAuditLogs } from '@/api/hooks/permission-audit-log';
+import { exportAuditLogsToCsv } from '@/utils/csv';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 import { getActionMap, getActionOptions } from './constants';
@@ -17,6 +19,8 @@ import { getActionMap, getActionOptions } from './constants';
 const PermissionAuditLogPage = () => {
   const { t } = useTranslation('permission-audit-log');
   const actionRef = useRef<ActionType>(null);
+  // 最近一次列表查询参数：导出 CSV 时沿用当前搜索/排序条件
+  const latestParamsRef = useRef<Record<string, any>>({});
   const { message } = App.useApp();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +101,26 @@ const PermissionAuditLogPage = () => {
     },
   ];
 
+  // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
+  const handleExport = async () => {
+    const exportColumns = columns
+      .filter((c) => c.dataIndex && !c.hideInTable)
+      .map((c) => ({
+        key: String(c.dataIndex),
+        title: typeof c.title === 'string' ? c.title : String(c.dataIndex),
+      }));
+    try {
+      await exportAuditLogsToCsv({
+        fetcher: (q) => fetchListPermissionAuditLogs(q),
+        filename: `permission-audit-logs-${Date.now()}.csv`,
+        columns: exportColumns,
+        params: latestParamsRef.current,
+      });
+    } catch (error: any) {
+      message.error(error?.message || 'Export failed');
+    }
+  };
+
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
@@ -104,6 +128,7 @@ const PermissionAuditLogPage = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params, sorter) => {
+            latestParamsRef.current = params;
             try {
               const query = new PaginationQuery({
                 paging: {
@@ -147,6 +172,16 @@ const PermissionAuditLogPage = () => {
             showSizeChanger: true,
             showQuickJumper: true,
           }}
+          toolBarRender={() => [
+            <Button
+              key="export-csv"
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+            >
+              {t('export')}
+            </Button>,
+          ]}
+
           options={{
             density: true,
             fullScreen: true,

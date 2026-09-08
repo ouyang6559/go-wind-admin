@@ -46,5 +46,6 @@
   "sectionOther": "其他信息",
   "action": "操作",
   "detail": "详情",
-  "fetchFailed": "获取数据失败"
+  "fetchFailed": "获取数据失败",
+  "export": "导出 CSV"
 }

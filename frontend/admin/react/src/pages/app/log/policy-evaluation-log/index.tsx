@@ -1,12 +1,14 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Tag, App } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
+import { Button, Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { permissionservicev1_PolicyEvaluationLog as PolicyEvaluationLog } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
 import { TABLE, METHOD_LIST } from '@/config/constants';
 import { fetchListPolicyEvaluationLogs } from '@/api/hooks/policy-evaluation-log';
+import { exportAuditLogsToCsv } from '@/utils/csv';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 
@@ -42,6 +44,8 @@ function resultToName(t: (key: string) => string, result: boolean | undefined): 
 const PolicyEvaluationLog = () => {
   const { t } = useTranslation('policy-evaluation-log');
   const actionRef = useRef<ActionType>(null);
+  // 最近一次列表查询参数：导出 CSV 时沿用当前搜索/排序条件
+  const latestParamsRef = useRef<Record<string, any>>({});
   const { message } = App.useApp();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,7 +107,27 @@ const PolicyEvaluationLog = () => {
           HEAD: 'default',
           OPTIONS: 'default',
         };
-        return (
+        // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
+  const handleExport = async () => {
+    const exportColumns = columns
+      .filter((c) => c.dataIndex && !c.hideInTable)
+      .map((c) => ({
+        key: String(c.dataIndex),
+        title: typeof c.title === 'string' ? c.title : String(c.dataIndex),
+      }));
+    try {
+      await exportAuditLogsToCsv({
+        fetcher: (q) => fetchListPolicyEvaluationLogs(q),
+        filename: `policy-evaluation-logs-${Date.now()}.csv`,
+        columns: exportColumns,
+        params: latestParamsRef.current,
+      });
+    } catch (error: any) {
+      message.error(error?.message || 'Export failed');
+    }
+  };
+
+  return (
           <span style={{ color: colorMap[record.requestMethod || ''] || '#666' }}>
             {record.requestMethod}
           </span>
@@ -186,6 +210,7 @@ const PolicyEvaluationLog = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params, sorter) => {
+            latestParamsRef.current = params;
             try {
               const query = new PaginationQuery({
                 paging: {
@@ -231,6 +256,16 @@ const PolicyEvaluationLog = () => {
             showSizeChanger: true,
             showQuickJumper: true,
           }}
+          toolBarRender={() => [
+            <Button
+              key="export-csv"
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+            >
+              {t('export')}
+            </Button>,
+          ]}
+
           options={{
             density: true,
             fullScreen: true,

@@ -26,5 +26,6 @@
   "success.false": "Failed",
   "geoLocation": "Geo Location",
   "createdAt": "Created At",
-  "fetchFailed": "Failed to fetch data"
+  "fetchFailed": "Failed to fetch data",
+  "export": "Export CSV"
 }
