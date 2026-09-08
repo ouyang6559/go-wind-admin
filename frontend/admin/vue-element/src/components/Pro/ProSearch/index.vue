@@ -298,11 +298,15 @@ defineExpose({
 }
 
 // === Grid 布局模式（参考 Vben） ===
-// 列数按容器宽度自适应（auto-fill），不能用视口断点：
-// 本组件常嵌在 ElSplitter 栏位等窄容器里，视口断点会把输入框挤成细条
+// 列数按容器宽度自适应，不能用视口断点：
+// 本组件常嵌在 ElSplitter 栏位等窄容器里，视口断点会把输入框挤成细条。
+// 列宽下限须同时约束「绝对 240px」和「容器 20%」：只给 240px 下限时超宽容器会
+// 生成大量窄列，字段挤在左侧、按钮被 grid-column:-1 孤立在最右，中间全是空洞。
+// 用 auto-fit（非 auto-fill）：未占用的轨道塌缩为 0 并由 1fr 均分拉伸，
+// 字段少时铺满整行、按钮紧跟在同一行末尾，不会留下空轨道。
 .pro-search--grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(240px, 20%), 1fr));
   gap: 16px;
 
   // 让表单项内容拉伸
