@@ -53,7 +53,7 @@
 }
 /* 暗色下分页器 hover/disabled */
 [data-theme='dark'] .ant-pagination-item:not(.ant-pagination-item-active):hover {
-  border-color: rgba(148, 163, 184, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 [data-theme='dark'] .ant-pagination-disabled .ant-pagination-item-link {
   color: #6e7681 !important;
@@ -132,7 +132,7 @@
 
 /* 表体行：文字高对比 + 极细分割线 */
 [data-theme='dark'] .ant-pro-table .ant-table-tbody > tr > td {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
   border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 [data-theme='light'] .ant-pro-table .ant-table-tbody > tr > td {
@@ -154,10 +154,10 @@
 [data-theme='dark'] .ant-input-number,
 [data-theme='dark'] .ant-picker,
 [data-theme='dark'] textarea.ant-input:not(.ant-input-affix-wrapper textarea) {
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  border-radius: 6px !important;
-  background-color: #161f33 !important;
-  color: #e6edf3 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  background-color: #111827 !important;
+  color: #f8fafc !important;
   /* 几何属性（min-height 等）不设主题专属值：亮暗控件高度必须一致 */
   box-shadow: none !important;
 }
@@ -165,13 +165,13 @@
 /* Select：v6 结构无边框载体子元素，直接打根元素 */
 [data-theme='dark'] .ant-select:not(.ant-select-disabled),
 [data-theme='dark'] .ant-select-multiple .ant-select-selection-item {
-  border-radius: 6px;
+  border-radius: 8px;
 }
 [data-theme='dark'] .ant-select:not(.ant-select-disabled) {
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  border-radius: 6px !important;
-  background-color: #161f33 !important;
-  color: #e6edf3 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  background-color: #111827 !important;
+  color: #f8fafc !important;
   box-shadow: none !important;
 }
 
@@ -180,10 +180,10 @@
    外层包装被撑高（暗色下曾达 41.3px，与亮色 31.3px 不一致）。 */
 html[data-theme='dark'] .ant-pro-table-search .ant-input:not(.ant-input-affix-wrapper .ant-input),
 html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-input) {
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  border-radius: 6px !important;
-  background-color: #161f33 !important;
-  color: #e6edf3 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  background-color: #111827 !important;
+  color: #f8fafc !important;
 }
 
 /* affix-wrapper 内层的真实 input 元素：透明 + 无边框（避免双边框） */
@@ -192,17 +192,17 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
   border: none !important;
   background-color: transparent !important;
   border-radius: 0 !important;
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 /* InputNumber 内部输入区（几何由外层控件统一决定，此处仅改色） */
 [data-theme='dark'] .ant-input-number .ant-input-number-input {
   background-color: transparent !important;
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 [data-theme='dark'] .ant-select-selection-item {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 [data-theme='dark'] .ant-select-selection-placeholder,
@@ -211,7 +211,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 [data-theme='dark'] .ant-input-affix-wrapper input::placeholder,
 [data-theme='dark'] .ant-input-number input::placeholder,
 [data-theme='dark'] textarea.ant-input::placeholder {
-  color: #64748b !important;
+  color: #9ca3af !important;
   opacity: 1 !important;
 }
 
@@ -222,7 +222,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 [data-theme='dark'] .ant-select-dropdown .ant-select-item {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 /* 悬停于已选中项：默认 hover 底色会把选中态的主色调蓝冲成灰，
    这里在选中色基础上提亮 14% 白，保留"当前选中"的蓝色语义。
@@ -239,7 +239,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 [data-theme='dark'] .ant-select:not(.ant-select-disabled):hover,
 html[data-theme='dark'] .ant-pro-table-search .ant-input:not(.ant-input-affix-wrapper .ant-input):hover,
 html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-input):hover {
-  border-color: rgba(148, 163, 184, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* focus：暗色下只把边框换成主色，不带外发光 ring（发光高亮观感刺眼，
@@ -402,7 +402,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 /* 表头：比卡片面稍深一档（#1A2230），标题加粗提亮，从表体中脱颖而出 */
 [data-theme='dark'] .ant-pro-table .ant-table-thead > tr > th {
   background-color: #1f2937 !important;
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -422,7 +422,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 }
 
 [data-theme='dark'] .ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked):hover {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 /* ========== Drawer / 抽屉表单（新建/编辑弹层） ========== */
@@ -439,7 +439,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
   border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 [data-theme='dark'] .ant-drawer .ant-drawer-title {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 /* 表单项垂直呼吸感 + 标签与输入框清晰间距（几何属性，亮暗一致） */
 .ant-drawer .ant-form-item {
@@ -466,15 +466,15 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 /* ========== 暗黑模式：权限树/包裹区域背景 ========== */
 [data-theme='dark'] .ant-tree {
   background: transparent !important;
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 [data-theme='dark'] .ant-tree .ant-tree-treenode {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 [data-theme='dark'] .ant-tree .ant-tree-node-content-wrapper {
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 [data-theme='dark'] .ant-tree .ant-tree-node-content-wrapper:hover {
@@ -486,8 +486,8 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 }
 
 [data-theme='dark'] .ant-tree-checkbox-inner {
-  background-color: #161f33 !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  background-color: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme='dark'] .ant-tree-checkbox-checked .ant-tree-checkbox-inner {
@@ -500,7 +500,7 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
 [data-theme='dark'] .ant-btn:not(.ant-btn-primary):not(.ant-btn-danger):not(.ant-btn-link):not(.ant-btn-text) {
   background-color: #1c2128 !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #e6edf3 !important;
+  color: #f8fafc !important;
 }
 
 [data-theme='dark'] .ant-btn-default:hover,

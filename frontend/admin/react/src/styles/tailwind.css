@@ -38,51 +38,20 @@
 /* ============================================
    登录表单输入控件统一化
    仅作用于 .login-form 内的 antd 输入控件。
-   统一高度 h-11、圆角 rounded-xl（与卡片/按钮一致）。
-   背景/边框用半透明灰覆盖 antd darkAlgorithm 的过深底色，
-   使 placeholder 与输入文字清晰可读。
-   focus 时叠加主色 ring 发光（token 色，跟随主题）。
+   颜色（底色/边框/focus/placeholder）全部跟随全局 antd
+   token（与全站输入框一致，暗色下为 L2 浮起底 + slate 边框），
+   此处只统一结构尺寸：高度 h-11、圆角 8px（规范控件值）。
    ============================================ */
 .login-form .ant-input-affix-wrapper,
 .login-form .ant-input-password {
   height: 2.75rem;
-  border-radius: 0.75rem;
-  background-color: rgba(9, 13, 22, 0.6);
-  border-color: rgba(255, 255, 255, 0.15);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  border-radius: 0.5rem;
 }
 
-.login-form .ant-input-affix-wrapper:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.login-form .ant-input-affix-wrapper:focus-within {
-  border-color: var(--ant-color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ant-color-primary) 35%, transparent);
-  background-color: rgba(9, 13, 22, 0.45);
-}
-
-/* 暗色模式：聚焦只保留主色边框，去掉外发光 ring（与全局暗色聚焦规则一致） */
-[data-theme=dark] .login-form .ant-input-affix-wrapper:focus-within {
-  box-shadow: none;
-}
-
-/* placeholder 浅灰，保证暗色下可读 */
-.login-form .ant-input::placeholder {
-  color: #64748b !important;
-  opacity: 1;
-}
-
-/* 输入文字色跟随主题 token */
-.login-form .ant-input {
-  color: var(--ant-color-text);
-  background: transparent;
-}
-
-/* 登录按钮：统一高度 h-11、圆角 rounded-xl（与卡片一致） */
+/* 登录按钮：统一高度 h-11，圆角跟随全局 token */
 .login-form .login-submit-btn {
   height: 2.75rem !important;
-  border-radius: 0.75rem !important;
+  border-radius: 0.5rem !important;
 }
 
 /* 统一 Form.Item 间距，确保所有表单元素两端对齐 */
@@ -93,20 +62,4 @@
 /* 记住账号行：减小 antd large 尺寸的默认 min-height */
 .login-form .login-remember-item .ant-form-item-control-input {
   min-height: auto;
-}
-
-/* 浅色模式下卡片内输入框背景为纯白，覆盖默认半透明黑 */
-[data-theme=light] .login-form .ant-input-affix-wrapper,
-[data-theme=light] .login-form .ant-input-password {
-  background-color: #fff;
-  border-color: #e5e7eb;
-}
-
-[data-theme=light] .login-form .ant-input-affix-wrapper:hover {
-  border-color: #d1d5db;
-}
-
-[data-theme=light] .login-form .ant-input-affix-wrapper:focus-within {
-  border-color: var(--ant-color-primary);
-  background-color: #fff;
 }

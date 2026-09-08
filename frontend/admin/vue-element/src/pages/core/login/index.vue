@@ -74,7 +74,7 @@ const formComponents = {
   flex-direction: column;
   width: 100%;
   min-height: 100vh;
-  background-color: #f5f7ff;
+  background-color: #0b0f19;
 
   html:not(.dark) & {
     background-color: #f5f7ff;
@@ -106,7 +106,7 @@ const formComponents = {
     .header-title {
       font-size: 14px;
       font-weight: 600;
-      color: #1a1d28;
+      color: #f8fafc;
 
       html:not(.dark) & {
         color: #1a1d28;
@@ -144,7 +144,7 @@ const formComponents = {
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: radial-gradient(ellipse at center, #e8f0ff 0%, #f5f7ff 70%);
+  background: radial-gradient(ellipse at center, #111827 0%, #0b0f19 70%);
   position: relative;
   overflow: hidden;
 
@@ -159,7 +159,7 @@ const formComponents = {
     left: 20%;
     width: 250px;
     height: 250px;
-    background: radial-gradient(circle, rgba(64, 158, 255, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 107, 230, 0.08) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(60px);
   }
@@ -171,7 +171,7 @@ const formComponents = {
     right: 15%;
     width: 180px;
     height: 180px;
-    background: radial-gradient(circle, rgba(64, 158, 255, 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 107, 230, 0.06) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(50px);
   }
@@ -191,10 +191,15 @@ const formComponents = {
     .slogan-icon {
       width: 280px;
       height: 280px;
-      filter: drop-shadow(0 8px 32px rgba(64, 158, 255, 0.3));
+      filter: drop-shadow(0 8px 32px rgba(0, 107, 230, 0.3));
+      animation: slogan-float 5s linear infinite;
 
       html:not(.dark) & {
-        filter: drop-shadow(0 8px 32px rgba(64, 158, 255, 0.2));
+        filter: drop-shadow(0 8px 32px rgba(0, 107, 230, 0.2));
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
       }
     }
   }
@@ -203,14 +208,22 @@ const formComponents = {
     .brand-title {
       font-size: 20px;
       font-weight: 600;
-      color: #1a1d28;
+      color: #f8fafc;
       margin: 0 0 8px 0;
+
+      html:not(.dark) & {
+        color: #1a1d28;
+      }
     }
 
     .brand-desc {
       font-size: 13px;
-      color: #6b7280;
+      color: #9ca3af;
       margin: 0;
+
+      html:not(.dark) & {
+        color: #6b7280;
+      }
     }
   }
 }
@@ -224,7 +237,7 @@ const formComponents = {
   align-items: center;
   justify-content: center;
   padding: 60px 40px;
-  background-color: #141927;
+  background-color: #111827;
   position: relative;
 
   html:not(.dark) & {
@@ -304,6 +317,19 @@ const formComponents = {
   }
 }
 
+// 品牌插画：vben 同款浮动动效（float 5s，translateY -20px 循环）
+@keyframes slogan-float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
 @keyframes wave {
   0% {
     transform: rotate(0deg);
@@ -354,30 +380,30 @@ const formComponents = {
     margin-bottom: 16px;
   }
 
-  // 暗色模式下的表单样式
+  // 暗色模式下的表单样式（对齐设计语言：输入框与表面同层 + 白 α 边框）
   :deep(.el-input__wrapper) {
-    background-color: #1a2030 !important;
-    border: 1px solid #3d4f6f !important;
+    background-color: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow: none !important;
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #5a7ca5 !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
     }
 
     &.is-focus {
-      border-color: #409eff !important;
+      border-color: #006be6 !important;
       box-shadow:
-        0 0 0 1px #409eff inset,
-        0 0 12px rgba(64, 158, 255, 0.15) !important;
+        0 0 0 1px #006be6 inset,
+        0 0 12px rgba(0, 107, 230, 0.15) !important;
     }
 
     .el-input__inner {
-      color: #e5eaf3 !important;
+      color: #f8fafc !important;
       font-weight: 400;
 
       &::placeholder {
-        color: #5a6a80 !important;
+        color: #9ca3af !important;
       }
     }
   }
@@ -385,42 +411,42 @@ const formComponents = {
   // 输入框前缀图标颜色
   :deep(.el-input__prefix) {
     .el-icon {
-      color: #5a6a80 !important;
+      color: #9ca3af !important;
     }
   }
 
   // 输入框后缀图标颜色
   :deep(.el-input__suffix) {
     .el-icon {
-      color: #5a6a80 !important;
+      color: #9ca3af !important;
     }
   }
 
   :deep(.el-checkbox__label) {
-    color: #8b9dc3 !important;
+    color: #f8fafc !important;
     font-weight: 400;
   }
 
   :deep(.el-checkbox__inner) {
-    border-color: #3d4f6f !important;
-    background-color: #1a2030 !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    background-color: #111827 !important;
   }
 
   :deep(.el-checkbox.is-checked .el-checkbox__inner) {
-    background-color: #409eff !important;
-    border-color: #409eff !important;
+    background-color: #006be6 !important;
+    border-color: #006be6 !important;
   }
 
   :deep(.el-link) {
-    color: #5b8cff !important;
+    color: var(--el-color-primary-light-3) !important;
     font-weight: 500;
     text-decoration: underline;
-    text-decoration-color: rgba(91, 140, 255, 0.3);
+    text-decoration-color: rgba(0, 107, 230, 0.3);
     text-underline-offset: 2px;
 
     &:hover {
-      color: #79a8ff !important;
-      text-decoration-color: #79a8ff;
+      color: var(--el-color-primary-light-5) !important;
+      text-decoration-color: var(--el-color-primary-light-5);
     }
   }
 }
@@ -434,12 +460,12 @@ html:not(.dark) {
       box-shadow: none !important;
 
       &:hover {
-        border-color: #409eff !important;
+        border-color: var(--el-color-primary) !important;
       }
 
       &.is-focus {
-        border-color: #409eff !important;
-        box-shadow: 0 0 0 1px #409eff inset !important;
+        border-color: var(--el-color-primary) !important;
+        box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
       }
 
       .el-input__inner {
@@ -475,7 +501,7 @@ html:not(.dark) {
     }
 
     :deep(.el-link) {
-      color: #409eff !important;
+      color: var(--el-color-primary) !important;
     }
   }
 }

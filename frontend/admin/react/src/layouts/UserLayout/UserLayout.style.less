@@ -215,3 +215,26 @@
     font-size: 12px;
   }
 }
+
+/* 品牌插画：vben 同款浮动动效（float 5s，translateY -20px 循环） */
+@keyframes slogan-float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.user-brand-icon {
+  animation: slogan-float 5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-brand-icon {
+    animation: none;
+  }
+}

@@ -8,14 +8,14 @@ import type { ThemeConfig } from 'antd';
  *   L2 #161F33  二楼：输入框/下拉框（比卡片微亮，"浮起"式，避免黑洞感）
  *   L3 #1F2937  表头独立次级深色；#1C2128 下拉/弹窗浮层
  *
- * 主色 hsl(212 100% 45%)（#006BE6，见 docs/design-language.md）；文字基色 #F8FAFC；placeholder #64748B
+ * 主色 hsl(212 100% 45%)（#006BE6，见 docs/design-language.md）；文字基色 #F8FAFC；placeholder #9CA3AF
  */
 export const DARK_PALETTE = {
   bgLayout: '#0B0F19',
   bgNav: '#111827',
   bgSurface: '#111827',
   bgElevated: '#1C2128',
-  bgInset: '#161F33',
+  bgInset: '#111827',
   borderInput: 'rgba(148, 163, 184, 0.22)',
   borderInputHover: 'rgba(148, 163, 184, 0.4)',
   borderCard: 'rgba(255, 255, 255, 0.05)',
@@ -23,7 +23,7 @@ export const DARK_PALETTE = {
   textPrimary: '#F8FAFC',
   textSecondary: '#8B949E',
   textTertiary: '#6E7681',
-  placeholder: '#64748B',
+  placeholder: '#9CA3AF',
   accentBlue: '#006BE6',
 } as const;
 
@@ -44,7 +44,7 @@ export const darkThemeTokens: ThemeConfig['token'] = {
   colorText: '#F8FAFC',
   colorTextSecondary: '#8B949E',
   colorTextTertiary: '#6E7681',
-  colorTextPlaceholder: '#64748B',
+  colorTextPlaceholder: '#9CA3AF',
   // 边框：拒绝隐形。输入类控件边框用 slate 蓝灰（带蓝相，和整页蓝黑调一致，
   // 纯白 α 边框在蓝黑底上会显"脏灰"）；分隔线 8% 白保证卡片/表格
   // 与大底之间有可感知的层次（5% 时几乎隐形，整页糊成一片）
@@ -76,13 +76,12 @@ export const darkThemeTokens: ThemeConfig['token'] = {
  * 边框等需 CSS 打根/新层（见 pro-components-dark.css）。
  */
 const inputLike = {
-  // 输入类控件底色比卡片微亮（"浮起"式）：原"内嵌更暗"方案在卡片上形成
-  // 一排近黑黑洞，与整体"越向前越亮"的明度层级相悖、观感突兀。
-  // 亮度差已足够定形，静默边框相应调柔（0.28→0.22）
-  colorBgContainer: '#161F33',
-  colorBorder: 'rgba(148, 163, 184, 0.22)',
-  borderRadius: 6,
-  hoverBorderColor: 'rgba(148, 163, 184, 0.4)',
+  // 输入类控件与表面同层（2026-09-08 对齐 vben 观感修订：vben 的输入框
+  // 与卡片同底色、仅靠边框区分，实测观感更通透；此前的"浮起 lighter"
+  // 与"内嵌更暗"两个方案先后被否）
+  colorBgContainer: '#111827',
+  colorBorder: 'rgba(255, 255, 255, 0.1)',
+  hoverBorderColor: 'rgba(255, 255, 255, 0.2)',
   activeBorderColor: '#006BE6',
   activeShadow: '0 0 0 3px rgba(0, 107, 230, 0.12)',
 };

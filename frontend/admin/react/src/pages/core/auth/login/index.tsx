@@ -105,7 +105,7 @@ const Login: React.FC = () => {
    */
   const captchaImageEl = (
     <div
-      className="flex items-center justify-center overflow-hidden w-[110px] h-11 shrink-0 rounded-xl cursor-pointer border border-solid bg-white/5 border-white/10 light:bg-black/5 light:border-black/10"
+      className="flex items-center justify-center overflow-hidden w-[110px] h-11 shrink-0 rounded-lg cursor-pointer border border-solid bg-white light:border-black/10 light:bg-black/[0.03]"
       title={t('captchaRefresh')}
       onClick={() => !captchaLoading && refreshCaptcha()}
     >
@@ -130,13 +130,13 @@ const Login: React.FC = () => {
         <h2 className="text-[34px] font-extrabold tracking-[-0.5px] mb-2.5 text-[color:var(--ant-color-text)]">
           {t('welcomeBack')}
         </h2>
-        <p className="text-[15px] leading-relaxed text-slate-400">
+        <p className="text-[15px] leading-relaxed text-[color:var(--ant-color-text-tertiary)]">
           {t('loginDescription')}
         </p>
       </div>
 
-      {/* 登录表单 —— 卡片包裹，暗黑半透明 + 极细边框 + 圆角 + 柔和阴影 */}
-      <div className="rounded-xl border border-white/10 bg-white/5 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-md light:border-gray-100 light:bg-white light:shadow-lg">
+      {/* 登录表单卡片 —— 实底表面色 + 24px 大圆角 + 主色柔影（对齐 vben 认证面板） */}
+      <div className="rounded-3xl border border-[color:var(--ant-color-border-secondary)] bg-[color:var(--ant-color-bg-container)] p-8 shadow-[0_12px_40px_-8px_rgba(0,107,230,0.18)]">
         <Form
           name="login"
           onFinish={handleSubmit}
@@ -222,7 +222,7 @@ const Login: React.FC = () => {
               htmlType="submit"
               loading={loginLoading}
               block
-              className="login-submit-btn h-11 rounded-xl"
+              className="login-submit-btn"
             >
               {loginLoading ? t('loggingIn') : t('loginButton')}
             </Button>
@@ -237,7 +237,7 @@ const Login: React.FC = () => {
         </span>
         <a
           href="/auth/register"
-          className="text-sky-400 hover:text-sky-300 dark:text-sky-400 dark:hover:text-sky-300"
+          className="text-[color:var(--ant-color-primary)] hover:opacity-80"
         >
           {t('createAccount')}
         </a>
