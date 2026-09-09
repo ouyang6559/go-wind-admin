@@ -119,7 +119,7 @@ const FileManagement = () => {
       dataIndex: 'size',
       width: 120,
       hideInSearch: true,
-      render: (_, record) => formatFileSize(record.size as number),
+      render: (_, record) => record.sizeFormat || formatFileSize(record.size),
     },
     {
       title: t('createdAt'),
