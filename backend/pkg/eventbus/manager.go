@@ -25,8 +25,14 @@ func NewManager(logger bLogger.Logger) *Manager {
 	}
 }
 
-// GetBus returns an event bus by name, creates it if it doesn't exist
+// GetBus returns an event bus by name, creates it if it doesn't exist.
+// "global" 特判返回 m.global：与 Global() 同一实例——否则 Publish("global") 与
+// Global() 上的订阅分属两个总线实例，发布永远到不了订阅者。
 func (m *Manager) GetBus(name string) EventBus {
+	if name == "" || name == "global" {
+		return m.global
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

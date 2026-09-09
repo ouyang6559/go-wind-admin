@@ -20,7 +20,12 @@ func RegisterUtilAPI(L *lua.LState, logger *bLogger.Helper) {
 }
 
 // LoaderUtil 返回 util 模块（kratos_util）的 loader，供 go-scripts 引擎 RegisterModule 使用。
-func LoaderUtil(logger *bLogger.Helper) lua.LGFunction {
+// maxSleep 为 sleep 时长上限（防御脚本无限阻塞执行线程）；未传时默认 5 秒。
+func LoaderUtil(logger *bLogger.Helper, maxSleep ...time.Duration) lua.LGFunction {
+	cap := 5 * time.Second
+	if len(maxSleep) > 0 && maxSleep[0] > 0 {
+		cap = maxSleep[0]
+	}
 	return func(L *lua.LState) int {
 		// Create util module
 		utilModule := L.NewTable()
@@ -30,6 +35,12 @@ func LoaderUtil(logger *bLogger.Helper) lua.LGFunction {
 		utilModule.RawSetString("sleep", L.NewFunction(func(L *lua.LState) int {
 			seconds := L.CheckNumber(1)
 			duration := time.Duration(float64(seconds) * float64(time.Second))
+			if duration > cap {
+				if logger != nil {
+					logger.Warnf(context.Background(), "Lua sleep %v exceeds cap, clamped to %v", duration, cap)
+				}
+				duration = cap
+			}
 
 			if logger != nil {
 				logger.Debugf(context.Background(), "Lua sleep: %v", duration)
