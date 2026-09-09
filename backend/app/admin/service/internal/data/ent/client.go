@@ -46,6 +46,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
+	"go-wind-admin/app/admin/service/internal/data/ent/script"
 	"go-wind-admin/app/admin/service/internal/data/ent/task"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
@@ -136,6 +137,8 @@ type Client struct {
 	RoleMetadata *RoleMetadataClient
 	// RolePermission is the client for interacting with the RolePermission builders.
 	RolePermission *RolePermissionClient
+	// Script is the client for interacting with the Script builders.
+	Script *ScriptClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tenant is the client for interacting with the Tenant builders.
@@ -198,6 +201,7 @@ func (c *Client) init() {
 	c.Role = NewRoleClient(c.config)
 	c.RoleMetadata = NewRoleMetadataClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
+	c.Script = NewScriptClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -333,6 +337,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Role:                     NewRoleClient(cfg),
 		RoleMetadata:             NewRoleMetadataClient(cfg),
 		RolePermission:           NewRolePermissionClient(cfg),
+		Script:                   NewScriptClient(cfg),
 		Task:                     NewTaskClient(cfg),
 		Tenant:                   NewTenantClient(cfg),
 		User:                     NewUserClient(cfg),
@@ -395,6 +400,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Role:                     NewRoleClient(cfg),
 		RoleMetadata:             NewRoleMetadataClient(cfg),
 		RolePermission:           NewRolePermissionClient(cfg),
+		Script:                   NewScriptClient(cfg),
 		Task:                     NewTaskClient(cfg),
 		Tenant:                   NewTenantClient(cfg),
 		User:                     NewUserClient(cfg),
@@ -439,8 +445,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Menu, c.NotificationChannel, c.OperationAuditLog, c.OrgUnit, c.Permission,
 		c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu,
 		c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog,
-		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Task, c.Tenant, c.User,
-		c.UserCredential, c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
+		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.Task,
+		c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
+		c.UserPosition, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -457,8 +464,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Menu, c.NotificationChannel, c.OperationAuditLog, c.OrgUnit, c.Permission,
 		c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu,
 		c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog,
-		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Task, c.Tenant, c.User,
-		c.UserCredential, c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
+		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.Task,
+		c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
+		c.UserPosition, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -537,6 +545,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RoleMetadata.mutate(ctx, m)
 	case *RolePermissionMutation:
 		return c.RolePermission.mutate(ctx, m)
+	case *ScriptMutation:
+		return c.Script.mutate(ctx, m)
 	case *TaskMutation:
 		return c.Task.mutate(ctx, m)
 	case *TenantMutation:
@@ -5476,6 +5486,139 @@ func (c *RolePermissionClient) mutate(ctx context.Context, m *RolePermissionMuta
 	}
 }
 
+// ScriptClient is a client for the Script schema.
+type ScriptClient struct {
+	config
+}
+
+// NewScriptClient returns a client for the Script from the given config.
+func NewScriptClient(c config) *ScriptClient {
+	return &ScriptClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `script.Hooks(f(g(h())))`.
+func (c *ScriptClient) Use(hooks ...Hook) {
+	c.hooks.Script = append(c.hooks.Script, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `script.Intercept(f(g(h())))`.
+func (c *ScriptClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Script = append(c.inters.Script, interceptors...)
+}
+
+// Create returns a builder for creating a Script entity.
+func (c *ScriptClient) Create() *ScriptCreate {
+	mutation := newScriptMutation(c.config, OpCreate)
+	return &ScriptCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Script entities.
+func (c *ScriptClient) CreateBulk(builders ...*ScriptCreate) *ScriptCreateBulk {
+	return &ScriptCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScriptClient) MapCreateBulk(slice any, setFunc func(*ScriptCreate, int)) *ScriptCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScriptCreateBulk{err: fmt.Errorf("calling to ScriptClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScriptCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScriptCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Script.
+func (c *ScriptClient) Update() *ScriptUpdate {
+	mutation := newScriptMutation(c.config, OpUpdate)
+	return &ScriptUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScriptClient) UpdateOne(_m *Script) *ScriptUpdateOne {
+	mutation := newScriptMutation(c.config, OpUpdateOne, withScript(_m))
+	return &ScriptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScriptClient) UpdateOneID(id uint32) *ScriptUpdateOne {
+	mutation := newScriptMutation(c.config, OpUpdateOne, withScriptID(id))
+	return &ScriptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Script.
+func (c *ScriptClient) Delete() *ScriptDelete {
+	mutation := newScriptMutation(c.config, OpDelete)
+	return &ScriptDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScriptClient) DeleteOne(_m *Script) *ScriptDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScriptClient) DeleteOneID(id uint32) *ScriptDeleteOne {
+	builder := c.Delete().Where(script.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScriptDeleteOne{builder}
+}
+
+// Query returns a query builder for Script.
+func (c *ScriptClient) Query() *ScriptQuery {
+	return &ScriptQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScript},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Script entity by its id.
+func (c *ScriptClient) Get(ctx context.Context, id uint32) (*Script, error) {
+	return c.Query().Where(script.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScriptClient) GetX(ctx context.Context, id uint32) *Script {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ScriptClient) Hooks() []Hook {
+	return c.hooks.Script
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScriptClient) Interceptors() []Interceptor {
+	return c.inters.Script
+}
+
+func (c *ScriptClient) mutate(ctx context.Context, m *ScriptMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScriptCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScriptUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScriptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScriptDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Script mutation op: %q", m.Op())
+	}
+}
+
 // TaskClient is a client for the Task schema.
 type TaskClient struct {
 	config
@@ -6572,7 +6715,7 @@ type (
 		MembershipRole, Menu, NotificationChannel, OperationAuditLog, OrgUnit,
 		Permission, PermissionApi, PermissionAuditLog, PermissionGroup, PermissionMenu,
 		PermissionPolicy, Plan, PlanModule, PlanQuota, PolicyEvaluationLog, Position,
-		Role, RoleMetadata, RolePermission, Task, Tenant, User, UserCredential,
+		Role, RoleMetadata, RolePermission, Script, Task, Tenant, User, UserCredential,
 		UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
 	}
 	inters struct {
@@ -6582,7 +6725,7 @@ type (
 		MembershipRole, Menu, NotificationChannel, OperationAuditLog, OrgUnit,
 		Permission, PermissionApi, PermissionAuditLog, PermissionGroup, PermissionMenu,
 		PermissionPolicy, Plan, PlanModule, PlanQuota, PolicyEvaluationLog, Position,
-		Role, RoleMetadata, RolePermission, Task, Tenant, User, UserCredential,
+		Role, RoleMetadata, RolePermission, Script, Task, Tenant, User, UserCredential,
 		UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Interceptor
 	}
 )

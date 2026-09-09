@@ -2394,6 +2394,49 @@ var (
 			},
 		},
 	}
+	// SysScriptsColumns holds the columns for the "sys_scripts" table.
+	SysScriptsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "is_enabled", Type: field.TypeBool, Nullable: true, Comment: "是否启用", Default: true},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "脚本唯一名称"},
+		{Name: "language", Type: field.TypeEnum, Nullable: true, Comment: "脚本语言（LUA=Lua JAVASCRIPT=JavaScript）", Enums: []string{"LUA", "JAVASCRIPT"}, Default: "LUA"},
+		{Name: "hook_point", Type: field.TypeString, Nullable: true, Comment: "挂载的钩子点名称，空表示未挂载"},
+		{Name: "source", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "脚本源码"},
+		{Name: "priority", Type: field.TypeInt32, Nullable: true, Comment: "执行优先级，越小越先执行", Default: 0},
+		{Name: "description", Type: field.TypeString, Nullable: true, Comment: "脚本用途说明"},
+		{Name: "critical", Type: field.TypeBool, Nullable: true, Comment: "关键脚本：执行失败时中断钩子链", Default: false},
+		{Name: "version", Type: field.TypeUint32, Nullable: true, Comment: "版本号，每次更新自增（热更新指纹）", Default: 1},
+	}
+	// SysScriptsTable holds the schema information for the "sys_scripts" table.
+	SysScriptsTable = &schema.Table{
+		Name:       "sys_scripts",
+		Comment:    "平台脚本表（脚本引擎插件承载）",
+		Columns:    SysScriptsColumns,
+		PrimaryKey: []*schema.Column{SysScriptsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uk_sys_scripts_name",
+				Unique:  true,
+				Columns: []*schema.Column{SysScriptsColumns[8]},
+			},
+			{
+				Name:    "idx_sys_scripts_hook_point_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{SysScriptsColumns[10], SysScriptsColumns[7]},
+			},
+			{
+				Name:    "idx_sys_scripts_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysScriptsColumns[1]},
+			},
+		},
+	}
 	// SysTasksColumns holds the columns for the "sys_tasks" table.
 	SysTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -3029,6 +3072,7 @@ var (
 		SysRolesTable,
 		SysRoleMetadataTable,
 		SysRolePermissionsTable,
+		SysScriptsTable,
 		SysTasksTable,
 		SysTenantsTable,
 		SysUsersTable,
@@ -3220,6 +3264,11 @@ func init() {
 	}
 	SysRolePermissionsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_role_permissions",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysScriptsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_scripts",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

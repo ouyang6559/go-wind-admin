@@ -41,6 +41,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/schema"
+	"go-wind-admin/app/admin/service/internal/data/ent/script"
 	"go-wind-admin/app/admin/service/internal/data/ent/task"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
@@ -980,6 +981,33 @@ func init() {
 	rolepermissionDescID := rolepermissionMixinFields0[0].Descriptor()
 	// rolepermission.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	rolepermission.IDValidator = rolepermissionDescID.Validators[0].(func(uint32) error)
+	scriptMixin := schema.Script{}.Mixin()
+	scriptMixinFields0 := scriptMixin[0].Fields()
+	_ = scriptMixinFields0
+	scriptMixinFields3 := scriptMixin[3].Fields()
+	_ = scriptMixinFields3
+	scriptFields := schema.Script{}.Fields()
+	_ = scriptFields
+	// scriptDescIsEnabled is the schema descriptor for is_enabled field.
+	scriptDescIsEnabled := scriptMixinFields3[0].Descriptor()
+	// script.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	script.DefaultIsEnabled = scriptDescIsEnabled.Default.(bool)
+	// scriptDescPriority is the schema descriptor for priority field.
+	scriptDescPriority := scriptFields[4].Descriptor()
+	// script.DefaultPriority holds the default value on creation for the priority field.
+	script.DefaultPriority = scriptDescPriority.Default.(int32)
+	// scriptDescCritical is the schema descriptor for critical field.
+	scriptDescCritical := scriptFields[6].Descriptor()
+	// script.DefaultCritical holds the default value on creation for the critical field.
+	script.DefaultCritical = scriptDescCritical.Default.(bool)
+	// scriptDescVersion is the schema descriptor for version field.
+	scriptDescVersion := scriptFields[7].Descriptor()
+	// script.DefaultVersion holds the default value on creation for the version field.
+	script.DefaultVersion = scriptDescVersion.Default.(uint32)
+	// scriptDescID is the schema descriptor for id field.
+	scriptDescID := scriptMixinFields0[0].Descriptor()
+	// script.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	script.IDValidator = scriptDescID.Validators[0].(func(uint32) error)
 	taskMixin := schema.Task{}.Mixin()
 	task.Policy = privacy.NewPolicies(taskMixin[4], schema.Task{})
 	task.Hooks[0] = func(next ent.Mutator) ent.Mutator {

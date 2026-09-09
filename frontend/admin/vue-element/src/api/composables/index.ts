@@ -69,3 +69,6 @@ export * from "./dashboard";
 
 // 内部消息
 export * from "./internal-message";
+
+// 脚本管理
+export * from "./script";

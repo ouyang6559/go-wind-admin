@@ -4,10 +4,14 @@
 package main
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/go-kratos/kratos/v2"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/script"
 	"go-wind-admin/app/admin/service/internal/server"
 	"go-wind-admin/app/admin/service/internal/service"
 	"go-wind-admin/pkg/authorizer"
@@ -136,6 +140,9 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	internalMessageCategoryRepo := data.NewInternalMessageCategoryRepo(ctx, entClient)
 	internalMessageRecipientRepo := data.NewInternalMessageRecipientRepo(ctx, entClient)
 
+	// 平台脚本
+	scriptRepo := data.NewScriptRepo(ctx, entClient)
+
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
 
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
@@ -201,6 +208,21 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	internalMessageCategoryService := service.NewInternalMessageCategoryService(ctx, internalMessageCategoryRepo)
 	internalMessageRecipientService := service.NewInternalMessageRecipientService(ctx, internalMessageRepo, internalMessageRecipientRepo)
 
+	// 平台脚本：运行时（多语言引擎）+ 管理服务
+	scriptRuntime := script.NewRuntime(ctx, scriptRepo, redisClient, minioClient)
+	cleanups = append(cleanups, scriptRuntime.Close)
+	scriptService := service.NewScriptService(ctx, scriptRepo, scriptRuntime)
+	// 启动加载已启用脚本（尽力而为：失败记日志，不阻断服务启动）
+	if err := scriptRuntime.Resync(ctx.Context()); err != nil {
+		ctx.GetLogger().Error(ctx.Context(), fmt.Sprintf("script runtime startup resync failed: %v", err))
+	}
+	// 实体生命周期钩子：变更成功后异步触发 <entity>.after_<op> 钩子点（见 script.EntityHooksMapping）
+	script.AttachEntityHooks(entClient.Client(), func(hookCtx context.Context, hookPoint string, payload map[string]any) {
+		if err := scriptRuntime.InvokeEntityHook(hookPoint, payload); err != nil {
+			ctx.GetLogger().Error(context.Background(), fmt.Sprintf("script entity hook %s failed: %v", hookPoint, err))
+		}
+	})
+
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
@@ -221,6 +243,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		redisCacheMonitorService, serverMonitorService, notificationChannelService,
 		onlineSessionService, dashboardService,
 		internalMessageService, internalMessageCategoryService, internalMessageRecipientService,
+		scriptService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
 	)
 	if err != nil {
@@ -228,7 +251,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService)
+	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, scriptRuntime)
 	if err != nil {
 		rollback()
 		return nil, nil, err
