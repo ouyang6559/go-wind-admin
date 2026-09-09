@@ -1,0 +1,11 @@
+.git
+etc/*.yaml.bak
+**/*.swp
+.DS_Store
+
+# 构建期不需要的目录（加速镜像构建、减小上下文）
+desc
+goctl-template
+docs
+bin
+*.md

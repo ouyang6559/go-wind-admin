@@ -1,0 +1,120 @@
+import "common.api"
+
+// 本分组类型定义
+
+type ControlTaskRequest {
+	ControlType	string	`json:"controlType,optional"`
+	TypeName	string	`json:"typeName,optional"`
+}
+
+type CreateTaskRequest {
+	Data	Task	`json:"data,optional"`
+}
+
+type ListTaskResponse {
+	Items	[]Task	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type ListTaskTypeNameResponse {
+	TypeNames	[]string	`json:"typeNames,optional"`
+}
+
+type RestartAllTaskResponse {
+	Count	int64	`json:"count,optional"`
+}
+
+type Task {
+	Id	int64	`json:"id,optional"`
+	Type	string	`json:"type,optional"`
+	TypeName	string	`json:"typeName,optional"`
+	TaskPayload	string	`json:"taskPayload,optional"`
+	CronSpec	string	`json:"cronSpec,optional"`
+	TaskOptions	TaskOption	`json:"taskOptions,optional"`
+	Enable	bool	`json:"enable,optional"`
+	Remark	string	`json:"remark,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type TaskOption {
+	MaxRetry	int64	`json:"maxRetry,optional"`
+	Timeout	string	`json:"timeout,optional"`
+	Deadline	string	`json:"deadline,optional"`
+	ProcessIn	string	`json:"processIn,optional"`
+	ProcessAt	string	`json:"processAt,optional"`
+	UniqueTTL	string	`json:"uniqueTTL,optional"`
+	Retention	string	`json:"retention,optional"`
+	Group	string	`json:"group,optional"`
+	TaskID	string	`json:"taskID,optional"`
+}
+
+type UpdateTaskRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Task	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type TaskDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type TaskGetByIdReq {
+	Id	int64	`path:"id,optional"`
+	TypeName	string	`form:"typeName,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type TaskGetByTypeNameReq {
+	TypeName	string	`path:"typeName,optional"`
+	Id	int64	`form:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/tasks"
+	group: task
+)
+
+service admin-api {
+	@handler TaskList
+	get / (PageRequest) returns (ListTaskResponse)
+
+	@handler TaskCreate
+	post / (CreateTaskRequest)
+
+	@handler TaskGetByTypeName
+	get /type-name/:typeName (TaskGetByTypeNameReq) returns (Task)
+
+	@handler TaskGetById
+	get /:id (TaskGetByIdReq) returns (Task)
+
+	@handler TaskUpdate
+	put /:id (UpdateTaskRequest)
+
+	@handler TaskDelete
+	delete /:id (TaskDeleteReq)
+
+	@handler TaskControlTask
+	post /control (ControlTaskRequest)
+
+	@handler TaskRestartAllTask
+	post /restart returns (RestartAllTaskResponse)
+
+	@handler TaskStartAllTask
+	post /start
+
+	@handler TaskStopAllTask
+	post /stop
+
+	@handler TaskListTaskTypeName
+	get /type-names returns (ListTaskTypeNameResponse)
+}

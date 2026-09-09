@@ -1,0 +1,50 @@
+syntax = "v1"
+
+info (
+	title:   "GoWind Admin API"
+	desc:    "由 openapi.yaml 一键生成的后端路由定义"
+	author:  "go-wind-admin"
+	email:   "yanglinbo@gmail.com"
+	version: "1.0"
+)
+
+//goctl api go --api desc/admin.api --dir . --type-group --style=go_zero
+//goctl api go --api desc/admin.api --dir . --type-group --style=go_zero --home goctl-template
+import (
+	"common.api"
+	"admin_portal.api"
+	"api.api"
+	"api_audit_log.api"
+	"authentication.api"
+	"dashboard.api"
+	"data_access_audit_log.api"
+	"dict_entry.api"
+	"dict_type.api"
+	"file.api"
+	"file_transfer.api"
+	"internal_message.api"
+	"internal_message_category.api"
+	"internal_message_recipient.api"
+	"language.api"
+	"login_audit_log.api"
+	"login_policy.api"
+	"menu.api"
+	"mfa.api"
+	"operation_audit_log.api"
+	"org_unit.api"
+	"permission.api"
+	"permission_audit_log.api"
+	"permission_group.api"
+	"plan.api"
+	"plan_module.api"
+	"plan_quota.api"
+	"policy_evaluation_log.api"
+	"position.api"
+	"redis_cache_monitor.api"
+	"role.api"
+	"task.api"
+	"tenant.api"
+	"user.api"
+	"user_profile.api"
+)
+

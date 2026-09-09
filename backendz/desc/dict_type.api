@@ -1,0 +1,78 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateDictTypeRequest {
+	Data	DictType	`json:"data,optional"`
+}
+
+type DictType {
+	Id	int64	`json:"id,optional"`
+	TypeCode	string	`json:"typeCode,optional"`
+	TypeName	string	`json:"typeName,optional"`
+	IsEnabled	bool	`json:"isEnabled,optional"`
+	SortOrder	int64	`json:"sortOrder,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListDictTypeResponse {
+	Items	[]DictType	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type UpdateDictTypeRequest {
+	Id	int64	`path:"id,optional"`
+	Data	DictType	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type DictTypeDeleteReq {
+	Ids	[]int64	`form:"ids,optional"`
+}
+
+type DictTypeGetByCodeReq {
+	Code	string	`path:"code,optional"`
+	Id	int64	`form:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type DictTypeGetByIdReq {
+	Id	int64	`path:"id,optional"`
+	Code	string	`form:"code,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/dict/types"
+	group: dict_type
+)
+
+service admin-api {
+	@handler DictTypeList
+	get / (PageRequest) returns (ListDictTypeResponse)
+
+	@handler DictTypeCreate
+	post / (CreateDictTypeRequest)
+
+	@handler DictTypeDelete
+	delete / (DictTypeDeleteReq)
+
+	@handler DictTypeGetByCode
+	get /code/:code (DictTypeGetByCodeReq) returns (DictType)
+
+	@handler DictTypeGetById
+	get /:id (DictTypeGetByIdReq) returns (DictType)
+
+	@handler DictTypeUpdate
+	put /:id (UpdateDictTypeRequest)
+}

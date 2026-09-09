@@ -1,0 +1,56 @@
+import "common.api"
+
+// 本分组类型定义
+
+type DataAccessAuditLog {
+	Id	int64	`json:"id,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	UserId	int64	`json:"userId,optional"`
+	Username	string	`json:"username,optional"`
+	IpAddress	string	`json:"ipAddress,optional"`
+	RequestId	string	`json:"requestId,optional"`
+	DataSource	string	`json:"dataSource,optional"`
+	TableName	string	`json:"tableName,optional"`
+	DataId	string	`json:"dataId,optional"`
+	AccessType	string	`json:"accessType,optional"`
+	SqlDigest	string	`json:"sqlDigest,optional"`
+	SqlText	string	`json:"sqlText,optional"`
+	AffectedRows	int64	`json:"affectedRows,optional"`
+	LatencyMs	int64	`json:"latencyMs,optional"`
+	Success	bool	`json:"success,optional"`
+	SensitiveLevel	string	`json:"sensitiveLevel,optional"`
+	DataMasked	bool	`json:"dataMasked,optional"`
+	MaskingRules	string	`json:"maskingRules,optional"`
+	BusinessPurpose	string	`json:"businessPurpose,optional"`
+	DataCategory	string	`json:"dataCategory,optional"`
+	DbUser	string	`json:"dbUser,optional"`
+	LogHash	string	`json:"logHash,optional"`
+	Signature	string	`json:"signature,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+}
+
+type ListDataAccessAuditLogResponse {
+	Items	[]DataAccessAuditLog	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type DataAccessAuditLogGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/data-access-audit-logs"
+	group: data_access_audit_log
+)
+
+service admin-api {
+	@handler DataAccessAuditLogList
+	get / (PageRequest) returns (ListDataAccessAuditLogResponse)
+
+	@handler DataAccessAuditLogGet
+	get /:id (DataAccessAuditLogGetReq) returns (DataAccessAuditLog)
+}

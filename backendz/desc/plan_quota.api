@@ -1,0 +1,57 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreatePlanQuotaRequest {
+	Data	PlanQuota	`json:"data,optional"`
+}
+
+type ListPlanQuotaResponse {
+	Items	[]PlanQuota	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type PlanQuota {
+	Id	int64	`json:"id,optional"`
+	PlanId	int64	`json:"planId,optional"`
+	QuotaType	string	`json:"quotaType,optional"`
+	QuotaValue	string	`json:"quotaValue,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdatePlanQuotaRequest {
+	Id	int64	`path:"id,optional"`
+	Data	PlanQuota	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type PlanQuotaDeleteReq {
+	Id	int64	`form:"id,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/plan-quotas"
+	group: plan_quota
+)
+
+service admin-api {
+	@handler PlanQuotaList
+	get / (PageRequest) returns (ListPlanQuotaResponse)
+
+	@handler PlanQuotaCreate
+	post / (CreatePlanQuotaRequest)
+
+	@handler PlanQuotaDelete
+	delete / (PlanQuotaDeleteReq)
+
+	@handler PlanQuotaUpdate
+	put /:id (UpdatePlanQuotaRequest)
+}

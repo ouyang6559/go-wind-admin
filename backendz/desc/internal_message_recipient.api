@@ -1,0 +1,55 @@
+import "common.api"
+
+// 本分组类型定义
+
+type DeleteNotificationFromInboxRequest {
+	UserId	int64	`json:"userId,optional"`
+	RecipientIds	[]int64	`json:"recipientIds,optional"`
+}
+
+type InternalMessageRecipient {
+	Id	int64	`json:"id,optional"`
+	MessageId	int64	`json:"messageId,optional"`
+	RecipientUserId	int64	`json:"recipientUserId,optional"`
+	Status	string	`json:"status,optional"`
+	ReceivedAt	string	`json:"receivedAt,optional"`
+	ReadAt	string	`json:"readAt,optional"`
+	Title	string	`json:"title,optional"`
+	Content	string	`json:"content,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListUserInboxResponse {
+	Items	[]InternalMessageRecipient	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type MarkNotificationAsReadRequest {
+	UserId	int64	`json:"userId,optional"`
+	RecipientIds	[]int64	`json:"recipientIds,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/internal-message"
+	group: internal_message_recipient
+)
+
+service admin-api {
+	@handler InternalMessageRecipientListUserInbox
+	get /inbox (PageRequest) returns (ListUserInboxResponse)
+
+	@handler InternalMessageRecipientDeleteNotificationFromInbox
+	post /inbox/delete (DeleteNotificationFromInboxRequest)
+
+	@handler InternalMessageRecipientMarkNotificationAsRead
+	post /read (MarkNotificationAsReadRequest)
+}

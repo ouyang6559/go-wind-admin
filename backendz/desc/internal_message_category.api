@@ -1,0 +1,69 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateInternalMessageCategoryRequest {
+	Data	InternalMessageCategory	`json:"data,optional"`
+}
+
+type InternalMessageCategory {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Code	string	`json:"code,optional"`
+	IconUrl	string	`json:"iconUrl,optional"`
+	SortOrder	int64	`json:"sortOrder,optional"`
+	IsEnabled	bool	`json:"isEnabled,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListInternalMessageCategoryResponse {
+	Items	[]InternalMessageCategory	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type UpdateInternalMessageCategoryRequest {
+	Id	int64	`path:"id,optional"`
+	Data	InternalMessageCategory	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type InternalMessageCategoryDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type InternalMessageCategoryGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/internal-message/categories"
+	group: internal_message_category
+)
+
+service admin-api {
+	@handler InternalMessageCategoryList
+	get / (PageRequest) returns (ListInternalMessageCategoryResponse)
+
+	@handler InternalMessageCategoryCreate
+	post / (CreateInternalMessageCategoryRequest)
+
+	@handler InternalMessageCategoryGet
+	get /:id (InternalMessageCategoryGetReq) returns (InternalMessageCategory)
+
+	@handler InternalMessageCategoryUpdate
+	put /:id (UpdateInternalMessageCategoryRequest)
+
+	@handler InternalMessageCategoryDelete
+	delete /:id (InternalMessageCategoryDeleteReq)
+}

@@ -1,0 +1,68 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreatePlanRequest {
+	Data	Plan	`json:"data,optional"`
+}
+
+type ListPlanResponse {
+	Items	[]Plan	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type Plan {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Version	string	`json:"version,optional"`
+	ExpiryPolicy	string	`json:"expiryPolicy,optional"`
+	DataRetentionDays	int64	`json:"dataRetentionDays,optional"`
+	Description	string	`json:"description,optional"`
+	Remark	string	`json:"remark,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdatePlanRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Plan	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type PlanDeleteReq {
+	Id	int64	`form:"id,optional"`
+}
+
+type PlanGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/plans"
+	group: plan
+)
+
+service admin-api {
+	@handler PlanList
+	get / (PageRequest) returns (ListPlanResponse)
+
+	@handler PlanCreate
+	post / (CreatePlanRequest)
+
+	@handler PlanDelete
+	delete / (PlanDeleteReq)
+
+	@handler PlanGet
+	get /:id (PlanGetReq) returns (Plan)
+
+	@handler PlanUpdate
+	put /:id (UpdatePlanRequest)
+}

@@ -1,0 +1,64 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreatePlanModuleRequest {
+	Data	PlanModule	`json:"data,optional"`
+}
+
+type ListPlanModuleResponse {
+	Items	[]PlanModule	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type PlanModule {
+	Id	int64	`json:"id,optional"`
+	PlanId	int64	`json:"planId,optional"`
+	Module	string	`json:"module,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdatePlanModuleRequest {
+	Id	int64	`path:"id,optional"`
+	Data	PlanModule	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type PlanModuleDeleteReq {
+	Id	int64	`form:"id,optional"`
+}
+
+type PlanModuleGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/plan-modules"
+	group: plan_module
+)
+
+service admin-api {
+	@handler PlanModuleList
+	get / (PageRequest) returns (ListPlanModuleResponse)
+
+	@handler PlanModuleCreate
+	post / (CreatePlanModuleRequest)
+
+	@handler PlanModuleDelete
+	delete / (PlanModuleDeleteReq)
+
+	@handler PlanModuleGet
+	get /:id (PlanModuleGetReq) returns (PlanModule)
+
+	@handler PlanModuleUpdate
+	put /:id (UpdatePlanModuleRequest)
+}

@@ -1,0 +1,82 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateDictEntryRequest {
+	Data	DictEntry	`json:"data,optional"`
+}
+
+type DictEntry {
+	Id	int64	`json:"id,optional"`
+	TypeId	int64	`json:"typeId,optional"`
+	EntryValue	string	`json:"entryValue,optional"`
+	NumericValue	int64	`json:"numericValue,optional"`
+	IsEnabled	bool	`json:"isEnabled,optional"`
+	SortOrder	int64	`json:"sortOrder,optional"`
+	I18n	map[string]interface{}	`json:"i18n,optional"`
+	CurrentI18n	DictEntryI18n	`json:"currentI18n,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type DictEntryI18n {
+	EntryLabel	string	`json:"entryLabel,optional"`
+	Description	string	`json:"description,optional"`
+	LanguageCode	string	`json:"languageCode,optional"`
+	LanguageName	string	`json:"languageName,optional"`
+}
+
+type ListDictEntryByTypeCodeResponse {
+	Items	[]DictEntry	`json:"items,optional"`
+}
+
+type ListDictEntryResponse {
+	Items	[]DictEntry	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type UpdateDictEntryRequest {
+	Id	int64	`path:"id,optional"`
+	Data	DictEntry	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type DictEntryDeleteReq {
+	Ids	[]int64	`form:"ids,optional"`
+}
+
+type DictEntryListByTypeCodeReq {
+	TypeCode	string	`form:"typeCode,optional"`
+	Local	string	`form:"local,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/dict/entries"
+	group: dict_entry
+)
+
+service admin-api {
+	@handler DictEntryList
+	get / (PageRequest) returns (ListDictEntryResponse)
+
+	@handler DictEntryCreate
+	post / (CreateDictEntryRequest)
+
+	@handler DictEntryDelete
+	delete / (DictEntryDeleteReq)
+
+	@handler DictEntryListByTypeCode
+	get /by-type-code (DictEntryListByTypeCodeReq) returns (ListDictEntryByTypeCodeResponse)
+
+	@handler DictEntryUpdate
+	put /:id (UpdateDictEntryRequest)
+}

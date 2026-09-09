@@ -1,0 +1,44 @@
+import "common.api"
+
+// 本分组类型定义
+
+type InitialContextResponse {
+	Menus	[]MenuRouteItem	`json:"menus,optional"`
+	Permissions	[]string	`json:"permissions,optional"`
+}
+
+type ListPermissionCodeResponse {
+	Codes	[]string	`json:"codes,optional"`
+}
+
+type ListRouteResponse {
+	Items	[]MenuRouteItem	`json:"items,optional"`
+}
+
+type MenuRouteItem {
+	Children	[]MenuRouteItem	`json:"children,optional"`
+	Path	string	`json:"path,optional"`
+	Redirect	string	`json:"redirect,optional"`
+	Alias	string	`json:"alias,optional"`
+	Name	string	`json:"name,optional"`
+	Component	string	`json:"component,optional"`
+	Meta	MenuMeta	`json:"meta,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1"
+	group: admin_portal
+)
+
+service admin-api {
+	@handler AdminPortalGetInitialContext
+	get /initial-context returns (InitialContextResponse)
+
+	@handler AdminPortalGetMyPermissionCode
+	get /perm-codes returns (ListPermissionCodeResponse)
+
+	@handler AdminPortalGetNavigation
+	get /routes returns (ListRouteResponse)
+}

@@ -1,0 +1,143 @@
+import "common.api"
+
+// 本分组类型定义
+
+type ConfirmEnrollMethodRequest {
+	Method	string	`json:"method,optional"`
+	OperationId	string	`json:"operationId,optional"`
+	TotpCode	string	`json:"totpCode,optional"`
+	Sms	SMSVerification	`json:"sms,optional"`
+	Webauthn	WebAuthnAssertion	`json:"webauthn,optional"`
+	BackupCode	string	`json:"backupCode,optional"`
+	Display	string	`json:"display,optional"`
+}
+
+type ConfirmEnrollMethodResponse {
+	Success	bool	`json:"success,optional"`
+	CredentialId	string	`json:"credentialId,optional"`
+}
+
+type DisableMFARequest {
+	CredentialId	string	`json:"credentialId,optional"`
+	Method	string	`json:"method,optional"`
+	Password	string	`json:"password,optional"`
+	TotpCode	string	`json:"totpCode,optional"`
+	Sms	SMSVerification	`json:"sms,optional"`
+	Webauthn	WebAuthnAssertion	`json:"webauthn,optional"`
+	Reason	string	`json:"reason,optional"`
+	UserId	int64	`json:"userId,optional"`
+}
+
+type EnrolledMethod {
+	Id	string	`json:"id,optional"`
+	Method	string	`json:"method,optional"`
+	Display	string	`json:"display,optional"`
+	Enabled	bool	`json:"enabled,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	LastUsedAt	string	`json:"lastUsedAt,optional"`
+}
+
+type GetMFAStatusResponse {
+	Enabled	bool	`json:"enabled,optional"`
+	Enrolled	[]EnrolledMethod	`json:"enrolled,optional"`
+	Enforcement	string	`json:"enforcement,optional"`
+}
+
+type ListEnrolledMethodsResponse {
+	Items	[]EnrolledMethod	`json:"items,optional"`
+}
+
+type SMSResult {
+	VerificationId	string	`json:"verificationId,optional"`
+	SmsSent	bool	`json:"smsSent,optional"`
+	MaskedPhone	string	`json:"maskedPhone,optional"`
+}
+
+type SMSVerification {
+	VerificationId	string	`json:"verificationId,optional"`
+	Code	string	`json:"code,optional"`
+}
+
+type StartEnrollMethodRequest {
+	Method	string	`json:"method,optional"`
+	Phone	string	`json:"phone,optional"`
+	Email	string	`json:"email,optional"`
+}
+
+type StartEnrollMethodResponse {
+	Totp	TOTPResult	`json:"totp,optional"`
+	Sms	SMSResult	`json:"sms,optional"`
+	Webauthn	WebAuthnResult	`json:"webauthn,optional"`
+	ExpiresAt	string	`json:"expiresAt,optional"`
+	OperationId	string	`json:"operationId,optional"`
+}
+
+type TOTPResult {
+	Secret	string	`json:"secret,optional"`
+	OtpAuthUrl	string	`json:"otpAuthUrl,optional"`
+	QrCodeDataUri	string	`json:"qrCodeDataUri,optional"`
+}
+
+type VerifyMFAChallengeRequest {
+	OperationId	string	`json:"operationId,optional"`
+	TotpCode	string	`json:"totpCode,optional"`
+	Sms	SMSVerification	`json:"sms,optional"`
+	Webauthn	WebAuthnAssertion	`json:"webauthn,optional"`
+	BackupCode	string	`json:"backupCode,optional"`
+}
+
+type WebAuthnAssertion {
+	Id	string	`json:"id,optional"`
+	ClientDataJson	string	`json:"clientDataJson,optional"`
+	AuthenticatorData	string	`json:"authenticatorData,optional"`
+	Signature	string	`json:"signature,optional"`
+	UserHandle	string	`json:"userHandle,optional"`
+}
+
+type WebAuthnResult {
+	Challenge	string	`json:"challenge,optional"`
+	OptionsJson	string	`json:"optionsJson,optional"`
+	RpId	string	`json:"rpId,optional"`
+}
+
+type MfaGetMFAStatusReq {
+	UserId	string	`form:"userId,optional"`
+}
+
+type MfaListEnrolledMethodsReq {
+	UserId	string	`form:"userId,optional"`
+}
+
+type MfaRevokeMFADeviceReq {
+	CredentialId	string	`path:"credentialId,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/mfa"
+	group: mfa
+)
+
+service admin-api {
+	@handler MfaDisableMFA
+	post /disable (DisableMFARequest)
+
+	@handler MfaConfirmEnrollMethod
+	post /enroll/confirm (ConfirmEnrollMethodRequest) returns (ConfirmEnrollMethodResponse)
+
+	@handler MfaStartEnrollMethod
+	post /enroll/start (StartEnrollMethodRequest) returns (StartEnrollMethodResponse)
+
+	@handler MfaListEnrolledMethods
+	get /methods (MfaListEnrolledMethodsReq) returns (ListEnrolledMethodsResponse)
+
+	@handler MfaGetMFAStatus
+	get /status (MfaGetMFAStatusReq) returns (GetMFAStatusResponse)
+
+	@handler MfaVerifyMFAChallenge
+	post /verify (VerifyMFAChallengeRequest) returns (LoginResponse)
+
+	@handler MfaRevokeMFADevice
+	delete /:credentialId (MfaRevokeMFADeviceReq)
+}

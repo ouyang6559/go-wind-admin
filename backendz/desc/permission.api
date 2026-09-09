@@ -1,0 +1,76 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreatePermissionRequest {
+	Data	Permission	`json:"data,optional"`
+}
+
+type ListPermissionResponse {
+	Items	[]Permission	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type Permission {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Code	string	`json:"code,optional"`
+	Description	string	`json:"description,optional"`
+	Status	string	`json:"status,optional"`
+	GroupId	int64	`json:"groupId,optional"`
+	GroupName	string	`json:"groupName,optional"`
+	MenuIds	[]int64	`json:"menuIds,optional"`
+	ApiIds	[]int64	`json:"apiIds,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdatePermissionRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Permission	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type PermissionDeleteReq {
+	Id	int64	`path:"id,optional"`
+	Code	string	`form:"code,optional"`
+	GroupId	int64	`form:"groupId,optional"`
+}
+
+type PermissionGetReq {
+	Id	int64	`path:"id,optional"`
+	Code	string	`form:"code,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/permissions"
+	group: permission
+)
+
+service admin-api {
+	@handler PermissionList
+	get / (PageRequest) returns (ListPermissionResponse)
+
+	@handler PermissionCreate
+	post / (CreatePermissionRequest)
+
+	@handler PermissionSyncPermissions
+	post /sync/perms
+
+	@handler PermissionGet
+	get /:id (PermissionGetReq) returns (Permission)
+
+	@handler PermissionUpdate
+	put /:id (UpdatePermissionRequest)
+
+	@handler PermissionDelete
+	delete /:id (PermissionDeleteReq)
+}

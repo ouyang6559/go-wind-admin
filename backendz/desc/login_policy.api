@@ -1,0 +1,69 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateLoginPolicyRequest {
+	Data	LoginPolicy	`json:"data,optional"`
+}
+
+type ListLoginPolicyResponse {
+	Items	[]LoginPolicy	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type LoginPolicy {
+	Id	int64	`json:"id,optional"`
+	TargetId	int64	`json:"targetId,optional"`
+	Type	string	`json:"type,optional"`
+	Method	string	`json:"method,optional"`
+	Value	string	`json:"value,optional"`
+	Reason	string	`json:"reason,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdateLoginPolicyRequest {
+	Id	int64	`path:"id,optional"`
+	Data	LoginPolicy	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type LoginPolicyDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type LoginPolicyGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/login-policies"
+	group: login_policy
+)
+
+service admin-api {
+	@handler LoginPolicyList
+	get / (PageRequest) returns (ListLoginPolicyResponse)
+
+	@handler LoginPolicyCreate
+	post / (CreateLoginPolicyRequest)
+
+	@handler LoginPolicyGet
+	get /:id (LoginPolicyGetReq) returns (LoginPolicy)
+
+	@handler LoginPolicyUpdate
+	put /:id (UpdateLoginPolicyRequest)
+
+	@handler LoginPolicyDelete
+	delete /:id (LoginPolicyDeleteReq)
+}

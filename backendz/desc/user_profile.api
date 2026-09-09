@@ -1,0 +1,78 @@
+import "common.api"
+
+// 本分组类型定义
+
+type BindContactRequest {
+	Phone	BindPhoneRequest	`json:"phone,optional"`
+	Email	BindEmailRequest	`json:"email,optional"`
+}
+
+type BindEmailRequest {
+	Email	string	`json:"email,optional"`
+	VerificationCode	string	`json:"verificationCode,optional"`
+}
+
+type BindPhoneRequest {
+	Phone	string	`json:"phone,optional"`
+	Code	string	`json:"code,optional"`
+}
+
+type ChangePasswordRequest {
+	OldPassword	string	`json:"oldPassword,optional"`
+	NewPassword	string	`json:"newPassword,optional"`
+}
+
+type EmailVerification {
+	Email	string	`json:"email,optional"`
+	Code	string	`json:"code"`
+}
+
+type PhoneVerification {
+	Phone	string	`json:"phone,optional"`
+	Code	string	`json:"code"`
+}
+
+type UploadAvatarRequest {
+	ImageBase64	string	`json:"imageBase64,optional"`
+	ImageUrl	string	`json:"imageUrl,optional"`
+}
+
+type UploadAvatarResponse {
+	Url	string	`json:"url,optional"`
+}
+
+type VerifyContactRequest {
+	Phone	PhoneVerification	`json:"phone,optional"`
+	Email	EmailVerification	`json:"email,optional"`
+	VerificationId	string	`json:"verificationId,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/me"
+	group: user_profile
+)
+
+service admin-api {
+	@handler UserProfileGetUser
+	get / returns (User)
+
+	@handler UserProfileUpdateUser
+	put / (UpdateUserRequest)
+
+	@handler UserProfileUploadAvatar
+	post /avatar (UploadAvatarRequest) returns (UploadAvatarResponse)
+
+	@handler UserProfileDeleteAvatar
+	delete /avatar
+
+	@handler UserProfileBindContact
+	post /contact (BindContactRequest)
+
+	@handler UserProfileVerifyContact
+	post /contact/verify (VerifyContactRequest)
+
+	@handler UserProfileChangePassword
+	post /password (ChangePasswordRequest)
+}

@@ -1,0 +1,57 @@
+import "common.api"
+
+// 本分组类型定义
+
+type ActionDistributionResponse {
+	Items	[]DistributionItem	`json:"items,optional"`
+}
+
+type DashboardOverviewResponse {
+	UserCount	int64	`json:"userCount,optional"`
+	RoleCount	int64	`json:"roleCount,optional"`
+	TodayLoginCount	int64	`json:"todayLoginCount,optional"`
+	TodayOperationCount	int64	`json:"todayOperationCount,optional"`
+}
+
+type DistributionItem {
+	Label	string	`json:"label,optional"`
+	Count	int64	`json:"count,optional"`
+}
+
+type LoginTrendResponse {
+	Points	[]TrendPoint	`json:"points,optional"`
+}
+
+type StatusDistributionResponse {
+	Items	[]DistributionItem	`json:"items,optional"`
+}
+
+type TrendPoint {
+	Date	string	`json:"date,optional"`
+	Count	int64	`json:"count,optional"`
+}
+
+type DashboardGetLoginTrendReq {
+	Days	int64	`form:"days,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/dashboard"
+	group: dashboard
+)
+
+service admin-api {
+	@handler DashboardGetLoginStatusDistribution
+	get /login-status-distribution returns (StatusDistributionResponse)
+
+	@handler DashboardGetLoginTrend
+	get /login-trend (DashboardGetLoginTrendReq) returns (LoginTrendResponse)
+
+	@handler DashboardGetOperationActionDistribution
+	get /operation-action-distribution returns (ActionDistributionResponse)
+
+	@handler DashboardGetOverview
+	get /overview returns (DashboardOverviewResponse)
+}

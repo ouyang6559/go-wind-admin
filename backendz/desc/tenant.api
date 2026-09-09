@@ -1,0 +1,131 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CleanupTenantDataRequest {
+	Id	int64	`path:"id,optional"`
+}
+
+type CreateTenantRequest {
+	Data	Tenant	`json:"data,optional"`
+}
+
+type CreateTenantWithAdminUserRequest {
+	Tenant	Tenant	`json:"tenant,optional"`
+	User	User	`json:"user,optional"`
+	Password	string	`json:"password,optional"`
+}
+
+type ListTenantResponse {
+	Items	[]Tenant	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type QuotaUsage {
+	QuotaType	string	`json:"quotaType,optional"`
+	QuotaValue	string	`json:"quotaValue,optional"`
+}
+
+type Tenant {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Code	string	`json:"code,optional"`
+	Domain	string	`json:"domain,optional"`
+	LogoUrl	string	`json:"logoUrl,optional"`
+	Industry	string	`json:"industry,optional"`
+	Type	string	`json:"type,optional"`
+	Remark	string	`json:"remark,optional"`
+	AdminUserId	int64	`json:"adminUserId,optional"`
+	AdminUserName	string	`json:"adminUserName,optional"`
+	SubscriptionAt	string	`json:"subscriptionAt,optional"`
+	UnsubscribeAt	string	`json:"unsubscribeAt,optional"`
+	ExpiredAt	string	`json:"expiredAt,optional"`
+	SubscriptionPlan	string	`json:"subscriptionPlan,optional"`
+	PlanId	int64	`json:"planId,optional"`
+	MemberCount	int64	`json:"memberCount,optional"`
+	Status	string	`json:"status,optional"`
+	AuditStatus	string	`json:"auditStatus,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type TenantExistsResponse {
+	Exist	bool	`json:"exist,optional"`
+}
+
+type TenantUsage {
+	TenantId	int64	`json:"tenantId,optional"`
+	UserCount	string	`json:"userCount,optional"`
+	StorageUsedBytes	string	`json:"storageUsedBytes,optional"`
+	ApiCallCount	string	`json:"apiCallCount,optional"`
+	PlanId	int64	`json:"planId,optional"`
+	PlanName	string	`json:"planName,optional"`
+	Quotas	[]QuotaUsage	`json:"quotas,optional"`
+}
+
+type UpdateTenantRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Tenant	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type TenantDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type TenantGetReq {
+	Id	int64	`path:"id,optional"`
+	Code	string	`form:"code,optional"`
+	Name	string	`form:"name,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type TenantGetUsageReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type TenantTenantExistsReq {
+	Code	string	`form:"code,optional"`
+	Name	string	`form:"name,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/tenants"
+	group: tenant
+)
+
+service admin-api {
+	@handler TenantList
+	get / (PageRequest) returns (ListTenantResponse)
+
+	@handler TenantCreate
+	post / (CreateTenantRequest)
+
+	@handler TenantGet
+	get /:id (TenantGetReq) returns (Tenant)
+
+	@handler TenantUpdate
+	put /:id (UpdateTenantRequest)
+
+	@handler TenantDelete
+	delete /:id (TenantDeleteReq)
+
+	@handler TenantCleanupData
+	post /:id/cleanup (CleanupTenantDataRequest)
+
+	@handler TenantGetUsage
+	get /:id/usage (TenantGetUsageReq) returns (TenantUsage)
+
+	@handler TenantTenantExists
+	get /exists (TenantTenantExistsReq) returns (TenantExistsResponse)
+
+	@handler TenantCreateTenantWithAdminUser
+	post /with-admin (CreateTenantWithAdminUserRequest)
+}

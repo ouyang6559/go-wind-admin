@@ -1,0 +1,85 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateUserRequest {
+	Data	User	`json:"data,optional"`
+	Password	string	`json:"password,optional"`
+}
+
+type EditUserPasswordRequest {
+	UserId	int64	`path:"userId,optional"`
+	NewPassword	string	`json:"newPassword,optional"`
+}
+
+type ListUserResponse {
+	Items	[]User	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type UserExistsResponse {
+	Exist	bool	`json:"exist,optional"`
+}
+
+type UserDeleteByIdReq {
+	Id	int64	`path:"id,optional"`
+	Username	string	`form:"username,optional"`
+}
+
+type UserDeleteByUsernameReq {
+	Username	string	`path:"username,optional"`
+	Id	int64	`form:"id,optional"`
+}
+
+type UserGetByIdReq {
+	Id	int64	`path:"id,optional"`
+	Username	string	`form:"username,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type UserGetByUsernameReq {
+	Username	string	`path:"username,optional"`
+	Id	int64	`form:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type UserUserExistsReq {
+	Id	int64	`form:"id,optional"`
+	Username	string	`form:"username,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/users"
+	group: user
+)
+
+service admin-api {
+	@handler UserList
+	get / (PageRequest) returns (ListUserResponse)
+
+	@handler UserCreate
+	post / (CreateUserRequest)
+
+	@handler UserGetByUsername
+	get /username/:username (UserGetByUsernameReq) returns (User)
+
+	@handler UserDeleteByUsername
+	delete /username/:username (UserDeleteByUsernameReq)
+
+	@handler UserGetById
+	get /:id (UserGetByIdReq) returns (User)
+
+	@handler UserUpdate
+	put /:id (UpdateUserRequest)
+
+	@handler UserDeleteById
+	delete /:id (UserDeleteByIdReq)
+
+	@handler UserEditUserPassword
+	post /:userId/password (EditUserPasswordRequest)
+
+	@handler UserUserExists
+	get /exists (UserUserExistsReq) returns (UserExistsResponse)
+}

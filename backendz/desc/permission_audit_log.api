@@ -1,0 +1,47 @@
+import "common.api"
+
+// 本分组类型定义
+
+type ListPermissionAuditLogResponse {
+	Items	[]PermissionAuditLog	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type PermissionAuditLog {
+	Id	int64	`json:"id,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	OperatorId	int64	`json:"operatorId,optional"`
+	OperatorName	string	`json:"operatorName,optional"`
+	TargetType	string	`json:"targetType,optional"`
+	TargetId	string	`json:"targetId,optional"`
+	TargetName	string	`json:"targetName,optional"`
+	Action	string	`json:"action,optional"`
+	OldValue	string	`json:"oldValue,optional"`
+	NewValue	string	`json:"newValue,optional"`
+	IpAddress	string	`json:"ipAddress,optional"`
+	RequestId	string	`json:"requestId,optional"`
+	Reason	string	`json:"reason,optional"`
+	LogHash	string	`json:"logHash,optional"`
+	Signature	string	`json:"signature,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+}
+
+type PermissionAuditLogGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/permission-audit-logs"
+	group: permission_audit_log
+)
+
+service admin-api {
+	@handler PermissionAuditLogList
+	get / (PageRequest) returns (ListPermissionAuditLogResponse)
+
+	@handler PermissionAuditLogGet
+	get /:id (PermissionAuditLogGetReq) returns (PermissionAuditLog)
+}

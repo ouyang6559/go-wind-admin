@@ -1,0 +1,75 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateFileRequest {
+	Data	File	`json:"data,optional"`
+}
+
+type File {
+	Id	int64	`json:"id,optional"`
+	Provider	string	`json:"provider,optional"`
+	BucketName	string	`json:"bucketName,optional"`
+	FileDirectory	string	`json:"fileDirectory,optional"`
+	FileGuid	string	`json:"fileGuid,optional"`
+	SaveFileName	string	`json:"saveFileName,optional"`
+	FileName	string	`json:"fileName,optional"`
+	Extension	string	`json:"extension,optional"`
+	Size	string	`json:"size,optional"`
+	SizeFormat	string	`json:"sizeFormat,optional"`
+	LinkUrl	string	`json:"linkUrl,optional"`
+	ContentHash	string	`json:"contentHash,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListFileResponse {
+	Items	[]File	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type UpdateFileRequest {
+	Id	int64	`path:"id,optional"`
+	Data	File	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type FileDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type FileGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/files"
+	group: file
+)
+
+service admin-api {
+	@handler FileList
+	get / (PageRequest) returns (ListFileResponse)
+
+	@handler FileCreate
+	post / (CreateFileRequest)
+
+	@handler FileGet
+	get /:id (FileGetReq) returns (File)
+
+	@handler FileUpdate
+	put /:id (UpdateFileRequest)
+
+	@handler FileDelete
+	delete /:id (FileDeleteReq)
+}

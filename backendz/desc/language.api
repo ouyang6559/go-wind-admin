@@ -1,0 +1,76 @@
+import "common.api"
+
+// 本分组类型定义
+
+type BatchCreateLanguagesRequest {
+	Items	[]Language	`json:"items,optional"`
+}
+
+type CreateLanguageRequest {
+	Data	Language	`json:"data,optional"`
+}
+
+type Language {
+	Id	int64	`json:"id,optional"`
+	LanguageCode	string	`json:"languageCode,optional"`
+	LanguageName	string	`json:"languageName,optional"`
+	NativeName	string	`json:"nativeName,optional"`
+	IsDefault	bool	`json:"isDefault,optional"`
+	IsEnabled	bool	`json:"isEnabled,optional"`
+	SortOrder	int64	`json:"sortOrder,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListLanguageResponse {
+	Items	[]Language	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type UpdateLanguageRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Language	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type LanguageDeleteReq {
+	Id	int64	`form:"id,optional"`
+}
+
+type LanguageGetReq {
+	Id	int64	`path:"id,optional"`
+	Code	string	`form:"code,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/dict/langs"
+	group: language
+)
+
+service admin-api {
+	@handler LanguageList
+	get / (PageRequest) returns (ListLanguageResponse)
+
+	@handler LanguageCreate
+	post / (CreateLanguageRequest)
+
+	@handler LanguageDelete
+	delete / (LanguageDeleteReq)
+
+	@handler LanguageBatchCreate
+	post /batch (BatchCreateLanguagesRequest)
+
+	@handler LanguageGet
+	get /:id (LanguageGetReq) returns (Language)
+
+	@handler LanguageUpdate
+	put /:id (UpdateLanguageRequest)
+}

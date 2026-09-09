@@ -1,0 +1,75 @@
+import "common.api"
+
+// 本分组类型定义
+
+type GenerateCaptchaResponse {
+	CaptchaId	string	`json:"captchaId,optional"`
+	ImageBase64	string	`json:"imageBase64,optional"`
+}
+
+type LoginRequest {
+	GrantType	string	`json:"grant_type"`
+	ClientId	string	`json:"client_id,optional"`
+	ClientSecret	string	`json:"client_secret,optional"`
+	Scope	string	`json:"scope,optional"`
+	RedirectUri	string	`json:"redirect_uri,optional"`
+	UserId	int64	`json:"user_id,optional"`
+	Username	string	`json:"username,optional"`
+	Email	string	`json:"email,optional"`
+	Mobile	string	`json:"mobile,optional"`
+	Password	string	`json:"password,optional"`
+	RefreshToken	string	`json:"refresh_token,optional"`
+	Code	string	`json:"code,optional"`
+	ClientType	string	`json:"client_type,optional"`
+	DeviceId	string	`json:"device_id,optional"`
+	Jti	string	`json:"jti,optional"`
+	TenantCode	string	`json:"tenant_code,optional"`
+}
+
+type RegisterUserRequest {
+	Username	string	`json:"username,optional"`
+	Password	string	`json:"password,optional"`
+	TenantCode	string	`json:"tenantCode,optional"`
+	Email	string	`json:"email,optional"`
+	ClientType	string	`json:"client_type,optional"`
+}
+
+type RegisterUserResponse {
+	UserId	int64	`json:"userId,optional"`
+}
+
+type VerifyCaptchaRequest {
+	CaptchaId	string	`json:"captchaId,optional"`
+	UserInput	string	`json:"userInput,optional"`
+}
+
+type VerifyCaptchaResponse {
+	Valid	bool	`json:"valid,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1"
+	group: authentication
+)
+
+service admin-api {
+	@handler AuthenticationGenerateCaptcha
+	get /captcha returns (GenerateCaptchaResponse)
+
+	@handler AuthenticationVerifyCaptcha
+	post /captcha/verify (VerifyCaptchaRequest) returns (VerifyCaptchaResponse)
+
+	@handler AuthenticationLogin
+	post /login (LoginRequest) returns (LoginResponse)
+
+	@handler AuthenticationLogout
+	post /logout
+
+	@handler AuthenticationRefreshToken
+	post /refresh-token (LoginRequest) returns (LoginResponse)
+
+	@handler AuthenticationRegisterUser
+	post /register (RegisterUserRequest) returns (RegisterUserResponse)
+}

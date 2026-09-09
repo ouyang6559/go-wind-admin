@@ -1,0 +1,89 @@
+# go-wind-admin backendz（admin-api）完整配置
+# 对应 internal/config/config.go 的 Config 结构体（go-zero v1.10.3）
+# 数据库 / Redis 与 backend 保持一致（PostgreSQL gwa / Redis 密码 *Abcd123456）
+
+Name: admin-api
+Host: 0.0.0.0
+Port: 8888
+
+# 不使用 nginx，直接监听端口对外服务；如需 HTTPS 在此配置证书
+#CertFile: etc/tls/dev.baidu.com.pem
+#KeyFile: etc/tls/dev.baidu.com.key
+
+#Verbose: false
+MaxConns: 10000        # 最大并发连接数（qps），默认 10000
+MaxBytes: 8388608      # 请求体大小上限（字节），默认 1048576
+Timeout: 30000         # 请求超时（毫秒），默认 3000
+CpuThreshold: 900      # CPU 负载熔断阈值，范围 [0,1000)，默认 900
+#Signature:
+#  Strict: false
+#  Expiry: 1h
+#  PrivateKeys:
+#    - Fingerprint: ""
+#      KeyFile: ""
+
+Mode: dev              # 运行模式 options=dev|test|rt|pre|pro，默认 pro
+
+# 数据库配置（PostgreSQL，与 backend / backendr 的 docker-compose 保持一致：
+#   user=postgres password=*Abcd123456 dbname=gwa）
+# host 用容器服务名 postgres（docker-compose 内可直接解析）；
+# 纯本机进程运行时改成 127.0.0.1，或加 /etc/hosts: 127.0.0.1 postgres
+Mysql:
+  DriverName: postgres
+  DataSource: "host=postgres port=5432 user=postgres password=*Abcd123456 dbname=gwa sslmode=disable"
+  #Replicas:
+  #  - host=...
+  #Policy: round-robin   # 多副本负载策略 round-robin|random
+
+# Redis 直连配置（与 backend / backendr 一致：密码 *Abcd123456，服务名 redis）
+Redis:
+  Host: redis:6379
+  Pass: "*Abcd123456"
+  Type: node             # options=node|cluster
+  #Tls: false
+  #NonBlock: true
+
+# Redis 缓存集群配置（cache.CacheConf，多节点继续追加即可）
+Cache:
+  - Host: redis:6379
+    Pass: "*Abcd123456"
+    Weight: 100
+
+# JWT 鉴权配置（.api 中 @server(jwt: Auth) 引用 Config.Auth.*）
+Auth:
+  AccessSecret: "kRZ3kA7LuB4LqOWi"
+  AccessExpire: 86400
+
+# 日志配置（rest.RestConf 内嵌 ServiceConf.Log，覆盖默认值）
+Log:
+  ServiceName: admin-api      # 日志服务名/文件前缀
+  Mode: console               # 输出方式 console|file|volume，开发 console，生产 file
+  Encoding: plain             # 编码 json|plain，开发 plain，生产 json
+  TimeFormat: "2006-01-02T15:04:05.000Z07"
+  Path: logs/admin-api        # file 模式日志目录（相对进程工作目录）
+  Level: info                 # 日志级别 debug|info|error|severe
+  #MaxContentLength: 0
+  Compress: false             # 是否压缩历史日志
+  Stat: true                  # 是否打印服务器统计信息
+  KeepDays: 15                # 保留天数（file/volume 模式生效）
+  StackCooldownMillis: 100
+  MaxBackups: 0               # size 轮转最大备份数，0 表示全部保留
+  MaxSize: 0                  # size 轮转单文件上限（MB），0 表示不限制
+  Rotation: daily             # 轮转方式 daily|size
+
+# 开发辅助服务（metrics / pprof / healthz），生产可置 Enabled: false
+DevServer:
+  Enabled: true
+  #Host:
+  Port: 6060
+  MetricsPath: "/metrics"
+  HealthPath: "/healthz"
+  EnableMetrics: true
+  EnablePprof: true
+  #HealthResponse: "OK"
+
+# 预留：后续接入 RPC 客户端时启用（zrpc.RpcClientConf）
+#AdminRpc:
+#  Timeout: 10000
+#  Endpoints:
+#    - 127.0.0.1:39711

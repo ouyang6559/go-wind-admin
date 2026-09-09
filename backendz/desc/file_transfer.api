@@ -1,0 +1,72 @@
+import "common.api"
+
+// 本分组类型定义
+
+type DownloadFileResponse {
+	File	string	`json:"file,optional"`
+	DownloadUrl	string	`json:"downloadUrl,optional"`
+	SourceFileName	string	`json:"sourceFileName,optional"`
+	Mime	string	`json:"mime,optional"`
+	Size	string	`json:"size,optional"`
+	Checksum	string	`json:"checksum,optional"`
+	StoragePath	string	`json:"storagePath,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+}
+
+type PresignOption {
+	Method	string	`json:"method,optional"`
+	ExpireSeconds	int64	`json:"expireSeconds,optional"`
+	ContentType	string	`json:"contentType,optional"`
+}
+
+type StorageObject {
+	BucketName	string	`json:"bucketName,optional"`
+	FileDirectory	string	`json:"fileDirectory,optional"`
+	ObjectName	string	`json:"objectName,optional"`
+}
+
+type UploadFileRequest {
+	StorageObject	StorageObject	`json:"storageObject,optional"`
+	File	string	`json:"file,optional"`
+	Presign	PresignOption	`json:"presign,optional"`
+	SourceFileName	string	`json:"sourceFileName,optional"`
+	Mime	string	`json:"mime,optional"`
+	Size	string	`json:"size,optional"`
+}
+
+type UploadFileResponse {
+	ObjectName	string	`json:"objectName,optional"`
+	PresignedUrl	string	`json:"presignedUrl,optional"`
+}
+
+type FileTransferDownloadFileReq {
+	FileId	int64	`form:"fileId,optional"`
+	StorageObjectBucketName	string	`form:"storageObject.bucketName,optional"`
+	StorageObjectFileDirectory	string	`form:"storageObject.fileDirectory,optional"`
+	StorageObjectObjectName	string	`form:"storageObject.objectName,optional"`
+	DownloadUrl	string	`form:"downloadUrl,optional"`
+	RangeStart	int64	`form:"rangeStart,optional"`
+	RangeEnd	int64	`form:"rangeEnd,optional"`
+	PreferPresignedUrl	bool	`form:"preferPresignedUrl,optional"`
+	PresignExpireSeconds	int64	`form:"presignExpireSeconds,optional"`
+	Disposition	string	`form:"disposition,optional"`
+	AcceptMime	string	`form:"acceptMime,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/file"
+	group: file_transfer
+)
+
+service admin-api {
+	@handler FileTransferDownloadFile
+	get /download (FileTransferDownloadFileReq) returns (DownloadFileResponse)
+
+	@handler FileTransferPutUploadFile
+	put /upload (UploadFileRequest) returns (UploadFileResponse)
+
+	@handler FileTransferPostUploadFile
+	post /upload (UploadFileRequest) returns (UploadFileResponse)
+}

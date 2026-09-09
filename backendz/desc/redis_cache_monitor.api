@@ -1,0 +1,40 @@
+import "common.api"
+
+// 本分组类型定义
+
+type InfoEntry {
+	Key	string	`json:"key,optional"`
+	Value	string	`json:"value,optional"`
+}
+
+type InfoSection {
+	Name	string	`json:"name,optional"`
+	Entries	[]InfoEntry	`json:"entries,optional"`
+}
+
+type RedisCacheMonitorInfo {
+	Sections	[]InfoSection	`json:"sections,optional"`
+	DbSize	string	`json:"dbSize,optional"`
+	Slowlog	[]SlowLogEntry	`json:"slowlog,optional"`
+}
+
+type SlowLogEntry {
+	Id	string	`json:"id,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	DurationUsec	string	`json:"durationUsec,optional"`
+	Args	[]string	`json:"args,optional"`
+	ClientAddr	string	`json:"clientAddr,optional"`
+	ClientName	string	`json:"clientName,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/redis-cache-monitor"
+	group: redis_cache_monitor
+)
+
+service admin-api {
+	@handler RedisCacheMonitorGet
+	get / returns (RedisCacheMonitorInfo)
+}

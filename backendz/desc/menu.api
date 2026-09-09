@@ -1,0 +1,81 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateMenuRequest {
+	Data	Menu	`json:"data,optional"`
+}
+
+type ListMenuResponse {
+	Items	[]Menu	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type Menu {
+	Id	int64	`json:"id,optional"`
+	Status	string	`json:"status,optional"`
+	Type	string	`json:"type,optional"`
+	Path	string	`json:"path,optional"`
+	Redirect	string	`json:"redirect,optional"`
+	Alias	string	`json:"alias,optional"`
+	Name	string	`json:"name,optional"`
+	Component	string	`json:"component,optional"`
+	Meta	MenuMeta	`json:"meta,optional"`
+	Module	string	`json:"module,optional"`
+	ParentId	int64	`json:"parentId,optional"`
+	Children	[]Menu	`json:"children,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type SyncMenusRequest {
+	Items	[]Menu	`json:"items,optional"`
+}
+
+type UpdateMenuRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Menu	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type MenuDeleteReq {
+	Id	int64	`path:"id,optional"`
+	OperatorId	int64	`form:"operatorId,optional"`
+}
+
+type MenuGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/menus"
+	group: menu
+)
+
+service admin-api {
+	@handler MenuList
+	get / (PageRequest) returns (ListMenuResponse)
+
+	@handler MenuCreate
+	post / (CreateMenuRequest)
+
+	@handler MenuSyncMenus
+	post /sync (SyncMenusRequest)
+
+	@handler MenuGet
+	get /:id (MenuGetReq) returns (Menu)
+
+	@handler MenuUpdate
+	put /:id (UpdateMenuRequest)
+
+	@handler MenuDelete
+	delete /:id (MenuDeleteReq)
+}

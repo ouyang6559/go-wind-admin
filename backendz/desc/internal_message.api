@@ -1,0 +1,91 @@
+import "common.api"
+
+// 本分组类型定义
+
+type InternalMessage {
+	Id	int64	`json:"id,optional"`
+	Title	string	`json:"title,optional"`
+	Content	string	`json:"content,optional"`
+	Status	string	`json:"status,optional"`
+	Type	string	`json:"type,optional"`
+	SenderId	int64	`json:"senderId,optional"`
+	SenderName	string	`json:"senderName,optional"`
+	CategoryId	int64	`json:"categoryId,optional"`
+	CategoryName	string	`json:"categoryName,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListInternalMessageResponse {
+	Items	[]InternalMessage	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type RevokeMessageRequest {
+	MessageId	int64	`json:"messageId,optional"`
+	UserId	int64	`json:"userId,optional"`
+}
+
+type SendMessageRequest {
+	Type	string	`json:"type,optional"`
+	RecipientUserId	int64	`json:"recipientUserId,optional"`
+	ConversationId	int64	`json:"conversationId,optional"`
+	CategoryId	int64	`json:"categoryId,optional"`
+	TargetUserIds	[]int64	`json:"targetUserIds,optional"`
+	TargetAll	bool	`json:"targetAll,optional"`
+	Title	string	`json:"title,optional"`
+	Content	string	`json:"content,optional"`
+}
+
+type SendMessageResponse {
+	MessageId	int64	`json:"messageId,optional"`
+}
+
+type UpdateInternalMessageRequest {
+	Id	int64	`path:"id,optional"`
+	Data	InternalMessage	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type InternalMessageDeleteMessageReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type InternalMessageGetMessageReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/internal-message"
+	group: internal_message
+)
+
+service admin-api {
+	@handler InternalMessageListMessage
+	get /messages (PageRequest) returns (ListInternalMessageResponse)
+
+	@handler InternalMessageGetMessage
+	get /messages/:id (InternalMessageGetMessageReq) returns (InternalMessage)
+
+	@handler InternalMessageUpdateMessage
+	put /messages/:id (UpdateInternalMessageRequest)
+
+	@handler InternalMessageDeleteMessage
+	delete /messages/:id (InternalMessageDeleteMessageReq)
+
+	@handler InternalMessageRevokeMessage
+	post /revoke (RevokeMessageRequest)
+
+	@handler InternalMessageSendMessage
+	post /send (SendMessageRequest) returns (SendMessageResponse)
+}

@@ -1,0 +1,74 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreateRoleRequest {
+	Data	Role	`json:"data,optional"`
+}
+
+type ListRoleResponse {
+	Items	[]Role	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type Role {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Code	string	`json:"code,optional"`
+	SortOrder	int64	`json:"sortOrder,optional"`
+	Status	string	`json:"status,optional"`
+	Description	string	`json:"description,optional"`
+	IsProtected	bool	`json:"isProtected,optional"`
+	Type	string	`json:"type,optional"`
+	Permissions	[]int64	`json:"permissions,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdateRoleRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Role	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type RoleDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type RoleGetReq {
+	Id	int64	`path:"id,optional"`
+	Name	string	`form:"name,optional"`
+	Code	string	`form:"code,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/roles"
+	group: role
+)
+
+service admin-api {
+	@handler RoleList
+	get / (PageRequest) returns (ListRoleResponse)
+
+	@handler RoleCreate
+	post / (CreateRoleRequest)
+
+	@handler RoleGet
+	get /:id (RoleGetReq) returns (Role)
+
+	@handler RoleUpdate
+	put /:id (UpdateRoleRequest)
+
+	@handler RoleDelete
+	delete /:id (RoleDeleteReq)
+}

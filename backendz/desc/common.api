@@ -1,0 +1,148 @@
+// 共享类型：所有分组 route 文件均可 import 本文件。
+
+
+// 分页/过滤公共请求（List 接口通用查询参数，form 绑定）
+type PageRequest {
+	Page     int64  `form:"page,optional"`
+	PageSize int64  `form:"pageSize,optional"`
+	Offset   int64  `form:"offset,optional"`
+	Limit    int64  `form:"limit,optional"`
+	Token    string `form:"token,optional"`
+	NoPaging bool   `form:"noPaging,optional"`
+	Query    string `form:"query,optional"`
+	Filter   string `form:"filter,optional"`
+	// FilterExprType 过滤表达式类型
+	FilterExprType string `form:"filterExpr.type,optional"`
+	OrderBy    string `form:"orderBy,optional"`
+	FieldMask  string `form:"fieldMask,optional"`
+}
+
+type DeviceInfo {
+	ClientId	string	`json:"clientId,optional"`
+	ClientName	string	`json:"clientName,optional"`
+	OsName	string	`json:"osName,optional"`
+	OsVersion	string	`json:"osVersion,optional"`
+	DeviceId	string	`json:"deviceId,optional"`
+	DeviceType	string	`json:"deviceType,optional"`
+	Manufacturer	string	`json:"manufacturer,optional"`
+	Model	string	`json:"model,optional"`
+	Platform	string	`json:"platform,optional"`
+	OsBuild	string	`json:"osBuild,optional"`
+	AppName	string	`json:"appName,optional"`
+	AppVersion	string	`json:"appVersion,optional"`
+	ScreenWidth	int64	`json:"screenWidth,optional"`
+	ScreenHeight	int64	`json:"screenHeight,optional"`
+	Locale	string	`json:"locale,optional"`
+	TimeZone	string	`json:"timeZone,optional"`
+	NetworkType	string	`json:"networkType,optional"`
+	Carrier	string	`json:"carrier,optional"`
+	DeviceFingerprint	string	`json:"deviceFingerprint,optional"`
+	UserAgent	string	`json:"userAgent,optional"`
+	BrowserName	string	`json:"browserName,optional"`
+	BrowserVersion	string	`json:"browserVersion,optional"`
+	BrowserEngine	string	`json:"browserEngine,optional"`
+	EngineVersion	string	`json:"engineVersion,optional"`
+}
+
+type GeoLocation {
+	CountryCode	string	`json:"countryCode,optional"`
+	Province	string	`json:"province,optional"`
+	City	string	`json:"city,optional"`
+	Isp	string	`json:"isp,optional"`
+	AddressRemark	string	`json:"addressRemark,optional"`
+	Latitude	string	`json:"latitude,optional"`
+	Longitude	string	`json:"longitude,optional"`
+}
+
+type KratosStatus {
+	Code	float64	`json:"code,optional"`
+	Message	string	`json:"message,optional"`
+	Reason	string	`json:"reason,optional"`
+	Metadata	map[string]interface{}	`json:"metadata,optional"`
+}
+
+type LoginResponse {
+	TokenType	string	`json:"token_type,optional"`
+	AccessToken	string	`json:"access_token,optional"`
+	ExpiresIn	string	`json:"expires_in,optional"`
+	RefreshToken	string	`json:"refresh_token,optional"`
+	Scope	string	`json:"scope,optional"`
+	RefreshExpiresIn	string	`json:"refresh_expires_in,optional"`
+	IdToken	string	`json:"id_token,optional"`
+	MfaOperationId	string	`json:"mfa_operation_id,optional"`
+}
+
+type MenuMeta {
+	ActiveIcon	string	`json:"activeIcon,optional"`
+	ActivePath	string	`json:"activePath,optional"`
+	AffixTab	bool	`json:"affixTab,optional"`
+	AffixTabOrder	int64	`json:"affixTabOrder,optional"`
+	Authority	[]string	`json:"authority,optional"`
+	Badge	string	`json:"badge,optional"`
+	BadgeType	string	`json:"badgeType,optional"`
+	BadgeVariants	string	`json:"badgeVariants,optional"`
+	HideChildrenInMenu	bool	`json:"hideChildrenInMenu,optional"`
+	HideInBreadcrumb	bool	`json:"hideInBreadcrumb,optional"`
+	HideInMenu	bool	`json:"hideInMenu,optional"`
+	HideInTab	bool	`json:"hideInTab,optional"`
+	Icon	string	`json:"icon,optional"`
+	IframeSrc	string	`json:"iframeSrc,optional"`
+	IgnoreAccess	bool	`json:"ignoreAccess,optional"`
+	KeepAlive	bool	`json:"keepAlive,optional"`
+	Link	string	`json:"link,optional"`
+	Loaded	bool	`json:"loaded,optional"`
+	MaxNumOfOpenTab	int64	`json:"maxNumOfOpenTab,optional"`
+	MenuVisibleWithForbidden	bool	`json:"menuVisibleWithForbidden,optional"`
+	OpenInNewWindow	bool	`json:"openInNewWindow,optional"`
+	Order	int64	`json:"order,optional"`
+	Title	string	`json:"title,optional"`
+}
+
+type UpdateUserRequest {
+	Id	int64	`path:"id,optional"`
+	Data	User	`json:"data"`
+	Password	string	`json:"password,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type User {
+	Id	int64	`json:"id,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	OrgUnitId	int64	`json:"orgUnitId,optional"`
+	OrgUnitIds	[]int64	`json:"orgUnitIds,optional"`
+	OrgUnitName	string	`json:"orgUnitName,optional"`
+	OrgUnitNames	[]string	`json:"orgUnitNames,optional"`
+	PositionId	int64	`json:"positionId,optional"`
+	PositionIds	[]int64	`json:"positionIds,optional"`
+	PositionName	string	`json:"positionName,optional"`
+	PositionNames	[]string	`json:"positionNames,optional"`
+	RoleId	int64	`json:"roleId,optional"`
+	RoleIds	[]int64	`json:"roleIds,optional"`
+	Roles	[]string	`json:"roles,optional"`
+	RoleNames	[]string	`json:"roleNames,optional"`
+	Username	string	`json:"username,optional"`
+	Nickname	string	`json:"nickname,optional"`
+	Realname	string	`json:"realname,optional"`
+	Avatar	string	`json:"avatar,optional"`
+	Email	string	`json:"email,optional"`
+	Mobile	string	`json:"mobile,optional"`
+	Telephone	string	`json:"telephone,optional"`
+	Gender	string	`json:"gender,optional"`
+	Address	string	`json:"address,optional"`
+	Region	string	`json:"region,optional"`
+	Description	string	`json:"description,optional"`
+	Remark	string	`json:"remark,optional"`
+	LastLoginAt	string	`json:"lastLoginAt,optional"`
+	LastLoginIp	string	`json:"lastLoginIp,optional"`
+	Status	string	`json:"status,optional"`
+	LockedUntil	string	`json:"lockedUntil,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+

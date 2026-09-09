@@ -1,0 +1,48 @@
+import "common.api"
+
+// 本分组类型定义
+
+type ListPolicyEvaluationLogResponse {
+	Items	[]PolicyEvaluationLog	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type PolicyEvaluationLog {
+	Id	int64	`json:"id,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	UserId	int64	`json:"userId,optional"`
+	MembershipId	int64	`json:"membershipId,optional"`
+	PermissionId	int64	`json:"permissionId,optional"`
+	PolicyId	int64	`json:"policyId,optional"`
+	RequestPath	string	`json:"requestPath,optional"`
+	RequestMethod	string	`json:"requestMethod,optional"`
+	Result	bool	`json:"result,optional"`
+	EffectDetails	string	`json:"effectDetails,optional"`
+	ScopeSql	string	`json:"scopeSql,optional"`
+	IpAddress	string	`json:"ipAddress,optional"`
+	TraceId	string	`json:"traceId,optional"`
+	EvaluationContext	string	`json:"evaluationContext,optional"`
+	LogHash	string	`json:"logHash,optional"`
+	Signature	string	`json:"signature,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+}
+
+type PolicyEvaluationLogGetReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/policy-evaluation-logs"
+	group: policy_evaluation_log
+)
+
+service admin-api {
+	@handler PolicyEvaluationLogList
+	get / (PageRequest) returns (ListPolicyEvaluationLogResponse)
+
+	@handler PolicyEvaluationLogGet
+	get /:id (PolicyEvaluationLogGetReq) returns (PolicyEvaluationLog)
+}

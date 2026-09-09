@@ -1,0 +1,84 @@
+import "common.api"
+
+// 本分组类型定义
+
+type CreatePositionRequest {
+	Data	Position	`json:"data,optional"`
+}
+
+type ListPositionResponse {
+	Items	[]Position	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type Position {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Code	string	`json:"code,optional"`
+	Headcount	int64	`json:"headcount,optional"`
+	SortOrder	int64	`json:"sortOrder,optional"`
+	Status	string	`json:"status,optional"`
+	Type	string	`json:"type,optional"`
+	Remark	string	`json:"remark,optional"`
+	Description	string	`json:"description,optional"`
+	JobFamily	string	`json:"jobFamily,optional"`
+	JobGrade	string	`json:"jobGrade,optional"`
+	Level	int64	`json:"level,optional"`
+	IsKeyPosition	bool	`json:"isKeyPosition,optional"`
+	TenantId	int64	`json:"tenantId,optional"`
+	TenantName	string	`json:"tenantName,optional"`
+	OrgUnitId	int64	`json:"orgUnitId,optional"`
+	OrgUnitName	string	`json:"orgUnitName,optional"`
+	ReportsToPositionId	int64	`json:"reportsToPositionId,optional"`
+	ReportsToPositionName	string	`json:"reportsToPositionName,optional"`
+	StartAt	string	`json:"startAt,optional"`
+	EndAt	string	`json:"endAt,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type UpdatePositionRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Position	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type PositionDeleteReq {
+	Id	int64	`path:"id,optional"`
+}
+
+type PositionGetReq {
+	Id	int64	`path:"id,optional"`
+	Name	string	`form:"name,optional"`
+	Code	string	`form:"code,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/positions"
+	group: position
+)
+
+service admin-api {
+	@handler PositionList
+	get / (PageRequest) returns (ListPositionResponse)
+
+	@handler PositionCreate
+	post / (CreatePositionRequest)
+
+	@handler PositionGet
+	get /:id (PositionGetReq) returns (Position)
+
+	@handler PositionUpdate
+	put /:id (UpdatePositionRequest)
+
+	@handler PositionDelete
+	delete /:id (PositionDeleteReq)
+}
