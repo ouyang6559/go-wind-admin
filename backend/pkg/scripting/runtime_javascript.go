@@ -97,7 +97,10 @@ func (b *JSBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 		}
 	}
 
-	// task 模块：随 M2 asynq 桥一并定义跨语言契约（Lua 侧的注册表同样未接执行器）
+	// task 模块：JS 侧 in-script 任务注册 API（对齐 Lua 的 task.register_handler）尚未实现，
+	// JS 脚本暂无法注册任务处理器。asynq 任务桥与执行链路本身已通
+	// （internal/script Runtime.RunScriptTaskHandler → Engine.ExecuteTaskHandler，Lua 处理器可注册可执行）；
+	// 跨语言契约对齐时用真实实现替换此占位。
 	_ = eng.RegisterModule(jsModuleTask, map[string]any{})
 
 	// 注册执行上下文全局函数（goja 自动桥接 Go 函数）
