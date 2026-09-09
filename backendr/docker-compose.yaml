@@ -1,0 +1,60 @@
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  postgres:
+    image: docker.io/bitnami/postgresql:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - app-tier
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=*Abcd123456
+      - POSTGRES_DB=gwa
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  redis:
+    image: docker.io/bitnami/redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-tier
+    environment:
+      - ALLOW_EMPTY_PASSWORD=no
+      - REDIS_PASSWORD=*Abcd123456
+      - REDIS_AOF_ENABLED=no
+      - REDIS_IO_THREADS_DO_READS=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
+
+  backendr:
+    image: go-wind-admin/backendr
+    restart: always
+    pull_policy: never
+    networks:
+      - app-tier
+    ports:
+      - "7666:7666"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - TZ=Asia/Shanghai
+      - GW_ADMIN_ENV=prod
+      - GW_ADMIN_HTTP_ADDR=0.0.0.0:7666
+      - GW_ADMIN_DATABASE_URL=postgres://postgres:*Abcd123456@postgres:5432/gwa
+      - GW_ADMIN_REDIS_URL=redis://:*Abcd123456@redis:6379/0
+      - GW_ADMIN_JWT_SECRET=dev-secret-change-me
+      - GW_ADMIN_DEFAULT_TENANT_ID=1
+      - GW_ADMIN_MAX_BODY_BYTES=10485760
+    build:
+      context: ./  # 指定 Dockerfile 所在的上下文路径
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: 0.1.0
