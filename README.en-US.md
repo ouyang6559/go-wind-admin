@@ -44,7 +44,7 @@ Security capabilities are designed with reference to the technical requirements 
 | **Security Audit** | Full coverage of six audit log types: login / operation / API / data access / permission change / policy evaluation, recording IP geolocation and trace_id. Daily scheduled archiving via asynq: 180-day in-database retention (`AUDIT_RETENTION_DAYS`, adjustable); expired rows are exported to JSONL archive files for long-term traceability |
 | **Identity Authentication** | Password complexity (≥8 chars, at least 3 of 4 character classes), password history reuse check (last 3 by default), password validity period (90 days by default) — all thresholds adjustable via environment variables; TOTP multi-factor authentication (MFA); image captcha; Redis login failure rate limiting (IP + username dual dimensions); configurable login restriction policies |
 | **Access Control** | Dynamic RBAC engine (Casbin / OPA / Zanzibar switchable); role–permission–API mappings stored in the database with instant hot-reload on changes; menu / button / data-level permission control; every authorization decision is logged to policy evaluation logs for traceability |
-| **Multi-Tenant Isolation** | Compile-time ent Privacy data isolation; tenant requests are fail-closed validated against the Api table by `(path, method)`; plan module whitelists and expiry read-only policy |
+| **Multi-Tenant Isolation** | Compile-time ent Privacy data isolation: read queries get automatic tenant filtering; Create guards against forged tenants, Update / Delete inject tenant predicates (cross-tenant mutations match 0 rows); tenant requests are fail-closed validated against the Api table by `(path, method)`; plan module whitelists and expiry read-only policy |
 | **Data Confidentiality** | Login passwords encrypted at the application layer (AES) in transit and bcrypt-hashed at rest; sensitive task configs encrypted at rest with AES-256-GCM (transparent via Ent hooks); JWT RS256 asymmetric signing; refresh token in HttpOnly Cookie; transport-layer TLS enabled at deployment (backend `server.rest.tls` config, or nginx / load balancer termination) |
 | **Data Backup & Recovery** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) scheduled full backups (pg_dump, 30 copies auto-rotation by default), Docker container / local direct-connect dual modes, with recovery documentation |
 | **Frontend Security** | All three frontend production builds enable security response headers such as CSP, X-Frame-Options, and HSTS |
@@ -146,11 +146,14 @@ pnpm dev:antd
 | Login Policy | Manage login restriction policies; configure restriction type, method, value, and reason for target users. |
 | Account Login | Sign in with username / email / phone number as account identifier, combinable with image captcha, login policies, and TOTP multi-factor authentication. |
 | Multi-Factor Authentication (MFA) | TOTP-based multi-factor authentication, including login challenge, personal binding management, and admin rescue reset of a user's MFA. |
+| Password Recovery | Reset password with a verification code sent to the bound email: code valid for 10 minutes, single use; all sessions revoked on success; silent handling prevents user enumeration. |
+| Notification Channels | Manage notification channels (EMAIL / SMTP); passwords stored encrypted and masked in lists; enable/disable and test sending. |
+| Server Monitoring | Read-only view of service runtime metrics (CPU cores, memory, goroutines, uptime, etc.) with auto refresh. |
 | Language Management | Manage system-supported languages; configure language name, code, native name, enabled and default status. |
 | Message Categories      | Manage message categories (2-level custom categories) for message management category selection.                                                                                                                        |
 | Message Management      | Manage messages; send by scope (all users / specified users) with message revocation; broadcast fan-out runs on an async task queue (resumable, idempotent); view read status and read time.                                                             |
 | Internal Mail           | Manage internal messages, view details, delete, mark as read, mark all as read.                                                                                                                                         |
-| Personal Center         | View and edit personal info, view last login info, change password, etc.                                                                                                                                                |
+| Personal Center         | View and edit personal info, view last login info, change password, bind / rebind email (verification code), etc.                                                                                                                |
 | Login Logs              | Query login logs for successful and failed logins; supports IP geolocation.                                                                                                                                             |
 | Operation Logs          | Query operation logs for normal and abnormal operations; supports IP geolocation, resource object identification, and viewing operation details.                                                                      |
 | API Logs | Query API audit logs recording API request operator, path, method, and success status; supports IP geolocation. |
@@ -158,6 +161,8 @@ pnpm dev:antd
 | Permission Logs | Query permission change audit logs recording operator, target object, and reason, with request snapshots retained. |
 | Policy Evaluation Logs | Query policy evaluation audit logs recording each authorization decision with evaluation context; supports trace_id correlation for troubleshooting. |
 | Redis Cache Monitor | Read-only Redis cache monitoring displaying INFO, DBSIZE, and slowlog data; performs no write operations. |
+
+> All six audit log pages (login / operation / API / data / permission / policy evaluation) support "Export All" under the current filters, aggregating pages into a CSV export (up to 10,000 rows).
 
 ## Backend Screenshots
 
