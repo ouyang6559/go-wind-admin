@@ -47,6 +47,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/script"
+	"go-wind-admin/app/admin/service/internal/data/ent/scriptlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/task"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
@@ -139,6 +140,8 @@ type Client struct {
 	RolePermission *RolePermissionClient
 	// Script is the client for interacting with the Script builders.
 	Script *ScriptClient
+	// ScriptLog is the client for interacting with the ScriptLog builders.
+	ScriptLog *ScriptLogClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tenant is the client for interacting with the Tenant builders.
@@ -202,6 +205,7 @@ func (c *Client) init() {
 	c.RoleMetadata = NewRoleMetadataClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.Script = NewScriptClient(c.config)
+	c.ScriptLog = NewScriptLogClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -338,6 +342,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RoleMetadata:             NewRoleMetadataClient(cfg),
 		RolePermission:           NewRolePermissionClient(cfg),
 		Script:                   NewScriptClient(cfg),
+		ScriptLog:                NewScriptLogClient(cfg),
 		Task:                     NewTaskClient(cfg),
 		Tenant:                   NewTenantClient(cfg),
 		User:                     NewUserClient(cfg),
@@ -401,6 +406,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RoleMetadata:             NewRoleMetadataClient(cfg),
 		RolePermission:           NewRolePermissionClient(cfg),
 		Script:                   NewScriptClient(cfg),
+		ScriptLog:                NewScriptLogClient(cfg),
 		Task:                     NewTaskClient(cfg),
 		Tenant:                   NewTenantClient(cfg),
 		User:                     NewUserClient(cfg),
@@ -445,8 +451,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Menu, c.NotificationChannel, c.OperationAuditLog, c.OrgUnit, c.Permission,
 		c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu,
 		c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog,
-		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.Task,
-		c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
+		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.ScriptLog,
+		c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
 		c.UserPosition, c.UserRole,
 	} {
 		n.Use(hooks...)
@@ -464,8 +470,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Menu, c.NotificationChannel, c.OperationAuditLog, c.OrgUnit, c.Permission,
 		c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu,
 		c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog,
-		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.Task,
-		c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
+		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.ScriptLog,
+		c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
 		c.UserPosition, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
@@ -547,6 +553,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RolePermission.mutate(ctx, m)
 	case *ScriptMutation:
 		return c.Script.mutate(ctx, m)
+	case *ScriptLogMutation:
+		return c.ScriptLog.mutate(ctx, m)
 	case *TaskMutation:
 		return c.Task.mutate(ctx, m)
 	case *TenantMutation:
@@ -5619,6 +5627,139 @@ func (c *ScriptClient) mutate(ctx context.Context, m *ScriptMutation) (Value, er
 	}
 }
 
+// ScriptLogClient is a client for the ScriptLog schema.
+type ScriptLogClient struct {
+	config
+}
+
+// NewScriptLogClient returns a client for the ScriptLog from the given config.
+func NewScriptLogClient(c config) *ScriptLogClient {
+	return &ScriptLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `scriptlog.Hooks(f(g(h())))`.
+func (c *ScriptLogClient) Use(hooks ...Hook) {
+	c.hooks.ScriptLog = append(c.hooks.ScriptLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `scriptlog.Intercept(f(g(h())))`.
+func (c *ScriptLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ScriptLog = append(c.inters.ScriptLog, interceptors...)
+}
+
+// Create returns a builder for creating a ScriptLog entity.
+func (c *ScriptLogClient) Create() *ScriptLogCreate {
+	mutation := newScriptLogMutation(c.config, OpCreate)
+	return &ScriptLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ScriptLog entities.
+func (c *ScriptLogClient) CreateBulk(builders ...*ScriptLogCreate) *ScriptLogCreateBulk {
+	return &ScriptLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScriptLogClient) MapCreateBulk(slice any, setFunc func(*ScriptLogCreate, int)) *ScriptLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScriptLogCreateBulk{err: fmt.Errorf("calling to ScriptLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScriptLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScriptLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ScriptLog.
+func (c *ScriptLogClient) Update() *ScriptLogUpdate {
+	mutation := newScriptLogMutation(c.config, OpUpdate)
+	return &ScriptLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScriptLogClient) UpdateOne(_m *ScriptLog) *ScriptLogUpdateOne {
+	mutation := newScriptLogMutation(c.config, OpUpdateOne, withScriptLog(_m))
+	return &ScriptLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScriptLogClient) UpdateOneID(id uint32) *ScriptLogUpdateOne {
+	mutation := newScriptLogMutation(c.config, OpUpdateOne, withScriptLogID(id))
+	return &ScriptLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ScriptLog.
+func (c *ScriptLogClient) Delete() *ScriptLogDelete {
+	mutation := newScriptLogMutation(c.config, OpDelete)
+	return &ScriptLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScriptLogClient) DeleteOne(_m *ScriptLog) *ScriptLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScriptLogClient) DeleteOneID(id uint32) *ScriptLogDeleteOne {
+	builder := c.Delete().Where(scriptlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScriptLogDeleteOne{builder}
+}
+
+// Query returns a query builder for ScriptLog.
+func (c *ScriptLogClient) Query() *ScriptLogQuery {
+	return &ScriptLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScriptLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ScriptLog entity by its id.
+func (c *ScriptLogClient) Get(ctx context.Context, id uint32) (*ScriptLog, error) {
+	return c.Query().Where(scriptlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScriptLogClient) GetX(ctx context.Context, id uint32) *ScriptLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ScriptLogClient) Hooks() []Hook {
+	return c.hooks.ScriptLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScriptLogClient) Interceptors() []Interceptor {
+	return c.inters.ScriptLog
+}
+
+func (c *ScriptLogClient) mutate(ctx context.Context, m *ScriptLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScriptLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScriptLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScriptLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScriptLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ScriptLog mutation op: %q", m.Op())
+	}
+}
+
 // TaskClient is a client for the Task schema.
 type TaskClient struct {
 	config
@@ -6715,8 +6856,8 @@ type (
 		MembershipRole, Menu, NotificationChannel, OperationAuditLog, OrgUnit,
 		Permission, PermissionApi, PermissionAuditLog, PermissionGroup, PermissionMenu,
 		PermissionPolicy, Plan, PlanModule, PlanQuota, PolicyEvaluationLog, Position,
-		Role, RoleMetadata, RolePermission, Script, Task, Tenant, User, UserCredential,
-		UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
+		Role, RoleMetadata, RolePermission, Script, ScriptLog, Task, Tenant, User,
+		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
 	}
 	inters struct {
 		Api, ApiAuditLog, DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File,
@@ -6725,7 +6866,8 @@ type (
 		MembershipRole, Menu, NotificationChannel, OperationAuditLog, OrgUnit,
 		Permission, PermissionApi, PermissionAuditLog, PermissionGroup, PermissionMenu,
 		PermissionPolicy, Plan, PlanModule, PlanQuota, PolicyEvaluationLog, Position,
-		Role, RoleMetadata, RolePermission, Script, Task, Tenant, User, UserCredential,
-		UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Interceptor
+		Role, RoleMetadata, RolePermission, Script, ScriptLog, Task, Tenant, User,
+		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
+		UserRole []ent.Interceptor
 	}
 )

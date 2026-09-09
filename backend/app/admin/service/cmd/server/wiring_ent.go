@@ -209,19 +209,31 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	internalMessageRecipientService := service.NewInternalMessageRecipientService(ctx, internalMessageRepo, internalMessageRecipientRepo)
 
 	// 平台脚本：运行时（多语言引擎）+ 管理服务
-	scriptRuntime := script.NewRuntime(ctx, scriptRepo, redisClient, minioClient)
+	scriptLogRepo := data.NewScriptLogRepo(ctx, entClient)
+	scriptRuntime := script.NewRuntime(ctx, scriptRepo, redisClient, minioClient, scriptLogRepo)
 	cleanups = append(cleanups, scriptRuntime.Close)
 	scriptService := service.NewScriptService(ctx, scriptRepo, scriptRuntime)
 	// 启动加载已启用脚本（尽力而为：失败记日志，不阻断服务启动）
 	if err := scriptRuntime.Resync(ctx.Context()); err != nil {
 		ctx.GetLogger().Error(ctx.Context(), fmt.Sprintf("script runtime startup resync failed: %v", err))
 	}
+	// 跨实例 Resync 通知监听：其他实例变更脚本后，本实例自动重同步
+	scriptRuntime.StartResyncListener(ctx.Context())
+	cleanups = append(cleanups, scriptRuntime.StopResyncListener)
+
 	// 实体生命周期钩子：变更成功后异步触发 <entity>.after_<op> 钩子点（见 script.EntityHooksMapping）
-	script.AttachEntityHooks(entClient.Client(), func(hookCtx context.Context, hookPoint string, payload map[string]any) {
-		if err := scriptRuntime.InvokeEntityHook(hookPoint, payload); err != nil {
-			ctx.GetLogger().Error(context.Background(), fmt.Sprintf("script entity hook %s failed: %v", hookPoint, err))
-		}
-	})
+	script.AttachEntityHooks(entClient.Client(),
+		// after：异步旁路，失败只记日志
+		func(hookCtx context.Context, hookPoint string, payload map[string]any) {
+			if err := scriptRuntime.InvokeEntityHook(hookPoint, payload); err != nil {
+				ctx.GetLogger().Error(context.Background(), fmt.Sprintf("script entity hook %s failed: %v", hookPoint, err))
+			}
+		},
+		// before：同步可否决（ctx.stop / return false 生效），失败不阻断业务写入
+		func(hookCtx context.Context, hookPoint string, payload map[string]any) error {
+			return scriptRuntime.InvokeEntityHookVeto(hookPoint, payload)
+		},
+	)
 
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
 

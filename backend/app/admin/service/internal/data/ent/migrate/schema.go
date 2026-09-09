@@ -2437,6 +2437,46 @@ var (
 			},
 		},
 	}
+	// SysScriptLogsColumns holds the columns for the "sys_script_logs" table.
+	SysScriptLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "script_id", Type: field.TypeUint32, Nullable: true, Comment: "脚本ID（试运行草稿为 0）", Default: 0},
+		{Name: "script_name", Type: field.TypeString, Nullable: true, Comment: "脚本名称"},
+		{Name: "language", Type: field.TypeString, Nullable: true, Comment: "脚本语言（LUA/JAVASCRIPT）"},
+		{Name: "trigger_type", Type: field.TypeString, Nullable: true, Comment: "触发方式（hook/task/test_run/manual）"},
+		{Name: "hook_point", Type: field.TypeString, Nullable: true, Comment: "钩子点或任务类型"},
+		{Name: "version", Type: field.TypeUint32, Nullable: true, Comment: "执行时的脚本版本（草稿为 0）", Default: 0},
+		{Name: "success", Type: field.TypeBool, Nullable: true, Comment: "是否执行成功", Default: false},
+		{Name: "duration_ms", Type: field.TypeInt64, Nullable: true, Comment: "执行耗时（毫秒）", Default: 0},
+		{Name: "error", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "失败原因（成功为空）"},
+	}
+	// SysScriptLogsTable holds the schema information for the "sys_script_logs" table.
+	SysScriptLogsTable = &schema.Table{
+		Name:       "sys_script_logs",
+		Comment:    "脚本执行日志",
+		Columns:    SysScriptLogsColumns,
+		PrimaryKey: []*schema.Column{SysScriptLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_sys_script_logs_script_created",
+				Unique:  false,
+				Columns: []*schema.Column{SysScriptLogsColumns[4], SysScriptLogsColumns[1]},
+			},
+			{
+				Name:    "idx_sys_script_logs_success_created",
+				Unique:  false,
+				Columns: []*schema.Column{SysScriptLogsColumns[10], SysScriptLogsColumns[1]},
+			},
+			{
+				Name:    "idx_sys_script_logs_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysScriptLogsColumns[1]},
+			},
+		},
+	}
 	// SysTasksColumns holds the columns for the "sys_tasks" table.
 	SysTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -3073,6 +3113,7 @@ var (
 		SysRoleMetadataTable,
 		SysRolePermissionsTable,
 		SysScriptsTable,
+		SysScriptLogsTable,
 		SysTasksTable,
 		SysTenantsTable,
 		SysUsersTable,
@@ -3269,6 +3310,11 @@ func init() {
 	}
 	SysScriptsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_scripts",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysScriptLogsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_script_logs",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

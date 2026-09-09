@@ -40,6 +40,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/script"
+	"go-wind-admin/app/admin/service/internal/data/ent/scriptlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/task"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
@@ -57,7 +58,7 @@ import (
 
 // schemaGraph holds a representation of ent/schema at runtime.
 var schemaGraph = func() *sqlgraph.Schema {
-	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 44)}
+	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 45)}
 	graph.Nodes[0] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   api.Table,
@@ -1073,6 +1074,31 @@ var schemaGraph = func() *sqlgraph.Schema {
 	}
 	graph.Nodes[36] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
+			Table:   scriptlog.Table,
+			Columns: scriptlog.Columns,
+			ID: &sqlgraph.FieldSpec{
+				Type:   field.TypeUint32,
+				Column: scriptlog.FieldID,
+			},
+		},
+		Type: "ScriptLog",
+		Fields: map[string]*sqlgraph.FieldSpec{
+			scriptlog.FieldCreatedAt:   {Type: field.TypeTime, Column: scriptlog.FieldCreatedAt},
+			scriptlog.FieldUpdatedAt:   {Type: field.TypeTime, Column: scriptlog.FieldUpdatedAt},
+			scriptlog.FieldDeletedAt:   {Type: field.TypeTime, Column: scriptlog.FieldDeletedAt},
+			scriptlog.FieldScriptID:    {Type: field.TypeUint32, Column: scriptlog.FieldScriptID},
+			scriptlog.FieldScriptName:  {Type: field.TypeString, Column: scriptlog.FieldScriptName},
+			scriptlog.FieldLanguage:    {Type: field.TypeString, Column: scriptlog.FieldLanguage},
+			scriptlog.FieldTriggerType: {Type: field.TypeString, Column: scriptlog.FieldTriggerType},
+			scriptlog.FieldHookPoint:   {Type: field.TypeString, Column: scriptlog.FieldHookPoint},
+			scriptlog.FieldVersion:     {Type: field.TypeUint32, Column: scriptlog.FieldVersion},
+			scriptlog.FieldSuccess:     {Type: field.TypeBool, Column: scriptlog.FieldSuccess},
+			scriptlog.FieldDurationMs:  {Type: field.TypeInt64, Column: scriptlog.FieldDurationMs},
+			scriptlog.FieldError:       {Type: field.TypeString, Column: scriptlog.FieldError},
+		},
+	}
+	graph.Nodes[37] = &sqlgraph.Node{
+		NodeSpec: sqlgraph.NodeSpec{
 			Table:   task.Table,
 			Columns: task.Columns,
 			ID: &sqlgraph.FieldSpec{
@@ -1098,7 +1124,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			task.FieldEnable:      {Type: field.TypeBool, Column: task.FieldEnable},
 		},
 	}
-	graph.Nodes[37] = &sqlgraph.Node{
+	graph.Nodes[38] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   tenant.Table,
 			Columns: tenant.Columns,
@@ -1131,7 +1157,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			tenant.FieldExpiredAt:        {Type: field.TypeTime, Column: tenant.FieldExpiredAt},
 		},
 	}
-	graph.Nodes[38] = &sqlgraph.Node{
+	graph.Nodes[39] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   user.Table,
 			Columns: user.Columns,
@@ -1167,7 +1193,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			user.FieldStatus:      {Type: field.TypeEnum, Column: user.FieldStatus},
 		},
 	}
-	graph.Nodes[39] = &sqlgraph.Node{
+	graph.Nodes[40] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   usercredential.Table,
 			Columns: usercredential.Columns,
@@ -1200,7 +1226,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			usercredential.FieldResetTokenUsedAt:       {Type: field.TypeTime, Column: usercredential.FieldResetTokenUsedAt},
 		},
 	}
-	graph.Nodes[40] = &sqlgraph.Node{
+	graph.Nodes[41] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   usermfafactor.Table,
 			Columns: usermfafactor.Columns,
@@ -1223,7 +1249,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			usermfafactor.FieldLastUsedAt:  {Type: field.TypeTime, Column: usermfafactor.FieldLastUsedAt},
 		},
 	}
-	graph.Nodes[41] = &sqlgraph.Node{
+	graph.Nodes[42] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userorgunit.Table,
 			Columns: userorgunit.Columns,
@@ -1253,7 +1279,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			userorgunit.FieldStatus:     {Type: field.TypeEnum, Column: userorgunit.FieldStatus},
 		},
 	}
-	graph.Nodes[42] = &sqlgraph.Node{
+	graph.Nodes[43] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userposition.Table,
 			Columns: userposition.Columns,
@@ -1282,7 +1308,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			userposition.FieldStatus:     {Type: field.TypeEnum, Column: userposition.FieldStatus},
 		},
 	}
-	graph.Nodes[43] = &sqlgraph.Node{
+	graph.Nodes[44] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userrole.Table,
 			Columns: userrole.Columns,
@@ -5887,6 +5913,106 @@ func (f *ScriptFilter) WhereVersion(p entql.Uint32P) {
 }
 
 // addPredicate implements the predicateAdder interface.
+func (_q *ScriptLogQuery) addPredicate(pred func(s *sql.Selector)) {
+	_q.predicates = append(_q.predicates, pred)
+}
+
+// Filter returns a Filter implementation to apply filters on the ScriptLogQuery builder.
+func (_q *ScriptLogQuery) Filter() *ScriptLogFilter {
+	return &ScriptLogFilter{config: _q.config, predicateAdder: _q}
+}
+
+// addPredicate implements the predicateAdder interface.
+func (m *ScriptLogMutation) addPredicate(pred func(s *sql.Selector)) {
+	m.predicates = append(m.predicates, pred)
+}
+
+// Filter returns an entql.Where implementation to apply filters on the ScriptLogMutation builder.
+func (m *ScriptLogMutation) Filter() *ScriptLogFilter {
+	return &ScriptLogFilter{config: m.config, predicateAdder: m}
+}
+
+// ScriptLogFilter provides a generic filtering capability at runtime for ScriptLogQuery.
+type ScriptLogFilter struct {
+	predicateAdder
+	config
+}
+
+// Where applies the entql predicate on the query filter.
+func (f *ScriptLogFilter) Where(p entql.P) {
+	f.addPredicate(func(s *sql.Selector) {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[36].Type, p, s); err != nil {
+			s.AddError(err)
+		}
+	})
+}
+
+// WhereID applies the entql uint32 predicate on the id field.
+func (f *ScriptLogFilter) WhereID(p entql.Uint32P) {
+	f.Where(p.Field(scriptlog.FieldID))
+}
+
+// WhereCreatedAt applies the entql time.Time predicate on the created_at field.
+func (f *ScriptLogFilter) WhereCreatedAt(p entql.TimeP) {
+	f.Where(p.Field(scriptlog.FieldCreatedAt))
+}
+
+// WhereUpdatedAt applies the entql time.Time predicate on the updated_at field.
+func (f *ScriptLogFilter) WhereUpdatedAt(p entql.TimeP) {
+	f.Where(p.Field(scriptlog.FieldUpdatedAt))
+}
+
+// WhereDeletedAt applies the entql time.Time predicate on the deleted_at field.
+func (f *ScriptLogFilter) WhereDeletedAt(p entql.TimeP) {
+	f.Where(p.Field(scriptlog.FieldDeletedAt))
+}
+
+// WhereScriptID applies the entql uint32 predicate on the script_id field.
+func (f *ScriptLogFilter) WhereScriptID(p entql.Uint32P) {
+	f.Where(p.Field(scriptlog.FieldScriptID))
+}
+
+// WhereScriptName applies the entql string predicate on the script_name field.
+func (f *ScriptLogFilter) WhereScriptName(p entql.StringP) {
+	f.Where(p.Field(scriptlog.FieldScriptName))
+}
+
+// WhereLanguage applies the entql string predicate on the language field.
+func (f *ScriptLogFilter) WhereLanguage(p entql.StringP) {
+	f.Where(p.Field(scriptlog.FieldLanguage))
+}
+
+// WhereTriggerType applies the entql string predicate on the trigger_type field.
+func (f *ScriptLogFilter) WhereTriggerType(p entql.StringP) {
+	f.Where(p.Field(scriptlog.FieldTriggerType))
+}
+
+// WhereHookPoint applies the entql string predicate on the hook_point field.
+func (f *ScriptLogFilter) WhereHookPoint(p entql.StringP) {
+	f.Where(p.Field(scriptlog.FieldHookPoint))
+}
+
+// WhereVersion applies the entql uint32 predicate on the version field.
+func (f *ScriptLogFilter) WhereVersion(p entql.Uint32P) {
+	f.Where(p.Field(scriptlog.FieldVersion))
+}
+
+// WhereSuccess applies the entql bool predicate on the success field.
+func (f *ScriptLogFilter) WhereSuccess(p entql.BoolP) {
+	f.Where(p.Field(scriptlog.FieldSuccess))
+}
+
+// WhereDurationMs applies the entql int64 predicate on the duration_ms field.
+func (f *ScriptLogFilter) WhereDurationMs(p entql.Int64P) {
+	f.Where(p.Field(scriptlog.FieldDurationMs))
+}
+
+// WhereError applies the entql string predicate on the error field.
+func (f *ScriptLogFilter) WhereError(p entql.StringP) {
+	f.Where(p.Field(scriptlog.FieldError))
+}
+
+// addPredicate implements the predicateAdder interface.
 func (_q *TaskQuery) addPredicate(pred func(s *sql.Selector)) {
 	_q.predicates = append(_q.predicates, pred)
 }
@@ -5915,7 +6041,7 @@ type TaskFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *TaskFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[36].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[37].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6025,7 +6151,7 @@ type TenantFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *TenantFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[37].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[38].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6179,7 +6305,7 @@ type UserFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[38].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[39].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6334,7 +6460,7 @@ type UserCredentialFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserCredentialFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[39].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[40].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6474,7 +6600,7 @@ type UserMfaFactorFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserMfaFactorFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[40].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[41].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6564,7 +6690,7 @@ type UserOrgUnitFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserOrgUnitFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[41].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[42].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6689,7 +6815,7 @@ type UserPositionFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserPositionFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[42].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[43].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6809,7 +6935,7 @@ type UserRoleFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserRoleFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[43].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[44].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})

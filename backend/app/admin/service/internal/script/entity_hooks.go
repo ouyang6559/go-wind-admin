@@ -13,13 +13,17 @@ import (
 
 // 实体生命周期钩子桥：
 //
-// 经 ent 的 client.Use() 挂载全局 mutation hook，在实体 Create/Update/Delete
-// 落库成功后异步触发形如 "<entity>.after_<op>" 的钩子点（如 user.after_create）。
-// 只暴露 after 类钩子（异步、不阻塞业务、不可回滚）——before 类同步钩子需要
-// 拦截/修改/否决变更，涉及时序与部分失败语义，待 after 类磨熟后另行开放。
+// 经 ent 的 client.Use() 挂载全局 mutation hook，提供两类钩子点：
 //
-// 执行隔离：钩子在独立 goroutine 中经 Runtime 执行，不阻塞业务写入路径；
-// 单脚本失败仅记日志/审计，绝不影响业务结果。
+//   - <entity>.before_<op>（同步，可否决）：变更前执行，脚本返回 false 或
+//     ctx.stop(reason) 时业务写入被拒绝。同步执行有请求路径耗时成本，
+//     且脚本引擎故障可能影响写入——因此设计为 fail-open：钩子自身执行出错
+//     不阻断业务（显式否决除外），且仅对明确登记的实体启用。
+//
+//   - <entity>.after_<op>（异步，只读旁路）：变更成功后独立 goroutine 执行，
+//     单脚本失败仅记日志/审计，绝不影响业务结果。
+//
+// 执行审计统一落 sys_script_logs（logExecution）。
 
 // EntityHooksMapping ent 实体类型名（m.Type()，PascalCase）→ 钩子点前缀（小写）。
 // 只收录有明确业务意义的实体，避免钩子风暴；新增实体在此登记即可生效。
@@ -31,51 +35,84 @@ var EntityHooksMapping = map[string]string{
 	"NotificationChannel": "notification_channel",
 }
 
-// ScriptHookInvoker 由 app 层注入（包装 Runtime.ExecuteHook 的异步调用），
-// 避免本桥依赖具体运行时实现。
+// ScriptHookInvoker after 类钩子：由 app 层注入（包装 Runtime 异步执行），
+// 结果只记日志/审计不影响业务。
 type ScriptHookInvoker func(ctx context.Context, hookPoint string, data map[string]any)
 
+// ScriptHookVetoInvoker before 类钩子：同步执行，返回 error 即否决业务写入
+// （脚本返回 false 或 ctx.stop）。nil 阶段跳过。
+type ScriptHookVetoInvoker func(ctx context.Context, hookPoint string, data map[string]any) error
+
+
+
 // AttachEntityHooks 在 ent client 上挂载全局生命周期钩子。
-func AttachEntityHooks(client *ent.Client, invoker ScriptHookInvoker) {
-	client.Use(newEntityHook(invoker))
+// vetoInvoker 为 nil 时 before 类钩子跳过（仅 after 生效）。
+func AttachEntityHooks(client *ent.Client, invoker ScriptHookInvoker, vetoInvoker ScriptHookVetoInvoker) {
+	client.Use(newEntityHook(invoker, vetoInvoker))
 }
 
-// newEntityHook 构造 ent 全局 hook：变更成功后按实体类型/操作触发对应钩子点。
-func newEntityHook(invoker ScriptHookInvoker) ent.Hook {
+// newEntityHook 构造 ent 全局 hook：
+// 变更前同步触发 <entity>.before_<op>（可否决），变更成功后异步触发 <entity>.after_<op>。
+func newEntityHook(invoker ScriptHookInvoker, vetoInvoker ScriptHookVetoInvoker) ent.Hook {
 	h := func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-			fmt.Printf("[script-hook] hook entered: type=%s op=%s\n", m.Type(), m.Op())
-			value, err := next.Mutate(ctx, m)
+			var (
+				typ       = m.Type()
+				prefix    string
+				mapped    bool
+				op        string
+			)
 
-			// 只在变更成功后触发（err == nil）
-			if err == nil && invoker != nil {
-				typ := m.Type()
-				prefix, ok := EntityHooksMapping[typ]
-				if ok {
-					op := mutationOpName(m.Op())
-					hookPoint := prefix + ".after_" + op
+			if prefix, mapped = EntityHooksMapping[typ]; mapped {
+				op = mutationOpName(m.Op())
+			}
 
-					payload := map[string]any{
+			// ── before 阶段：同步、可否决 ──
+			// fail-open：vetoInvoker 自身 panic 不阻断业务（显式否决返回 error 才拒绝）
+			if mapped && vetoInvoker != nil {
+				beforePoint := prefix + ".before_" + op
+				vetoErr := func() (vetoErr error) {
+					defer func() {
+						if r := recover(); r != nil {
+							fmt.Printf("[script-hook] before hook %s panic (fail-open): %v\n", beforePoint, r)
+						}
+					}()
+					return vetoInvoker(ctx, beforePoint, map[string]any{
 						"entity": typ,
 						"op":     op,
 						"id":     mutationID(m),
-					}
-
-					go func() {
-						fmt.Printf("[script-hook] goroutine fired: %s payload=%v\n", hookPoint, payload)
-						defer func() {
-							// 钩子 goroutine 的兜底防护：脚本 panic 不能带走业务进程
-							if r := recover(); r != nil {
-								fmt.Printf("[script-hook] panic in %s: %v\n", hookPoint, r)
-							}
-						}()
-
-						// 带超时的独立上下文：不继承请求取消信号（业务返回后钩子仍应跑完）
-						hookCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
-						defer cancel()
-						invoker(hookCtx, hookPoint, payload)
-					}()
+					})
+				}()
+				if vetoErr != nil {
+					return nil, fmt.Errorf("%w: hook=%s reason=%v", scripting.ErrScriptVetoed, beforePoint, vetoErr)
 				}
+			}
+
+			value, err := next.Mutate(ctx, m)
+
+			// ── after 阶段：变更成功后异步触发 ──
+			if err == nil && mapped && invoker != nil {
+				hookPoint := prefix + ".after_" + op
+
+				payload := map[string]any{
+					"entity": typ,
+					"op":     op,
+					"id":     mutationID(m),
+				}
+
+				go func() {
+					defer func() {
+						// 钩子 goroutine 的兜底防护：脚本 panic 不能带走业务进程
+						if r := recover(); r != nil {
+							fmt.Printf("[script-hook] panic in %s: %v\n", hookPoint, r)
+						}
+					}()
+
+					// 带超时的独立上下文：不继承请求取消信号（业务返回后钩子仍应跑完）
+					hookCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+					defer cancel()
+					invoker(hookCtx, hookPoint, payload)
+				}()
 			}
 
 			return value, err
@@ -111,8 +148,7 @@ func mutationID(m ent.Mutation) uint32 {
 	return 0
 }
 
-// ExecuteHookPayload 组装脚本执行上下文并同步触发钩子点（Runtime 侧入口）。
-// 异步路径经 ScriptHookInvoker 间接调用本方法。
+// InvokeEntityHook 异步钩子（after）的执行入口：组装执行上下文并触发钩子点。
 func (r *Runtime) InvokeEntityHook(hookPoint string, payload map[string]any) error {
 	eng := r.engineForHookPoint(hookPoint)
 	if eng == nil {
@@ -124,8 +160,34 @@ func (r *Runtime) InvokeEntityHook(hookPoint string, payload map[string]any) err
 		execCtx.Set(k, v)
 	}
 
-	// 钩子上下文把实体信息放在顶层（脚本用 ctx.get("entity") / ctx.get("id") 读取）
-	return eng.ExecuteHook(context.Background(), hookPoint, execCtx)
+	started := time.Now()
+	err := eng.ExecuteHook(context.Background(), hookPoint, execCtx)
+	r.logExecution("hook", hookPoint, hookPoint, "", 0, started, err)
+	return err
+}
+
+// InvokeEntityHookVeto before 钩子的同步执行入口：返回 error 即否决业务写入。
+// ctx.stop(reason) 的脚本经 ExecuteHook 的 Stopped 信号转为错误；
+// 「无脚本挂载」不视为否决（返回 nil）。
+func (r *Runtime) InvokeEntityHookVeto(hookPoint string, payload map[string]any) error {
+	eng := r.engineForHookPoint(hookPoint)
+	if eng == nil {
+		return nil
+	}
+
+	execCtx := scripting.NewContext(hookPoint)
+	for k, v := range payload {
+		execCtx.Set(k, v)
+	}
+
+	err := eng.ExecuteHook(context.Background(), hookPoint, execCtx)
+	if err != nil {
+		return err
+	}
+	if execCtx.Stopped {
+		return scriptV1.ErrorBadRequest("script veto: %s", execCtx.StopReason)
+	}
+	return nil
 }
 
 // engineForHookPoint 返回挂载了指定钩子点脚本的引擎（任一语言命中即可）。

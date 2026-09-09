@@ -234,9 +234,11 @@ func (s *ScriptService) validateDraft(draft *scriptV1.Script) error {
 	return nil
 }
 
-// resync 触发运行时全量重同步（尽力而为：失败记日志不影响管理操作本身）。
+// resync 触发本实例全量重同步，并通知其他实例同样重同步
+// （尽力而为：失败记日志不影响管理操作本身）。
 func (s *ScriptService) resync(ctx context.Context) {
 	if err := s.runtime.Resync(ctx); err != nil {
 		s.log.Errorf(ctx, "script runtime resync after change failed: %v", err)
 	}
+	s.runtime.NotifyResync(ctx)
 }

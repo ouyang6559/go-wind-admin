@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 
@@ -43,6 +44,37 @@ type Runtime struct {
 	// taskHandlerOwner 记录处理器名 → 注册它的引擎（决定执行走哪条引擎锁）。
 	taskRegistrar    func(taskType string, fn func(taskType string, data *task.ScriptTaskData) error) error
 	taskHandlerOwner map[string]gsEngine.Type
+
+	// scriptLog 脚本执行日志（可选：nil 时不落审计）
+	scriptLog *data.ScriptLogRepo
+
+	// redisClient 用于跨实例 Resync 通知（可选：nil 时不通知）
+	redisClient *redis.Client
+	notifyStop  chan struct{}
+	notifyOnce  sync.Once
+}
+
+// ScriptResyncNotifyChannel 脚本 Resync 的跨实例通知频道。
+const ScriptResyncNotifyChannel = "gowind:script:resync"
+
+// logExecution 落一条执行日志（nil logger 时 no-op）。
+func (r *Runtime) logExecution(trigger, hookPoint string, scriptName, language string, version uint32, started time.Time, err error) {
+	if r.scriptLog == nil {
+		return
+	}
+	rec := data.ScriptLogRecord{
+		ScriptName: scriptName,
+		Language:   language,
+		Trigger:    trigger,
+		HookPoint:  hookPoint,
+		Version:    version,
+		Success:    err == nil,
+		DurationMS: time.Since(started).Milliseconds(),
+	}
+	if err != nil {
+		rec.Error = err.Error()
+	}
+	r.scriptLog.Record(context.Background(), rec)
 }
 
 // 脚本任务的 sys_tasks 约定：type=PERIODIC，type_name=task.ScriptTaskDispatchType
@@ -50,7 +82,7 @@ type Runtime struct {
 
 // NewRuntime 创建脚本运行时并为每种已注册语言实例化编排器。
 // ScriptDir 固定为空：平台脚本一律以数据库为事实源，不走文件目录。
-func NewRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient *redis.Client, ossClient *oss.MinIOClient) *Runtime {
+func NewRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient *redis.Client, ossClient *oss.MinIOClient, scriptLog *data.ScriptLogRepo) *Runtime {
 	r := &Runtime{
 		engines:          make(map[gsEngine.Type]*scripting.Engine),
 		cfg:              scripting.DefaultConfig(),
@@ -58,6 +90,8 @@ func NewRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient *redi
 		log:              ctx.NewLoggerHelper("script/runtime"),
 		logger:           ctx.GetLogger(),
 		taskHandlerOwner: make(map[string]gsEngine.Type),
+		scriptLog:        scriptLog,
+		redisClient:      redisClient,
 	}
 	// http 出站护栏：域名白名单走环境变量 SCRIPT_HTTP_ALLOWED_DOMAINS
 	// （逗号分隔，支持 *.example.com 通配一级子域；未设置 = 全部拒绝，fail-closed）。
@@ -145,6 +179,71 @@ func (r *Runtime) AttachScriptTaskRegistrar(
 	return nil
 }
 
+// NotifyResync 向其他实例广播 Resync 通知（Redis pub/sub；redisClient 为 nil 时 no-op）。
+// 本实例的 Resync 由调用方直接执行，不经此通知。
+func (r *Runtime) NotifyResync(ctx context.Context) {
+	if r.redisClient == nil {
+		return
+	}
+	if err := r.redisClient.Publish(ctx, ScriptResyncNotifyChannel, "resync").Err(); err != nil {
+		r.log.Errorf(ctx, "publish script resync notify failed: %v", err)
+	}
+}
+
+// StartResyncListener 订阅跨实例 Resync 通知并在本实例执行 Resync
+// （redisClient 为 nil 时 no-op）。阻塞 goroutine 运行至 Stop 被调用，
+// 由 wiring 注册 cleanup。
+func (r *Runtime) StartResyncListener(ctx context.Context) {
+	if r.redisClient == nil {
+		return
+	}
+
+	r.notifyStop = make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-r.notifyStop:
+				return
+			default:
+			}
+
+			sub := r.redisClient.Subscribe(ctx, ScriptResyncNotifyChannel)
+			for {
+				select {
+				case <-r.notifyStop:
+					_ = sub.Close()
+					return
+				case msg, ok := <-sub.Channel():
+					if !ok {
+						// 连接断开：退避后重建订阅
+						select {
+						case <-r.notifyStop:
+						case <-time.After(3 * time.Second):
+						}
+						break
+					}
+					if msg == nil {
+						continue
+					}
+					r.log.Infof(ctx, "script resync notify received from channel, resyncing")
+					if err := r.Resync(ctx); err != nil {
+						r.log.Errorf(ctx, "resync after notify failed: %v", err)
+					}
+				}
+			}
+		}
+	}()
+}
+
+// Stop 停止后台 goroutine（通知监听等）。幂等。
+func (r *Runtime) StopResyncListener() {
+	r.notifyOnce.Do(func() {
+		if r.notifyStop != nil {
+			close(r.notifyStop)
+		}
+	})
+}
+
 // RegisterScriptTaskSubscriber 注册固定分发类型的订阅（启动期一次）。
 // 运行期脚本变更只影响处理器注册表，不需要新的 asynq 订阅。
 func (r *Runtime) RegisterScriptTaskSubscriber() {
@@ -179,7 +278,11 @@ func (r *Runtime) RunScriptTaskHandler(ctx context.Context, name string, params 
 	}
 
 	r.log.Infof(ctx, "run script task handler %q (engine: %s)", name, owner)
-	return eng.ExecuteTaskHandler(ctx, name, params)
+
+	started := time.Now()
+	err := eng.ExecuteTaskHandler(ctx, name, params)
+	r.logExecution("task", task.ScriptTaskDispatchType, "task:"+name, string(owner), 0, started, err)
+	return err
 }
 
 // Resync 全量重同步：清空各语言引擎的脚本注册，重新加载数据库中全部已启用脚本。
@@ -284,7 +387,10 @@ func (r *Runtime) TestRun(ctx context.Context, language, name, source string, in
 		Source:   source,
 		Enabled:  true,
 	}
-	if err := sandbox.Execute(ctx, script, execCtx); err != nil {
+	started := time.Now()
+	err := sandbox.Execute(ctx, script, execCtx)
+	r.logExecution("test_run", "", name, strings.ToLower(language), 0, started, err)
+	if err != nil {
 		return execCtx.Data, err
 	}
 	return execCtx.Data, nil
