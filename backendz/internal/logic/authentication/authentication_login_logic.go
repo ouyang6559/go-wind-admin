@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"context"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -152,6 +153,10 @@ func (l *AuthenticationLoginLogic) clientIP() string {
 	r, ok := middleware.RequestFromContext(l.ctx)
 	if !ok {
 		return ""
+	}
+	// RemoteAddr 形如 "192.168.65.1:50516"，去掉端口仅保留 IP（与 backend/kratos 返回一致）
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
 	}
 	return r.RemoteAddr
 }

@@ -17,6 +17,7 @@ import (
 	"go-wind-admin/backendz/internal/config"
 	"go-wind-admin/backendz/internal/ent/gen"
 	"go-wind-admin/backendz/internal/ent/gen/migrate"
+	"go-wind-admin/backendz/internal/pkg/ssehub"
 	"go-wind-admin/backendz/internal/pkg/token"
 )
 
@@ -36,6 +37,8 @@ type ServiceContext struct {
 	Rds *redis.Redis
 	// Token 负责签发/解析访问令牌与刷新令牌。
 	Token *token.TokenManager
+	// Sse 是按用户组织的 SSE 事件 Hub（站内信实时通知推送用）。
+	Sse *ssehub.Hub
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -59,6 +62,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Ent:    entClient,
 		Rds:    rds,
 		Token:  tm,
+		Sse:    ssehub.New(),
 	}
 }
 

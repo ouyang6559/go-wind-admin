@@ -14,6 +14,7 @@ import (
 	data_access_audit_log "go-wind-admin/backendz/internal/handler/data_access_audit_log"
 	dict_entry "go-wind-admin/backendz/internal/handler/dict_entry"
 	dict_type "go-wind-admin/backendz/internal/handler/dict_type"
+	events "go-wind-admin/backendz/internal/handler/events"
 	file "go-wind-admin/backendz/internal/handler/file"
 	file_transfer "go-wind-admin/backendz/internal/handler/file_transfer"
 	internal_message "go-wind-admin/backendz/internal/handler/internal_message"
@@ -267,6 +268,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/admin/v1/dict/types"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/events",
+				Handler: events.StreamEventsHandler(serverCtx),
+			},
+		},
+		rest.WithSSE(),
 	)
 
 	server.AddRoutes(

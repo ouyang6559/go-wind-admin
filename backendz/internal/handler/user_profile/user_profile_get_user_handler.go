@@ -4,6 +4,7 @@
 package user_profile
 
 import (
+	"encoding/json"
 	"net/http"
 
 	xhttp "github.com/zeromicro/x/http"
@@ -17,8 +18,13 @@ func UserProfileGetUserHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		resp, err := l.UserProfileGetUser()
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
-		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, resp)
+			return
+		}
+		// 与 backend（kratos）保持一致：GET /admin/v1/me 平铺输出 user 对象，
+		// 不再套 {code,msg,data} 外壳，否则前端 fetchUserProfile 读不到 uid/roles/homePath。
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }

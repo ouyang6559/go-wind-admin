@@ -20,6 +20,7 @@ import (
 	"data_access_audit_log.api"
 	"dict_entry.api"
 	"dict_type.api"
+	"events.api"
 	"file.api"
 	"file_transfer.api"
 	"internal_message.api"

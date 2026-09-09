@@ -4,6 +4,7 @@
 package authentication
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
@@ -25,8 +26,13 @@ func AuthenticationLoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		resp, err := l.AuthenticationLogin(&req)
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
-		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, resp)
+			return
+		}
+		// 与 backend（kratos）保持一致：登录成功时平铺输出 {token_type, access_token, ...}，
+		// 不再套 {code,msg,data} 外壳，否则前端 auth.ts 读取 response.access_token 取不到令牌。
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
