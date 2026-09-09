@@ -65,14 +65,11 @@
             - `data`：存放 Admin 服务的数据访问代码
                 - `ent`：存放 Admin 服务的 Ent 数据库 ORM 代码
                 - `gorm`：存放 Admin 服务的 GORM 相关代码
-                - `providers`：存放 Wire ProviderSet 定义
             - `middleware`：存放 Admin 服务的中间件代码
                 - `auth`：存放 Admin 服务的认证中间件代码
                 - `logging`：存放 Admin 服务的日志中间件代码
             - `server`：存放 Admin 服务的服务端代码（HTTP/Asynq/SSE）
-                - `providers`：存放 Wire ProviderSet 定义
             - `service`：存放 Admin 服务的业务逻辑代码
-                - `providers`：存放 Wire ProviderSet 定义
 3. `pkg`：存放通用公共包代码
 4. `scripts`：存放部署脚本代码，用于项目的构建、部署、环境配置等。
     - `env/`：存放环境初始化脚本（支持 Ubuntu/CentOS/Rocky/macOS/Windows）

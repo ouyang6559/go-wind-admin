@@ -5,7 +5,7 @@
 ## 仓库布局
 
 ```
-backend/                    Go + Kratos + Ent + Wire（HTTP :7788，SSE 网关 :7789）
+backend/                    Go + Kratos + Ent（DI 手写装配 wiring_*.go，已弃用 Wire；HTTP :7788，SSE 网关 :7789）
 frontend/admin/
 ├── react/                  React 18 + antd 6 + ProComponents + TanStack Query + zustand
 ├── vue-element/            Vue 3 + Element Plus + vxe-table + TanStack vue-query + Pinia
@@ -35,9 +35,26 @@ docs/                       后端部署/开发环境/前端权限等专题文�
 
 **CRUD 模块**：使用 `/add-crud-module` skill（后端 + 前端端到端流程）。
 
+**代码生成器**：配套工具 [go-wind-toolkit/gowind-uiapp](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)（桌面 GUI + CLI，从数据库表/SQL 生成前后端代码，含简单表单）。CLI（`gowind-cli`）非交互、JSON 输出，适合 Agent 调用。工具产物仍须按本仓铁律与约定验收补齐（`{ data: {...} }` 包裹、contains 搜索、Api 表种子、`make ts` 生成三端 TS 等）。
+
+## 后端任务：gow 优先，make 兜底
+
+后端的运行与代码生成统一走 [gow CLI](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind)（安装：`go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest`），在 `backend/` 下执行。**接手后不要上来就用 Makefile 的 make 命令**：Windows 无原生 make、嵌套 Makefile 需要跨目录 cd，而 gow 自动发现 `app/*/service`，行为一致：
+
+| 任务 | gow 命令 |
+|---|---|
+| 运行服务 | `gow run admin` |
+| Ent 生成 | `gow ent`（全部服务）/ `gow ent admin` |
+| Proto / API Go 代码 | `gow api` |
+| 从数据库表生成 CRUD | `gow generate`（DSN 驱动；`--proto-only` 仅出 proto） |
+
+项目已弃用 Wire（DI 为手写 `wiring_*.go`），不要运行 `gow wire`，也不要在新代码里引入 wire 依赖。
+
+gow 未覆盖的任务（三端 TS 生成 `make ts`、OpenAPI `make openapi`、`make test/lint` 等）才退回 Makefile（`backend/` 根目录执行）。
+
 ## 本地验证要点
 
-- 后端起在 `:7788`（启动方式见 `docs/windows-startup-guide.md` / `docs/backend_deploy.md`）；前端 dev 端口见上表，代理已配置好 API 转发。
+- 后端起在 `:7788`（`gow run admin`；启动方式见 `docs/windows-startup-guide.md` / `docs/backend_deploy.md`）；前端 dev 端口见上表，代理已配置好 API 转发。
 - 登录账号 `admin / admin`（dev 默认）。图形验证码的答案可在 Redis 中按 `gowind:captcha:<captchaId>` 直接读取，便于自动化验证。
 - vue-element 在 dev 下若见 router-view 塌空/白屏：先重启 dev server 再下结论（vite 依赖优化竞态已做遏制与自愈，见其 AGENTS.md「dev 白屏处置」）。
 

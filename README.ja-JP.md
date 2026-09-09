@@ -28,7 +28,7 @@
 
 効率的で安定したスケーラブルな技術選択の理念に基づき、システムのコア技術スタックは以下の通りです：
 
-- **バックエンド**：`Golang`、`go-kratos`、`Wire`、`Ent ORM` / `Gorm`、`MySQL`、`Redis`、`Docker`
+- **バックエンド**：`Golang`、`go-kratos`、`Ent ORM` / `Gorm`、`MySQL`、`Redis`、`Docker`
 - **共通基盤**：`JWT 認証`、`Casbin` / `OPA` / `Zanzibar` 認可、`SSE プッシュ`、`Swagger API ドキュメント`
 - **スクリプトエンジン**：`go-scripts` · `Lua`（gopher-lua） · `JavaScript`（goja） · 多言語 Hook プラグインシステム
 - **Vue Vben 版**：`Vue3` + `TypeScript` + `Vite` + `Ant Design Vue` + `Vben Admin`
@@ -65,6 +65,8 @@
 - **libs_only 依存モード（推奨）**：ミドルウェアのみ起動、アプリはローカルIDEで実行・デバッグ、日常開発に適用。
 
 ### バックエンド起動コマンド
+
+> バックエンドのコマンドは `gow` CLI 経由で統一（インストール：`go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest`、詳しくは[関連ツール](#関連ツール)）。
 
 #### Linux / macOS
 
@@ -225,6 +227,11 @@ pnpm dev:antd
 <td><img src="./docs/images/api_swagger_ui.png" alt="バックエンド内蔵Swagger UI画面"/></td>
 </tr>
 </table>
+
+## 関連ツール
+
+- **[go-wind-toolkit / gowind-uiapp](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)** — クロスプラットフォームのデスクトップ型コードジェネレーター（Go + Wails）。SQL のインポートまたはデータベーステーブル（MySQL / PostgreSQL / SQLite / SQL Server / Oracle）への接続から、gRPC / RESTful などのテンプレートでサーバーサイド・フロントエンドのコード（簡易フォームを含む）を自動生成。非対話・JSON 出力の CLI（`gowind-cli`）も同梱しており、スクリプトや AI エージェントからの呼び出しに便利です。
+- **[gow — GoWind CLI](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind)** — 本プロジェクトの推奨コマンドライン入口：`gow run admin` でサービス起動、`gow ent` / `gow api` でコード生成、`gow generate` でデータベース DSN から CRUD マイクロサービスを生成、`gow extract` でマイクロサービスのモジュール分割を行います。`backend/` 配下で実行すると `app/*/service` を自動検出します。日常開発では Makefile より優先的に使用してください。
 
 ## お問い合わせ
 
