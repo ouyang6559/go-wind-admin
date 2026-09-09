@@ -75,7 +75,7 @@
     - `env/`：存放环境初始化脚本（支持 Ubuntu/CentOS/Rocky/macOS/Windows）
     - `docker/`：存放 Docker 部署脚本（full_deploy、libs_only）
     - `deploy/`：存放 PM2 进程管理脚本
-5. `sql`：存放 SQL 文件，里面存放了数据库的初始化 SQL 文件（支持 MySQL 和 PostgreSQL），以及演示数据的 SQL 文件。
+5. `sql`：存放演示数据的 SQL 文件（MySQL 和 PostgreSQL 各一份）。系统默认数据（用户/角色/菜单/权限/语言等）**不在 SQL 里**——由服务启动时在 Go 侧自动播种（`pkg/constants/default_data.go` + 各 service 的 count==0 守卫；Api 表仅在空表时由启动期自动同步，后续靠管理页「接口同步」全量重建）。
 6. `app.mk`：存放应用服务使用的 Makefile 文件，它由`app/{服务名}/service`下的`Makefile`调用，用于构建、运行、测试应用服务。
 7. `Makefile`：项目根目录下的 Makefile 文件，可以用来安装 CLI 工具、生成 API 代码、构建 Docker 镜像等。
 8. `docker-compose.yaml`：完整的 Docker Compose 配置文件，包含应用服务和所有依赖中间件。

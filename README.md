@@ -241,7 +241,7 @@ go-wind-admin/
 │   │   ├── eventbus/               # 事件总线
 │   │   └── ...                     # 其他工具包
 │   ├── scripts/                    # 部署与备份脚本（env/docker/deploy/backup）
-│   └── sql/                        # 初始化 SQL 文件
+│   └── sql/                        # 演示数据 SQL（默认数据由服务启动自动播种）
 ├── frontend/admin/                 # 前端项目
 │   ├── react/                      # React 19 + Ant Design V6
 │   ├── vue-element/                # Vue 3 + Element Plus
