@@ -1,5 +1,7 @@
 import type {
   scriptservicev1_DeleteScriptRequest,
+  scriptservicev1_PurgeScriptLogsRequest,
+  scriptservicev1_PurgeScriptLogsResponse,
   scriptservicev1_GetScriptRequest,
   scriptservicev1_ListScriptsResponse,
   scriptservicev1_Script,
@@ -83,6 +85,19 @@ export function useUpdateScript(
   });
 }
 
+export function usePurgeScriptLogs(
+  options?: UseMutationOptions<
+    scriptservicev1_PurgeScriptLogsResponse,
+    Error,
+    scriptservicev1_PurgeScriptLogsRequest
+  >,
+) {
+  return useMutation({
+    mutationFn: (req) => apiClient.scriptLogService.Purge(req),
+    ...options,
+  });
+}
+
 export function useDeleteScript(
   options?: UseMutationOptions<object, Error, scriptservicev1_DeleteScriptRequest>,
 ) {
@@ -102,6 +117,15 @@ export function useTestRunScript(
   return useMutation({
     mutationFn: (req) => apiClient.scriptService.TestRun(req),
     ...options,
+  });
+}
+
+export async function fetchListScriptLogs(params: any) {
+  return queryClient.fetchQuery({
+    queryKey: ['listScriptLogs', params],
+    queryFn: () => apiClient.scriptLogService.List(params),
+    staleTime: 0,
+    retry: 0,
   });
 }
 

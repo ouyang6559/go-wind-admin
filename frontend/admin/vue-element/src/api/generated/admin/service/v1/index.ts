@@ -8136,6 +8136,301 @@ export type scriptservicev1_HookPoint = {
   scriptCount: number | undefined;
 };
 
+// 脚本执行日志管理服务（平台管理员）
+export interface ScriptLogService {
+  // 分页查询脚本执行日志
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<scriptservicev1_ListScriptLogsResponse>;
+  // 统计脚本执行日志数量
+  Count(
+    request: pagination_PagingRequest,
+  ): Promise<scriptservicev1_CountScriptLogsResponse>;
+  // 清理指定时间之前的日志
+  Purge(
+    request: scriptservicev1_PurgeScriptLogsRequest,
+  ): Promise<scriptservicev1_PurgeScriptLogsResponse>;
+}
+
+export function createScriptLogServiceClient(
+  transport: ClientTransport,
+): ScriptLogService {
+  return {
+    List(request) {
+      const path = `admin/v1/script/logs`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'ScriptLogService',
+        method: 'List',
+      }) as Promise<scriptservicev1_ListScriptLogsResponse>;
+    },
+    Count(request) {
+      const path = `admin/v1/script/logs/count`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'ScriptLogService',
+        method: 'Count',
+      }) as Promise<scriptservicev1_CountScriptLogsResponse>;
+    },
+    Purge(request) {
+      const path = `admin/v1/script/logs/purge`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'ScriptLogService',
+        method: 'Purge',
+      }) as Promise<scriptservicev1_PurgeScriptLogsResponse>;
+    },
+  };
+}
+// 查询脚本执行日志列表 - 回应
+export type scriptservicev1_ListScriptLogsResponse = {
+  items: scriptservicev1_ScriptLog[] | undefined;
+  total: number | undefined;
+};
+
+// 脚本执行日志
+export type scriptservicev1_ScriptLog = {
+  createdAt?: wellKnownTimestamp;
+  durationMs?: number;
+  error?: string;
+  hookPoint?: string;
+  id?: number;
+  language?: string;
+  scriptId?: number;
+  scriptName?: string;
+  success?: boolean;
+  triggerType?: string;
+  version?: number;
+};
+
+export type scriptservicev1_CountScriptLogsResponse = {
+  count: number | undefined;
+};
+
+// 清理日志 - 请求（删除 created_at 早于 before 的日志）
+export type scriptservicev1_PurgeScriptLogsRequest = {
+  before: undefined | wellKnownTimestamp;
+};
+
+// 清理日志 - 回应
+export type scriptservicev1_PurgeScriptLogsResponse = {
+  deleted: number | undefined;
+};
+
 // 服务监控管理服务（只读）
 export interface ServerMonitorService {
   // 查询服务监控信息
@@ -9530,6 +9825,7 @@ export class ApiClient {
   private _positionService?: PositionService;
   private _redisCacheMonitorService?: RedisCacheMonitorService;
   private _roleService?: RoleService;
+  private _scriptLogService?: ScriptLogService;
   private _scriptService?: ScriptService;
   private _serverMonitorService?: ServerMonitorService;
   private _taskService?: TaskService;
@@ -9668,6 +9964,10 @@ export class ApiClient {
 
   get roleService(): RoleService {
     return this._roleService ??= createRoleServiceClient(this._transport);
+  }
+
+  get scriptLogService(): ScriptLogService {
+    return this._scriptLogService ??= createScriptLogServiceClient(this._transport);
   }
 
   get scriptService(): ScriptService {

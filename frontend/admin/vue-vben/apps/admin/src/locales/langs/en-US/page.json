@@ -736,6 +736,15 @@
     "fetchFailed": "Failed to load data",
     "button": {
       "create": "New Script"
-    }
+    },
+    "logTitle": "Execution Logs",
+    "logScriptName": "Script Name",
+    "logTrigger": "Trigger",
+    "logSuccess": "Result",
+    "logError": "Error",
+    "logCreatedAt": "Executed At",
+    "logPurge": "Purge >90d",
+    "logPurgeConfirmDesc": "This deletes all execution logs older than 90 days. Continue?",
+    "logPurgeSuccess": "Purged {count} log entries"
   }
 }

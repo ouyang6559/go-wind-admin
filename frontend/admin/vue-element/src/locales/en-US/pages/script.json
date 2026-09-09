@@ -38,5 +38,14 @@
   "unmounted": "Unmounted",
   "switchLanguageTitle": "Switch Script Language",
   "switchLanguageConfirm": "The current source is not a built-in skeleton. Switching the language keeps the source unchanged and only re-highlights it; after saving, the script runs under the new language and the existing code may not work. Switch anyway?",
-  "fetchFailed": "Failed to load data"
+  "fetchFailed": "Failed to load data",
+  "logTitle": "Execution Logs",
+  "logScriptName": "Script Name",
+  "logTrigger": "Trigger",
+  "logSuccess": "Result",
+  "logError": "Error",
+  "logCreatedAt": "Executed At",
+  "logPurge": "Purge >90d",
+  "logPurgeConfirmDesc": "This deletes all execution logs older than 90 days. Continue?",
+  "logPurgeSuccess": "Purged {count} log entries"
 }

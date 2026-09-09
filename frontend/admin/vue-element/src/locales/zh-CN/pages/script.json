@@ -38,5 +38,14 @@
   "unmounted": "未挂载",
   "switchLanguageTitle": "切换脚本语言",
   "switchLanguageConfirm": "当前源码不是内置骨架，切换语言不会修改源码，仅按新语言高亮显示；保存后脚本将按新语言执行，现有代码可能无法运行。确定切换吗？",
-  "fetchFailed": "获取数据失败"
+  "fetchFailed": "获取数据失败",
+  "logTitle": "执行日志",
+  "logScriptName": "脚本名称",
+  "logTrigger": "触发方式",
+  "logSuccess": "结果",
+  "logError": "错误",
+  "logCreatedAt": "执行时间",
+  "logPurge": "清理90天前",
+  "logPurgeConfirmDesc": "将删除 90 天前的全部执行日志，确定继续吗？",
+  "logPurgeSuccess": "已清理 {count} 条日志"
 }

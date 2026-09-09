@@ -5,6 +5,7 @@
       :config="pageConfig"
       @add="handleAdd"
       @edit="handleEdit"
+      @toolbar="handleToolbar"
       @operate="handleOperate"
     >
       <!-- 语言 -->
@@ -49,6 +50,9 @@
 
     <!-- 试运行对话框 -->
     <TestRunDialog ref="testRunRef" @success="handleSuccess" />
+
+    <!-- 执行日志对话框 -->
+    <ScriptLogDialog ref="logDialogRef" />
   </div>
 </template>
 
@@ -57,8 +61,9 @@ import { computed, ref } from "vue";
 import { ElMessage, ElSwitch, ElTag } from "element-plus";
 
 import ProPage from "@/components/Pro/ProPage/index.vue";
-import type { ProPageConfig } from "@/components/Pro/ProPage/types";
+import type { ProPageConfig, ToolsButton } from "@/components/Pro/ProPage/types";
 import ScriptDrawer from "./script-drawer.vue";
+import ScriptLogDialog from "./script-log-dialog.vue";
 import TestRunDialog from "./test-run-dialog.vue";
 
 import {
@@ -78,6 +83,7 @@ const { mutateAsync: updateScript } = useUpdateScript();
 const pageRef = ref();
 const drawerRef = ref();
 const testRunRef = ref();
+const logDialogRef = ref();
 
 const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
@@ -124,7 +130,13 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deleteScript({ ids: ids.split(",").map((id) => Number(id)) });
     },
-    toolbar: [],
+    toolbar: [
+      {
+        name: "logs",
+        label: $t("pages.script.logTitle"),
+        attrs: { type: "default" },
+      } as ToolsButton,
+    ],
     toolbarRight: ["add"],
     defaultToolbar: ["refresh", "filter"],
     tableAttrs: { border: true, stripe: false },
@@ -197,6 +209,12 @@ function handleAdd() {
 
 function handleEdit(row: any) {
   drawerRef.value?.open(row);
+}
+
+function handleToolbar(name: string) {
+  if (name === "logs") {
+    logDialogRef.value?.open();
+  }
 }
 
 function handleOperate(data: { name: string; row: any }) {

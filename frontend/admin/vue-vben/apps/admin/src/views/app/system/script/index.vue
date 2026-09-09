@@ -23,6 +23,7 @@ import { type scriptservicev1_Script as Script } from '#/api';
 import { $t } from '#/locales';
 
 import ScriptDrawer from './script-drawer.vue';
+import ScriptLogDrawer from './script-log-drawer.vue';
 
 const { mutateAsync: deleteScript } = useDeleteScript();
 const { mutateAsync: updateScript } = useUpdateScript();
@@ -138,6 +139,10 @@ const gridOptions: VxeGridProps<Script> = {
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
+const [LogDrawer, logDrawerApi] = useVbenDrawer({
+  connectedComponent: ScriptLogDrawer,
+});
+
 const [Drawer, drawerApi] = useVbenDrawer({
   connectedComponent: ScriptDrawer,
   onOpenChange(isOpen: boolean) {
@@ -146,6 +151,10 @@ const [Drawer, drawerApi] = useVbenDrawer({
     }
   },
 });
+
+function handleOpenLogs() {
+  logDrawerApi.open();
+}
 
 function handleCreate() {
   drawerApi.setData({ create: true });
@@ -240,6 +249,9 @@ async function handleTestRun() {
   <Page auto-content-height>
     <Grid :table-title="$t('menu.system.scripts')">
       <template #toolbar-tools>
+        <a-button class="mr-2" @click="handleOpenLogs">
+          {{ $t('page.script.logTitle') }}
+        </a-button>
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.script.button.create') }}
         </a-button>
@@ -279,6 +291,7 @@ async function handleTestRun() {
       </template>
     </Grid>
     <Drawer />
+    <LogDrawer />
 
     <!-- 试运行对话框 -->
     <a-modal

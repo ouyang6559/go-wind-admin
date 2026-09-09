@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Popover, Switch, Tag, Tooltip, App } from 'antd';
-import { CodeOutlined, DeleteOutlined, EditOutlined, PlusOutlined, PlayCircleOutlined, ApiOutlined } from '@ant-design/icons';
+import { ApiOutlined, CodeOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, PlusOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { scriptservicev1_Script as Script } from '@/api/generated/admin/service/v1';
@@ -13,6 +13,7 @@ import ContentContainer from '@/layouts/components/PageContainer/ContentContaine
 import { TABLE } from '@/config/constants.ts';
 import { getLanguageOptions, languageColorMap } from './constants';
 import ScriptDrawer from './components/ScriptDrawer';
+import ScriptLogDrawer from './components/ScriptLogDrawer';
 import TestRunModal from './components/TestRunModal';
 
 /**
@@ -33,6 +34,7 @@ const ScriptManagement = () => {
 
   const [testRunOpen, setTestRunOpen] = useState(false);
   const [testRunTarget, setTestRunTarget] = useState<Script | undefined>();
+  const [logOpen, setLogOpen] = useState(false);
 
   // 钩子点概览（工具栏弹出卡片）
   const hookPointsQuery = useListHookPoints({
@@ -279,6 +281,9 @@ const ScriptManagement = () => {
               >
                 <Button icon={<CodeOutlined />}>{t('hookPoints')}</Button>
               </Popover>,
+              <Button key="logs" icon={<FileTextOutlined />} onClick={() => setLogOpen(true)}>
+                {t('logTitle')}
+              </Button>,
               <Button
                 key="create"
                 type="primary"
@@ -330,6 +335,9 @@ const ScriptManagement = () => {
         }}
         onSuccess={() => actionRef.current?.reload()}
       />
+
+      {/* 执行日志抽屉 */}
+      <ScriptLogDrawer open={logOpen} onClose={() => setLogOpen(false)} />
     </>
   );
 };

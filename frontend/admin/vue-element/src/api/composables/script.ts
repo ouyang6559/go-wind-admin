@@ -7,6 +7,8 @@ import {
 } from "@tanstack/vue-query";
 import type {
   scriptservicev1_DeleteScriptRequest,
+  scriptservicev1_PurgeScriptLogsRequest,
+  scriptservicev1_PurgeScriptLogsResponse,
   scriptservicev1_GetScriptRequest,
   scriptservicev1_ListHookPointsResponse,
   scriptservicev1_ListScriptsResponse,
@@ -76,6 +78,28 @@ export function useUpdateScript(
         data: { ...values },
         updateMask: makeUpdateMask(Object.keys(values ?? {})),
       }),
+    ...options,
+  });
+}
+
+export async function fetchListScriptLogs(params: any) {
+  return queryClient.fetchQuery({
+    queryKey: ["listScriptLogs", params],
+    queryFn: () => apiClient.scriptLogService.List(params),
+    staleTime: 0,
+    retry: 0,
+  });
+}
+
+export function usePurgeScriptLog(
+  options?: UseMutationOptions<
+    scriptservicev1_PurgeScriptLogsResponse,
+    Error,
+    scriptservicev1_PurgeScriptLogsRequest
+  >
+) {
+  return useMutation({
+    mutationFn: (req) => apiClient.scriptLogService.Purge(req),
     ...options,
   });
 }

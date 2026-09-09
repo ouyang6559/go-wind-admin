@@ -4412,6 +4412,181 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListHookPointsResponse'
+    /admin/v1/script/logs:
+        get:
+            tags:
+                - ScriptLogService
+            description: 分页查询脚本执行日志
+            operationId: ScriptLogService_List
+            parameters:
+                - name: page
+                  in: query
+                  description: 当前页码（从1开始，默认1）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页条数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  description: 跳过的记录数（从0开始，默认0）
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  description: 最多返回的记录数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: token
+                  in: query
+                  description: 上一页最后一条记录的游标（如ID/时间戳+ID，首次请求为空）
+                  schema:
+                    type: string
+                - name: noPaging
+                  in: query
+                  description: 是否不分页，如果为true，则page和pageSize参数无效。
+                  schema:
+                    type: boolean
+                - name: query
+                  in: query
+                  description: JSON字符串过滤条件，基础语法：{"field1":"val1", "field2___icontains":"val2"}，具体请参见：https://github.com/tx7do/go-crud/tree/main/pagination/filter/README.md
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: Google AIP规范字符串过滤条件
+                  schema:
+                    type: string
+                - name: filterExpr.type
+                  in: query
+                  description: 过滤表达式类型
+                  schema:
+                    enum:
+                        - EXPR_TYPE_UNSPECIFIED
+                        - AND
+                        - OR
+                    type: string
+                    format: enum
+                - name: orderBy
+                  in: query
+                  description: 排序条件
+                  schema:
+                    type: string
+                - name: fieldMask
+                  in: query
+                  description: 字段掩码，其作用为SELECT中的字段，其语法为使用逗号分隔字段名，例如：id,realName,userName。如果为空则选中所有字段，即SELECT *。
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListScriptLogsResponse'
+    /admin/v1/script/logs/count:
+        get:
+            tags:
+                - ScriptLogService
+            description: 统计脚本执行日志数量
+            operationId: ScriptLogService_Count
+            parameters:
+                - name: page
+                  in: query
+                  description: 当前页码（从1开始，默认1）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页条数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  description: 跳过的记录数（从0开始，默认0）
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  description: 最多返回的记录数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: token
+                  in: query
+                  description: 上一页最后一条记录的游标（如ID/时间戳+ID，首次请求为空）
+                  schema:
+                    type: string
+                - name: noPaging
+                  in: query
+                  description: 是否不分页，如果为true，则page和pageSize参数无效。
+                  schema:
+                    type: boolean
+                - name: query
+                  in: query
+                  description: JSON字符串过滤条件，基础语法：{"field1":"val1", "field2___icontains":"val2"}，具体请参见：https://github.com/tx7do/go-crud/tree/main/pagination/filter/README.md
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: Google AIP规范字符串过滤条件
+                  schema:
+                    type: string
+                - name: filterExpr.type
+                  in: query
+                  description: 过滤表达式类型
+                  schema:
+                    enum:
+                        - EXPR_TYPE_UNSPECIFIED
+                        - AND
+                        - OR
+                    type: string
+                    format: enum
+                - name: orderBy
+                  in: query
+                  description: 排序条件
+                  schema:
+                    type: string
+                - name: fieldMask
+                  in: query
+                  description: 字段掩码，其作用为SELECT中的字段，其语法为使用逗号分隔字段名，例如：id,realName,userName。如果为空则选中所有字段，即SELECT *。
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CountScriptLogsResponse'
+    /admin/v1/script/logs/purge:
+        post:
+            tags:
+                - ScriptLogService
+            description: 清理指定时间之前的日志
+            operationId: ScriptLogService_Purge
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PurgeScriptLogsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PurgeScriptLogsResponse'
     /admin/v1/scripts:
         get:
             tags:
@@ -5768,6 +5943,11 @@ components:
                     type: string
                     description: 任务执行类型名，例如 "send_email"、"generate_report" 等，用于区分不同类型的任务
             description: 控制调度任务 - 请求
+        CountScriptLogsResponse:
+            type: object
+            properties:
+                count:
+                    type: string
         CountScriptsResponse:
             type: object
             properties:
@@ -7246,6 +7426,16 @@ components:
                     items:
                         $ref: '#/components/schemas/MenuRouteItem'
             description: 查询路由列表 - 回应
+        ListScriptLogsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ScriptLog'
+                total:
+                    type: string
+            description: 查询脚本执行日志列表 - 回应
         ListScriptsResponse:
             type: object
             properties:
@@ -8749,6 +8939,20 @@ components:
                     type: string
                     description: 预签名约束的 Content-Type（可选）
             description: 预签名选项
+        PurgeScriptLogsRequest:
+            type: object
+            properties:
+                before:
+                    type: string
+                    description: 删除该时间之前的日志
+                    format: date-time
+            description: 清理日志 - 请求（删除 created_at 早于 before 的日志）
+        PurgeScriptLogsResponse:
+            type: object
+            properties:
+                deleted:
+                    type: string
+            description: 清理日志 - 回应
         QuotaUsage:
             type: object
             properties:
@@ -9015,6 +9219,47 @@ components:
                     description: 删除时间
                     format: date-time
             description: 脚本
+        ScriptLog:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: 日志ID
+                    format: uint32
+                scriptId:
+                    type: integer
+                    description: 脚本ID，试运行草稿为 0
+                    format: uint32
+                scriptName:
+                    type: string
+                    description: 脚本名称
+                language:
+                    type: string
+                    description: 脚本语言
+                triggerType:
+                    type: string
+                    description: 触发方式（hook/task/test_run）
+                hookPoint:
+                    type: string
+                    description: 钩子点或任务类型
+                version:
+                    type: integer
+                    description: 执行时的脚本版本
+                    format: uint32
+                success:
+                    type: boolean
+                    description: 是否执行成功
+                durationMs:
+                    type: string
+                    description: 执行耗时（毫秒）
+                error:
+                    type: string
+                    description: 失败原因（成功为空）
+                createdAt:
+                    type: string
+                    description: 执行时间
+                    format: date-time
+            description: 脚本执行日志
         SendMessageRequest:
             type: object
             properties:
@@ -10198,6 +10443,8 @@ tags:
       description: Redis缓存监控管理服务（只读）
     - name: RoleService
       description: 角色管理服务
+    - name: ScriptLogService
+      description: 脚本执行日志管理服务（平台管理员）
     - name: ScriptService
       description: 脚本管理服务（平台管理员）
     - name: ServerMonitorService

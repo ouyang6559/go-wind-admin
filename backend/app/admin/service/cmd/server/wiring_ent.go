@@ -213,6 +213,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	scriptRuntime := script.NewRuntime(ctx, scriptRepo, redisClient, minioClient, scriptLogRepo)
 	cleanups = append(cleanups, scriptRuntime.Close)
 	scriptService := service.NewScriptService(ctx, scriptRepo, scriptRuntime)
+	scriptLogService := service.NewScriptLogService(ctx, scriptLogRepo)
 	// 启动加载已启用脚本（尽力而为：失败记日志，不阻断服务启动）
 	if err := scriptRuntime.Resync(ctx.Context()); err != nil {
 		ctx.GetLogger().Error(ctx.Context(), fmt.Sprintf("script runtime startup resync failed: %v", err))
@@ -255,7 +256,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		redisCacheMonitorService, serverMonitorService, notificationChannelService,
 		onlineSessionService, dashboardService,
 		internalMessageService, internalMessageCategoryService, internalMessageRecipientService,
-		scriptService,
+		scriptService, scriptLogService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
 	)
 	if err != nil {
