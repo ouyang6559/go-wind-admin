@@ -95,18 +95,14 @@ const PermissionGroupList: React.FC<PermissionGroupListProps> = ({
     {
       title: t('name'),
       dataIndex: 'name',
-      width: 200,
-      fixed: 'left',
     },
     {
       title: t('module'),
       dataIndex: 'module',
-      width: 120,
     },
     {
       title: t('status'),
       dataIndex: 'status',
-      width: 95,
       valueType: 'select',
       fieldProps: {
         options: getStatusOptions(t),
@@ -201,7 +197,7 @@ const PermissionGroupList: React.FC<PermissionGroupListProps> = ({
           search={{
             labelWidth: 'auto',
             defaultCollapsed: false,
-            span: 24,
+            span: 12,
           }}
           pagination={false}
           toolBarRender={() => [
@@ -253,10 +249,9 @@ const PermissionGroupList: React.FC<PermissionGroupListProps> = ({
             onClick: () => {
               onGroupSelect(record.id);
             },
+            className: record.id === currentGroupId ? 'ant-table-row-selected' : undefined,
             style: {
               cursor: 'pointer',
-              outline: record.id === currentGroupId ? '2px solid var(--ant-color-primary)' : undefined,
-              outlineOffset: '-2px',
             },
           })}
         />

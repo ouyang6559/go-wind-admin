@@ -50,18 +50,14 @@ const DictTypeList: React.FC<DictTypeListProps> = ({ currentTypeId, onTypeSelect
     {
       title: t('typeName'),
       dataIndex: 'typeName',
-      width: 150,
-      fixed: 'left',
     },
     {
       title: t('typeCode'),
       dataIndex: 'typeCode',
-      width: 150,
     },
     {
       title: t('status'),
       dataIndex: 'isEnabled',
-      width: 95,
       valueType: 'select',
       fieldProps: {
         options: enableBoolOptions(t),
@@ -145,7 +141,7 @@ const DictTypeList: React.FC<DictTypeListProps> = ({ currentTypeId, onTypeSelect
           search={{
             labelWidth: 'auto',
             defaultCollapsed: false,
-            span: 24,
+            span: 12,
           }}
           pagination={{
             defaultPageSize: TABLE.DEFAULT_PAGE_SIZE,
@@ -181,10 +177,9 @@ const DictTypeList: React.FC<DictTypeListProps> = ({ currentTypeId, onTypeSelect
             onClick: () => {
               onTypeSelect(record.id);
             },
+            className: record.id === currentTypeId ? 'ant-table-row-selected' : undefined,
             style: {
               cursor: 'pointer',
-              outline: record.id === currentTypeId ? '2px solid var(--ant-color-primary)' : undefined,
-              outlineOffset: '-2px',
             },
           })}
         />
