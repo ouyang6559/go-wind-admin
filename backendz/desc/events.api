@@ -1,0 +1,19 @@
+import "common.api"
+
+// SSE 实时通知流：客户端以 Bearer Token 建立连接，订阅 ?stream=<userId>，
+// 服务端按用户推送站内信 notification 事件。
+// 对应 backend 的 SSE 端点（原部署在 7789 /events），go-zero 侧挂在 admin-api 同服务。
+type SseMessage {
+	Type	string	`json:"type"`
+	Data	string	`json:"data"`
+}
+
+@server (
+	group: events
+	sse: true
+)
+
+service admin-api {
+	@handler StreamEvents
+	get /events returns (SseMessage)
+}
