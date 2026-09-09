@@ -1271,6 +1271,24 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /admin/v1/forgot-password:
+        post:
+            tags:
+                - AuthenticationService
+            description: 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
+            operationId: AuthenticationService_ForgotPassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ForgotPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+            security:
+                - {}
     /admin/v1/initial-context:
         get:
             tags:
@@ -1726,6 +1744,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SendMessageResponse'
+    /admin/v1/internal-message/status:
+        post:
+            tags:
+                - InternalMessageRecipientService
+            description: 标记通知投递回执（SENT→RECEIVED；服务端写入即 RECEIVED，此端点为回执补偿通道）
+            operationId: InternalMessageRecipientService_MarkNotificationsStatus
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/MarkNotificationsStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /admin/v1/login:
         post:
             tags:
@@ -2437,6 +2471,265 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /admin/v1/notification-channels:
+        get:
+            tags:
+                - NotificationChannelService
+            description: 查询通知渠道列表
+            operationId: NotificationChannelService_ListNotificationChannel
+            parameters:
+                - name: page
+                  in: query
+                  description: 当前页码（从1开始，默认1）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页条数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  description: 跳过的记录数（从0开始，默认0）
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  description: 最多返回的记录数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: token
+                  in: query
+                  description: 上一页最后一条记录的游标（如ID/时间戳+ID，首次请求为空）
+                  schema:
+                    type: string
+                - name: noPaging
+                  in: query
+                  description: 是否不分页，如果为true，则page和pageSize参数无效。
+                  schema:
+                    type: boolean
+                - name: query
+                  in: query
+                  description: JSON字符串过滤条件，基础语法：{"field1":"val1", "field2___icontains":"val2"}，具体请参见：https://github.com/tx7do/go-crud/tree/main/pagination/filter/README.md
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: Google AIP规范字符串过滤条件
+                  schema:
+                    type: string
+                - name: filterExpr.type
+                  in: query
+                  description: 过滤表达式类型
+                  schema:
+                    enum:
+                        - EXPR_TYPE_UNSPECIFIED
+                        - AND
+                        - OR
+                    type: string
+                    format: enum
+                - name: orderBy
+                  in: query
+                  description: 排序条件
+                  schema:
+                    type: string
+                - name: fieldMask
+                  in: query
+                  description: 字段掩码，其作用为SELECT中的字段，其语法为使用逗号分隔字段名，例如：id,realName,userName。如果为空则选中所有字段，即SELECT *。
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListNotificationChannelResponse'
+        post:
+            tags:
+                - NotificationChannelService
+            description: 创建通知渠道
+            operationId: NotificationChannelService_CreateNotificationChannel
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateNotificationChannelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationChannel'
+    /admin/v1/notification-channels/{id}:
+        get:
+            tags:
+                - NotificationChannelService
+            description: 查询通知渠道详情
+            operationId: NotificationChannelService_GetNotificationChannel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationChannel'
+        put:
+            tags:
+                - NotificationChannelService
+            description: 更新通知渠道
+            operationId: NotificationChannelService_UpdateNotificationChannel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateNotificationChannelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+        delete:
+            tags:
+                - NotificationChannelService
+            description: 删除通知渠道
+            operationId: NotificationChannelService_DeleteNotificationChannel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /admin/v1/notification-channels/{id}/send-test-email:
+        post:
+            tags:
+                - NotificationChannelService
+            description: 发送测试邮件（验证渠道配置）
+            operationId: NotificationChannelService_SendTestEmail
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendTestEmailRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /admin/v1/online-session/force-logout:
+        post:
+            tags:
+                - OnlineSessionService
+            description: 强制下线指定会话
+            operationId: OnlineSessionService_ForceLogoutSession
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ForceLogoutSessionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ForceLogoutSessionResponse'
+    /admin/v1/online-session/my-sessions:
+        get:
+            tags:
+                - OnlineSessionService
+            description: 查询当前登录用户的在线会话（个人中心自助视图）
+            operationId: OnlineSessionService_ListMyOnlineSession
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListOnlineSessionResponse'
+    /admin/v1/online-session/my-sessions/revoke:
+        post:
+            tags:
+                - OnlineSessionService
+            description: 当前用户强制下线自己的指定会话
+            operationId: OnlineSessionService_RevokeMyOnlineSession
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevokeMyOnlineSessionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RevokeMyOnlineSessionResponse'
+    /admin/v1/online-session/sessions:
+        get:
+            tags:
+                - OnlineSessionService
+            description: 查询在线会话列表
+            operationId: OnlineSessionService_ListOnlineSession
+            parameters:
+                - name: keyword
+                  in: query
+                  description: 关键词过滤（模糊匹配用户名 / IP），留空返回全部
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  description: 页码（从 1 开始）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页数量
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListOnlineSessionResponse'
     /admin/v1/operation-audit-logs:
         get:
             tags:
@@ -3911,6 +4204,24 @@ paths:
                                 $ref: '#/components/schemas/RegisterUserResponse'
             security:
                 - {}
+    /admin/v1/reset-password-by-code:
+        post:
+            tags:
+                - AuthenticationService
+            description: 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
+            operationId: AuthenticationService_ResetPasswordByCode
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ResetPasswordByCodeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+            security:
+                - {}
     /admin/v1/roles:
         get:
             tags:
@@ -4088,6 +4399,319 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListRouteResponse'
+    /admin/v1/script/hooks:
+        get:
+            tags:
+                - ScriptService
+            description: 列出全部已注册的钩子点
+            operationId: ScriptService_ListHookPoints
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListHookPointsResponse'
+    /admin/v1/scripts:
+        get:
+            tags:
+                - ScriptService
+            description: 分页查询脚本列表
+            operationId: ScriptService_List
+            parameters:
+                - name: page
+                  in: query
+                  description: 当前页码（从1开始，默认1）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页条数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  description: 跳过的记录数（从0开始，默认0）
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  description: 最多返回的记录数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: token
+                  in: query
+                  description: 上一页最后一条记录的游标（如ID/时间戳+ID，首次请求为空）
+                  schema:
+                    type: string
+                - name: noPaging
+                  in: query
+                  description: 是否不分页，如果为true，则page和pageSize参数无效。
+                  schema:
+                    type: boolean
+                - name: query
+                  in: query
+                  description: JSON字符串过滤条件，基础语法：{"field1":"val1", "field2___icontains":"val2"}，具体请参见：https://github.com/tx7do/go-crud/tree/main/pagination/filter/README.md
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: Google AIP规范字符串过滤条件
+                  schema:
+                    type: string
+                - name: filterExpr.type
+                  in: query
+                  description: 过滤表达式类型
+                  schema:
+                    enum:
+                        - EXPR_TYPE_UNSPECIFIED
+                        - AND
+                        - OR
+                    type: string
+                    format: enum
+                - name: orderBy
+                  in: query
+                  description: 排序条件
+                  schema:
+                    type: string
+                - name: fieldMask
+                  in: query
+                  description: 字段掩码，其作用为SELECT中的字段，其语法为使用逗号分隔字段名，例如：id,realName,userName。如果为空则选中所有字段，即SELECT *。
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListScriptsResponse'
+        post:
+            tags:
+                - ScriptService
+            description: 创建脚本
+            operationId: ScriptService_Create
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateScriptRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+        delete:
+            tags:
+                - ScriptService
+            description: 删除脚本
+            operationId: ScriptService_Delete
+            parameters:
+                - name: ids
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: integer
+                        format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /admin/v1/scripts/count:
+        get:
+            tags:
+                - ScriptService
+            description: 统计脚本数量
+            operationId: ScriptService_Count
+            parameters:
+                - name: page
+                  in: query
+                  description: 当前页码（从1开始，默认1）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页条数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  description: 跳过的记录数（从0开始，默认0）
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  description: 最多返回的记录数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: token
+                  in: query
+                  description: 上一页最后一条记录的游标（如ID/时间戳+ID，首次请求为空）
+                  schema:
+                    type: string
+                - name: noPaging
+                  in: query
+                  description: 是否不分页，如果为true，则page和pageSize参数无效。
+                  schema:
+                    type: boolean
+                - name: query
+                  in: query
+                  description: JSON字符串过滤条件，基础语法：{"field1":"val1", "field2___icontains":"val2"}，具体请参见：https://github.com/tx7do/go-crud/tree/main/pagination/filter/README.md
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: Google AIP规范字符串过滤条件
+                  schema:
+                    type: string
+                - name: filterExpr.type
+                  in: query
+                  description: 过滤表达式类型
+                  schema:
+                    enum:
+                        - EXPR_TYPE_UNSPECIFIED
+                        - AND
+                        - OR
+                    type: string
+                    format: enum
+                - name: orderBy
+                  in: query
+                  description: 排序条件
+                  schema:
+                    type: string
+                - name: fieldMask
+                  in: query
+                  description: 字段掩码，其作用为SELECT中的字段，其语法为使用逗号分隔字段名，例如：id,realName,userName。如果为空则选中所有字段，即SELECT *。
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CountScriptsResponse'
+    /admin/v1/scripts/name/{name}:
+        get:
+            tags:
+                - ScriptService
+            description: 查询脚本详情
+            operationId: ScriptService_Get
+            parameters:
+                - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: id
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: viewMask
+                  in: query
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Script'
+    /admin/v1/scripts/test_run:
+        post:
+            tags:
+                - ScriptService
+            description: 试运行脚本
+            operationId: ScriptService_TestRun
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TestRunScriptRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TestRunScriptResponse'
+    /admin/v1/scripts/{id}:
+        get:
+            tags:
+                - ScriptService
+            description: 查询脚本详情
+            operationId: ScriptService_Get
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+                - name: viewMask
+                  in: query
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Script'
+        put:
+            tags:
+                - ScriptService
+            description: 更新脚本
+            operationId: ScriptService_Update
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateScriptRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /admin/v1/server-monitor:
+        get:
+            tags:
+                - ServerMonitorService
+            description: 查询服务监控信息
+            operationId: ServerMonitorService_Get
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServerMonitorInfo'
     /admin/v1/tasks:
         get:
             tags:
@@ -5144,6 +5768,11 @@ components:
                     type: string
                     description: 任务执行类型名，例如 "send_email"、"generate_report" 等，用于区分不同类型的任务
             description: 控制调度任务 - 请求
+        CountScriptsResponse:
+            type: object
+            properties:
+                count:
+                    type: string
         CreateApiRequest:
             type: object
             properties:
@@ -5192,6 +5821,15 @@ components:
                 data:
                     $ref: '#/components/schemas/Menu'
             description: 创建菜单 - 请求
+        CreateNotificationChannelRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/NotificationChannel'
+                password:
+                    type: string
+                    description: SMTP 密码/授权码
+            description: 创建通知渠道 - 请求
         CreateOrgUnitRequest:
             type: object
             properties:
@@ -5240,6 +5878,12 @@ components:
                 data:
                     $ref: '#/components/schemas/Role'
             description: 创建角色 - 请求
+        CreateScriptRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/Script'
+            description: 创建脚本 - 请求
         CreateTaskRequest:
             type: object
             properties:
@@ -5399,6 +6043,35 @@ components:
                     description: 日志创建时间
                     format: date-time
             description: 数据访问审计日志
+        DatabaseInfo:
+            type: object
+            properties:
+                driver:
+                    type: string
+                    description: 数据库类型
+                pingOk:
+                    type: boolean
+                    description: 连通性是否正常
+                pingError:
+                    type: string
+                    description: 连通性错误信息
+                maxOpenConnections:
+                    type: integer
+                    description: 最大打开连接数
+                    format: uint32
+                openConnections:
+                    type: integer
+                    description: 当前打开连接数
+                    format: uint32
+                inUseConnections:
+                    type: integer
+                    description: 使用中连接数
+                    format: uint32
+                idleConnections:
+                    type: integer
+                    description: 空闲连接数
+                    format: uint32
+            description: 数据库信息
         DeleteNotificationFromInboxRequest:
             type: object
             properties:
@@ -5844,6 +6517,35 @@ components:
                     description: 删除时间
                     format: date-time
             description: 文件
+        ForceLogoutSessionRequest:
+            type: object
+            properties:
+                clientType:
+                    enum:
+                        - admin
+                        - app
+                    type: string
+                    description: 客户端类型
+                    format: enum
+                userId:
+                    type: integer
+                    description: 目标用户ID
+                    format: uint32
+                jti:
+                    type: string
+                    description: 会话令牌对ID
+            description: 强制下线指定会话 - 请求
+        ForceLogoutSessionResponse:
+            type: object
+            properties: {}
+            description: 强制下线指定会话 - 回应
+        ForgotPasswordRequest:
+            type: object
+            properties:
+                identifier:
+                    type: string
+                    description: 登录账号或绑定邮箱
+            description: 忘记密码 - 请求（identifier 为已绑定的邮箱）
         GenerateCaptchaResponse:
             type: object
             properties:
@@ -5894,6 +6596,62 @@ components:
                         - MFA_REQUIRED
                     type: string
                     format: enum
+        GoRuntimeInfo:
+            type: object
+            properties:
+                version:
+                    type: string
+                    description: Go 版本
+                numGoroutine:
+                    type: integer
+                    description: goroutine 数量
+                    format: uint32
+                memAllocBytes:
+                    type: string
+                    description: 堆内存分配字节数
+                memSysBytes:
+                    type: string
+                    description: 向系统申请的内存字节数
+                gcCycles:
+                    type: integer
+                    description: GC 完成次数
+                    format: uint32
+                uptimeSeconds:
+                    type: string
+                    description: 服务运行时长（秒）
+                startedAt:
+                    type: string
+                    description: 进程启动时间
+                    format: date-time
+            description: Go 运行时信息
+        HookPoint:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                scriptCount:
+                    type: integer
+                    format: uint32
+            description: 钩子点
+        HostInfo:
+            type: object
+            properties:
+                os:
+                    type: string
+                    description: 操作系统
+                arch:
+                    type: string
+                    description: CPU 架构
+                numCpu:
+                    type: integer
+                    description: CPU 逻辑核数
+                    format: uint32
+                hostname:
+                    type: string
+                    description: 主机名
+            description: 主机信息
         InfoEntry:
             type: object
             properties:
@@ -6269,6 +7027,19 @@ components:
                 total:
                     type: string
             description: 查询列表 - 回应
+        ListHookPointsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/HookPoint'
+                languages:
+                    type: array
+                    items:
+                        type: string
+                    description: 引擎支持的语言列表（如 lua / javascript）
+            description: 列出钩子点 - 回应
         ListInternalMessageCategoryResponse:
             type: object
             properties:
@@ -6329,6 +7100,26 @@ components:
                 total:
                     type: string
             description: 查询菜单列表 - 回应
+        ListNotificationChannelResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/NotificationChannel'
+                total:
+                    type: string
+            description: 查询通知渠道列表 - 回应
+        ListOnlineSessionResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/OnlineSession'
+                total:
+                    type: string
+            description: 查询在线会话列表 - 回应
         ListOperationAuditLogResponse:
             type: object
             properties:
@@ -6455,6 +7246,16 @@ components:
                     items:
                         $ref: '#/components/schemas/MenuRouteItem'
             description: 查询路由列表 - 回应
+        ListScriptsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Script'
+                total:
+                    type: string
+            description: 查询脚本列表 - 回应
         ListTaskResponse:
             type: object
             properties:
@@ -6798,6 +7599,29 @@ components:
                         type: integer
                         format: uint32
                     description: 收件箱记录ID列表，为空表示全部未读
+        MarkNotificationsStatusRequest:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    description: 用户ID
+                    format: uint32
+                recipientIds:
+                    type: array
+                    items:
+                        type: integer
+                        format: uint32
+                    description: 收件箱记录ID列表
+                newStatus:
+                    enum:
+                        - SENT
+                        - RECEIVED
+                        - READ
+                        - REVOKED
+                        - DELETED
+                    type: string
+                    description: 新的消息状态
+                    format: enum
         Menu:
             type: object
             properties:
@@ -7002,6 +7826,107 @@ components:
                 meta:
                     $ref: '#/components/schemas/MenuMeta'
             description: 路由项
+        NotificationChannel:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: 渠道ID
+                    format: uint32
+                name:
+                    type: string
+                    description: 渠道名称
+                type:
+                    enum:
+                        - EMAIL
+                        - WEBHOOK
+                    type: string
+                    description: 渠道类型
+                    format: enum
+                smtpHost:
+                    type: string
+                    description: SMTP 服务器地址
+                smtpPort:
+                    type: integer
+                    description: SMTP 端口
+                    format: uint32
+                smtpUsername:
+                    type: string
+                    description: SMTP 用户名
+                hasPassword:
+                    type: boolean
+                    description: 是否已配置密码
+                smtpFrom:
+                    type: string
+                    description: 发件人地址
+                smtpTls:
+                    enum:
+                        - NONE
+                        - START_TLS
+                        - SSL
+                    type: string
+                    description: 加密方式
+                    format: enum
+                enabled:
+                    type: boolean
+                    description: 是否启用
+                remark:
+                    type: string
+                    description: 备注
+                createdBy:
+                    type: integer
+                    format: uint32
+                updatedBy:
+                    type: integer
+                    format: uint32
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+            description: 通知渠道
+        OnlineSession:
+            type: object
+            properties:
+                current:
+                    type: boolean
+                    description: 是否为当前会话
+                jti:
+                    type: string
+                    description: 会话令牌对ID
+                userId:
+                    type: integer
+                    description: 用户ID
+                    format: uint32
+                username:
+                    type: string
+                    description: 用户名
+                tenantId:
+                    type: integer
+                    description: 租户ID，0代表平台
+                    format: uint32
+                clientType:
+                    enum:
+                        - admin
+                        - app
+                    type: string
+                    description: 客户端类型
+                    format: enum
+                ipAddress:
+                    type: string
+                    description: 登录IP
+                userAgent:
+                    type: string
+                    description: 浏览器User-Agent
+                deviceId:
+                    type: string
+                    description: 设备ID
+                loginAt:
+                    type: string
+                    description: 登录时间（刷新轮换继承首次登录时间）
+                    format: date-time
+            description: 在线会话
         OperationAuditLog:
             type: object
             properties:
@@ -7883,6 +8808,19 @@ components:
                     type: integer
                     description: 用户ID
                     format: uint32
+        ResetPasswordByCodeRequest:
+            type: object
+            properties:
+                identifier:
+                    type: string
+                    description: 登录账号或绑定邮箱
+                code:
+                    type: string
+                    description: 邮箱验证码
+                new_password:
+                    type: string
+                    description: 新密码
+            description: 凭验证码重置密码 - 请求
         RestartAllTaskResponse:
             type: object
             properties:
@@ -7901,6 +8839,24 @@ components:
                     type: integer
                     description: 用户ID，0表示全局撤销
                     format: uint32
+        RevokeMyOnlineSessionRequest:
+            type: object
+            properties:
+                clientType:
+                    enum:
+                        - admin
+                        - app
+                    type: string
+                    description: 客户端类型
+                    format: enum
+                jti:
+                    type: string
+                    description: 会话令牌对ID
+            description: 当前用户强制下线自己的指定会话 - 请求
+        RevokeMyOnlineSessionResponse:
+            type: object
+            properties: {}
+            description: 当前用户强制下线自己的指定会话 - 回应
         Role:
             type: object
             properties:
@@ -7994,6 +8950,71 @@ components:
                     type: string
                 code:
                     type: string
+        Script:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: 脚本ID
+                    format: uint32
+                name:
+                    type: string
+                    description: 脚本唯一名称，如 user_after_create_notify
+                language:
+                    enum:
+                        - LUA
+                        - JAVASCRIPT
+                    type: string
+                    description: 脚本语言
+                    format: enum
+                hookPoint:
+                    type: string
+                    description: 挂载的钩子点名称，空表示未挂载（仅可试运行）
+                source:
+                    type: string
+                    description: 脚本源码
+                priority:
+                    type: integer
+                    description: 执行优先级，越小越先执行
+                    format: int32
+                description:
+                    type: string
+                    description: 脚本用途说明
+                critical:
+                    type: boolean
+                    description: 关键脚本：执行失败时中断钩子链
+                version:
+                    type: integer
+                    description: 版本号，每次更新自增（热更新指纹）
+                    format: uint32
+                isEnabled:
+                    type: boolean
+                    description: 是否启用
+                createdBy:
+                    type: integer
+                    description: 创建者用户ID
+                    format: uint32
+                updatedBy:
+                    type: integer
+                    description: 更新者用户ID
+                    format: uint32
+                deletedBy:
+                    type: integer
+                    description: 删除者用户ID
+                    format: uint32
+                createdAt:
+                    type: string
+                    description: 创建时间
+                    format: date-time
+                updatedAt:
+                    type: string
+                    description: 更新时间
+                    format: date-time
+                deletedAt:
+                    type: string
+                    description: 删除时间
+                    format: date-time
+            description: 脚本
         SendMessageRequest:
             type: object
             properties:
@@ -8039,6 +9060,31 @@ components:
                     type: integer
                     description: 消息ID
                     format: uint32
+        SendTestEmailRequest:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: 渠道ID
+                    format: uint32
+                recipient:
+                    type: string
+                    description: 测试收件人邮箱
+            description: 发送测试邮件 - 请求
+        ServerMonitorInfo:
+            type: object
+            properties:
+                go:
+                    $ref: '#/components/schemas/GoRuntimeInfo'
+                database:
+                    $ref: '#/components/schemas/DatabaseInfo'
+                host:
+                    $ref: '#/components/schemas/HostInfo'
+                collectedAt:
+                    type: string
+                    description: 采集时间
+                    format: date-time
+            description: 服务监控聚合信息
         SlowLogEntry:
             type: object
             properties:
@@ -8377,6 +9423,38 @@ components:
                         $ref: '#/components/schemas/QuotaUsage'
                     description: 配额上限列表
             description: 租户用量与配额
+        TestRunScriptRequest:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: 运行已保存的脚本
+                    format: uint32
+                draft:
+                    allOf:
+                        - $ref: '#/components/schemas/Script'
+                    description: 运行未保存的草稿（name/language/source 必填）
+                input:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 执行上下文初始数据，值以 JSON 字符串提供
+            description: 试运行脚本 - 请求
+        TestRunScriptResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                error:
+                    type: string
+                context:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 上下文数据快照（键值均以 JSON 字符串编码）
+                durationMs:
+                    type: string
+            description: 试运行脚本 - 回应
         TrendPoint:
             type: object
             properties:
@@ -8539,6 +9617,21 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新菜单 - 请求
+        UpdateNotificationChannelRequest:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/NotificationChannel'
+                updateMask:
+                    type: string
+                    format: field-mask
+                password:
+                    type: string
+                    description: SMTP 密码/授权码，留空不修改
+            description: 更新通知渠道 - 请求
         UpdateOrgUnitRequest:
             type: object
             properties:
@@ -8675,6 +9768,23 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新角色 - 请求
+        UpdateScriptRequest:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/Script'
+                updateMask:
+                    example: name,source,is_enabled
+                    type: string
+                    description: 要更新的字段列表
+                    format: field-mask
+                allowMissing:
+                    type: boolean
+                    description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
+            description: 更新脚本 - 请求
         UpdateTaskRequest:
             type: object
             properties:
@@ -8775,6 +9885,9 @@ components:
                 presignedUrl:
                     type: string
                     description: 预签名上传链接
+                publicUrl:
+                    type: string
+                    description: 签名公开访问 URL
         User:
             type: object
             properties:
@@ -9057,6 +10170,10 @@ tags:
          管理侧 RPC（GetMFAStatus/ListEnrolledMethods/StartEnrollMethod/ConfirmEnrollMethod/
          DisableMFA/RevokeMFADevice）需登录态，走正常 auth+authz 中间件，不加 security:{}。
          登录挑战侧 RPC（VerifyMFAChallenge）免鉴权，加 security:{} 并加入 rest_server 白名单。
+    - name: NotificationChannelService
+      description: 通知渠道管理服务（平台级配置）
+    - name: OnlineSessionService
+      description: 在线会话管理服务（在线用户列表 + 强制下线）
     - name: OperationAuditLogService
       description: 操作审计日志管理服务
     - name: OrgUnitService
@@ -9081,6 +10198,10 @@ tags:
       description: Redis缓存监控管理服务（只读）
     - name: RoleService
       description: 角色管理服务
+    - name: ScriptService
+      description: 脚本管理服务（平台管理员）
+    - name: ServerMonitorService
+      description: 服务监控管理服务（只读）
     - name: TaskService
       description: 调度任务管理服务
     - name: TenantService
