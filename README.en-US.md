@@ -149,6 +149,7 @@ pnpm dev:antd
 | Password Recovery | Reset password with a verification code sent to the bound email: code valid for 10 minutes, single use; all sessions revoked on success; silent handling prevents user enumeration. |
 | Notification Channels | Manage notification channels (EMAIL / SMTP); passwords stored encrypted and masked in lists; enable/disable and test sending. |
 | Server Monitoring | Read-only view of service runtime metrics (CPU cores, memory, goroutines, uptime, etc.) with auto refresh. |
+| Script System   | Script-based plugin system (Lua / JavaScript, database as source of truth, admin-UI changes take effect immediately): entity lifecycle hooks (before veto / after async), scheduled tasks (asynq), HTTP egress (domain allowlist, fail-closed), test runs and execution logs. See [docs/script_system.md](./docs/script_system.md). |
 | Language Management | Manage system-supported languages; configure language name, code, native name, enabled and default status. |
 | Message Categories      | Manage message categories (2-level custom categories) for message management category selection.                                                                                                                        |
 | Message Management      | Manage messages; send by scope (all users / specified users) with message revocation; broadcast fan-out runs on an async task queue (resumable, idempotent); view read status and read time.                                                             |
