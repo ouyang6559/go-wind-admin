@@ -134,7 +134,7 @@ const ScriptLogDrawer: React.FC<ScriptLogDrawerProps> = ({ open, onClose }) => {
       title={t('logTitle')}
       open={open}
       onClose={onClose}
-      width={960}
+      size={960}
       destroyOnClose
     >
       <ProTable<ScriptLog>
