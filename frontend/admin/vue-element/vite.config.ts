@@ -10,6 +10,7 @@ import { mockDevServerPlugin } from "vite-plugin-mock-dev-server";
 import tailwindcss from "@tailwindcss/vite";
 import pkg from "./package.json" with { type: "json" };
 import { existsSync, readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
 /**
@@ -32,6 +33,23 @@ function elementPlusStyleDeps(): string[] {
  * vue-element 仓库内无独立部署 header 层，meta CSP 是规范支持、部署无关的途径。
  * 限制：meta 不支持 frame-ancestors 等，点击劫持防护仍需部署侧 header。
  */
+/**
+ * 对 index.html 内联脚本逐个计算 sha256，以 'sha256-...' 追加进 script-src：
+ * 内容任一字符变动哈希即失效，外来注入的内联脚本无法借道通过。
+ */
+function collectInlineScriptHashes(html: string): string[] {
+  const hashes: string[] = [];
+  const scriptPattern = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = scriptPattern.exec(html)) !== null) {
+    const content = match[1];
+    if (content.trim().length === 0) continue;
+    const digest = createHash("sha256").update(content, "utf8").digest("base64");
+    hashes.push(`'sha256-${digest}'`);
+  }
+  return hashes;
+}
+
 function cspMetaPlugin(): PluginOption {
   let isBuild = false;
   // vite 对 transformIndexHtml.handler 返回 undefined 的联合类型展开存在版本间
@@ -43,15 +61,16 @@ function cspMetaPlugin(): PluginOption {
     },
     transformIndexHtml: {
       order: "post" as const,
-      handler() {
+      handler(html: string) {
         if (!isBuild) return;
+        const scriptSrc = ["script-src 'self'", ...collectInlineScriptHashes(html)].join(" ");
         return {
           tags: [
             {
               tag: "meta",
               attrs: {
                 "http-equiv": "Content-Security-Policy",
-                content: "script-src 'self'; base-uri 'self'; object-src 'none'",
+                content: `${scriptSrc}; base-uri 'self'; object-src 'none'`,
               },
               injectTo: "head-prepend" as const,
             },
