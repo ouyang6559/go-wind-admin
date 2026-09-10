@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"go-wind-admin/backendz/internal/auditlog"
 	"go-wind-admin/backendz/internal/ent/gen/tenant"
 	"go-wind-admin/backendz/internal/ent/gen/user"
 	"go-wind-admin/backendz/internal/ent/gen/usercredential"
@@ -40,6 +41,20 @@ func NewAuthenticationLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext
 }
 
 func (l *AuthenticationLoginLogic) AuthenticationLogin(req *types.LoginRequest) (resp *types.LoginResponse, err error) {
+	requestID := auditlog.NewRequestID()
+	ip := l.clientIP()
+
+	// 登录审计：无论成功/失败统一在返回前写出一次（best-effort，失败仅记日志不阻断登录）。
+	var username string
+	var auditUserID uint32
+	defer func() {
+		if err != nil {
+			auditlog.WriteLoginFail(l.ctx, l.svcCtx, username, ip, err.Error(), requestID)
+		} else if resp != nil {
+			auditlog.WriteLoginSuccess(l.ctx, l.svcCtx, auditUserID, username, ip, requestID)
+		}
+	}()
+
 	grantType := req.GrantType
 	if grantType == "" {
 		grantType = "password"
@@ -53,7 +68,7 @@ func (l *AuthenticationLoginLogic) AuthenticationLogin(req *types.LoginRequest) 
 		return nil, xerr.InvalidCaptchaMsg()
 	}
 
-	username := strings.NewReplacer("\r", "", "\n", "").Replace(strings.TrimSpace(req.Username))
+	username = strings.NewReplacer("\r", "", "\n", "").Replace(strings.TrimSpace(req.Username))
 	if username == "" || req.Password == "" {
 		return nil, xerr.BadRequestMsg("username and password required")
 	}
@@ -141,6 +156,10 @@ func (l *AuthenticationLoginLogic) AuthenticationLogin(req *types.LoginRequest) 
 		SetLastLoginAt(time.Now()).
 		SetLastLoginIP(clientIP).
 		Save(l.ctx)
+
+	// 供登录成功审计使用
+	auditUserID = u.ID
+	username = usernameVal
 
 	return &types.LoginResponse{
 		TokenType:        "Bearer",
