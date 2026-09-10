@@ -62,6 +62,9 @@ service admin-api {
 	@handler PermissionCreate
 	post / (CreatePermissionRequest)
 
+	// ==== 代码转移（来自 Kratos openapi 的冒号路由，非无效代码）====
+	// 契约 URL 为 /admin/v1/permissions/sync:perms；goctl 不认路径内 ':'，
+	// 斜杠写法仅用于 goctl 生成，冒号字面路由在 routes.go 手动补注册。
 	@handler PermissionSyncPermissions
 	post /sync/perms
 

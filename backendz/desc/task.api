@@ -103,6 +103,10 @@ service admin-api {
 	@handler TaskDelete
 	delete /:id (TaskDeleteReq)
 
+	// ==== 代码转移（来自 Kratos openapi 的冒号路由，非无效代码）====
+	// 契约 URL 实际为 /admin/v1/tasks:control 等冒号路由。由于 goctl 的 .api
+	// 解析器不允许路径段内出现 ':'，此处只能以斜杠写法注册以便 goctl 生成；
+	// 冒号字面路由在 routes.go 中手动补注册（见 RegisterHandlers 内的 代码转移 段）。
 	@handler TaskControlTask
 	post /control (ControlTaskRequest)
 

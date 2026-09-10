@@ -33,6 +33,8 @@ func main() {
 
 	ctx := svc.NewServiceContext(c)
 	handler.RegisterHandlers(server, ctx)
+	// 补注册 goctl 无法表达的「资源:动作」冒号字面路由（Kratos 契约迁移，见 colon_routes.go）
+	handler.RegisterColonRoutes(server, ctx)
 
 	// 全局中间件：注入原始请求（供 logic 读头/IP），再做 JWT 鉴权（白名单放行）
 	server.Use(middleware.RequestCtx())
