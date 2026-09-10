@@ -1,4 +1,4 @@
-package script
+package service
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"go-wind-admin/app/admin/service/internal/data/ent"
 	scriptV1 "go-wind-admin/api/gen/go/script/service/v1"
+	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/scripting"
 )
 
@@ -35,15 +35,13 @@ var EntityHooksMapping = map[string]string{
 	"NotificationChannel": "notification_channel",
 }
 
-// ScriptHookInvoker after 类钩子：由 app 层注入（包装 Runtime 异步执行），
+// ScriptHookInvoker after 类钩子：由 app 层注入（包装 ScriptRuntime 异步执行），
 // 结果只记日志/审计不影响业务。
 type ScriptHookInvoker func(ctx context.Context, hookPoint string, data map[string]any)
 
 // ScriptHookVetoInvoker before 类钩子：同步执行，返回 error 即否决业务写入
 // （脚本返回 false 或 ctx.stop）。nil 阶段跳过。
 type ScriptHookVetoInvoker func(ctx context.Context, hookPoint string, data map[string]any) error
-
-
 
 // AttachEntityHooks 在 ent client 上挂载全局生命周期钩子。
 // vetoInvoker 为 nil 时 before 类钩子跳过（仅 after 生效）。
@@ -57,10 +55,10 @@ func newEntityHook(invoker ScriptHookInvoker, vetoInvoker ScriptHookVetoInvoker)
 	h := func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
 			var (
-				typ       = m.Type()
-				prefix    string
-				mapped    bool
-				op        string
+				typ    = m.Type()
+				prefix string
+				mapped bool
+				op     string
 			)
 
 			if prefix, mapped = EntityHooksMapping[typ]; mapped {
@@ -149,7 +147,7 @@ func mutationID(m ent.Mutation) uint32 {
 }
 
 // InvokeEntityHook 异步钩子（after）的执行入口：组装执行上下文并触发钩子点。
-func (r *Runtime) InvokeEntityHook(hookPoint string, payload map[string]any) error {
+func (r *ScriptRuntime) InvokeEntityHook(hookPoint string, payload map[string]any) error {
 	eng := r.engineForHookPoint(hookPoint)
 	if eng == nil {
 		return scriptV1.ErrorNotFound("no scripts mounted on hook point: %s", hookPoint)
@@ -169,7 +167,7 @@ func (r *Runtime) InvokeEntityHook(hookPoint string, payload map[string]any) err
 // InvokeEntityHookVeto before 钩子的同步执行入口：返回 error 即否决业务写入。
 // ctx.stop(reason) 的脚本经 ExecuteHook 的 Stopped 信号转为错误；
 // 「无脚本挂载」不视为否决（返回 nil）。
-func (r *Runtime) InvokeEntityHookVeto(hookPoint string, payload map[string]any) error {
+func (r *ScriptRuntime) InvokeEntityHookVeto(hookPoint string, payload map[string]any) error {
 	eng := r.engineForHookPoint(hookPoint)
 	if eng == nil {
 		return nil
@@ -192,7 +190,7 @@ func (r *Runtime) InvokeEntityHookVeto(hookPoint string, payload map[string]any)
 
 // engineForHookPoint 返回挂载了指定钩子点脚本的引擎（任一语言命中即可）。
 // 无挂载时返回 nil（业务侧据此完全跳过执行开销）。
-func (r *Runtime) engineForHookPoint(hookPoint string) *scripting.Engine {
+func (r *ScriptRuntime) engineForHookPoint(hookPoint string) *scripting.Engine {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, eng := range r.engines {

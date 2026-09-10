@@ -1,10 +1,16 @@
 <template>
   <!-- 宽屏：左右分栏（可拖拽） -->
   <ElSplitter v-if="!isStacked">
-    <ElSplitterPanel :size="leftSize" :min-size="leftMinSize" :max-size="leftMaxSize">
+    <!-- EP 2.14 起数字 size 按 px 解读且首帧容器未量宽时归一化产出 0，
+         必须传百分比字符串（文档格式）才能稳定得到 40/60 分栏 -->
+    <ElSplitterPanel
+      :size="`${leftSize}%`"
+      :min="leftMinSize != null ? `${leftMinSize}%` : undefined"
+      :max="leftMaxSize != null ? `${leftMaxSize}%` : undefined"
+    >
       <slot name="left" />
     </ElSplitterPanel>
-    <ElSplitterPanel :size="rightSize">
+    <ElSplitterPanel :size="`${rightSize}%`">
       <slot name="right" />
     </ElSplitterPanel>
   </ElSplitter>

@@ -164,7 +164,7 @@ const ScriptDrawer: React.FC<ScriptDrawerProps> = ({ open, mode, data, onClose, 
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 720 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 720 }}
     >
       <ProFormText
         name="name"

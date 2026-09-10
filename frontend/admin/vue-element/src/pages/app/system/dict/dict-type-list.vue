@@ -64,30 +64,33 @@ const pageConfig = computed<ProPageConfig>(() => ({
     toolbar: [],
     toolbarRight: ["add"],
     defaultToolbar: ["refresh", "filter"],
-    tableAttrs: { border: true, stripe: true, height: "auto" },
+    tableAttrs: {
+      border: true,
+      stripe: true,
+      height: "auto",
+      "show-overflow": "title",
+      "show-header-overflow": "title",
+    },
+    // 左栏分栏主表：内容列不设宽度（均分贴合容器防横向溢出），仅操作列定宽
     columns: [
       {
         prop: "typeName",
         label: $t("pages.dict.typeName"),
-        minWidth: 150,
         align: "left",
       },
       {
         prop: "typeCode",
         label: $t("pages.dict.typeCode"),
-        minWidth: 150,
         align: "left",
       },
       {
         prop: "isEnabled",
         label: $t("common.table.status"),
-        width: 95,
         slotName: "isEnabled",
       },
       {
         prop: "action",
         label: $t("common.table.action"),
-        fixed: "right",
         width: 150,
         cellType: "tool",
         buttons: [

@@ -139,7 +139,7 @@ const PermissionGroupDrawer: React.FC<PermissionGroupDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, placement: 'left', size: 600 }}
+      drawerProps={{ destroyOnHidden: true, onClose, placement: 'left', size: 600 }}
     >
       <ProFormText
         name="name"

@@ -104,7 +104,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
         },
         api: async () => {
           const result = await fetchListMessageCategories(
-            new PaginationQuery({ formValues: { is_enabled: "true" } })
+            new PaginationQuery({ formValues: { is_enabled: true } })
           );
           return result.items || [];
         },

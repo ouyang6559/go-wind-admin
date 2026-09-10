@@ -12,9 +12,11 @@ import (
 	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/captcha"
 	"github.com/tx7do/go-utils/crypto"
+	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent/privacy"
@@ -591,6 +593,9 @@ func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *au
 	// 记录会话元数据（在线会话列表展示用）；失败不阻断登录
 	recordSessionMeta(ctx, s.log, s.authenticator, req.GetClientType(), tokenPayload)
 
+	// 记录最后登录时间与 IP（用户列表/个人中心展示用）；失败不阻断登录
+	recordUserLastLogin(ctx, s.log, s.userRepo, user.GetId(), clientIP)
+
 	// H5：登录成功后清零失败计数
 	if s.rateLimiter != nil {
 		s.rateLimiter.Reset(ctx, clientIP, username)
@@ -605,6 +610,31 @@ func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *au
 		AccessToken: accessToken,
 		ExpiresIn:   int64(s.authenticator.GetAccessTokenExpires(req.GetClientType()).Seconds()),
 	}, nil
+}
+
+// recordUserLastLogin 记录用户最后登录时间与 IP。
+// 仅用于展示（用户列表"最后登录"列、个人中心），更新失败不阻断登录流程。
+// 密码登录与 MFA 挑战通过两条成功路径都调用。
+func recordUserLastLogin(ctx context.Context, log *bLogger.Helper, userRepo data.UserRepo, userID uint32, clientIP string) {
+	if userID == 0 || userRepo == nil {
+		return
+	}
+	mask, err := fieldmaskpb.New(&identityV1.User{}, "last_login_at", "last_login_ip")
+	if err != nil {
+		log.Errorf(ctx, "build last-login fieldmask failed: %s", err.Error())
+		return
+	}
+	uerr := userRepo.Update(ctx, &identityV1.UpdateUserRequest{
+		Id: userID,
+		Data: &identityV1.User{
+			LastLoginAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+			LastLoginIp: trans.Ptr(clientIP),
+		},
+		UpdateMask: mask,
+	})
+	if uerr != nil {
+		log.Errorf(ctx, "record last login for user [%d] failed: %s", userID, uerr.Error())
+	}
 }
 
 // decryptTransportSecret 解密前端 AES-CBC（base64）传输的秘密（注册/改密与登录同规）。

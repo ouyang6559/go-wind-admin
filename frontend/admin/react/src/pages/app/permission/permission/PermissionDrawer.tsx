@@ -286,7 +286,7 @@ const PermissionDrawer: React.FC<PermissionDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 700 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 700 }}
     >
       <ProFormText
         name="name"

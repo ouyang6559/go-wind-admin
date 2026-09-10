@@ -111,7 +111,7 @@ const LoginPolicyDrawer: React.FC<LoginPolicyDrawerProps> = ({
         },
       }}
       drawerProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         onClose,
         size: 520,
       }}

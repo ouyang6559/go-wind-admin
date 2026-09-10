@@ -5,7 +5,7 @@ GoWind Admin 内置一套以 **Lua / JavaScript** 为载体的脚本级插件系
 对外推送 Webhook 等。脚本以数据库为唯一事实源，通过管理界面增删改查，变更即时生效。
 
 - 后端内核：`backend/pkg/scripting`（语言无关编排器 + 各语言适配器）
-- 平台运行时：`backend/app/admin/service/internal/script`（多语言实例、数据库加载、任务桥、实体钩子）
+- 平台运行时：`backend/app/admin/service/internal/service`（`script_runtime.go` 多语言实例/数据库加载/任务桥，`script_entity_hooks.go` 实体钩子）
 - 管理面：`系统管理 → 脚本管理`（三端齐备：React / vue-element / vue-vben）
 
 ## 定位与边界
@@ -27,7 +27,7 @@ GoWind Admin 内置一套以 **Lua / JavaScript** 为载体的脚本级插件系
 
 平台在实体的写路径上暴露同步/异步钩子点，命名 `<entity>.before_<op>` / `<entity>.after_<op>`
 （op = create / update / delete）。已登记实体：`user`、`tenant`、`role`、
-`internal_message`、`notification_channel`（见 `internal/script.EntityHooksMapping`，
+`internal_message`、`notification_channel`（见 `internal/service/script_entity_hooks.go` 的 `EntityHooksMapping`，
 新增实体登记一行即生效）。
 
 | 类型 | 时机 | 语义 |

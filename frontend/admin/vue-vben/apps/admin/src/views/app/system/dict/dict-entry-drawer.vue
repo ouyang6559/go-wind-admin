@@ -72,7 +72,7 @@ const [BaseForm, baseFormApi] = useVbenForm({
           const result = await fetchListDictTypes(
             new PaginationQuery({
               formValues: {
-                is_enabled: 'true',
+                is_enabled: true,
               },
             }),
           );

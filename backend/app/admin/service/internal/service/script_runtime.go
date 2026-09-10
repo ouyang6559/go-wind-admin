@@ -1,4 +1,4 @@
-package script
+package service
 
 import (
 	"context"
@@ -21,18 +21,18 @@ import (
 	"go-wind-admin/pkg/task"
 )
 
-// Runtime 是脚本引擎的平台运行时：按语言持有一组编排器实例，
+// ScriptRuntime 是脚本引擎的平台运行时：按语言持有一组编排器实例，
 // 负责依赖注入（Redis 等）、数据库脚本的启动加载与变更重同步。
 //
 // 语言分发模型：内核编排器（scripting.Engine）是单语言单 VM 的，
 // 每种语言一个 Engine 实例；脚本记录携带 language 字段，
-// Runtime 按其分发到对应 Engine。go-scripts 注册表里有适配器的语言
+// ScriptRuntime 按其分发到对应 Engine。go-scripts 注册表里有适配器的语言
 // （当前 lua / javascript）都会被实例化。
 //
 // 多实例部署注意：当前重同步由本进程的管理接口触发（事件驱动），
 // 其他实例需等下一次 Resync 才能感知脚本变更；跨实例通知（Redis pub/sub）
 // 是后续增强项。
-type Runtime struct {
+type ScriptRuntime struct {
 	mu      sync.RWMutex
 	engines map[gsEngine.Type]*scripting.Engine
 	cfg     *scripting.Config
@@ -58,7 +58,7 @@ type Runtime struct {
 const ScriptResyncNotifyChannel = "gowind:script:resync"
 
 // logExecution 落一条执行日志（nil logger 时 no-op）。
-func (r *Runtime) logExecution(trigger, hookPoint string, scriptName, language string, version uint32, started time.Time, err error) {
+func (r *ScriptRuntime) logExecution(trigger, hookPoint string, scriptName, language string, version uint32, started time.Time, err error) {
 	if r.scriptLog == nil {
 		return
 	}
@@ -80,10 +80,10 @@ func (r *Runtime) logExecution(trigger, hookPoint string, scriptName, language s
 // 脚本任务的 sys_tasks 约定：type=PERIODIC，type_name=task.ScriptTaskDispatchType
 // （"script_task"，启动期注册的固定分发订阅），task_payload 携带 handler 与 params。
 
-// NewRuntime 创建脚本运行时并为每种已注册语言实例化编排器。
+// NewScriptRuntime 创建脚本运行时并为每种已注册语言实例化编排器。
 // ScriptDir 固定为空：平台脚本一律以数据库为事实源，不走文件目录。
-func NewRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient *redis.Client, ossClient *oss.MinIOClient, scriptLog *data.ScriptLogRepo) *Runtime {
-	r := &Runtime{
+func NewScriptRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient *redis.Client, ossClient *oss.MinIOClient, scriptLog *data.ScriptLogRepo) *ScriptRuntime {
+	r := &ScriptRuntime{
 		engines:          make(map[gsEngine.Type]*scripting.Engine),
 		cfg:              scripting.DefaultConfig(),
 		repo:             repo,
@@ -112,14 +112,14 @@ func NewRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient *redi
 }
 
 // EngineFor 返回指定语言（不区分大小写，如 "lua" / "javascript"）的编排器。
-func (r *Runtime) EngineFor(language string) *scripting.Engine {
+func (r *ScriptRuntime) EngineFor(language string) *scripting.Engine {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.engines[gsEngine.Type(strings.ToLower(language))]
 }
 
 // Languages 返回支持的语言列表（小写字符串）。
-func (r *Runtime) Languages() []string {
+func (r *ScriptRuntime) Languages() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	out := make([]string, 0, len(r.engines))
@@ -130,7 +130,7 @@ func (r *Runtime) Languages() []string {
 }
 
 // HookPoints 聚合全部语言引擎的钩子点（同名钩子合并计数）。
-func (r *Runtime) HookPoints() []scripting.HookPointInfo {
+func (r *ScriptRuntime) HookPoints() []scripting.HookPointInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -159,7 +159,7 @@ func (r *Runtime) HookPoints() []scripting.HookPointInfo {
 }
 
 // ScriptTaskHandlers 返回当前注册的全部脚本任务处理器（供管理面/观测展示）。
-func (r *Runtime) ScriptTaskHandlers() []api.LuaTaskHandler {
+func (r *ScriptRuntime) ScriptTaskHandlers() []api.LuaTaskHandler {
 	handlers := api.GetRegisteredHandlers()
 	out := make([]api.LuaTaskHandler, 0, len(handlers))
 	for _, h := range handlers {
@@ -170,7 +170,7 @@ func (r *Runtime) ScriptTaskHandlers() []api.LuaTaskHandler {
 
 // AttachScriptTaskRegistrar 注入 asynq 订阅注册回调（asynq 的 mux 拒绝 Start 后注册，
 // 因此只在启动期调用一次；分发模型见 RunScriptTask）。
-func (r *Runtime) AttachScriptTaskRegistrar(
+func (r *ScriptRuntime) AttachScriptTaskRegistrar(
 	registrar func(taskType string, fn func(taskType string, data *task.ScriptTaskData) error) error,
 ) error {
 	r.mu.Lock()
@@ -181,7 +181,7 @@ func (r *Runtime) AttachScriptTaskRegistrar(
 
 // NotifyResync 向其他实例广播 Resync 通知（Redis pub/sub；redisClient 为 nil 时 no-op）。
 // 本实例的 Resync 由调用方直接执行，不经此通知。
-func (r *Runtime) NotifyResync(ctx context.Context) {
+func (r *ScriptRuntime) NotifyResync(ctx context.Context) {
 	if r.redisClient == nil {
 		return
 	}
@@ -193,7 +193,7 @@ func (r *Runtime) NotifyResync(ctx context.Context) {
 // StartResyncListener 订阅跨实例 Resync 通知并在本实例执行 Resync
 // （redisClient 为 nil 时 no-op）。阻塞 goroutine 运行至 Stop 被调用，
 // 由 wiring 注册 cleanup。
-func (r *Runtime) StartResyncListener(ctx context.Context) {
+func (r *ScriptRuntime) StartResyncListener(ctx context.Context) {
 	if r.redisClient == nil {
 		return
 	}
@@ -236,7 +236,7 @@ func (r *Runtime) StartResyncListener(ctx context.Context) {
 }
 
 // Stop 停止后台 goroutine（通知监听等）。幂等。
-func (r *Runtime) StopResyncListener() {
+func (r *ScriptRuntime) StopResyncListener() {
 	r.notifyOnce.Do(func() {
 		if r.notifyStop != nil {
 			close(r.notifyStop)
@@ -246,7 +246,7 @@ func (r *Runtime) StopResyncListener() {
 
 // RegisterScriptTaskSubscriber 注册固定分发类型的订阅（启动期一次）。
 // 运行期脚本变更只影响处理器注册表，不需要新的 asynq 订阅。
-func (r *Runtime) RegisterScriptTaskSubscriber() {
+func (r *ScriptRuntime) RegisterScriptTaskSubscriber() {
 	r.mu.RLock()
 	registrar := r.taskRegistrar
 	r.mu.RUnlock()
@@ -264,7 +264,7 @@ func (r *Runtime) RegisterScriptTaskSubscriber() {
 }
 
 // RunScriptTaskHandler 执行指定脚本任务处理器（asynq worker 的最终落点）。
-func (r *Runtime) RunScriptTaskHandler(ctx context.Context, name string, params map[string]any) error {
+func (r *ScriptRuntime) RunScriptTaskHandler(ctx context.Context, name string, params map[string]any) error {
 	r.mu.RLock()
 	owner, ok := r.taskHandlerOwner[name]
 	r.mu.RUnlock()
@@ -289,7 +289,7 @@ func (r *Runtime) RunScriptTaskHandler(ctx context.Context, name string, params 
 // 挂载了 hook_point 的脚本走注册表路径（钩子触发时执行）；
 // 未挂载、在源码顶层自行 hook.register 的脚本走自注册路径（加载时执行一次）。
 // 任一脚本失败不中断整体同步（记日志继续），保证一个坏脚本不拖垮其他脚本。
-func (r *Runtime) Resync(ctx context.Context) error {
+func (r *ScriptRuntime) Resync(ctx context.Context) error {
 	r.mu.Lock()
 	for _, eng := range r.engines {
 		eng.ResetScriptRegistrations()
@@ -359,7 +359,7 @@ func (r *Runtime) Resync(ctx context.Context) error {
 
 // TestRun 在一次性隔离引擎中试运行脚本：不污染常驻引擎的 VM 与 hook 注册。
 // input 为执行上下文初始数据；返回执行后的完整上下文数据。
-func (r *Runtime) TestRun(ctx context.Context, language, name, source string, input map[string]any) (map[string]any, error) {
+func (r *ScriptRuntime) TestRun(ctx context.Context, language, name, source string, input map[string]any) (map[string]any, error) {
 	eng := r.EngineFor(language)
 	if eng == nil {
 		return nil, scriptV1.ErrorBadRequest("unsupported script language: %s", language)
@@ -397,7 +397,7 @@ func (r *Runtime) TestRun(ctx context.Context, language, name, source string, in
 }
 
 // Close 关闭全部语言引擎。
-func (r *Runtime) Close() {
+func (r *ScriptRuntime) Close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for t, eng := range r.engines {
