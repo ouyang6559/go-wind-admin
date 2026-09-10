@@ -65,3 +65,6 @@ export * from './user';
 
 // 用户个人资料
 export * from './user-profile';
+
+// 脚本管理
+export * from './script';

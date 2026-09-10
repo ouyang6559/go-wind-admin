@@ -58,13 +58,10 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
     {
       title: t('name'),
       dataIndex: 'name',
-      width: 150,
-      fixed: 'left',
     },
     {
       title: t('versionLabel'),
       dataIndex: 'version',
-      width: 95,
       valueType: 'select',
       fieldProps: {
         options: getPlanVersionOptions(t),
@@ -77,7 +74,6 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
     {
       title: t('expiryPolicyLabel'),
       dataIndex: 'expiryPolicy',
-      width: 95,
       valueType: 'select',
       fieldProps: {
         options: getExpiryPolicyOptions(t),
@@ -90,20 +86,17 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
     {
       title: t('dataRetentionDays'),
       dataIndex: 'dataRetentionDays',
-      width: 110,
       hideInSearch: true,
     },
     {
       title: t('description'),
       dataIndex: 'description',
-      width: 150,
       hideInSearch: true,
       ellipsis: true,
     },
     {
       title: t('remark'),
       dataIndex: 'remark',
-      width: 150,
       hideInSearch: true,
       ellipsis: true,
     },
@@ -111,7 +104,6 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
       title: t('createdAt'),
       dataIndex: 'createdAt',
       valueType: 'dateTime',
-      width: 150,
       hideInSearch: true,
       sorter: true,
     },
@@ -195,7 +187,7 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
           search={{
             labelWidth: 'auto',
             defaultCollapsed: false,
-            span: 24,
+            span: 12,
           }}
           pagination={{
             defaultPageSize: TABLE.DEFAULT_PAGE_SIZE,
@@ -231,10 +223,9 @@ const PlanList: React.FC<PlanListProps> = ({ currentPlanId, onPlanSelect }) => {
             onClick: () => {
               onPlanSelect(record.id);
             },
+            className: record.id === currentPlanId ? 'ant-table-row-selected' : undefined,
             style: {
               cursor: 'pointer',
-              outline: record.id === currentPlanId ? '2px solid var(--ant-color-primary)' : undefined,
-              outlineOffset: '-2px',
             },
           })}
         />

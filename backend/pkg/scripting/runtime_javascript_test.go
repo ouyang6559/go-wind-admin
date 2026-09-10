@@ -4,9 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
+	"github.com/redis/go-redis/v9"
 
 	gsEngine "github.com/tx7do/go-scripts"
+
+	"go-wind-admin/pkg/eventbus"
 )
 
 // newTestJSEngine 创建一个 JS 引擎编排器（禁用自动加载）。
@@ -191,4 +195,75 @@ func TestMultiLanguageSwitch(t *testing.T) {
 	}
 
 	t.Log("✓ Lua and JS engines coexist in same process")
+}
+
+// newTestJSEngineWithRedis 创建带 Redis 的 JS 编排器（miniredis），用于 cache/eventbus 模块测试。
+func newTestJSEngineWithRedis(t *testing.T) *Engine {
+	t.Helper()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to start miniredis: %v", err)
+	}
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+
+	cfg := DefaultConfig()
+	cfg.ScriptDir = ""
+	cfg.EngineType = gsEngine.JavaScriptType
+	e := NewEngine(cfg, bLogger.NopLogger())
+	e.SetRedis(rdb)
+	e.SetEventBus(eventbus.NewManager(bLogger.NopLogger()))
+	t.Cleanup(func() {
+		e.Close()
+		rdb.Close()
+		mr.Close()
+	})
+	return e
+}
+
+// TestJSEngine_CacheModule 验证 JS cache 模块真实读写 Redis（set/get/incr/delete）。
+func TestJSEngine_CacheModule(t *testing.T) {
+	e := newTestJSEngineWithRedis(t)
+
+	script := `
+		cache.set("js_test:str", "hello", 60)
+		var s = cache.get("js_test:str")
+		if (s !== "hello") throw "string roundtrip failed: " + s
+
+		cache.set("js_test:obj", { a: 1, b: [true, "x"] })
+		var obj = cache.get("js_test:obj")
+		if (obj.a !== 1 || obj.b[1] !== "x") throw "object roundtrip failed"
+
+		var n = cache.incr("js_test:counter")
+		n = cache.incrby("js_test:counter", 5)
+		if (n !== 6) throw "counter failed: " + n
+
+		if (!cache.exists("js_test:str")) throw "exists failed"
+		cache.delete("js_test:str")
+		if (cache.exists("js_test:str")) throw "delete failed"
+
+		if (cache.get("js_test:missing") !== null) throw "missing key should be null"
+	`
+	if err := e.LoadScriptString(context.Background(), "cache_js_test", script); err != nil {
+		t.Fatalf("JS cache script failed: %v", err)
+	}
+}
+
+// TestJSEngine_EventBusModule 验证 JS eventbus 模块的订阅与发布往返。
+func TestJSEngine_EventBusModule(t *testing.T) {
+	e := newTestJSEngineWithRedis(t)
+
+	// 订阅 + 同步发布，发布发生在脚本执行内（Handle 在 Publish 调用栈内触发）
+	script := `
+		var received = null
+		eventbus.subscribe("js.test.event", function (evt) {
+			received = evt
+		})
+		eventbus.publish("js.test.event", { msg: "roundtrip" })
+		if (received === null) throw "handler not invoked"
+		if (received.type !== "js.test.event") throw "event type mismatch: " + received.type
+		if (received.data.msg !== "roundtrip") throw "event data mismatch"
+	`
+	if err := e.LoadScriptString(context.Background(), "eventbus_js_test", script); err != nil {
+		t.Fatalf("JS eventbus script failed: %v", err)
+	}
 }

@@ -64,6 +64,7 @@ const Editor: React.FC<EditorProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           uploadImage={uploadImage}
+          autoDetectLanguage={codeOptions?.autoDetectLanguage}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           options={currentOptions as any}
           onChange={onChange}

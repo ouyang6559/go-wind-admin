@@ -112,6 +112,18 @@ const system: RouteRecordRaw[] = [
         },
         component: () => import('#/views/app/system/notification_channel/index.vue'),
       },
+
+      {
+        path: 'scripts',
+        name: 'ScriptManagement',
+        meta: {
+          order: 11,
+          icon: 'lucide:file-code-2',
+          title: $t('menu.system.scripts'),
+          authority: ['sys:platform_admin'],
+        },
+        component: () => import('#/views/app/system/script/index.vue'),
+      },
     ],
   },
 ];

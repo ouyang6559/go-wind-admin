@@ -701,7 +701,7 @@ export const HeaderContent = ({
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <Avatar src={userInfo?.avatar} icon={<UserOutlined />} size="small" />
+            <Avatar src={userInfo?.avatar || undefined} icon={<UserOutlined />} size="small" />
             <span
               className="hidden md:inline"
               style={{

@@ -3,6 +3,7 @@ package scripting
 import (
 	"context"
 	"fmt"
+	"time"
 
 	lua "github.com/yuin/gopher-lua"
 
@@ -55,9 +56,23 @@ func (b *LuaBinder) WithContext(holder *execCtxHolder, cfg *Config) RuntimeBinde
 	}
 }
 
+// httpOpts 从编排器配置取 http 护栏（binder 无 cfg 时 fail-closed 空白名单）。
+func (b *LuaBinder) httpOpts() api.HTTPOptions {
+	if b.cfg == nil {
+		return api.HTTPOptions{}
+	}
+	return b.cfg.HTTPOptions
+}
+
 // Bind 在 Lua VM 上注入全部业务模块与执行上下文函数。
 // 沙箱配置在 PreInit 中完成（必须在 VM 创建前生效）。
 func (b *LuaBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
+	// sleep 上限 = 单脚本执行超时（防御脚本用 sleep 绕过超时控制）
+	sleepCap := 5 * time.Second
+	if b.cfg != nil && b.cfg.VMTimeout > 0 {
+		sleepCap = b.cfg.VMTimeout
+	}
+
 	// 注入业务模块（经 preloadAdapter 适配为 go-scripts 期望的 preload 风格）
 	registrations := []struct {
 		name    string
@@ -65,8 +80,11 @@ func (b *LuaBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 	}{
 		{"kratos_logger", api.LoaderLogger(deps.Logger)},
 		{"kratos_crypto", api.LoaderCrypto(deps.Logger)},
-		{"kratos_util", api.LoaderUtil(deps.Logger)},
+		{"kratos_util", api.LoaderUtil(deps.Logger, sleepCap)},
+		{"kratos_http", api.LoaderHTTP(b.httpOpts())},
 	}
+
+	// http 模块即便未配置白名单也注册（fail-closed：脚本调用即收到明确的白名单错误）
 
 	if deps.Rdb != nil {
 		registrations = append(registrations, struct {
@@ -202,12 +220,16 @@ type luaCallback struct {
 	L        *lua.LState
 	Function *lua.LFunction
 	hookName string
+	owner    string // 注册时正在执行的脚本名（热更新幂等替换的依据）
 	cfg      *Config
 	holder   *execCtxHolder
 }
 
 // 确保 luaCallback 实现 ScriptCallback。
 var _ ScriptCallback = (*luaCallback)(nil)
+
+// CallbackOwner 返回回调归属（脚本名），空表示匿名回调（不去重）。
+func (c *luaCallback) CallbackOwner() string { return c.owner }
 
 // Source 返回回调来源信息。
 func (c *luaCallback) Source() string {
@@ -278,11 +300,14 @@ func (a *luaHookAdapter) ListHooks() []string {
 }
 
 // RegisterCallback 捕获 Lua 回调函数，创建 luaCallback 并注册到编排器。
+// 归属（owner）取注册时刻正在执行的脚本名——脚本热更新重执行
+// hook.register 时，同归属旧回调会被替换而非追加。
 func (a *luaHookAdapter) RegisterCallback(hookName string, L *lua.LState, fn *lua.LFunction) {
 	cb := &luaCallback{
 		L:        L,
 		Function: fn,
 		hookName: hookName,
+		owner:    a.orchestrator.execCtx.currentScript(),
 		cfg:      a.orchestrator.config,
 		holder:   &a.orchestrator.execCtx,
 	}

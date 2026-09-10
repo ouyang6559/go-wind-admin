@@ -31,8 +31,8 @@ const LoginAuditLogDetailDrawer = ({ open, data, onClose }: DetailDrawerProps) =
     <Drawer
       open={open}
       onClose={onClose}
-      width={780}
-      title={t('moduleName')}
+      size={780}
+      title={t('title')}
       destroyOnClose
     >
       <Divider titlePlacement="left">{t('sectionBasic')}</Divider>

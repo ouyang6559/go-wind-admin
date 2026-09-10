@@ -111,6 +111,12 @@ type RoleMetadata func(*sql.Selector)
 // RolePermission is the predicate function for rolepermission builders.
 type RolePermission func(*sql.Selector)
 
+// Script is the predicate function for script builders.
+type Script func(*sql.Selector)
+
+// ScriptLog is the predicate function for scriptlog builders.
+type ScriptLog func(*sql.Selector)
+
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 

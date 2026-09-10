@@ -2,14 +2,21 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
+
+	"go-wind-admin/pkg/scripting/internal/convert"
 )
 
 // TaskHandlerRegistry stores Lua-based task handlers
 type TaskHandlerRegistry struct {
 	handlers map[string]*LuaTaskHandler
+	mu       sync.RWMutex
 	logger   *bLogger.Helper
 	engine   VMManager
 }
@@ -30,10 +37,39 @@ type LuaTaskHandler struct {
 	TimeoutSecs int // Timeout in seconds (default: 30)
 	MaxRetries  int // Max retry attempts (default: 2)
 	Priority    int // Task priority (default: 5 = normal)
+	Generation  int64
 }
 
 var globalTaskRegistry = &TaskHandlerRegistry{
 	handlers: make(map[string]*LuaTaskHandler),
+}
+
+// taskHandlerGeneration 注册代际计数器：Resync 前取号，重载完成后清理旧代际的处理器，
+// 使已禁用/删除脚本的处理器不残留。
+var taskHandlerGeneration int64
+
+// NextTaskGeneration 取下一个代际号。
+func NextTaskGeneration() int64 {
+	return atomic.AddInt64(&taskHandlerGeneration, 1)
+}
+
+// PruneStaleTaskHandlers 清理代际早于 generation 的任务处理器
+// （它们所属的脚本在本轮全量重同步中未被重新注册，即已禁用或已删除）。
+func PruneStaleTaskHandlers(generation int64) int {
+	globalTaskRegistry.mu.Lock()
+	defer globalTaskRegistry.mu.Unlock()
+
+	removed := 0
+	for name, h := range globalTaskRegistry.handlers {
+		if h.Generation < generation {
+			delete(globalTaskRegistry.handlers, name)
+			removed++
+		}
+	}
+	if removed > 0 && globalTaskRegistry.logger != nil {
+		globalTaskRegistry.logger.Infof(context.Background(), "Pruned %d stale task handlers (generation < %d)", removed, generation)
+	}
+	return removed
 }
 
 // RegisterTask registers the task API for Lua scripts
@@ -59,6 +95,9 @@ func RegisterTask(L *lua.LState, engine VMManager, logger *bLogger.Helper) {
 
 // LoaderTask 返回 task 模块的 loader，供 go-scripts 引擎 RegisterModule 使用。
 // engine 为 nil 时返回空模块。
+//
+// 注意：loader 必须把模块表压栈并返回 1——此前漏 Push 导致 require "task"
+// 拿到栈上残留的模块名字符串（"attempt to call a non-function object"）。
 func LoaderTask(engine VMManager, logger *bLogger.Helper) lua.LGFunction {
 	globalTaskRegistry.logger = logger
 	globalTaskRegistry.engine = engine
@@ -68,7 +107,7 @@ func LoaderTask(engine VMManager, logger *bLogger.Helper) lua.LGFunction {
 			L.Push(L.NewTable())
 			return 1
 		}
-		buildTaskModule(L, nil)
+		L.Push(buildTaskModule(L, nil))
 		return 1
 	}
 }
@@ -153,10 +192,13 @@ func registerTaskHandler(L *lua.LState) int {
 		TimeoutSecs: timeoutSecs,
 		MaxRetries:  maxRetries,
 		Priority:    priority,
+		Generation:  atomic.AddInt64(&taskHandlerGeneration, 1),
 	}
 
 	// Register globally
+	globalTaskRegistry.mu.Lock()
 	globalTaskRegistry.handlers[name] = handler
+	globalTaskRegistry.mu.Unlock()
 
 	// Mark the VM as dedicated so it won't be returned to the pool
 	// This ensures the handler function remains available for execution
@@ -177,17 +219,68 @@ func registerTaskHandler(L *lua.LState) int {
 
 // GetRegisteredHandlers returns all registered Lua task handlers
 func GetRegisteredHandlers() map[string]*LuaTaskHandler {
-	if globalTaskRegistry.logger != nil {
-		globalTaskRegistry.logger.Infof(context.Background(), "📋 GetRegisteredHandlers called: %d handlers available", len(globalTaskRegistry.handlers))
-		for name := range globalTaskRegistry.handlers {
-			globalTaskRegistry.logger.Infof(context.Background(), "  - %s", name)
-		}
+	globalTaskRegistry.mu.RLock()
+	defer globalTaskRegistry.mu.RUnlock()
+
+	handlers := make(map[string]*LuaTaskHandler, len(globalTaskRegistry.handlers))
+	for name, h := range globalTaskRegistry.handlers {
+		handlers[name] = h
 	}
-	return globalTaskRegistry.handlers
+	return handlers
 }
 
 // GetHandler returns a specific Lua task handler
 func GetHandler(name string) (*LuaTaskHandler, bool) {
+	globalTaskRegistry.mu.RLock()
+	defer globalTaskRegistry.mu.RUnlock()
+
 	handler, exists := globalTaskRegistry.handlers[name]
 	return handler, exists
+}
+
+// InvokeHandler 执行指定的任务处理器：合并 params（可选参数取默认值、校验必填项），
+// 在处理器声明的超时内以 params 表为唯一参数调用脚本函数。
+// 调用方须自行保证与该处理器所属引擎的执行互斥（编排器的 ExecuteTaskHandler 已加锁）。
+func InvokeHandler(ctx context.Context, name string, params map[string]any) error {
+	handler, exists := GetHandler(name)
+	if !exists {
+		return fmt.Errorf("task handler not found: %s", name)
+	}
+
+	// 合并可选参数默认值 + 校验必填
+	merged := make(map[string]any, len(params)+len(handler.Optional))
+	for k, v := range handler.Optional {
+		merged[k] = v
+	}
+	var missing []string
+	for k, v := range params {
+		merged[k] = v
+	}
+	for _, req := range handler.Required {
+		if _, ok := merged[req]; !ok {
+			missing = append(missing, req)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("task handler %s missing required params: %v", name, missing)
+	}
+
+	timeoutSecs := handler.TimeoutSecs
+	if timeoutSecs <= 0 {
+		timeoutSecs = 30
+	}
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSecs)*time.Second)
+	defer cancel()
+
+	L := handler.L
+	L.SetContext(timeoutCtx)
+	defer L.SetContext(context.Background())
+
+	L.Push(handler.Function)
+	L.Push(convert.ToLuaValue(L, merged))
+
+	if err := L.PCall(1, 0, nil); err != nil {
+		return fmt.Errorf("task handler %s execution error: %w", name, err)
+	}
+	return nil
 }
