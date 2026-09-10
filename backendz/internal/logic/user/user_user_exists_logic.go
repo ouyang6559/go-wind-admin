@@ -7,8 +7,10 @@ import (
 	"context"
 
 	genuser "go-wind-admin/backendz/internal/ent/gen/user"
+	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/svc"
 	"go-wind-admin/backendz/internal/types"
+	"go-wind-admin/backendz/internal/xerr"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -28,15 +30,22 @@ func NewUserUserExistsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Us
 }
 
 func (l *UserUserExistsLogic) UserUserExists(req *types.UserUserExistsReq) (resp *types.UserExistsResponse, err error) {
+	// 对齐 kratos UserExists 的 oneof 语义：id 与 username 必须且只能提供其一，否则视为非法查询。
+	if (req.Id > 0) == (req.Username != "") {
+		return &types.UserExistsResponse{Exist: false}, xerr.BadRequestMsg("invalid query by type")
+	}
+
 	q := l.svcCtx.Ent.User.Query().Where(genuser.DeletedAtIsNil())
-	if req.Id > 0 && req.Username != "" {
-		q = q.Where(genuser.Or(genuser.IDEQ(uint32(req.Id)), genuser.UsernameEQ(req.Username)))
-	} else if req.Id > 0 {
+	switch {
+	case req.Id > 0:
 		q = q.Where(genuser.IDEQ(uint32(req.Id)))
-	} else if req.Username != "" {
+	default:
+		// username 仅在 (tenant_id, username) 维度唯一；平台上下文(tid=0)下按 username 查存在性
+		// 会跨租户泄露（任意租户有同名即 true）。与 kratos 一致，仅允许具名租户上下文(tid>0)查询。
+		if !l.hasTenantContext() {
+			return &types.UserExistsResponse{Exist: false}, xerr.BadRequestMsg("tenant scope required")
+		}
 		q = q.Where(genuser.UsernameEQ(req.Username))
-	} else {
-		return &types.UserExistsResponse{Exist: false}, nil
 	}
 
 	count, cerr := q.Count(l.ctx)
@@ -45,4 +54,10 @@ func (l *UserUserExistsLogic) UserUserExists(req *types.UserUserExistsReq) (resp
 		return nil, cerr
 	}
 	return &types.UserExistsResponse{Exist: count > 0}, nil
+}
+
+// hasTenantContext 判断当前请求是否处于具名租户上下文（JWT 载荷中 tid>0）。
+func (l *UserUserExistsLogic) hasTenantContext() bool {
+	claims, ok := middleware.ClaimsFromContext(l.ctx)
+	return ok && claims.TenantID > 0
 }
