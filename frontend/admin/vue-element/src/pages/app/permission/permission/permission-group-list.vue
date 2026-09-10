@@ -47,36 +47,26 @@ const drawerRef = ref();
 const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
   search: {
+    // 左栏窄容器：grid 列数按容器宽度自适应（inline+minWidth 在窄栏会溢出换行）
+    grid: true,
     fields: [
       {
         type: "input",
         label: $t("pages.permission_group.name"),
         field: "name",
-        attrs: {
-          placeholder: $t("common.placeholder.input"),
-          clearable: true,
-          style: { minWidth: "200px" },
-        },
+        attrs: { placeholder: $t("common.placeholder.input"), clearable: true },
       },
       {
         type: "input",
         label: $t("pages.permission_group.module"),
         field: "module",
-        attrs: {
-          placeholder: $t("common.placeholder.input"),
-          clearable: true,
-          style: { minWidth: "200px" },
-        },
+        attrs: { placeholder: $t("common.placeholder.input"), clearable: true },
       },
       {
         type: "select",
         label: $t("common.table.status"),
         field: "status",
-        attrs: {
-          placeholder: $t("common.placeholder.select"),
-          clearable: true,
-          style: { minWidth: "200px" },
-        },
+        attrs: { placeholder: $t("common.placeholder.select"), clearable: true },
         options: statusList.value,
       },
     ],
@@ -113,36 +103,35 @@ const pageConfig = computed<ProPageConfig>(() => ({
       border: true,
       stripe: false,
       height: "auto",
+      "show-overflow": "title",
+      "show-header-overflow": "title",
       "tree-config": {
         parentField: "parentId",
         rowField: "id",
         expandAll: true,
       },
     },
+    // 左栏分栏主表：内容列不设宽度（均分贴合容器防横向溢出），仅操作列定宽
     columns: [
       {
         prop: "name",
         label: $t("pages.permission_group.name"),
-        minWidth: 150,
         treeNode: true,
         align: "left",
       },
       {
         prop: "module",
         label: $t("pages.permission_group.module"),
-        minWidth: 120,
         align: "left",
       },
       {
         prop: "status",
         label: $t("common.table.status"),
-        width: 95,
         slotName: "status",
       },
       {
         prop: "action",
         label: $t("common.table.action"),
-        fixed: "right",
         width: 150,
         cellType: "tool",
         buttons: [
