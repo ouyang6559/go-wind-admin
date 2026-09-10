@@ -213,7 +213,7 @@ const title = computed(() =>
 async function loadCategoryTree() {
   try {
     const result = await fetchListMessageCategories(
-      new PaginationQuery({ formValues: { is_enabled: "true" } })
+      new PaginationQuery({ formValues: { is_enabled: true } })
     );
     categoryTreeData.value = result.items || [];
   } catch (error) {
