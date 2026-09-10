@@ -1,0 +1,126 @@
+import "common.api"
+
+// 脚本管理（平台脚本引擎插件的持久化承载）
+// 路由拆分：CRUD/试运行挂在 /admin/v1/scripts，钩子点挂在 /admin/v1/script/hooks。
+
+type Script {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	Language	string	`json:"language,optional"`
+	HookPoint	string	`json:"hookPoint,optional"`
+	Source	string	`json:"source,optional"`
+	Priority	int64	`json:"priority,optional"`
+	Description	string	`json:"description,optional"`
+	Critical	bool	`json:"critical,optional"`
+	Version	int64	`json:"version,optional"`
+	IsEnabled	bool	`json:"isEnabled,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListScriptsResponse {
+	Items	[]Script	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type CountScriptsResponse {
+	Count	int64	`json:"count,optional"`
+}
+
+type GetScriptReq {
+	Id	int64	`path:"id,optional"`
+	Name	string	`form:"name,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type GetScriptByNameReq {
+	Name	string	`path:"name,optional"`
+	Id	int64	`form:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type CreateScriptRequest {
+	Data	Script	`json:"data,optional"`
+}
+
+type UpdateScriptRequest {
+	Id	int64	`path:"id,optional"`
+	Data	Script	`json:"data,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type DeleteScriptReq {
+	Ids	[]int64	`form:"ids,optional"`
+}
+
+type TestRunScriptRequest {
+	Id	int64	`json:"id,optional"`
+	Draft	Script	`json:"draft,optional"`
+	Input	map[string]string	`json:"input,optional"`
+}
+
+type TestRunScriptResponse {
+	Success	bool	`json:"success,optional"`
+	Error	string	`json:"error,optional"`
+	Context	map[string]string	`json:"context,optional"`
+	DurationMs	int64	`json:"durationMs,optional"`
+}
+
+type HookPoint {
+	Name	string	`json:"name,optional"`
+	Description	string	`json:"description,optional"`
+	ScriptCount	int64	`json:"scriptCount,optional"`
+}
+
+type ListHookPointsResponse {
+	Items	[]HookPoint	`json:"items,optional"`
+	Languages	[]string	`json:"languages,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/scripts"
+	group: script
+)
+
+service admin-api {
+	@handler ScriptList
+	get / (PageRequest) returns (ListScriptsResponse)
+
+	@handler ScriptCount
+	get /count (PageRequest) returns (CountScriptsResponse)
+
+	@handler ScriptCreate
+	post / (CreateScriptRequest)
+
+	@handler ScriptGetById
+	get /:id (GetScriptReq) returns (Script)
+
+	@handler ScriptGetByName
+	get /name/:name (GetScriptByNameReq) returns (Script)
+
+	@handler ScriptUpdate
+	put /:id (UpdateScriptRequest)
+
+	@handler ScriptDelete
+	delete / (DeleteScriptReq)
+
+	@handler ScriptTestRun
+	post /test_run (TestRunScriptRequest) returns (TestRunScriptResponse)
+}
+
+@server (
+	prefix: "/admin/v1/script"
+	group: script
+)
+
+service admin-api {
+	@handler ScriptListHookPoints
+	get /hooks returns (ListHookPointsResponse)
+}

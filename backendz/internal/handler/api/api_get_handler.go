@@ -26,7 +26,7 @@ func ApiGetHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
 		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, resp)
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

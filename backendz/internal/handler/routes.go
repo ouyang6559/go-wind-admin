@@ -37,6 +37,8 @@ import (
 	position "go-wind-admin/backendz/internal/handler/position"
 	redis_cache_monitor "go-wind-admin/backendz/internal/handler/redis_cache_monitor"
 	role "go-wind-admin/backendz/internal/handler/role"
+	script "go-wind-admin/backendz/internal/handler/script"
+	script_log "go-wind-admin/backendz/internal/handler/script_log"
 	task "go-wind-admin/backendz/internal/handler/task"
 	tenant "go-wind-admin/backendz/internal/handler/tenant"
 	user "go-wind-admin/backendz/internal/handler/user"
@@ -886,6 +888,84 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/admin/v1/roles"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/",
+				Handler: script.ScriptListHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/",
+				Handler: script.ScriptCreateHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/",
+				Handler: script.ScriptDeleteHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/:id",
+				Handler: script.ScriptGetByIdHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/:id",
+				Handler: script.ScriptUpdateHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/count",
+				Handler: script.ScriptCountHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/name/:name",
+				Handler: script.ScriptGetByNameHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/test_run",
+				Handler: script.ScriptTestRunHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/admin/v1/scripts"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/hooks",
+				Handler: script.ScriptListHookPointsHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/admin/v1/script"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/logs",
+				Handler: script_log.ScriptLogListHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/logs/count",
+				Handler: script_log.ScriptLogCountHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/logs/purge",
+				Handler: script_log.ScriptLogPurgeHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/admin/v1/script"),
 	)
 
 	server.AddRoutes(

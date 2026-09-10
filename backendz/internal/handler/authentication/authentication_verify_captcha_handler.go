@@ -26,7 +26,7 @@ func AuthenticationVerifyCaptchaHandler(svcCtx *svc.ServiceContext) http.Handler
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
 		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, resp)
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

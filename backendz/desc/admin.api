@@ -43,6 +43,8 @@ import (
 	"position.api"
 	"redis_cache_monitor.api"
 	"role.api"
+	"script.api"
+	"script_log.api"
 	"task.api"
 	"tenant.api"
 	"user.api"

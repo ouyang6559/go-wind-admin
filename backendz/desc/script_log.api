@@ -1,0 +1,53 @@
+import "common.api"
+
+// 脚本执行日志（只读 + 清理）。
+// 注意：该组路由前缀为 /admin/v1/script（单数），与 /admin/v1/scripts（复数 CRUD）不同。
+
+type ScriptLog {
+	Id	int64	`json:"id,optional"`
+	ScriptId	int64	`json:"scriptId,optional"`
+	ScriptName	string	`json:"scriptName,optional"`
+	Language	string	`json:"language,optional"`
+	TriggerType	string	`json:"triggerType,optional"`
+	HookPoint	string	`json:"hookPoint,optional"`
+	Version	int64	`json:"version,optional"`
+	Success	bool	`json:"success,optional"`
+	DurationMs	int64	`json:"durationMs,optional"`
+	Error	string	`json:"error,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+}
+
+type ListScriptLogsResponse {
+	Items	[]ScriptLog	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type CountScriptLogsResponse {
+	Count	int64	`json:"count,optional"`
+}
+
+type PurgeScriptLogsRequest {
+	Before	string	`json:"before,optional"`
+}
+
+type PurgeScriptLogsResponse {
+	Deleted	int64	`json:"deleted,optional"`
+}
+
+
+
+@server (
+	prefix: "/admin/v1/script"
+	group: script_log
+)
+
+service admin-api {
+	@handler ScriptLogList
+	get /logs (PageRequest) returns (ListScriptLogsResponse)
+
+	@handler ScriptLogCount
+	get /logs/count (PageRequest) returns (CountScriptLogsResponse)
+
+	@handler ScriptLogPurge
+	post /logs/purge (PurgeScriptLogsRequest) returns (PurgeScriptLogsResponse)
+}

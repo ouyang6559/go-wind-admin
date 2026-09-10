@@ -95,6 +95,12 @@ type GeoLocation struct {
 	Longitude     string `json:"longitude,optional"`
 }
 
+type HookPoint struct {
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
+	ScriptCount int64  `json:"scriptCount,optional"`
+}
+
 type InfoEntry struct {
 	Key   string `json:"key,optional"`
 	Value string `json:"value,optional"`
@@ -230,6 +236,20 @@ type SMSResult struct {
 type SMSVerification struct {
 	VerificationId string `json:"verificationId,optional"`
 	Code           string `json:"code,optional"`
+}
+
+type ScriptLog struct {
+	Id          int64  `json:"id,optional"`
+	ScriptId    int64  `json:"scriptId,optional"`
+	ScriptName  string `json:"scriptName,optional"`
+	Language    string `json:"language,optional"`
+	TriggerType string `json:"triggerType,optional"`
+	HookPoint   string `json:"hookPoint,optional"`
+	Version     int64  `json:"version,optional"`
+	Success     bool   `json:"success,optional"`
+	DurationMs  int64  `json:"durationMs,optional"`
+	Error       string `json:"error,optional"`
+	CreatedAt   string `json:"createdAt,optional"`
 }
 
 type SlowLogEntry struct {

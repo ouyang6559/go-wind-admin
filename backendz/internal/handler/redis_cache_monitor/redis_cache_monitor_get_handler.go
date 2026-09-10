@@ -6,6 +6,7 @@ package redis_cache_monitor
 import (
 	"net/http"
 
+	"github.com/zeromicro/go-zero/rest/httpx"
 	xhttp "github.com/zeromicro/x/http"
 	"go-wind-admin/backendz/internal/logic/redis_cache_monitor"
 	"go-wind-admin/backendz/internal/svc"
@@ -18,7 +19,7 @@ func RedisCacheMonitorGetHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
 		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, resp)
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

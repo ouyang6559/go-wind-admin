@@ -428,6 +428,30 @@ func (f RolePermissionFunc) Mutate(ctx context.Context, m gen.Mutation) (gen.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *gen.RolePermissionMutation", m)
 }
 
+// The ScriptFunc type is an adapter to allow the use of ordinary
+// function as Script mutator.
+type ScriptFunc func(context.Context, *gen.ScriptMutation) (gen.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScriptFunc) Mutate(ctx context.Context, m gen.Mutation) (gen.Value, error) {
+	if mv, ok := m.(*gen.ScriptMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *gen.ScriptMutation", m)
+}
+
+// The ScriptLogFunc type is an adapter to allow the use of ordinary
+// function as ScriptLog mutator.
+type ScriptLogFunc func(context.Context, *gen.ScriptLogMutation) (gen.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScriptLogFunc) Mutate(ctx context.Context, m gen.Mutation) (gen.Value, error) {
+	if mv, ok := m.(*gen.ScriptLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *gen.ScriptLogMutation", m)
+}
+
 // The TaskFunc type is an adapter to allow the use of ordinary
 // function as Task mutator.
 type TaskFunc func(context.Context, *gen.TaskMutation) (gen.Value, error)

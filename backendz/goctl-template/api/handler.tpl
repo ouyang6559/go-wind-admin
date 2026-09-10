@@ -6,10 +6,14 @@ package {{.PkgName}}
 import (
 	"net/http"
 
-	{{if .HasRequest}}"github.com/zeromicro/go-zero/rest/httpx"
+	{{if or .HasRequest .HasResp}}"github.com/zeromicro/go-zero/rest/httpx"
 	{{end}}xhttp "github.com/zeromicro/x/http"
 	{{.ImportPackages}}
 )
+
+// 成功响应与 Kratos 主后端对齐：直接返回扁平 proto 消息体（如 {"items":[],"total":"0"}），
+// 不包 {code,msg,data} 信封，保证 react/vue-element/vue-vben 三层前端零改动。
+// 仅错误路径通过 xhttp 输出 {code,msg}。
 
 {{if .HasDoc}}{{.Doc}}{{end}}
 func {{.HandlerName}}(svcCtx *svc.ServiceContext) http.HandlerFunc {
@@ -25,7 +29,7 @@ func {{.HandlerName}}(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
 		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, {{if .HasResp}}resp{{else}}nil{{end}})
+			{{if .HasResp}}httpx.OkJsonCtx(r.Context(), w, resp){{else}}xhttp.JsonBaseResponseCtx(r.Context(), w, nil){{end}}
 		}
 	}
 }

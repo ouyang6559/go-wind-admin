@@ -26,7 +26,7 @@ func AuthenticationRegisterUserHandler(svcCtx *svc.ServiceContext) http.HandlerF
 		if err != nil {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
 		} else {
-			xhttp.JsonBaseResponseCtx(r.Context(), w, resp)
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }
