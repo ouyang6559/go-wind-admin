@@ -34,6 +34,12 @@ type ServiceContext struct {
 
 	// Ent 是数据库 ORM 客户端（PostgreSQL，gen 为生成代码包）。
 	Ent *gen.Client
+	// DB 是 ent 底层连接池（供服务监控：连接池统计 / 连通性探测）。
+	DB *sql.DB
+	// DBDriver 是数据库驱动名（服务监控展示用）。
+	DBDriver string
+	// StartedAt 进程启动时间（服务监控 uptime/startedAt 基准）。
+	StartedAt time.Time
 	// Rds 是 Redis 客户端（验证码存储、缓存）。
 	Rds *redis.Redis
 	// Token 负责签发/解析访问令牌与刷新令牌。
@@ -47,7 +53,7 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	ctx := context.Background()
 
-	entClient, err := newEntClient(ctx, c)
+	entClient, db, err := newEntClient(ctx, c)
 	if err != nil {
 		panic(fmt.Sprintf("new ent client failed: %v", err))
 	}
@@ -61,29 +67,32 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	)
 
 	return &ServiceContext{
-		Config:  c,
-		Ent:     entClient,
-		Rds:     rds,
-		Token:   tm,
-		Session: session.NewManager(rds),
-		Sse:     ssehub.New(),
+		Config:    c,
+		Ent:       entClient,
+		DB:        db,
+		DBDriver:  c.Mysql.DriverName,
+		StartedAt: time.Now(),
+		Rds:       rds,
+		Token:     tm,
+		Session:   session.NewManager(rds),
+		Sse:       ssehub.New(),
 	}
 }
 
-// newEntClient 基于配置的 DataSource 创建 ent 客户端并自动建表。
-func newEntClient(ctx context.Context, c config.Config) (*gen.Client, error) {
+// newEntClient 基于配置的 DataSource 创建 ent 客户端并自动建表，同时返回底层连接池。
+func newEntClient(ctx context.Context, c config.Config) (*gen.Client, *sql.DB, error) {
 	drv, err := sqlDriver.Open(c.Mysql.DriverName, c.Mysql.DataSource)
 	if err != nil {
-		return nil, fmt.Errorf("open %s driver failed: %w", c.Mysql.DriverName, err)
+		return nil, nil, fmt.Errorf("open %s driver failed: %w", c.Mysql.DriverName, err)
 	}
 
 	client := gen.NewClient(gen.Driver(drv))
 	if err := client.Schema.Create(ctx, migrate.WithForeignKeys(true)); err != nil {
 		client.Close()
-		return nil, fmt.Errorf("auto migrate schema failed: %w", err)
+		return nil, nil, fmt.Errorf("auto migrate schema failed: %w", err)
 	}
 
-	return client, nil
+	return client, drv.DB(), nil
 }
 
 // ===== 验证码存储（Redis）=====

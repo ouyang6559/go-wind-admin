@@ -47,6 +47,7 @@ import (
 	"role.api"
 	"script.api"
 	"script_log.api"
+	"server_monitor.api"
 	"task.api"
 	"tenant.api"
 	"user.api"

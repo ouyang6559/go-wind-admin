@@ -13,6 +13,16 @@ type BindPhoneRequest struct {
 	Code  string `json:"code,optional"`
 }
 
+type DatabaseInfo struct {
+	Driver             string `json:"driver,optional"`
+	PingOk             bool   `json:"pingOk,optional"`
+	PingError          string `json:"pingError,optional"`
+	MaxOpenConnections uint32 `json:"maxOpenConnections,optional"`
+	OpenConnections    uint32 `json:"openConnections,optional"`
+	InUseConnections   uint32 `json:"inUseConnections,optional"`
+	IdleConnections    uint32 `json:"idleConnections,optional"`
+}
+
 type DeviceInfo struct {
 	ClientId          string `json:"clientId,optional"`
 	ClientName        string `json:"clientName,optional"`
@@ -95,10 +105,27 @@ type GeoLocation struct {
 	Longitude     string `json:"longitude,optional"`
 }
 
+type GoRuntimeInfo struct {
+	Version       string `json:"version,optional"`
+	NumGoroutine  uint32 `json:"numGoroutine,optional"`
+	MemAllocBytes uint64 `json:"memAllocBytes,optional"`
+	MemSysBytes   uint64 `json:"memSysBytes,optional"`
+	GcCycles      uint32 `json:"gcCycles,optional"`
+	UptimeSeconds uint64 `json:"uptimeSeconds,optional"`
+	StartedAt     string `json:"startedAt,optional"`
+}
+
 type HookPoint struct {
 	Name        string `json:"name,optional"`
 	Description string `json:"description,optional"`
 	ScriptCount int64  `json:"scriptCount,optional"`
+}
+
+type HostInfo struct {
+	Os       string `json:"os,optional"`
+	Arch     string `json:"arch,optional"`
+	NumCpu   uint32 `json:"numCpu,optional"`
+	Hostname string `json:"hostname,optional"`
 }
 
 type InfoEntry struct {

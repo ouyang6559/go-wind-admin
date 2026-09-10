@@ -41,6 +41,7 @@ import (
 	role "go-wind-admin/backendz/internal/handler/role"
 	script "go-wind-admin/backendz/internal/handler/script"
 	script_log "go-wind-admin/backendz/internal/handler/script_log"
+	server_monitor "go-wind-admin/backendz/internal/handler/server_monitor"
 	task "go-wind-admin/backendz/internal/handler/task"
 	tenant "go-wind-admin/backendz/internal/handler/tenant"
 	user "go-wind-admin/backendz/internal/handler/user"
@@ -1030,6 +1031,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/admin/v1/script"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/server-monitor",
+				Handler: server_monitor.ServerMonitorGetHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/admin/v1"),
 	)
 
 	server.AddRoutes(

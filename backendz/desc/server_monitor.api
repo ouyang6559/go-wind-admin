@@ -1,0 +1,52 @@
+import "common.api"
+
+// 服务监控（只读，聚合 Go 运行时 / 数据库连接池 / 主机信息视图）
+
+// GoRuntimeInfo Go 运行时信息
+type GoRuntimeInfo {
+	Version          string	`json:"version,optional"`
+	NumGoroutine     uint32	`json:"numGoroutine,optional"`
+	MemAllocBytes    uint64	`json:"memAllocBytes,optional"`
+	MemSysBytes      uint64	`json:"memSysBytes,optional"`
+	GcCycles         uint32	`json:"gcCycles,optional"`
+	UptimeSeconds    uint64	`json:"uptimeSeconds,optional"`
+	StartedAt        string	`json:"startedAt,optional"`
+}
+
+// DatabaseInfo 数据库信息（连接池统计 + 连通性）
+type DatabaseInfo {
+	Driver              string	`json:"driver,optional"`
+	PingOk              bool	`json:"pingOk,optional"`
+	PingError           string	`json:"pingError,optional"`
+	MaxOpenConnections  uint32	`json:"maxOpenConnections,optional"`
+	OpenConnections     uint32	`json:"openConnections,optional"`
+	InUseConnections    uint32	`json:"inUseConnections,optional"`
+	IdleConnections     uint32	`json:"idleConnections,optional"`
+}
+
+// HostInfo 主机信息
+type HostInfo {
+	Os       string	`json:"os,optional"`
+	Arch     string	`json:"arch,optional"`
+	NumCpu   uint32	`json:"numCpu,optional"`
+	Hostname string	`json:"hostname,optional"`
+}
+
+// ServerMonitorInfo 服务监控聚合信息
+type ServerMonitorInfo {
+	Go          *GoRuntimeInfo	`json:"go,optional"`
+	Database    *DatabaseInfo	`json:"database,optional"`
+	Host        *HostInfo		`json:"host,optional"`
+	CollectedAt string			`json:"collectedAt,optional"`
+}
+
+
+@server (
+	prefix: "/admin/v1"
+	group: server_monitor
+)
+
+service admin-api {
+	@handler ServerMonitorGet
+	get /server-monitor () returns (ServerMonitorInfo)
+}
