@@ -2,6 +2,7 @@ import type {PluginOption} from 'vite';
 import {visualizer} from 'rollup-plugin-visualizer';
 import {timePlugin} from './time';
 import {nojekyllPlugin} from './nojekyll';
+import {archiverPlugin} from './archiver';
 import {autoImportPlugin} from './autoImport';
 import {versionUpdatePlugin} from './version';
 import {cspMetaPlugin} from './csp';
@@ -35,6 +36,8 @@ export function createVitePlugins() {
             timePlugin(),
             // 生产期注入 CSP meta（阻断 XSS 内联脚本执行）
             cspMetaPlugin(),
+            // 构建完成后将 dist 打包为 dist.zip（对齐 vue-vben 构建产物行为）
+            archiverPlugin(),
         );
 
         // 按需启用：Gzip 压缩（设置 ANALYZE=true 启用包分析时一起启用）
