@@ -35,6 +35,9 @@ func main() {
 	handler.RegisterHandlers(server, ctx)
 	// 补注册 goctl 无法表达的「资源:动作」冒号字面路由（Kratos 契约迁移，见 colon_routes.go）
 	handler.RegisterColonRoutes(server, ctx)
+	// 收集全部已注册路由（含前缀拼接），供 sys_apis 资源表同步（启动播种/管理页接口同步）。
+	// 必须在此收集：容器内无源码文件，不能靠读 routes.go 重建路由清单。
+	ctx.Routes = server.Routes()
 
 	// 全局中间件：注入原始请求（供 logic 读头/IP），再做 JWT 鉴权（白名单放行），最后做 API 审计
 	server.Use(middleware.RequestCtx())

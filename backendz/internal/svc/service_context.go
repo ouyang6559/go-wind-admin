@@ -13,6 +13,7 @@ import (
 	sqlDriver "entgo.io/ent/dialect/sql"
 	sqlpgx "github.com/jackc/pgx/v5/stdlib"
 	"github.com/zeromicro/go-zero/core/stores/redis"
+	"github.com/zeromicro/go-zero/rest"
 
 	"go-wind-admin/backendz/internal/config"
 	"go-wind-admin/backendz/internal/ent/gen"
@@ -48,6 +49,9 @@ type ServiceContext struct {
 	Session *session.Manager
 	// Sse 是按用户组织的 SSE 事件 Hub（站内信实时通知推送用）。
 	Sse *ssehub.Hub
+	// Routes 是启动时从 rest.Server 收集的全部已注册路由（method+path），
+	// 供 sys_apis 资源表同步（接口同步/启动播种）使用，不依赖容器内源码文件。
+	Routes []rest.Route
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -130,7 +134,9 @@ const vcodeTTL = 10 * time.Minute
 // VCodePurposeResetPassword 忘记密码重置验证码用途.
 const VCodePurposeResetPassword = "reset_password"
 
-func vcodeKey(purpose, identifier string) string { return fmt.Sprintf("%s%s:%s", vcodeKeyPrefix, purpose, identifier) }
+func vcodeKey(purpose, identifier string) string {
+	return fmt.Sprintf("%s%s:%s", vcodeKeyPrefix, purpose, identifier)
+}
 
 // VCodeSave 保存业务验证码（10 分钟 TTL），返回保存是否成功。
 func (s *ServiceContext) VCodeSave(purpose, identifier, code string) error {
