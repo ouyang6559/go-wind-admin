@@ -5,7 +5,6 @@ package plan_quota
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -62,6 +61,6 @@ func (l *PlanQuotaListLogic) PlanQuotaList(req *types.PageRequest) (resp *types.
 
 	return &types.ListPlanQuotaResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

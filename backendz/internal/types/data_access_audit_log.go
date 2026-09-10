@@ -38,5 +38,5 @@ type DataAccessAuditLogGetReq struct {
 
 type ListDataAccessAuditLogResponse struct {
 	Items []DataAccessAuditLog `json:"items,optional"`
-	Total string               `json:"total,optional"`
+	Total int64               `json:"total,optional"`
 }

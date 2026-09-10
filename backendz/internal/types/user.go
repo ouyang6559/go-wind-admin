@@ -15,7 +15,7 @@ type EditUserPasswordRequest struct {
 
 type ListUserResponse struct {
 	Items []User `json:"items,optional"`
-	Total string `json:"total,optional"`
+	Total int64 `json:"total,optional"`
 }
 
 type UserDeleteByIdReq struct {

@@ -42,5 +42,5 @@ type ApiAuditLogGetReq struct {
 
 type ListApiAuditLogResponse struct {
 	Items []ApiAuditLog `json:"items,optional"`
-	Total string        `json:"total,optional"`
+	Total int64        `json:"total,optional"`
 }

@@ -35,7 +35,7 @@ type InternalMessageCategoryGetReq struct {
 
 type ListInternalMessageCategoryResponse struct {
 	Items []InternalMessageCategory `json:"items,optional"`
-	Total string                    `json:"total,optional"`
+	Total int64                    `json:"total,optional"`
 }
 
 type UpdateInternalMessageCategoryRequest struct {

@@ -5,7 +5,6 @@ package permission_audit_log
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -66,6 +65,6 @@ func (l *PermissionAuditLogListLogic) PermissionAuditLogList(req *types.PageRequ
 
 	return &types.ListPermissionAuditLogResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

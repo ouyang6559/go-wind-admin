@@ -5,7 +5,6 @@ package script
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -68,6 +67,6 @@ func (l *ScriptListLogic) ScriptList(req *types.PageRequest) (resp *types.ListSc
 
 	return &types.ListScriptsResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

@@ -8,7 +8,7 @@ type CreatePlanQuotaRequest {
 
 type ListPlanQuotaResponse {
 	Items	[]PlanQuota	`json:"items,optional"`
-	Total	string	`json:"total,optional"`
+	Total	int64	`json:"total,optional"`
 }
 
 type PlanQuota {

@@ -38,7 +38,7 @@ type ListDictEntryByTypeCodeResponse {
 
 type ListDictEntryResponse {
 	Items	[]DictEntry	`json:"items,optional"`
-	Total	string	`json:"total,optional"`
+	Total	int64	`json:"total,optional"`
 }
 
 type UpdateDictEntryRequest {

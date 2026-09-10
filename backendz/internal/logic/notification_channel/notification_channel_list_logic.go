@@ -5,7 +5,6 @@ package notification_channel
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"go-wind-admin/backendz/internal/ent/gen/notificationchannel"
@@ -62,6 +61,6 @@ func (l *NotificationChannelListLogic) NotificationChannelList(req *types.PageRe
 
 	return &types.ListNotificationChannelResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

@@ -5,7 +5,6 @@ package internal_message_recipient
 
 import (
 	"context"
-	"strconv"
 
 	"entgo.io/ent/dialect/sql"
 
@@ -83,7 +82,7 @@ func (l *InternalMessageRecipientListUserInboxLogic) InternalMessageRecipientLis
 
 	return &types.ListUserInboxResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }
 

@@ -14,7 +14,7 @@ type CreateTaskRequest struct {
 
 type ListTaskResponse struct {
 	Items []Task `json:"items,optional"`
-	Total string `json:"total,optional"`
+	Total int64 `json:"total,optional"`
 }
 
 type ListTaskTypeNameResponse struct {

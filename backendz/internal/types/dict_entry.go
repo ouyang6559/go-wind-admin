@@ -22,7 +22,7 @@ type ListDictEntryByTypeCodeResponse struct {
 
 type ListDictEntryResponse struct {
 	Items []DictEntry `json:"items,optional"`
-	Total string      `json:"total,optional"`
+	Total int64      `json:"total,optional"`
 }
 
 type UpdateDictEntryRequest struct {

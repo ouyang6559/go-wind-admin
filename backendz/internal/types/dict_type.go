@@ -41,7 +41,7 @@ type DictTypeGetByIdReq struct {
 
 type ListDictTypeResponse struct {
 	Items []DictType `json:"items,optional"`
-	Total string     `json:"total,optional"`
+	Total int64     `json:"total,optional"`
 }
 
 type UpdateDictTypeRequest struct {

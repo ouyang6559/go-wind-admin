@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -69,6 +68,6 @@ func (l *ApiListLogic) ApiList(req *types.PageRequest) (resp *types.ListApiRespo
 
 	return &types.ListApiResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

@@ -18,7 +18,7 @@ type CreateTenantWithAdminUserRequest {
 
 type ListTenantResponse {
 	Items	[]Tenant	`json:"items,optional"`
-	Total	string	`json:"total,optional"`
+	Total	int64	`json:"total,optional"`
 }
 
 type QuotaUsage {

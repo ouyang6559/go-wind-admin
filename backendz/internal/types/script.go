@@ -34,7 +34,7 @@ type ListHookPointsResponse struct {
 
 type ListScriptsResponse struct {
 	Items []Script `json:"items,optional"`
-	Total string   `json:"total,optional"`
+	Total int64   `json:"total,optional"`
 }
 
 type Script struct {

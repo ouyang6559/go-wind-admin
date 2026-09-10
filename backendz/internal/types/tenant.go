@@ -19,7 +19,7 @@ type CreateTenantWithAdminUserRequest struct {
 
 type ListTenantResponse struct {
 	Items []Tenant `json:"items,optional"`
-	Total string   `json:"total,optional"`
+	Total int64   `json:"total,optional"`
 }
 
 type Tenant struct {

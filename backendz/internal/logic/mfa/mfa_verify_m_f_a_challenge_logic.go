@@ -2,7 +2,6 @@ package mfa
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"go-wind-admin/backendz/internal/ent/gen/usermfafactor"
@@ -74,8 +73,8 @@ func (l *MfaVerifyMFAChallengeLogic) MfaVerifyMFAChallenge(req *types.VerifyMFAC
 	return &types.LoginResponse{
 		TokenType:        "Bearer",
 		AccessToken:      accessToken,
-		ExpiresIn:        strconv.FormatInt(l.svcCtx.Token.AccessExpiresIn(), 10),
+		ExpiresIn:        l.svcCtx.Token.AccessExpiresIn(),
 		RefreshToken:     refreshToken,
-		RefreshExpiresIn: strconv.FormatInt(l.svcCtx.Token.RefreshExpiresIn(), 10),
+		RefreshExpiresIn: l.svcCtx.Token.RefreshExpiresIn(),
 	}, nil
 }

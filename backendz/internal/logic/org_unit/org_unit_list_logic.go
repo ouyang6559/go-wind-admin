@@ -5,7 +5,6 @@ package org_unit
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -68,6 +67,6 @@ func (l *OrgUnitListLogic) OrgUnitList(req *types.PageRequest) (resp *types.List
 
 	return &types.ListOrgUnitResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

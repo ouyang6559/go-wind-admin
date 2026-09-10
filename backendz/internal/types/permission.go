@@ -9,7 +9,7 @@ type CreatePermissionRequest struct {
 
 type ListPermissionResponse struct {
 	Items []Permission `json:"items,optional"`
-	Total string       `json:"total,optional"`
+	Total int64       `json:"total,optional"`
 }
 
 type Permission struct {

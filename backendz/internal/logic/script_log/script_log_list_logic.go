@@ -5,7 +5,6 @@ package script_log
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -69,6 +68,6 @@ func (l *ScriptLogListLogic) ScriptLogList(req *types.PageRequest) (resp *types.
 
 	return &types.ListScriptLogsResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

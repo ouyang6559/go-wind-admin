@@ -5,7 +5,6 @@ package login_policy
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -68,6 +67,6 @@ func (l *LoginPolicyListLogic) LoginPolicyList(req *types.PageRequest) (resp *ty
 
 	return &types.ListLoginPolicyResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

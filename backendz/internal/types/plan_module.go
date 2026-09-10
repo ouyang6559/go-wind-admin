@@ -9,7 +9,7 @@ type CreatePlanModuleRequest struct {
 
 type ListPlanModuleResponse struct {
 	Items []PlanModule `json:"items,optional"`
-	Total string       `json:"total,optional"`
+	Total int64       `json:"total,optional"`
 }
 
 type PlanModule struct {

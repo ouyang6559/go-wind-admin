@@ -5,7 +5,6 @@ package internal_message_category
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -66,6 +65,6 @@ func (l *InternalMessageCategoryListLogic) InternalMessageCategoryList(req *type
 
 	return &types.ListInternalMessageCategoryResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

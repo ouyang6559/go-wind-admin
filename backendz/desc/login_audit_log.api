@@ -4,7 +4,7 @@ import "common.api"
 
 type ListLoginAuditLogResponse {
 	Items	[]LoginAuditLog	`json:"items,optional"`
-	Total	string	`json:"total,optional"`
+	Total	int64	`json:"total,optional"`
 }
 
 type LoginAuditLog {

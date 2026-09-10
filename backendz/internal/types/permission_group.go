@@ -9,7 +9,7 @@ type CreatePermissionGroupRequest struct {
 
 type ListPermissionGroupResponse struct {
 	Items []PermissionGroup `json:"items,optional"`
-	Total string            `json:"total,optional"`
+	Total int64            `json:"total,optional"`
 }
 
 type PermissionGroup struct {

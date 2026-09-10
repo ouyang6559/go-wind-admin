@@ -10,7 +10,7 @@ type DeleteNotificationFromInboxRequest struct {
 
 type ListUserInboxResponse struct {
 	Items []InternalMessageRecipient `json:"items,optional"`
-	Total string                     `json:"total,optional"`
+	Total int64                     `json:"total,optional"`
 }
 
 type MarkNotificationAsReadRequest struct {

@@ -5,7 +5,6 @@ package policy_evaluation_log
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -62,6 +61,6 @@ func (l *PolicyEvaluationLogListLogic) PolicyEvaluationLogList(req *types.PageRe
 
 	return &types.ListPolicyEvaluationLogResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

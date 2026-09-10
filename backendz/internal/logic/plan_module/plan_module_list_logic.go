@@ -5,7 +5,6 @@ package plan_module
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"go-wind-admin/backendz/internal/ent/gen/planmodule"
@@ -60,6 +59,6 @@ func (l *PlanModuleListLogic) PlanModuleList(req *types.PageRequest) (resp *type
 
 	return &types.ListPlanModuleResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -63,6 +62,6 @@ func (l *TaskListLogic) TaskList(req *types.PageRequest) (resp *types.ListTaskRe
 	}
 	return &types.ListTaskResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

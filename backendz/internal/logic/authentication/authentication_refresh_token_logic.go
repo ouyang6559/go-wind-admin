@@ -3,7 +3,6 @@ package authentication
 import (
 	"context"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -86,9 +85,9 @@ func (l *AuthenticationRefreshTokenLogic) AuthenticationRefreshToken(req *types.
 	return &types.LoginResponse{
 		TokenType:        "Bearer",
 		AccessToken:      accessToken,
-		ExpiresIn:        strconv.FormatInt(l.svcCtx.Token.AccessExpiresIn(), 10),
+		ExpiresIn:        l.svcCtx.Token.AccessExpiresIn(),
 		RefreshToken:     newRefresh,
-		RefreshExpiresIn: strconv.FormatInt(l.svcCtx.Token.RefreshExpiresIn(), 10),
+		RefreshExpiresIn: l.svcCtx.Token.RefreshExpiresIn(),
 	}, nil
 }
 

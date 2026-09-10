@@ -9,7 +9,7 @@ type CreatePositionRequest struct {
 
 type ListPositionResponse struct {
 	Items []Position `json:"items,optional"`
-	Total string     `json:"total,optional"`
+	Total int64     `json:"total,optional"`
 }
 
 type Position struct {

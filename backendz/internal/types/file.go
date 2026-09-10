@@ -41,7 +41,7 @@ type FileGetReq struct {
 
 type ListFileResponse struct {
 	Items []File `json:"items,optional"`
-	Total string `json:"total,optional"`
+	Total int64 `json:"total,optional"`
 }
 
 type UpdateFileRequest struct {

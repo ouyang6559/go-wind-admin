@@ -19,7 +19,7 @@ type ScriptLog {
 
 type ListScriptLogsResponse {
 	Items	[]ScriptLog	`json:"items,optional"`
-	Total	string	`json:"total,optional"`
+	Total	int64	`json:"total,optional"`
 }
 
 type CountScriptLogsResponse {

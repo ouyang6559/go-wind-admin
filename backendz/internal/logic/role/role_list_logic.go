@@ -5,7 +5,6 @@ package role
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -73,6 +72,6 @@ func (l *RoleListLogic) RoleList(req *types.PageRequest) (resp *types.ListRoleRe
 
 	return &types.ListRoleResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

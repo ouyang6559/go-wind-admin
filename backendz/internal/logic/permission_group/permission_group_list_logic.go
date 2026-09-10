@@ -5,7 +5,6 @@ package permission_group
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -65,6 +64,6 @@ func (l *PermissionGroupListLogic) PermissionGroupList(req *types.PageRequest) (
 
 	return &types.ListPermissionGroupResponse{
 		Items: buildTree(items),
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

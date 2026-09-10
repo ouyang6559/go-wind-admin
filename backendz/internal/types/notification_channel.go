@@ -19,7 +19,7 @@ type GetNotificationChannelReq struct {
 
 type ListNotificationChannelResponse struct {
 	Items []NotificationChannel `json:"items,optional"`
-	Total string                `json:"total,optional"`
+	Total int64                `json:"total,optional"`
 }
 
 type NotificationChannel struct {

@@ -9,7 +9,7 @@ type CreateLoginPolicyRequest struct {
 
 type ListLoginPolicyResponse struct {
 	Items []LoginPolicy `json:"items,optional"`
-	Total string        `json:"total,optional"`
+	Total int64        `json:"total,optional"`
 }
 
 type LoginPolicy struct {

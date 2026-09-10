@@ -5,7 +5,6 @@ package dict_type
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -66,6 +65,6 @@ func (l *DictTypeListLogic) DictTypeList(req *types.PageRequest) (resp *types.Li
 
 	return &types.ListDictTypeResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

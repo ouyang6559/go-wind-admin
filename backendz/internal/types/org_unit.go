@@ -9,7 +9,7 @@ type CreateOrgUnitRequest struct {
 
 type ListOrgUnitResponse struct {
 	Items []OrgUnit `json:"items,optional"`
-	Total string    `json:"total,optional"`
+	Total int64    `json:"total,optional"`
 }
 
 type OrgUnit struct {

@@ -5,7 +5,6 @@ package menu
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -66,6 +65,6 @@ func (l *MenuListLogic) MenuList(req *types.PageRequest) (resp *types.ListMenuRe
 
 	return &types.ListMenuResponse{
 		Items: buildTree(items),
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

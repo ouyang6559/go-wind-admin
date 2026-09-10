@@ -5,7 +5,6 @@ package login_audit_log
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -68,6 +67,6 @@ func (l *LoginAuditLogListLogic) LoginAuditLogList(req *types.PageRequest) (resp
 
 	return &types.ListLoginAuditLogResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

@@ -34,7 +34,7 @@ type InternalMessageGetMessageReq struct {
 
 type ListInternalMessageResponse struct {
 	Items []InternalMessage `json:"items,optional"`
-	Total string            `json:"total,optional"`
+	Total int64            `json:"total,optional"`
 }
 
 type RevokeMessageRequest struct {

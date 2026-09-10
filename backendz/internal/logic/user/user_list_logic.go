@@ -5,7 +5,6 @@ package user
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -73,6 +72,6 @@ func (l *UserListLogic) UserList(req *types.PageRequest) (resp *types.ListUserRe
 
 	return &types.ListUserResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

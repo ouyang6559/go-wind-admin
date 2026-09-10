@@ -167,10 +167,10 @@ type KratosStatus struct {
 type LoginResponse struct {
 	TokenType        string `json:"token_type,optional"`
 	AccessToken      string `json:"access_token,optional"`
-	ExpiresIn        string `json:"expires_in,optional"`
+	ExpiresIn        int64 `json:"expires_in,optional"`
 	RefreshToken     string `json:"refresh_token,optional"`
 	Scope            string `json:"scope,optional"`
-	RefreshExpiresIn string `json:"refresh_expires_in,optional"`
+	RefreshExpiresIn int64 `json:"refresh_expires_in,optional"`
 	IdToken          string `json:"id_token,optional"`
 	MfaOperationId   string `json:"mfa_operation_id,optional"`
 }

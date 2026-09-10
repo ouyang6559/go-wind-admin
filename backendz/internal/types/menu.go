@@ -9,7 +9,7 @@ type CreateMenuRequest struct {
 
 type ListMenuResponse struct {
 	Items []Menu `json:"items,optional"`
-	Total string `json:"total,optional"`
+	Total int64 `json:"total,optional"`
 }
 
 type Menu struct {

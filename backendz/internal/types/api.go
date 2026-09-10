@@ -37,7 +37,7 @@ type CreateApiRequest struct {
 
 type ListApiResponse struct {
 	Items []Api  `json:"items,optional"`
-	Total string `json:"total,optional"`
+	Total int64 `json:"total,optional"`
 }
 
 type UpdateApiRequest struct {

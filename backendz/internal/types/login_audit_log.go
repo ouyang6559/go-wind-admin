@@ -5,7 +5,7 @@ package types
 
 type ListLoginAuditLogResponse struct {
 	Items []LoginAuditLog `json:"items,optional"`
-	Total string          `json:"total,optional"`
+	Total int64          `json:"total,optional"`
 }
 
 type LoginAuditLog struct {

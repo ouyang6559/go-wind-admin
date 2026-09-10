@@ -9,7 +9,7 @@ type CountScriptLogsResponse struct {
 
 type ListScriptLogsResponse struct {
 	Items []ScriptLog `json:"items,optional"`
-	Total string      `json:"total,optional"`
+	Total int64      `json:"total,optional"`
 }
 
 type PurgeScriptLogsRequest struct {

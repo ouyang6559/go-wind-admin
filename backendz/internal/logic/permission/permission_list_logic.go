@@ -5,7 +5,6 @@ package permission
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -71,6 +70,6 @@ func (l *PermissionListLogic) PermissionList(req *types.PageRequest) (resp *type
 
 	return &types.ListPermissionResponse{
 		Items: items,
-		Total: strconv.FormatInt(int64(total), 10),
+		Total: int64(total),
 	}, nil
 }

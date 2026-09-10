@@ -28,7 +28,7 @@ type NotificationChannel {
 
 type ListNotificationChannelResponse {
 	Items	[]NotificationChannel	`json:"items,optional"`
-	Total	string	`json:"total,optional"`
+	Total	int64	`json:"total,optional"`
 }
 
 type GetNotificationChannelReq {

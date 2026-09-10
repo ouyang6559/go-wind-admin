@@ -39,7 +39,7 @@ type LanguageGetReq struct {
 
 type ListLanguageResponse struct {
 	Items []Language `json:"items,optional"`
-	Total string     `json:"total,optional"`
+	Total int64     `json:"total,optional"`
 }
 
 type UpdateLanguageRequest struct {
