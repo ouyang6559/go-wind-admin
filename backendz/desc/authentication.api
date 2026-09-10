@@ -47,6 +47,19 @@ type VerifyCaptchaResponse {
 	Valid	bool	`json:"valid,optional"`
 }
 
+type ForgotPasswordRequest {
+	// Identifier 登录账号或绑定邮箱
+	Identifier	string	`json:"identifier,optional"`
+}
+
+type ResetPasswordByCodeRequest {
+	// Identifier 登录账号或绑定邮箱
+	Identifier	string	`json:"identifier,optional"`
+	// Code 邮箱验证码
+	Code	string	`json:"code,optional"`
+	// NewPassword 新密码（AES 密文传输，与登录同规）
+	NewPassword	string	`json:"new_password,optional"`
+}
 
 
 @server (
@@ -72,4 +85,10 @@ service admin-api {
 
 	@handler AuthenticationRegisterUser
 	post /register (RegisterUserRequest) returns (RegisterUserResponse)
+
+	@handler AuthenticationForgotPassword
+	post /forgot-password (ForgotPasswordRequest)
+
+	@handler AuthenticationResetPasswordByCode
+	post /reset-password-by-code (ResetPasswordByCodeRequest)
 }

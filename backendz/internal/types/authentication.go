@@ -3,6 +3,10 @@
 
 package types
 
+type ForgotPasswordRequest struct {
+	Identifier string `json:"identifier,optional"`
+}
+
 type GenerateCaptchaResponse struct {
 	CaptchaId   string `json:"captchaId,optional"`
 	ImageBase64 string `json:"imageBase64,optional"`
@@ -37,6 +41,12 @@ type RegisterUserRequest struct {
 
 type RegisterUserResponse struct {
 	UserId int64 `json:"userId,optional"`
+}
+
+type ResetPasswordByCodeRequest struct {
+	Identifier  string `json:"identifier,optional"`
+	Code        string `json:"code,optional"`
+	NewPassword string `json:"new_password,optional"`
 }
 
 type VerifyCaptchaRequest struct {

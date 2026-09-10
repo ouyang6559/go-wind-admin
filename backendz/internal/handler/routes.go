@@ -144,6 +144,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodPost,
+				Path:    "/forgot-password",
+				Handler: authentication.AuthenticationForgotPasswordHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
 				Path:    "/login",
 				Handler: authentication.AuthenticationLoginHandler(serverCtx),
 			},
@@ -161,6 +166,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/register",
 				Handler: authentication.AuthenticationRegisterUserHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/reset-password-by-code",
+				Handler: authentication.AuthenticationResetPasswordByCodeHandler(serverCtx),
 			},
 		},
 		rest.WithPrefix("/admin/v1"),

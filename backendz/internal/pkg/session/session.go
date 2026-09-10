@@ -144,6 +144,21 @@ func (m *Manager) Revoke(ctx context.Context, uid uint32, jti string) error {
 	return nil
 }
 
+// RevokeByUser 吊销某用户的全部会话（如忘记密码重置后强制全部下线）。
+// 返回被吊销的会话数量。
+func (m *Manager) RevokeByUser(ctx context.Context, uid uint32) (int, error) {
+	keys, err := m.rds.Keys(keyPrefix + fmt.Sprintf("%d:*", uid))
+	if err != nil {
+		return 0, fmt.Errorf("session user keys scan failed: %w", err)
+	}
+	for _, k := range keys {
+		if _, err := m.rds.DelCtx(ctx, k); err != nil {
+			return 0, fmt.Errorf("session user revoke failed: %w", err)
+		}
+	}
+	return len(keys), nil
+}
+
 func sortDesc(items []Meta) {
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].LoginAt.After(items[j].LoginAt)

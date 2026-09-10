@@ -120,3 +120,33 @@ func (s *ServiceContext) CaptchaVerify(id, answer string) bool {
 	s.Rds.DelCtx(context.Background(), key)
 	return strings.EqualFold(strings.TrimSpace(stored), strings.TrimSpace(answer))
 }
+
+// ===== 业务验证码（如忘记密码重置码）存储（Redis）=====
+// 与图形验证码区分：按 (purpose, identifier) 维度存储，单次校验后即删。
+
+const vcodeKeyPrefix = "gowind:vcode:"
+const vcodeTTL = 10 * time.Minute
+
+// VCodePurposeResetPassword 忘记密码重置验证码用途.
+const VCodePurposeResetPassword = "reset_password"
+
+func vcodeKey(purpose, identifier string) string { return fmt.Sprintf("%s%s:%s", vcodeKeyPrefix, purpose, identifier) }
+
+// VCodeSave 保存业务验证码（10 分钟 TTL），返回保存是否成功。
+func (s *ServiceContext) VCodeSave(purpose, identifier, code string) error {
+	return s.Rds.SetexCtx(context.Background(), vcodeKey(purpose, identifier), code, int(vcodeTTL.Seconds()))
+}
+
+// VCodeVerify 校验业务验证码并删除（单次有效）。无论比对成功与否都会删除，杜绝暴力重试。
+func (s *ServiceContext) VCodeVerify(purpose, identifier, code string) bool {
+	if identifier == "" || code == "" {
+		return false
+	}
+	key := vcodeKey(purpose, identifier)
+	stored, err := s.Rds.GetCtx(context.Background(), key)
+	if err != nil || stored == "" {
+		return false
+	}
+	s.Rds.DelCtx(context.Background(), key)
+	return stored == code
+}

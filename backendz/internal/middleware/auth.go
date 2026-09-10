@@ -44,13 +44,15 @@ func RequestFromContext(ctx context.Context) (*http.Request, bool) {
 	return r, ok
 }
 
-// publicPaths 免鉴权路径（登录验证码/登录/刷新/注册）。
+// publicPaths 免鉴权路径（登录验证码/登录/刷新/注册/忘记密码/凭码重置密码）。
 var publicPaths = map[string]bool{
-	"/admin/v1/captcha":        true,
-	"/admin/v1/captcha/verify": true,
-	"/admin/v1/login":          true,
-	"/admin/v1/refresh-token":  true,
-	"/admin/v1/register":       true,
+	"/admin/v1/captcha":                true,
+	"/admin/v1/captcha/verify":         true,
+	"/admin/v1/login":                  true,
+	"/admin/v1/refresh-token":          true,
+	"/admin/v1/register":               true,
+	"/admin/v1/forgot-password":        true,
+	"/admin/v1/reset-password-by-code": true,
 }
 
 // Auth 返回 JWT 鉴权中间件：白名单路径放行，其余路径校验 Bearer Token。
