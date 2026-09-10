@@ -186,24 +186,28 @@ const Login: React.FC = () => {
             />
           </Form.Item>
 
-          {/* 验证码 —— 输入框与图片水平对齐，等高 h-11，flex 布局 */}
-          <Form.Item
-            name="captcha"
-            className="login-form-item"
-            rules={[
-              {
-                required: true,
-                message: t('captchaRequired'),
-              },
-            ]}
-          >
+          {/* 验证码 —— 输入框与图片水平对齐，等高 h-11，flex 布局。
+              name 必须挂在直接包裹 Input 的 Form.Item 上：antd 只向唯一子元素注入
+              value/onChange，中间隔一层 div 会让验证码值永远进不了表单状态 */}
+          <Form.Item className="login-form-item" style={{ marginBottom: 0 }}>
             <div className="flex items-center space-x-2">
-              <Input
-                prefix={<SafetyOutlined />}
-                placeholder={t('captchaPlaceholder')}
-                autoComplete="off"
+              <Form.Item
+                name="captcha"
+                rules={[
+                  {
+                    required: true,
+                    message: t('captchaRequired'),
+                  },
+                ]}
                 className="flex-1"
-              />
+                style={{ marginBottom: 0 }}
+              >
+                <Input
+                  prefix={<SafetyOutlined />}
+                  placeholder={t('captchaPlaceholder')}
+                  autoComplete="off"
+                />
+              </Form.Item>
               {captchaImageEl}
             </div>
           </Form.Item>

@@ -89,7 +89,7 @@ const ApiDrawer: React.FC<ApiDrawerProps> = ({ open, mode, data, onClose, onSucc
         },
       }}
       drawerProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         onClose,
         size: 600,
       }}

@@ -153,7 +153,7 @@ const PlanQuotaDrawer: React.FC<PlanQuotaDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 600 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 600 }}
     >
       {/* 所属套餐 - 只读 Select */}
       <Form.Item

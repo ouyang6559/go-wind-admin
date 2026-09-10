@@ -135,7 +135,7 @@ const ScriptLogDrawer: React.FC<ScriptLogDrawerProps> = ({ open, onClose }) => {
       open={open}
       onClose={onClose}
       size={960}
-      destroyOnClose
+      destroyOnHidden
     >
       <ProTable<ScriptLog>
         actionRef={actionRef}
