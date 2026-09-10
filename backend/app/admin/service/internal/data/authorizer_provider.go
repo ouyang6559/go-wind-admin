@@ -83,6 +83,12 @@ func (p *AuthorizerProvider) ProvidePolicies(_ context.Context) (authorizer.Perm
 			continue
 		}
 
+		// 角色未绑定任何 API 时直接跳过：GetApiByIDs 对空集合返回 400，
+		// 逐角色刷 ERROR 日志纯属误导。
+		if len(apiIDs) == 0 {
+			continue
+		}
+
 		apis, err = p.apiRepo.GetApiByIDs(ctx, apiIDs)
 		if err != nil {
 			p.log.Errorf(context.Background(), "failed to list apis by ids: %v", err)

@@ -28,7 +28,7 @@ Easy to get started, feature-rich, deeply adapted to enterprise scenarios, helpi
 
 Adhering to the philosophy of efficient, stable, and scalable technology selection:
 
-- **Backend**: `Golang`, `go-kratos`, `Wire`, `Ent ORM` / `Gorm`, `MySQL`, `Redis`, `Docker`
+- **Backend**: `Golang`, `go-kratos`, `Ent ORM` / `Gorm`, `MySQL`, `Redis`, `Docker`
 - **Common Infrastructure**: `JWT Authentication`, `Casbin` / `OPA` / `Zanzibar` Authorization, `SSE Push`, `Swagger API Docs`
 - **Scripting Engine**: `go-scripts` · `Lua` (gopher-lua) · `JavaScript` (goja) · Multi-language Hook plugin system
 - **Vue Vben Edition**: `Vue3` + `TypeScript` + `Vite` + `Ant Design Vue` + `Vben Admin`
@@ -65,6 +65,8 @@ Security capabilities are designed with reference to the technical requirements 
 - **libs_only (Recommended)**: Starts middleware only, run application locally in IDE for daily development.
 
 ### Backend Startup
+
+> Backend commands go through the `gow` CLI (install: `go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest`, see [Companion Tools](#companion-tools)).
 
 #### Linux / macOS
 
@@ -149,6 +151,7 @@ pnpm dev:antd
 | Password Recovery | Reset password with a verification code sent to the bound email: code valid for 10 minutes, single use; all sessions revoked on success; silent handling prevents user enumeration. |
 | Notification Channels | Manage notification channels (EMAIL / SMTP); passwords stored encrypted and masked in lists; enable/disable and test sending. |
 | Server Monitoring | Read-only view of service runtime metrics (CPU cores, memory, goroutines, uptime, etc.) with auto refresh. |
+| Script System   | Script-based plugin system (Lua / JavaScript, database as source of truth, admin-UI changes take effect immediately): entity lifecycle hooks (before veto / after async), scheduled tasks (asynq), HTTP egress (domain allowlist, fail-closed), test runs and execution logs. See [docs/script_system.md](./docs/script_system.md). |
 | Language Management | Manage system-supported languages; configure language name, code, native name, enabled and default status. |
 | Message Categories      | Manage message categories (2-level custom categories) for message management category selection.                                                                                                                        |
 | Message Management      | Manage messages; send by scope (all users / specified users) with message revocation; broadcast fan-out runs on an async task queue (resumable, idempotent); view read status and read time.                                                             |
@@ -224,6 +227,11 @@ pnpm dev:antd
         <td><img src="./docs/images/api_swagger_ui.png" alt="Backend built-in Swagger UI page"/></td>
     </tr>
 </table>
+
+## Companion Tools
+
+- **[go-wind-toolkit / gowind-uiapp](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)** — Cross-platform desktop code generator (Go + Wails). Import SQL or connect to your database (MySQL / PostgreSQL / SQLite / SQL Server / Oracle) to generate server-side and frontend code from gRPC / RESTful templates, including simple forms. Also ships a non-interactive, JSON-output CLI (`gowind-cli`) for scripts and AI agents.
+- **[gow — GoWind CLI](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind)** — The recommended command-line entry for this project: `gow run admin` to run the service, `gow ent` / `gow api` for code generation, `gow generate` to scaffold CRUD microservices from a database DSN, and `gow extract` for progressive microservice extraction. Run it under `backend/`; it discovers `app/*/service` automatically. Prefer it over the Makefile for daily development.
 
 ## Contact
 

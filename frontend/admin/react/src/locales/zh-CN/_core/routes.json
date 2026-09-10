@@ -47,5 +47,6 @@
   "home": "首页",
   "server-monitor": "服务监控",
   "notification-channels": "通知渠道",
+  "scripts": "脚本管理",
   "forgot-password": "找回密码"
 }

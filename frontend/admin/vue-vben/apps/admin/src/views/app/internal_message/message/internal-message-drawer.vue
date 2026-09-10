@@ -137,7 +137,7 @@ const [BaseForm, baseFormApi] = useVbenForm({
           const result = await fetchListMessageCategories(
             new PaginationQuery({
               formValues: {
-                is_enabled: 'true',
+                is_enabled: true,
               },
             }),
           );

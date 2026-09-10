@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import React from 'react';
-import { Avatar, Dropdown, Badge, Tooltip, Button, Breadcrumb, Input, Popover, List, Empty, Spin, App as AntdApp } from 'antd';
+import { Avatar, Dropdown, Badge, Tooltip, Button, Breadcrumb, Input, Popover, Empty, Spin, App as AntdApp } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   UserOutlined,
@@ -338,9 +338,8 @@ export const HeaderContent = ({
 
       <Spin spinning={recentLoading}>
         {recentItems.length > 0 ? (
-          <List
-            dataSource={recentItems}
-            renderItem={(item) => {
+          <div>
+            {recentItems.map((item, index) => {
               const unread = item.status === 'RECEIVED';
               const preview = (item.content || '')
                 .replace(/<[^>]*>/g, ' ')
@@ -348,9 +347,17 @@ export const HeaderContent = ({
                 .trim()
                 .slice(0, 46);
               return (
-                <List.Item
+                <div
+                  key={item.id ?? index}
                   className="notification-item"
-                  style={{ padding: '9px 8px', borderRadius: 8, cursor: 'pointer', gap: 10 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '9px 8px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    gap: 10,
+                  }}
                   onClick={() => navigate('/internal-message/inbox')}
                 >
                   <span
@@ -403,10 +410,10 @@ export const HeaderContent = ({
                   >
                     {fromNow(item.createdAt, appLocale)}
                   </span>
-                </List.Item>
+                </div>
               );
-            }}
-          />
+            })}
+            </div>
         ) : (
           <Empty
             description={tInbox('noMessages')}
@@ -701,7 +708,7 @@ export const HeaderContent = ({
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <Avatar src={userInfo?.avatar} icon={<UserOutlined />} size="small" />
+            <Avatar src={userInfo?.avatar || undefined} icon={<UserOutlined />} size="small" />
             <span
               className="hidden md:inline"
               style={{

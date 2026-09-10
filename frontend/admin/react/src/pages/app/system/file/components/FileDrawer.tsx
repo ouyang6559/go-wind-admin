@@ -103,7 +103,7 @@ const FileDrawer: React.FC<FileDrawerProps> = ({
         },
       }}
       drawerProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         onClose,
         size: 480,
       }}

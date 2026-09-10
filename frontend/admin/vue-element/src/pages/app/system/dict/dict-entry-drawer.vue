@@ -203,7 +203,7 @@ const title = computed(() =>
 async function loadDictTypeList() {
   try {
     const result = await fetchListDictTypes(
-      new PaginationQuery({ formValues: { is_enabled: "true" } })
+      new PaginationQuery({ formValues: { is_enabled: true } })
     );
     dictTypeList.value = (result.items || []).filter(
       (item): item is DictType & { id: number } => item.id != null

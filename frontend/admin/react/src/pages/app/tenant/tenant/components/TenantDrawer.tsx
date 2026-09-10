@@ -197,7 +197,7 @@ const TenantDrawer: React.FC<TenantDrawerProps> = ({
         ],
       }}
       drawerProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         onClose,
         size: 600,
       }}

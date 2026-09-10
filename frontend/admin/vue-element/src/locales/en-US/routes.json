@@ -41,7 +41,8 @@
     "language": "Language Management",
     "onlineSessions": "Online Users",
     "serverMonitor": "Server Monitor",
-    "notificationChannels": "Notification Channels"
+    "notificationChannels": "Notification Channels",
+    "scripts": "Scripts"
   },
   "tenant": {
     "moduleName": "Tenant Management",

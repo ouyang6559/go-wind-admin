@@ -58,7 +58,9 @@ func (r *Registry) RegisterHook(name, description string) error {
 	return nil
 }
 
-// AddScript adds a script to a hook
+// AddScript adds a script to a hook.
+// Upsert semantics: a script with the same name replaces the existing one —
+// this is what makes script hot-reload (re-register after source change) work.
 func (r *Registry) AddScript(hookName string, script *Script) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -73,17 +75,21 @@ func (r *Registry) AddScript(hookName string, script *Script) error {
 		r.hooks[hookName] = hook
 	}
 
-	// Check for duplicate script names
-	for _, s := range hook.Scripts {
+	// Replace same-name script (hot reload / re-registration)
+	for i, s := range hook.Scripts {
 		if s.Name == script.Name {
-			return fmt.Errorf("script already exists: %s", script.Name)
+			hook.Scripts[i] = script
+			sort.SliceStable(hook.Scripts, func(i, j int) bool {
+				return hook.Scripts[i].Priority < hook.Scripts[j].Priority
+			})
+			return nil
 		}
 	}
 
 	hook.Scripts = append(hook.Scripts, script)
 
 	// Sort scripts by priority (lower priority = executed first)
-	sort.Slice(hook.Scripts, func(i, j int) bool {
+	sort.SliceStable(hook.Scripts, func(i, j int) bool {
 		return hook.Scripts[i].Priority < hook.Scripts[j].Priority
 	})
 

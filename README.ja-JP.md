@@ -28,7 +28,7 @@
 
 効率的で安定したスケーラブルな技術選択の理念に基づき、システムのコア技術スタックは以下の通りです：
 
-- **バックエンド**：`Golang`、`go-kratos`、`Wire`、`Ent ORM` / `Gorm`、`MySQL`、`Redis`、`Docker`
+- **バックエンド**：`Golang`、`go-kratos`、`Ent ORM` / `Gorm`、`MySQL`、`Redis`、`Docker`
 - **共通基盤**：`JWT 認証`、`Casbin` / `OPA` / `Zanzibar` 認可、`SSE プッシュ`、`Swagger API ドキュメント`
 - **スクリプトエンジン**：`go-scripts` · `Lua`（gopher-lua） · `JavaScript`（goja） · 多言語 Hook プラグインシステム
 - **Vue Vben 版**：`Vue3` + `TypeScript` + `Vite` + `Ant Design Vue` + `Vben Admin`
@@ -65,6 +65,8 @@
 - **libs_only 依存モード（推奨）**：ミドルウェアのみ起動、アプリはローカルIDEで実行・デバッグ、日常開発に適用。
 
 ### バックエンド起動コマンド
+
+> バックエンドのコマンドは `gow` CLI 経由で統一（インストール：`go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest`、詳しくは[関連ツール](#関連ツール)）。
 
 #### Linux / macOS
 
@@ -148,6 +150,7 @@ pnpm dev:antd
 | 多要素認証（MFA） | TOTP ベースの多要素認証。ログインチャレンジ、個人センターでのバインド管理、および管理者によるユーザー MFA のレスキューリセットを含む。 |
 | パスワード再設定 | バインド済みメールアドレス宛の認証コードでパスワードを再設定：コードは 10 分間・1 回のみ有効、再設定成功時に全セッションを失効。存在しないユーザーは静かに処理し、ユーザー列挙を防止。 |
 | 通知チャネル | 通知チャネル（EMAIL / SMTP）の管理。パスワードは暗号化保存・リストではマスク表示、有効化 / 無効化とテスト送信をサポート。 |
+| スクリプトシステム | スクリプトプラグインシステム（Lua / JavaScript、データベースを信頼源、管理画面の変更は即時反映）：エンティティライフサイクルフック（before は否決可 / after は非同期）、定時タスク（asynq）、HTTP 送信（ドメイン許可リスト fail-closed）、テスト実行と実行ログ。詳細は [docs/script_system.md](./docs/script_system.md) |
 | サーバーモニタリング | サービスのランタイム指標（CPU コア数、メモリ、goroutine 数、稼働時間など）を読み取り専用で表示し、自動更新。 |
 | 言語管理 | システムがサポートする多言語を管理し、言語名、言語コード、ネイティブ名、有効化およびデフォルト状態を設定。 |
 | メッセージ分類 | メッセージ分類の管理を行い、2 段階のカスタムメッセージ分類をサポートし、メッセージ管理におけるメッセージ分類選択に使用。                                         |
@@ -224,6 +227,11 @@ pnpm dev:antd
 <td><img src="./docs/images/api_swagger_ui.png" alt="バックエンド内蔵Swagger UI画面"/></td>
 </tr>
 </table>
+
+## 関連ツール
+
+- **[go-wind-toolkit / gowind-uiapp](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)** — クロスプラットフォームのデスクトップ型コードジェネレーター（Go + Wails）。SQL のインポートまたはデータベーステーブル（MySQL / PostgreSQL / SQLite / SQL Server / Oracle）への接続から、gRPC / RESTful などのテンプレートでサーバーサイド・フロントエンドのコード（簡易フォームを含む）を自動生成。非対話・JSON 出力の CLI（`gowind-cli`）も同梱しており、スクリプトや AI エージェントからの呼び出しに便利です。
+- **[gow — GoWind CLI](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind)** — 本プロジェクトの推奨コマンドライン入口：`gow run admin` でサービス起動、`gow ent` / `gow api` でコード生成、`gow generate` でデータベース DSN から CRUD マイクロサービスを生成、`gow extract` でマイクロサービスのモジュール分割を行います。`backend/` 配下で実行すると `app/*/service` を自動検出します。日常開発では Makefile より優先的に使用してください。
 
 ## お問い合わせ
 

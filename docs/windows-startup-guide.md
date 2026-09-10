@@ -25,7 +25,7 @@
 powershell -ExecutionPolicy Bypass -File backend\scripts\env\install_windows_dev.ps1
 ```
 
-该脚本通过 Scoop 自动安装 Go、Docker Desktop、Node.js、Git、Make 等，并安装所有 Go 代码生成工具（buf、ent、wire 插件等）。
+该脚本通过 Scoop 自动安装 Go、Docker Desktop、Node.js、Git、Make 等，并安装所有 Go 代码生成工具（buf、ent、gow 等）。
 
 > **注意**：非管理员运行也可以，但 Docker 服务自动启动配置会被跳过。
 
@@ -167,28 +167,30 @@ cd backend
 # 下载 Go 模块依赖
 go mod download
 
-# 首次搭建：安装代码生成工具（buf、ent、wire 插件等）
+# 首次搭建：安装代码生成工具（buf、ent 等）
 make init
 
-# 生成全部代码（ENT ORM + Wire DI + Protobuf API + OpenAPI）
-make gen
+# 安装 gow CLI（本项目后端命令统一入口，优先于 make）
+go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest
+
+# 生成全部代码（Ent ORM + Protobuf API）
+gow ent && gow api
+
+# OpenAPI 文档（gow 未覆盖，走 make）
+make openapi
 ```
 
-如果没有安装 `make`，可以分步手动执行：
+如果没有安装 `make`，生成代码可全部分步用 gow / buf 手动执行：
 
 ```bash
-# 1. 生成 ENT ORM 代码
-cd app/admin/service
-ent generate --feature privacy --feature entql --feature sql/modifier --feature sql/upsert --feature sql/lock ./internal/data/ent/schema
+# 1. 生成 ENT ORM 代码（在 backend/ 下）
+gow ent
 
-# 2. 生成 Wire 依赖注入代码
-go run -mod=mod github.com/google/wire/cmd/wire ./cmd/server
+# 2. 生成 Protobuf Go 代码（在 backend/ 下）
+gow api
 
-# 3. 生成 Protobuf Go 代码
-cd ../../../api
-buf generate
-
-# 4. 生成 OpenAPI 文档
+# 3. 生成 OpenAPI 文档
+cd api
 buf generate --template buf.admin.openapi.gen.yaml
 ```
 
@@ -314,10 +316,9 @@ pnpm install
 
 | 场景 | 命令 |
 |------|------|
-| 修改了 `.proto` 文件 | `make api && make openapi` |
-| 修改了 ENT Schema | `make ent` |
-| 修改了 Wire 依赖注入 | `make wire` |
-| 全量重新生成 | `make gen` |
+| 修改了 `.proto` 文件 | `gow api`，如需文档再跑 `make openapi` |
+| 修改了 ENT Schema | `gow ent` |
+| 全量重新生成 | `gow ent && gow api && make openapi` |
 | 生成前端 TypeScript 客户端 | `make ts` |
 
 ---
@@ -332,7 +333,7 @@ pnpm install
 
 确认配置文件中的主机名已改为 `localhost`（见第三步）。`postgres` / `redis` / `minio` 是 Docker Compose 内部网络的服务名，宿主机上不能直接使用。
 
-### Q: `make gen` / `make init` 报错找不到 `buf` / `ent` / `wire`
+### Q: `make gen` / `make init` 报错找不到 `buf` / `ent`
 
 确保 `%USERPROFILE%\go\bin` 已加入系统 PATH。验证：
 
@@ -341,15 +342,15 @@ echo $GOPATH
 # 应输出类似 C:\Users\你的用户名\go
 
 ls $GOPATH/bin/
-# 应能看到 buf.exe、ent.exe 等
+# 应能看到 buf.exe、gow.exe 等
 ```
 
 如果为空，手动安装：
 
 ```bash
+go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest
 go install github.com/bufbuild/buf/cmd/buf@latest
 go install entgo.io/ent/cmd/ent@latest
-go install github.com/google/wire/cmd/wire@latest
 ```
 
 ### Q: `golangci-lint` 安装失败
@@ -369,13 +370,3 @@ corepack enable
 corepack prepare pnpm@10.19.0 --activate
 ```
 
-### Q: 后端启动报 `wire_gen.go` 不存在
-
-需要先执行代码生成：
-
-```bash
-cd backend/app/admin/service
-go run -mod=mod github.com/google/wire/cmd/wire ./cmd/server
-```
-
-或在 `backend/` 目录执行 `make wire`。

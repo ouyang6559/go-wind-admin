@@ -175,7 +175,7 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({ open, mode, data, onClose, onSu
         }
       }}
       drawerProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         onClose,
         size: 720,
       }}

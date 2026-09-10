@@ -158,7 +158,7 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 600 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 600 }}
     >
       <ProFormText
         name="name"

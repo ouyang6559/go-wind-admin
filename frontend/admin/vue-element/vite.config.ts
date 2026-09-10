@@ -7,11 +7,12 @@ import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 
 import { mockDevServerPlugin } from "vite-plugin-mock-dev-server";
 
+import archiver from "archiver";
 import tailwindcss from "@tailwindcss/vite";
 import pkg from "./package.json" with { type: "json" };
-import { existsSync, readdirSync } from "node:fs";
+import { createWriteStream, existsSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 /**
  * 枚举 element-plus 全部组件样式模块。ElementPlusResolver 按需生成的
@@ -81,6 +82,61 @@ function cspMetaPlugin(): PluginOption {
   } as PluginOption;
 }
 
+/**
+ * 构建完成后将 dist 目录打包为 dist.zip，便于交付部署
+ * （对齐 vue-vben 的构建产物行为，见 internal/vite-config/src/plugins/archiver.ts）
+ * apply: "build" 确保 dev server 不加载本插件，仅生产构建生效
+ */
+function archiverPlugin(): PluginOption {
+  return {
+    apply: "build",
+    closeBundle: {
+      handler() {
+        setTimeout(async () => {
+          const zipOutputPath = join(process.cwd(), "dist.zip");
+          try {
+            await zipFolder("dist", zipOutputPath);
+            console.log(`Folder has been zipped to: ${zipOutputPath}`);
+          } catch (error) {
+            console.error("Error zipping folder:", error);
+          }
+        }, 0);
+      },
+      order: "post",
+    },
+    enforce: "post",
+    name: "vite:archiver",
+  };
+}
+
+/**
+ * 流式压缩指定目录为 zip 文件
+ */
+async function zipFolder(folderPath: string, outputPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const output = createWriteStream(outputPath);
+    const archive = archiver("zip", {
+      zlib: { level: 9 }, // 最高压缩率
+    });
+
+    output.on("close", () => {
+      console.log(`ZIP file created: ${outputPath} (${archive.pointer()} total bytes)`);
+      resolve();
+    });
+
+    archive.on("error", (err) => {
+      reject(err);
+    });
+
+    archive.pipe(output);
+
+    // 以流方式压缩目录，减少内存占用
+    archive.directory(folderPath, false);
+
+    archive.finalize();
+  });
+}
+
 // Vite配置  https://cn.vitejs.dev/config
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const env = loadEnv(mode, process.cwd());
@@ -123,6 +179,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       tailwindcss(),
       // 生产构建期注入 CSP meta（内部 isBuild 守卫，dev 空操作）
       cspMetaPlugin(),
+      // 构建完成后将 dist 打包为 dist.zip（对齐 vue-vben 构建产物行为）
+      archiverPlugin(),
       // API 自动导入
       AutoImport({
         // 导入 Vue 函数，如：ref, reactive, toRef 等

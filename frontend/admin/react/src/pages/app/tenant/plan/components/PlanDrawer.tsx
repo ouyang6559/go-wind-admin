@@ -74,7 +74,7 @@ const PlanDrawer: React.FC<PlanDrawerProps> = ({
   });
   const existingModules = extractModuleNames(planModuleData?.items);
 
-  // 编辑模式下设置表单值（destroyOnClose 时需延迟赋值）
+  // 编辑模式下设置表单值（destroyOnHidden 时需延迟赋值）
   useEffect(() => {
     if (open && mode === 'edit' && data) {
       setTimeout(() => {
@@ -197,7 +197,7 @@ const PlanDrawer: React.FC<PlanDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 600 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 600 }}
     >
       <ProFormText
         name="name"

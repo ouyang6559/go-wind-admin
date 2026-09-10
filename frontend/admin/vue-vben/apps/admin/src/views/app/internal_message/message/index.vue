@@ -86,7 +86,7 @@ const formOptions: VbenFormProps = {
           const result = await fetchListMessageCategories(
             new PaginationQuery({
               formValues: {
-                is_enabled: 'true',
+                is_enabled: true,
               },
             }),
           );

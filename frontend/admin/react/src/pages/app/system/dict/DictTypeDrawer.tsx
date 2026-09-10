@@ -38,7 +38,7 @@ const DictTypeDrawer: React.FC<DictTypeDrawerProps> = ({
 
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  // 编辑模式下设置表单值（destroyOnClose 时需延迟赋值）
+  // 编辑模式下设置表单值（destroyOnHidden 时需延迟赋值）
   useEffect(() => {
     if (open && mode === 'edit' && data) {
       setTimeout(() => {
@@ -121,7 +121,7 @@ const DictTypeDrawer: React.FC<DictTypeDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, placement: 'left', size: 600 }}
+      drawerProps={{ destroyOnHidden: true, onClose, placement: 'left', size: 600 }}
     >
       <ProFormText
         name="typeName"

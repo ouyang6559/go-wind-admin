@@ -29,6 +29,27 @@ export class PaginationQuery {
   }
 
   /**
+   * key 末段是否已是 go-crud 支持的查询操作符（type__not 等）。
+   * 这类 key 不能再叠加 __contains：go-crud 会把 `type__not__contains`
+   * 解析成 `type CONTAINS value`，"排除"语义静默反转成"命中"。
+   */
+  private static hasOperatorSuffix(key: string): boolean {
+    const idx = key.lastIndexOf('__');
+    if (idx === -1) return false;
+    return [
+      'eq', 'equal', 'equals', 'ne', 'neq', 'not', 'not_equal', 'not_equals',
+      'gt', 'gte', 'lt', 'lte',
+      'like', 'ilike', 'not_like',
+      'in', 'nin', 'not_in', 'notin',
+      'is_null', 'isnull', 'is_not_null', 'isnotnull',
+      'between', 'range',
+      'regexp', 'regex', 'iregexp',
+      'contains', 'icontains',
+      'starts_with', 'startswith', 'ends_with', 'endswith',
+    ].includes(key.slice(idx + 2));
+  }
+
+  /**
    * 创建列表查询 JSON 过滤字符串
    *
    * 后端 go-crud 的裸 `{"field": value}` 走 EQ 精确匹配；搜索框输入部分关键词
@@ -64,9 +85,12 @@ export class PaginationQuery {
 
     // 字符串值转模糊匹配。ID 类字段（*_id/idXxx）即使值是字符串也保持 EQ：
     // 它们指向数字列且多为页面隐式固定参数，contains 会导致 SQL 报错或误匹配。
+    // 已带操作符后缀的 key（field__not / field__in 等）保持原样。
     const fuzzy = Object.fromEntries(
       Object.entries(cleaned).map(([key, value]) => [
-        typeof value === 'string' && !/(_id$|Id$|ID$|^id$)/.test(key)
+        typeof value === 'string' &&
+        !/(_id$|Id$|ID$|^id$)/.test(key) &&
+        !this.hasOperatorSuffix(key)
           ? `${key}__contains`
           : key,
         value,

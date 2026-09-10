@@ -41,7 +41,8 @@
     "language": "语言管理",
     "onlineSessions": "在线用户",
     "serverMonitor": "服务监控",
-    "notificationChannels": "通知渠道"
+    "notificationChannels": "通知渠道",
+    "scripts": "脚本管理"
   },
   "tenant": {
     "moduleName": "租户管理",

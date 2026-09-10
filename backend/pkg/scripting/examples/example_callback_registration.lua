@@ -1,5 +1,22 @@
 -- Example: Callback-based hook registration
--- This demonstrates the simplified callback API
+-- This demonstrates the callback API of the kratos_hook module: multiple
+-- callbacks per hook point, context access via ctx.get / ctx.set, early
+-- abort via ctx.stop(), and hook.add_script attaching a source-payload
+-- script alongside a callback.
+--
+-- Original example by Veselin Iordanov (commit c50c054c, 2025-10).
+-- Adapted to the current module API:
+--   - modules are obtained via require "kratos_*"
+--   - mounted payloads follow the execute() + __get_ctx() convention
+--     (execute takes no parameter; the context comes from __get_ctx())
+--   - os.time() removed: the platform sandbox whitelist excludes the os library
+--   - kratos_cache / kratos_eventbus exist only when the host runtime
+--     configured the matching dependency (Redis / EventBusManager)
+
+local log = require "kratos_logger"
+local hook = require "kratos_hook"
+local cache = require "kratos_cache"
+local eventbus = require "kratos_eventbus"
 
 -- Simple callback registration
 -- Syntax: hook.register(hook_name, description, callback_function)
@@ -22,7 +39,7 @@ end)
 hook.register("data.validated", nil, function(ctx)
     local data = ctx.get("data")
     log.info("Data validated: " .. data)
-    ctx.set("validation_timestamp", os.time())
+    ctx.set("validation_timestamp", "recorded")
     return true
 end)
 
@@ -94,11 +111,13 @@ end)
 hook.add_script("user.updated", {
     name = "audit_log",
     source = [[
-        function execute(ctx)
+        local log = require "kratos_logger"
+        function execute()
+            local ctx = __get_ctx()
             local user_id = ctx.get("user_id")
             local changes = ctx.get("changes")
             log.info("Audit: Recording changes for user " .. user_id)
-            -- Both callback and this script will execute
+            -- Both the callback above and this script will execute
             return true
         end
     ]],

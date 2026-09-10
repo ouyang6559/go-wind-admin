@@ -42,7 +42,8 @@
     "loginPolicy": "Login Policy",
     "onlineSessions": "Online Users",
     "serverMonitor": "Server Monitor",
-    "notificationChannels": "Notification Channels"
+    "notificationChannels": "Notification Channels",
+    "scripts": "Scripts"
   },
   "log": {
     "moduleName": "Audit Logs",

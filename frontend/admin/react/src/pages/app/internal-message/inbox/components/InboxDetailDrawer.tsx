@@ -27,7 +27,7 @@ export const InboxDetailDrawer = ({ open, record, onClose }: InboxDetailDrawerPr
   const statusConfig = status ? statusMap[status] : undefined;
 
   return (
-    <Drawer title={t('detailTitle')} open={open} onClose={onClose} width={480}>
+    <Drawer title={t('detailTitle')} open={open} onClose={onClose} size={480}>
       {record && (
         <div className="flex flex-col gap-4">
           <Typography.Title level={5} style={{ marginBottom: 0 }}>
