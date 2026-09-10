@@ -8,11 +8,14 @@ import (
 
 	xhttp "github.com/zeromicro/x/http"
 	"go-wind-admin/backendz/internal/logic/authentication"
+	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/svc"
 )
 
 func AuthenticationLogoutHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// 无论登出逻辑是否成功，都清除 refresh token 相关 cookie（header 先于 body 落盘）
+		middleware.ClearRefreshCookies(w, r)
 		l := authentication.NewAuthenticationLogoutLogic(r.Context(), svcCtx)
 		err := l.AuthenticationLogout()
 		if err != nil {

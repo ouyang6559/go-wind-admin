@@ -10,6 +10,7 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 	xhttp "github.com/zeromicro/x/http"
 	"go-wind-admin/backendz/internal/logic/authentication"
+	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/svc"
 	"go-wind-admin/backendz/internal/types"
 )
@@ -28,6 +29,10 @@ func AuthenticationLoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			xhttp.JsonBaseResponseCtx(r.Context(), w, err)
 			return
 		}
+		// 与 kratos backend 保持一致：登录成功时将 refresh token 写入
+		// HttpOnly cookie（刷新端点专用）+ refresh_exp 可读 cookie（前端静默恢复会话）。
+		// 需在写响应体前设置 Set-Cookie（header 先于 body 落盘）。
+		middleware.SetRefreshCookies(w, r, resp.RefreshToken, resp.RefreshExpiresIn)
 		// 与 backend（kratos）保持一致：登录成功时平铺输出 {token_type, access_token, ...}，
 		// 不再套 {code,msg,data} 外壳，否则前端 auth.ts 读取 response.access_token 取不到令牌。
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
