@@ -32,9 +32,9 @@ bin/
 .vscode/
 .idea/
 *.swp
-.tmp/*
-.trae/*
-backendr/target/*
+.tmp/
+.trae/
+backendr/target/
 
 # ZCode CLI - 忽略会话级临时产物（plans/state 等），保留项目级 skills
 .zcode/*
