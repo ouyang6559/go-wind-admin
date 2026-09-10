@@ -8,6 +8,7 @@
 //! - `routes` 负责把每个业务模块的 Router 聚合挂载到 `/admin/v1`。
 
 pub mod config;
+pub mod crypto;
 pub mod dto;
 pub mod error;
 pub mod handlers;
@@ -17,3 +18,4 @@ pub mod response;
 pub mod routes;
 pub mod services;
 pub mod state;
+pub mod auth;

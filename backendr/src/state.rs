@@ -25,6 +25,7 @@ impl AppState {
     pub async fn new(config: AppConfig) -> Self {
         // sqlx::any 要求先注册已编译进二进制（按 feature）的驱动，否则连接时 panic
         sqlx::any::install_default_drivers();
+
         let db = match &config.database_url {
             Some(url) => match sqlx::AnyPool::connect(url).await {
                 Ok(pool) => Some(pool),
@@ -54,5 +55,12 @@ impl AppState {
             redis,
             jwt_secret,
         }
+    }
+}
+
+/// 使 `Operator` 等提取器可通过泛型 `S: AsRef<AppState>` 拿到共享状态。
+impl std::convert::AsRef<AppState> for AppState {
+    fn as_ref(&self) -> &AppState {
+        self
     }
 }

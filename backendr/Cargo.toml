@@ -52,6 +52,10 @@ rand = "0.8"
 base64 = "0.22"
 captcha_rust = "0.1"
 password-hash = "0.5"
+bcrypt = "0.15"
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+cipher = "0.4"
 
 # 校验 / 邮件 / 辅助
 validator = { version = "0.19", features = ["derive"] }
