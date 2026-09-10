@@ -99,7 +99,7 @@ func (b *JSBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 
 	// task 模块：JS 侧 in-script 任务注册 API（对齐 Lua 的 task.register_handler）尚未实现，
 	// JS 脚本暂无法注册任务处理器。asynq 任务桥与执行链路本身已通
-	// （internal/script Runtime.RunScriptTaskHandler → Engine.ExecuteTaskHandler，Lua 处理器可注册可执行）；
+	// （internal/service ScriptRuntime.RunScriptTaskHandler → Engine.ExecuteTaskHandler，Lua 处理器可注册可执行）；
 	// 跨语言契约对齐时用真实实现替换此占位。
 	_ = eng.RegisterModule(jsModuleTask, map[string]any{})
 

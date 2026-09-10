@@ -49,9 +49,14 @@ const UserDrawer: React.FC<UserDrawerProps> = ({
   useEffect(() => {
     if (open) {
       // 角色
+      // 角色 —— 与后端 CreateUser 的角色校验语义严格对齐：
+      // 平台用户只接受 SYSTEM 角色，租户用户只接受该租户的 TENANT 角色；
+      // 之前用 type__not: 'TEMPLATE' 会把 TENANT 类型角色也放进下拉，提交必 400。
       fetchListRoles(
         new PaginationQuery({
-          formValues: { status: 'ON', type__not: 'TEMPLATE', tenant_id: tenantId ?? 0 },
+          formValues: tenantId
+            ? { status: 'ON', type: 'TENANT', tenant_id: tenantId }
+            : { status: 'ON', type: 'SYSTEM' },
         }),
       )
         .then((res) => {
@@ -185,7 +190,7 @@ const UserDrawer: React.FC<UserDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 600 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 600 }}
     >
       <ProFormText
         name="username"

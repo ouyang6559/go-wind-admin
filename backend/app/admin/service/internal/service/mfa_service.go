@@ -55,6 +55,7 @@ type MfaService struct {
 	mfaChallengeCache *data.MfaChallengeCache
 	authenticator     *data.Authenticator
 	rateLimiter       *data.LoginRateLimiter
+	userRepo          data.UserRepo
 }
 
 func NewMfaService(
@@ -63,6 +64,7 @@ func NewMfaService(
 	mfaChallengeCache *data.MfaChallengeCache,
 	authenticator *data.Authenticator,
 	rateLimiter *data.LoginRateLimiter,
+	userRepo data.UserRepo,
 ) *MfaService {
 	return &MfaService{
 		log:               ctx.NewLoggerHelper("mfa/service/admin-service"),
@@ -70,6 +72,7 @@ func NewMfaService(
 		mfaChallengeCache: mfaChallengeCache,
 		authenticator:     authenticator,
 		rateLimiter:       rateLimiter,
+		userRepo:          userRepo,
 	}
 }
 
@@ -301,6 +304,9 @@ func (s *MfaService) VerifyMFAChallenge(ctx context.Context, req *authentication
 
 	// 记录会话元数据（在线会话列表展示用）；失败不阻断登录
 	recordSessionMeta(ctx, s.log, s.authenticator, challengeCtx.ClientType, payload)
+
+	// MFA 通过即登录成功，记录最后登录时间与 IP；失败不阻断登录
+	recordUserLastLogin(ctx, s.log, s.userRepo, payload.GetUserId(), netutil.ClientIPFromContext(ctx))
 
 	return &authenticationV1.LoginResponse{
 		TokenType:        authenticationV1.TokenType_bearer,

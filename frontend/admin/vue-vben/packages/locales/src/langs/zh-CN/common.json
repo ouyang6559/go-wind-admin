@@ -10,5 +10,7 @@
   "refresh": "刷新",
   "loadingMenu": "加载菜单中",
   "query": "查询",
-  "search": "搜索"
+  "search": "搜索",
+  "edit": "编辑",
+  "delete": "删除"
 }

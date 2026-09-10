@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go-wind-admin/app/admin/service/internal/data"
-	"go-wind-admin/app/admin/service/internal/script"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	scriptV1 "go-wind-admin/api/gen/go/script/service/v1"
@@ -30,13 +29,13 @@ type ScriptService struct {
 
 	log     *bLogger.Helper
 	repo    *data.ScriptRepo
-	runtime *script.Runtime
+	runtime *ScriptRuntime
 }
 
 func NewScriptService(
 	ctx *bootstrap.Context,
 	repo *data.ScriptRepo,
-	runtime *script.Runtime,
+	runtime *ScriptRuntime,
 ) *ScriptService {
 	return &ScriptService{
 		log:     ctx.NewLoggerHelper("script/service/admin-service"),

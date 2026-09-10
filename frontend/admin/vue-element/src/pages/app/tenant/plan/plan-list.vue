@@ -90,55 +90,54 @@ const pageConfig = computed<ProPageConfig>(() => ({
     toolbar: [],
     toolbarRight: ["add"],
     defaultToolbar: ["refresh", "filter"],
-    tableAttrs: { border: true, stripe: true, height: "auto" },
+    tableAttrs: {
+      border: true,
+      stripe: true,
+      height: "auto",
+      "show-overflow": "title",
+      "show-header-overflow": "title",
+    },
+    // 左栏分栏主表：内容列不设宽度（均分贴合容器防横向溢出），仅操作列定宽
     columns: [
       {
         prop: "name",
         label: $t("pages.plan.name"),
-        minWidth: 150,
         align: "left",
       },
       {
         prop: "version",
         label: $t("pages.plan.version"),
-        width: 120,
         slotName: "version",
       },
       {
         prop: "expiryPolicy",
         label: $t("pages.plan.expiryPolicy"),
-        width: 120,
         slotName: "expiryPolicy",
       },
       {
         prop: "dataRetentionDays",
         label: $t("pages.plan.dataRetentionDays"),
-        width: 120,
         align: "right",
       },
       {
         prop: "description",
         label: $t("common.table.description"),
-        minWidth: 150,
         align: "left",
       },
       {
         prop: "remark",
         label: $t("common.table.remark"),
-        minWidth: 150,
         align: "left",
       },
       {
         prop: "createdAt",
         label: $t("common.table.createdAt"),
-        minWidth: 160,
         cellType: "date",
         dateFormat: "YYYY-MM-DD HH:mm:ss",
       },
       {
         prop: "action",
         label: $t("common.table.action"),
-        fixed: "right",
         width: 150,
         cellType: "tool",
         buttons: [

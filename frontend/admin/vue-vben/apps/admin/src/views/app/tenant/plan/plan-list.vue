@@ -74,53 +74,45 @@ const gridOptions: VxeGridProps<Plan> = {
     },
   },
 
+  // 左栏分栏主表：内容列不设宽度（均分贴合容器防横向溢出），仅操作列定宽
   columns: [
     {
       title: $t('page.plan.name'),
       field: 'name',
-      fixed: 'left',
       align: 'left',
-      minWidth: 150,
     },
     {
       title: $t('page.plan.version'),
       field: 'version',
       slots: { default: 'version' },
-      minWidth: 95,
     },
     {
       title: $t('page.plan.expiryPolicy'),
       field: 'expiryPolicy',
       slots: { default: 'expiryPolicy' },
-      minWidth: 95,
     },
     {
       title: $t('page.plan.dataRetentionDays'),
       field: 'dataRetentionDays',
-      minWidth: 95,
     },
     {
       title: $t('ui.table.description'),
       field: 'description',
-      minWidth: 95,
     },
     {
       title: $t('ui.table.remark'),
       field: 'remark',
-      minWidth: 95,
     },
     {
       title: $t('ui.table.createdAt'),
       field: 'createdAt',
-      minWidth: 95,
       formatter: 'formatDateTime',
     },
     {
       title: $t('ui.table.action'),
       field: 'action',
-      fixed: 'right',
       slots: { default: 'action' },
-      minWidth: 90,
+      width: 90,
     },
   ],
 };

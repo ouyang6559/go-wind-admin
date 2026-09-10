@@ -10,7 +10,6 @@ import (
 	bootstrapAsynq "github.com/tx7do/kratos-bootstrap/transport/asynq"
 	asynqServer "github.com/tx7do/kratos-transport/transport/asynq"
 
-	"go-wind-admin/app/admin/service/internal/script"
 	"go-wind-admin/app/admin/service/internal/service"
 
 	appViewer "go-wind-admin/pkg/entgo/viewer"
@@ -18,7 +17,7 @@ import (
 )
 
 // NewAsynqServer creates a new asynq server.
-func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, scriptRuntime *script.Runtime) (*asynqServer.Server, error) {
+func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, scriptRuntime *service.ScriptRuntime) (*asynqServer.Server, error) {
 	cfg := ctx.GetConfig()
 
 	if cfg == nil || cfg.Server == nil || cfg.Server.Asynq == nil {
@@ -37,7 +36,7 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 
 	// 脚本任务桥：注册固定分发类型（task.ScriptTaskDispatchType）的订阅。
 	// asynq 的 mux 拒绝 Start 后注册 handler，而脚本处理器运行期动态变化，
-	// 故订阅在启动期一次注册，处理器名经消息载荷 handler 字段分发（见 Runtime.RunScriptTaskHandler）。
+	// 故订阅在启动期一次注册，处理器名经消息载荷 handler 字段分发（见 ScriptRuntime.RunScriptTaskHandler）。
 	// sys_tasks 侧：type=PERIODIC，type_name="script_task"，task_payload 带 handler/params。
 	if scriptRuntime != nil {
 		if err := scriptRuntime.AttachScriptTaskRegistrar(

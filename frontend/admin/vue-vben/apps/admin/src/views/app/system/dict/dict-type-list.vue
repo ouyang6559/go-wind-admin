@@ -68,32 +68,28 @@ const gridOptions: VxeGridProps<DictType> = {
     },
   },
 
+  // 左栏分栏主表：内容列不设宽度（均分贴合容器防横向溢出），仅操作列定宽
   columns: [
     {
       title: $t('page.dict.typeName'),
       field: 'typeName',
-      fixed: 'left',
       align: 'left',
-      minWidth: 150,
     },
     {
       title: $t('page.dict.typeCode'),
       field: 'typeCode',
       align: 'left',
-      minWidth: 150,
     },
     {
       title: $t('ui.table.status'),
       field: 'isEnabled',
       slots: { default: 'isEnabled' },
-      minWidth: 95,
     },
     {
       title: $t('ui.table.action'),
       field: 'action',
-      fixed: 'right',
       slots: { default: 'action' },
-      minWidth: 90,
+      width: 90,
     },
   ],
 };

@@ -84,7 +84,7 @@ const DictEntryDrawer: React.FC<DictEntryDrawerProps> = ({
   // 编辑模式下设置表单值
   useEffect(() => {
     if (!(open && mode === 'edit' && data)) return;
-    // destroyOnClose 下，open 由 false→true 时表单刚挂载，formRef 可能尚未就绪。
+    // destroyOnHidden 下，open 由 false→true 时表单刚挂载，formRef 可能尚未就绪。
     // 这里用「轮询等待 formRef 就绪 + 取消标志位」替代裸 setTimeout(0)，
     // 既避免 StrictMode 双调用导致的竞态，也防止组件卸载后 setState。
     let cancelled = false;
@@ -344,7 +344,7 @@ const DictEntryDrawer: React.FC<DictEntryDrawerProps> = ({
         },
         resetButtonProps: { onClick: onClose },
       }}
-      drawerProps={{ destroyOnClose: true, onClose, size: 800 }}
+      drawerProps={{ destroyOnHidden: true, onClose, size: 800 }}
     >
       {/* 所属类型 - Select */}
       <Form.Item

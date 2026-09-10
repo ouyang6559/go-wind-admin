@@ -118,7 +118,7 @@ const LanguageDrawer: React.FC<LanguageDrawerProps> = ({
         },
       }}
       drawerProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         onClose,
         size: 480,
       }}

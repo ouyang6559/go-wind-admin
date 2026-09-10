@@ -10,5 +10,7 @@
   "refresh": "Refresh",
   "loadingMenu": "Loading Menu",
   "query": "Search",
-  "search": "Search"
+  "search": "Search",
+  "edit": "Edit",
+  "delete": "Delete"
 }

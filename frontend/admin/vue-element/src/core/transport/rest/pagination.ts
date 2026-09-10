@@ -39,6 +39,28 @@ export class PaginationQuery {
    * @param needCleanTenant - 是否需要清理租户字段
    * @returns JSON 字符串或 undefined
    */
+  /**
+   * key 末段是否已是 go-crud 支持的查询操作符（created_at__gte、type__not 等）。
+   * 这类 key 不能再叠加 __contains：go-crud 会把 `a__gte__contains`
+   * 解析成 `a CONTAINS value`，对时间/布尔列直接 SQL 报错（500），
+   * "排除"等语义也可能被静默反转。
+   */
+  private static hasOperatorSuffix(key: string): boolean {
+    const idx = key.lastIndexOf('__');
+    if (idx === -1) return false;
+    return [
+      'eq', 'equal', 'equals', 'ne', 'neq', 'not', 'not_equal', 'not_equals',
+      'gt', 'gte', 'lt', 'lte',
+      'like', 'ilike', 'not_like',
+      'in', 'nin', 'not_in', 'notin',
+      'is_null', 'isnull', 'is_not_null', 'isnotnull',
+      'between', 'range',
+      'regexp', 'regex', 'iregexp',
+      'contains', 'icontains',
+      'starts_with', 'startswith', 'ends_with', 'endswith',
+    ].includes(key.slice(idx + 2));
+  }
+
   private static makeQueryString(
     formValues?: null | Record<string, unknown>,
     needCleanTenant: boolean = false,
@@ -64,9 +86,12 @@ export class PaginationQuery {
 
     // 字符串值转模糊匹配。ID 类字段（*_id/idXxx）即使值是字符串也保持 EQ：
     // 它们指向数字列且多为页面隐式固定参数，contains 会导致 SQL 报错或误匹配。
+    // 已带操作符后缀的 key（field__gte / field__not 等）保持原样。
     const fuzzy = Object.fromEntries(
       Object.entries(cleaned).map(([key, value]) => [
-        typeof value === 'string' && !/(_id$|Id$|ID$|^id$)/.test(key)
+        typeof value === 'string' &&
+        !/(_id$|Id$|ID$|^id$)/.test(key) &&
+        !this.hasOperatorSuffix(key)
           ? `${key}__contains`
           : key,
         value,

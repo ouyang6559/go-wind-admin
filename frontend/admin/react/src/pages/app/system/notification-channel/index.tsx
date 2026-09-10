@@ -274,7 +274,7 @@ const NotificationChannelManagement = () => {
         width={560}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        modalProps={{ destroyOnClose: true, maskClosable: false }}
+        modalProps={{ destroyOnHidden: true, mask: { closable: false } }}
         submitTimeout={3000}
         onFinish={handleSubmit}
         initialValues={
@@ -325,7 +325,7 @@ const NotificationChannelManagement = () => {
         onOpenChange={(open) => {
           if (!open) setTestTarget(undefined);
         }}
-        modalProps={{ destroyOnClose: true }}
+        modalProps={{ destroyOnHidden: true }}
         submitTimeout={5000}
         onFinish={handleTestSend}
       >

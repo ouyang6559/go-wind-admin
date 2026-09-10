@@ -32,6 +32,8 @@ const formOptions: VbenFormProps = {
   showCollapseButton: false,
   // 按下回车时是否提交表单
   submitOnEnter: true,
+  // 左栏窄容器：默认 md:grid-cols-3 视口断点会把三个字段挤成细条，固定一行两字段
+  wrapperClass: 'grid-cols-1 sm:grid-cols-2',
   schema: [
     {
       component: 'Input',
@@ -104,30 +106,27 @@ const gridOptions: VxeGridProps<PermissionGroup> = {
     },
   },
 
+  // 左栏分栏主表：内容列不设宽度（均分贴合容器防横向溢出），仅操作列定宽
   columns: [
     {
       title: $t('page.permissionGroup.name'),
       field: 'name',
-      fixed: 'left',
       align: 'left',
       treeNode: true,
     },
     {
       title: $t('page.permissionGroup.module'),
       field: 'module',
-      fixed: 'left',
       align: 'left',
     },
     {
       title: $t('ui.table.status'),
       field: 'status',
       slots: { default: 'status' },
-      width: 95,
     },
     {
       title: $t('ui.table.action'),
       field: 'action',
-      fixed: 'right',
       slots: { default: 'action' },
       width: 90,
     },
