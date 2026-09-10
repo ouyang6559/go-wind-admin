@@ -11,6 +11,7 @@ type Script struct {
 	ID          uint32    `json:"id"`
 	Name        string    `json:"name"`        // Unique script name
 	Hook        string    `json:"hook"`        // Hook point name
+	Language    string    `json:"language"`    // Script language (lua / javascript); empty = engine default
 	Source      string    `json:"source"`      // Lua source code
 	Enabled     bool      `json:"enabled"`     // Active/inactive
 	Priority    int       `json:"priority"`    // Execution order (lower = first)

@@ -362,9 +362,20 @@ cd backend/app/admin/service && make build
 ```
 Run and check Swagger at `http://localhost:7788/docs` for the new resource. Hit a route via curl/the frontend to confirm.
 
+## Step 11 — Default data & the Api registry (how seeds actually work)
+
+All built-in data — admin user, roles, menus, permission groups, languages, **and the Api table** — is seeded **in Go at service construction**, behind a `count == 0` guard. Definitions live in `pkg/constants/default_data.go`; the triggers are each service's `init()` (e.g. `NewApiService` → `init()` → `SyncApis` → `syncWithOpenAPI`, which rebuilds the Api table from the embedded OpenAPI document). `backend/sql/` holds demo data only — **there is no SQL seed script**.
+
+Consequences for a new module:
+
+- **Fresh deployment**: everything (including Api registry rows) appears automatically on first boot.
+- **Existing deployment never re-seeds.** Adding entries to `DefaultMenus` / `DefaultRoles` / etc. changes nothing on a running instance — new menus go in via the 菜单管理 admin page.
+- **New endpoints don't auto-register** into the Api table once it's non-empty. After deploying, run 接口管理 →「接口同步」(`SyncApis` RPC: truncate + full rebuild from OpenAPI). Until then the tenant access checker's `(path, method)` lookup fails closed with 403 for tenant users.
+- If the module needs its own built-in rows (like default dict types), follow the same pattern: data in `pkg/constants/default_data.go`, seeded from the service's `init()` behind `count == 0`.
+
 ## Backend-specific pitfalls
 
-1. **`gow` vs `make`.** The `gow` CLI (from `go-wind-toolkit`) is documented in `backend/AGENTS.md` as `gow api` / `gow ent`, but the project's `Makefile` actually wires `make api/ent/gen`. Prefer `make` targets — they are the source of truth for what really runs. `gow` is fine if installed, just don't assume targets exist.
+1. **`gow` first, `make` for the rest.** Backend run/generate tasks go through the `gow` CLI per the root `AGENTS.md`（「gow 优先，make 兜底」）: `gow run admin`, `gow ent`, `gow api`. Fall back to Makefile targets only for what gow doesn't cover: `make ts` (three-frontends TypeScript), `make openapi`, `make gen` (full generate).
 
 2. **The repo's generic signature has 10 type params, not 9.** Order: Query, Select, Create, CreateBulk, Update, UpdateOne, Delete, Predicate, DTO, Entity. Swapping any two breaks compilation in confusing ways. Copy the exact order from `api_repo.go`.
 

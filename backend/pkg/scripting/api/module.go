@@ -123,12 +123,21 @@ func ModuleCrypto() ModuleDef {
 }
 
 // ModuleUtil 构建语言无关的 util 模块。
-func ModuleUtil() ModuleDef {
+// maxSleep 为 sleep 时长上限（防御脚本无限阻塞执行线程）；未传时默认 5 秒。
+func ModuleUtil(maxSleep ...time.Duration) ModuleDef {
+	cap := 5 * time.Second
+	if len(maxSleep) > 0 && maxSleep[0] > 0 {
+		cap = maxSleep[0]
+	}
 	return ModuleDef{
 		Name: "util",
 		Funcs: map[string]any{
 			"sleep": func(seconds float64) {
-				time.Sleep(time.Duration(seconds * float64(time.Second)))
+				d := time.Duration(seconds * float64(time.Second))
+				if d > cap {
+					d = cap
+				}
+				time.Sleep(d)
 			},
 			"time": func() int64 {
 				return time.Now().Unix()

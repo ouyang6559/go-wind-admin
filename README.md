@@ -24,7 +24,7 @@
 - **企业级 RBAC**：支持多租户、多角色、多部门、菜单/按钮/数据级权限控制（Casbin / OPA / Zanzibar）
 - **安全与等保合规**：按等保 2.0 技术要求内置 180 天审计日志留存归档、口令策略三件套、TOTP MFA、口令应用层加密、动态 RBAC 与多租户隔离、定时备份轮换，详见[安全与等保合规](#安全与等保合规)
 - **微服务 + 单体自由切换**：基于 go-kratos 微服务框架，但支持单体架构模式开发与部署，灵活适配团队规模
-- **全栈代码生成**：Protobuf → Go API / TypeScript 客户端，Ent Schema → ORM，一键 CRUD 脚手架
+- **全栈代码生成**：Protobuf → Go API / TypeScript 客户端，Ent Schema → ORM，一键 CRUD 脚手架；配套桌面端可视化代码生成器与 CLI（[go-wind-toolkit](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)，见[配套工具](#配套工具)）
 - **生产就绪**：JWT 鉴权、SSE 消息推送、异步任务调度、分布式链路追踪、Swagger 文档、Docker 一键部署
 
 ---
@@ -46,7 +46,7 @@
 
 <table>
 <tr><th>层级</th><th>技术</th></tr>
-<tr><td><strong>后端框架</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Wire</code> · <code>Protobuf / Buf</code></td></tr>
+<tr><td><strong>后端框架</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
 <tr><td><strong>ORM</strong></td><td><code>Ent</code>（主要） · <code>GORM</code>（辅助） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
 <tr><td><strong>中间件</strong></td><td><code>Redis 8.0+</code> · <code>MinIO</code>（S3 兼容对象存储） · <code>Jaeger</code>（链路追踪）</td></tr>
 <tr><td><strong>认证授权</strong></td><td><code>JWT</code> · <code>Casbin</code> · <code>OPA</code> · <code>Zanzibar</code></td></tr>
@@ -101,6 +101,8 @@
 - **libs_only 依赖模式（推荐开发）**：仅启动中间件，应用本地 IDE 运行调试
 
 ### 后端启动
+
+> 后端命令统一走 `gow` CLI（安装：`go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest`，详见[配套工具](#配套工具)）。
 
 **Linux / macOS：**
 
@@ -193,6 +195,7 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | 找回密码 | 绑定邮箱验证码找回密码：验证码 10 分钟单次有效、重置成功即吊销全部会话，静默处理防用户枚举 |
 | 通知渠道 | 管理通知渠道（EMAIL / SMTP），密码加密存储、列表脱敏展示，支持启用 / 停用与测试发送 |
 | 服务监控 | 只读展示服务运行时指标（CPU 核数、内存、goroutine 数、运行时长等），自动刷新 |
+| 脚本系统 | 脚本级插件系统（Lua / JavaScript，数据库为事实源，管理页增改即时生效）：实体生命周期钩子（before 可否决 / after 异步）、定时任务（asynq 调度）、HTTP 出站（域名白名单 fail-closed）、试运行与执行日志；详见 [docs/script_system.md](./docs/script_system.md) |
 | 语言管理 | 管理系统支持的多语言，配置语言名称、语言代码、本地名称、启用与默认状态 |
 
 ### 消息与日志
@@ -238,7 +241,7 @@ go-wind-admin/
 │   │   ├── eventbus/               # 事件总线
 │   │   └── ...                     # 其他工具包
 │   ├── scripts/                    # 部署与备份脚本（env/docker/deploy/backup）
-│   └── sql/                        # 初始化 SQL 文件
+│   └── sql/                        # 演示数据 SQL（默认数据由服务启动自动播种）
 ├── frontend/admin/                 # 前端项目
 │   ├── react/                      # React 19 + Ant Design V6
 │   ├── vue-element/                # Vue 3 + Element Plus
@@ -308,6 +311,11 @@ go-wind-admin/
         <td><img src="./docs/images/api_swagger_ui.png" alt="后端内置Swagger UI界面"/></td>
     </tr>
 </table>
+
+## 配套工具
+
+- **[go-wind-toolkit / gowind-uiapp](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)** —— 跨平台桌面端代码生成器（Go + Wails）：一键导入 SQL 或直连数据库表（MySQL / PostgreSQL / SQLite / SQL Server / Oracle），自动生成服务端与前端代码，支持 gRPC / RESTful 等多种模板与简单表单生成；另提供非交互、JSON 输出的 CLI（`gowind-cli`），便于脚本与 AI Agent 调用。
+- **[gow —— GoWind CLI](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind)** —— 本项目的推荐命令行入口：`gow run admin` 运行服务，`gow ent` / `gow api` 代码生成，`gow generate` 从数据库 DSN 生成 CRUD 微服务，`gow extract` 微服务模块拆分演进。在 `backend/` 下执行，自动发现 `app/*/service`，日常开发优先于 Makefile 使用。
 
 ## 社区与贡献
 

@@ -47,5 +47,6 @@
   "home": "Home",
   "server-monitor": "Server Monitor",
   "notification-channels": "Notification Channels",
+  "scripts": "Scripts",
   "forgot-password": "Forgot Password"
 }

@@ -39,11 +39,12 @@ export function getProviderMap(t: TFn) {
 
 // ========== 文件大小格式化 ==========
 
-/** 将字节数格式化为可读字符串 */
-export function formatFileSize(bytes: number | undefined | null): string {
-  if (bytes == null || bytes === 0) return '-';
+/** 将字节数格式化为可读字符串；兼容 protojson 把 uint64 序列化成字符串的运行时形态 */
+export function formatFileSize(bytes: number | string | undefined | null): string {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return '-';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let size = bytes;
+  let size = n;
   let unitIndex = 0;
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;

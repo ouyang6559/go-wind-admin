@@ -83,6 +83,8 @@ Before declaring done, verify cross-cutting concerns:
 - [ ] `apiClient.<entity>Service` getter exists in the frontend generated index (proves proto round-trip worked)
 - [ ] i18n: no hardcoded Chinese/English in pages — everything goes through `$t`/`t` with keys in the locale JSONs
 - [ ] Update operations carry `updateMask` (frontend `useUpdateXxx` does this automatically via `makeUpdateMask`; do not hand-build the mask)
+- [ ] Api registry: on a **fresh** DB the Api table auto-syncs at first boot; on an **existing** deployment trigger 管理页「接口管理 → 接口同步」 after deploying — otherwise the tenant gate `(path, method)` check 403s the new routes (fail-closed)
+- [ ] Menu entries for the new module: on an existing deployment add them via the 菜单管理 admin page — editing `pkg/constants/default_data.go` (`DefaultMenus`) only affects empty-DB fresh installs (all seeds are `count == 0` guarded, see `references/backend.md` Step 11)
 
 ## Step 5 — Cross-framework pitfalls (memorize these)
 

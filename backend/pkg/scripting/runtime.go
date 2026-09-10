@@ -59,12 +59,14 @@ type RuntimeBinder interface {
 	Bind(eng gsEngine.Engine, deps *RuntimeDeps) error
 }
 
-// execCtxHolder 在执行期间持有当前执行上下文。
-// 并发安全：同一编排器实例串行执行 Hook，执行前 Set / 执行后 Reset。
-// 供脚本通过 __get_ctx / __set_ctx / __stop 等全局函数访问。
+// execCtxHolder 在执行期间持有当前执行上下文与脚本名。
+// 并发安全依赖编排器的 execMu 串行化：同一时刻只有一个脚本在执行，
+// 执行前 Set / 执行后 Reset。供脚本通过 __get_ctx / __set_ctx / __stop
+// 等全局函数访问，供 hook.register 捕获回调归属（脚本名）。
 type execCtxHolder struct {
-	current *Context
-	mu      sync.Mutex
+	current    *Context
+	scriptName string
+	mu         sync.Mutex
 }
 
 // set 设置当前执行上下文，返回上一个（用于恢复）。
@@ -90,6 +92,22 @@ func (h *execCtxHolder) get() *Context {
 	return h.current
 }
 
+// setScript 记录正在执行的脚本名（回调注册归属用），返回旧值用于恢复。
+func (h *execCtxHolder) setScript(name string) string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	prev := h.scriptName
+	h.scriptName = name
+	return prev
+}
+
+// scriptNameCurrent 返回当前执行的脚本名（可能为空）。
+func (h *execCtxHolder) currentScript() string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.scriptName
+}
+
 // binderRegistry 注册所有语言适配器，按引擎类型查找。
 var binderRegistry = struct {
 	mu      sync.RWMutex
@@ -110,4 +128,15 @@ func getBinder(typ gsEngine.Type) RuntimeBinder {
 	binderRegistry.mu.RLock()
 	defer binderRegistry.mu.RUnlock()
 	return binderRegistry.binders[typ]
+}
+
+// SupportedTypes 返回已注册语言适配器的全部引擎类型（供管理面动态展示支持的语言）。
+func SupportedTypes() []gsEngine.Type {
+	binderRegistry.mu.RLock()
+	defer binderRegistry.mu.RUnlock()
+	types := make([]gsEngine.Type, 0, len(binderRegistry.binders))
+	for t := range binderRegistry.binders {
+		types = append(types, t)
+	}
+	return types
 }

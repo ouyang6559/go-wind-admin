@@ -23,6 +23,7 @@ import (
 
 	"go-wind-admin/pkg/eventbus"
 	"go-wind-admin/pkg/oss"
+	"go-wind-admin/pkg/scripting/api"
 	"go-wind-admin/pkg/scripting/hook"
 )
 
@@ -58,6 +59,15 @@ type Engine struct {
 	// 执行上下文持有器（执行期间 Set，执行后 Reset，供脚本 __get_ctx 等访问）
 	execCtx execCtxHolder
 
+	// execMu 串行化所有脚本执行路径（Execute / ExecuteHook / LoadScriptString）。
+	//
+	// 必须串行的原因：底层 go-scripts/lua 引擎是单 VM——
+	//  1. ExecuteString 与后续 GetGlobal/CallFunction 之间引擎锁会释放，
+	//     并发执行会让脚本间同名全局函数（如约定入口 execute）互相覆盖；
+	//  2. execCtxHolder 是单槽，并发执行的上下文会互相污染。
+	// 串行执行是当前引擎形态下的正确性前提，不是性能优化。
+	execMu sync.Mutex
+
 	mu sync.RWMutex
 }
 
@@ -71,6 +81,10 @@ type Config struct {
 	AllowedModules []string      // 允许的模块
 	PoolSize       int           // VM 池大小（默认 5）
 	EngineType     gsEngine.Type // 脚本引擎类型（默认 lua）
+
+	// HTTPOptions http 出站模块护栏：域名白名单（空 = 全部拒绝）、超时、响应体上限。
+	// 白名单来源：环境变量 SCRIPT_HTTP_ALLOWED_DOMAINS（逗号分隔）。
+	HTTPOptions api.HTTPOptions
 }
 
 // DefaultConfig 返回默认配置。
@@ -89,6 +103,25 @@ func DefaultConfig() *Config {
 
 // EngineTypeLua 是 Lua 引擎类型标识（对齐 go-scripts）。
 const EngineTypeLua = gsEngine.LuaType
+
+// EnvHTTPAllowedDomains http 出站白名单环境变量名（逗号分隔域名）。
+const EnvHTTPAllowedDomains = "SCRIPT_HTTP_ALLOWED_DOMAINS"
+
+// HTTPAllowlistFromEnv 从环境变量读取域名白名单构造 http 护栏。
+// 未设置 = 空 = 全部出站拒绝（fail-closed）。
+func HTTPAllowlistFromEnv() api.HTTPOptions {
+	raw := strings.TrimSpace(os.Getenv(EnvHTTPAllowedDomains))
+	opts := api.HTTPOptions{}
+	if raw == "" {
+		return opts
+	}
+	for _, d := range strings.Split(raw, ",") {
+		if d = strings.TrimSpace(d); d != "" {
+			opts.AllowedDomains = append(opts.AllowedDomains, d)
+		}
+	}
+	return opts
+}
 
 // ScriptEngineFactory 创建脚本引擎实例。
 type ScriptEngineFactory func(config *Config, logger bLogger.Logger) (gsEngine.Engine, error)
@@ -296,15 +329,81 @@ func (e *Engine) ListHooks() []string {
 	return e.registry.ListHooks()
 }
 
+// HookPointInfo 描述一个钩子点的注册情况（供管理面展示）。
+type HookPointInfo struct {
+	Name          string
+	Description   string
+	ScriptCount   int // 注册表挂载的脚本数
+	CallbackCount int // hook.register 自注册的回调数
+}
+
+// HookPoints 返回全部钩子点及挂载数量（按名称排序）。
+func (e *Engine) HookPoints() []HookPointInfo {
+	hooks := e.registry.GetAllHooks()
+
+	e.callbacksMu.RLock()
+	defer e.callbacksMu.RUnlock()
+
+	infos := make([]HookPointInfo, 0, len(hooks))
+	for _, h := range hooks {
+		infos = append(infos, HookPointInfo{
+			Name:          h.Name,
+			Description:   h.Description,
+			ScriptCount:   len(h.Scripts),
+			CallbackCount: len(e.callbacks[h.Name]),
+		})
+	}
+	return infos
+}
+
+// ResetScriptRegistrations 清空脚本注册（registry + callbacks），供数据库脚本全量重同步。
+// 注意：也会清掉从文件目录加载脚本的注册，调用方须在 Reset 后重新加载全部来源。
+func (e *Engine) ResetScriptRegistrations() {
+	e.execMu.Lock()
+	defer e.execMu.Unlock()
+
+	e.registry.Clear()
+
+	e.callbacksMu.Lock()
+	e.callbacks = make(map[string][]ScriptCallback)
+	e.callbacksMu.Unlock()
+}
+
+// ExecuteTaskHandler 在引擎锁保护下执行脚本注册的任务处理器
+// （asynq 桥的执行入口：与钩子/脚本执行互斥，共享同一 LState 是不安全的）。
+func (e *Engine) ExecuteTaskHandler(ctx context.Context, name string, params map[string]any) error {
+	e.execMu.Lock()
+	defer e.execMu.Unlock()
+	return api.InvokeHandler(ctx, name, params)
+}
+
 // registerCallback 注册语言无关的脚本回调到 hook（供 hook.register 经适配器调用）。
+//
+// 幂等语义：回调实现若提供 CallbackOwner()（非空），同 hook 下同归属的旧回调
+// 会被替换——脚本热更新重执行 hook.register 时不会产生重复回调。
 func (e *Engine) registerCallback(hookName string, cb ScriptCallback) {
 	e.callbacksMu.Lock()
 	defer e.callbacksMu.Unlock()
 
+	owner := ""
+	if o, ok := cb.(interface{ CallbackOwner() string }); ok {
+		owner = o.CallbackOwner()
+	}
+	if owner != "" {
+		kept := e.callbacks[hookName][:0]
+		for _, existing := range e.callbacks[hookName] {
+			if o, ok := existing.(interface{ CallbackOwner() string }); ok && o.CallbackOwner() == owner {
+				continue // 同归属旧回调：替换
+			}
+			kept = append(kept, existing)
+		}
+		e.callbacks[hookName] = kept
+	}
+
 	e.callbacks[hookName] = append(e.callbacks[hookName], cb)
 
-	e.logger.Infof(context.Background(), "Registered callback for hook: %s (total: %d callbacks)",
-		hookName, len(e.callbacks[hookName]))
+	e.logger.Infof(context.Background(), "Registered callback for hook: %s (owner: %q, total: %d callbacks)",
+		hookName, owner, len(e.callbacks[hookName]))
 }
 
 // RegisterCallback 注册语言无关的脚本回调（公开方法，供适配器使用）。
@@ -319,29 +418,59 @@ func (e *Engine) RegisterCallback(hookName string, cb ScriptCallback) {
 // Execute 执行单个脚本（带执行上下文）。
 // 语言无关：通过 scriptEngine.ExecuteString 执行脚本主体，
 // 若脚本定义了 execute() 函数则调用它。
+//
+// 必须持有 execMu（ExecuteHook 已持有；单独调用时自行加锁）——
+// 脚本执行与 execute() 全局函数探活/调用必须原子，否则并发下会被其他脚本覆盖。
 func (e *Engine) Execute(ctx context.Context, script *Script, execCtx *Context) error {
 	if e.scriptEngine == nil {
 		return fmt.Errorf("no script engine available")
 	}
 
+	e.execMu.Lock()
+	defer e.execMu.Unlock()
+
+	return e.executeLocked(ctx, script, execCtx)
+}
+
+// executeLocked 在已持有 execMu 的前提下执行单个脚本。
+func (e *Engine) executeLocked(ctx context.Context, script *Script, execCtx *Context) error {
+	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.VMTimeout)
+	defer cancel()
+
+	// 记录当前脚本名（hook.register 回调归属、诊断日志用）
+	prevScript := e.execCtx.setScript(script.Name)
+	defer e.execCtx.setScript(prevScript)
+
 	// 设置执行上下文（供脚本 __get_ctx 等访问）
 	prev := e.execCtx.set(execCtx)
 	defer e.execCtx.reset(prev)
 
+	// execute() 入口调用策略（哨兵法）：
+	// go-scripts/lua 的 GetGlobal 把 LFunction convert 成 nil，无法直接探知脚本
+	// 是否定义了 execute（未定义时读回也是 nil）。因此执行主体前先把全局 execute
+	// 预写为哨兵字符串（可读回）：主体执行后哨兵原样保留 = 脚本未定义 execute，
+	// 跳过调用；哨兵消失/变化（被函数覆盖，函数读回即 nil）= 已定义，调用之。
+	// 哨兵不得含 NUL：luar/convert 对含 NUL 字符串的往返会失败（读回 nil）。
+	const sentinel = "__go_wind_no_execute__"
+	_ = e.scriptEngine.RegisterGlobal("execute", sentinel)
+
 	// 执行脚本主体（定义函数、注册 hook 等）
-	_, err := e.scriptEngine.ExecuteString(ctx, script.Name, script.Source)
-	if err != nil {
+	if _, err := e.scriptEngine.ExecuteString(timeoutCtx, script.Name, script.Source); err != nil {
 		return err
 	}
 
-	// 若脚本定义了 execute() 函数，调用它
-	if result, callErr := e.scriptEngine.CallFunction(ctx, "execute"); callErr == nil {
+	// 哨兵被覆盖 → 脚本定义了 execute()，调用它
+	//（函数经 GetGlobal 读出为 nil，因此 nil 同样视为「已定义」）
+	if v, err := e.scriptEngine.GetGlobal("execute"); err != nil || v != sentinel {
+		result, callErr := e.scriptEngine.CallFunction(timeoutCtx, "execute")
+		if callErr != nil {
+			// 正常情况到不了这里（哨兵仍在即未定义已跳过）；防御性透出
+			return fmt.Errorf("execute function error: %w", callErr)
+		}
 		// execute 返回 false 表示中止
 		if b, isBool := result.(bool); isBool && !b {
 			return fmt.Errorf("script returned false")
 		}
-	} else if !isMissingFunctionErr(callErr) {
-		return fmt.Errorf("execute function error: %w", callErr)
 	}
 
 	// 检查 __stop() 中止信号
@@ -351,20 +480,13 @@ func (e *Engine) Execute(ctx context.Context, script *Script, execCtx *Context) 
 	return nil
 }
 
-// isMissingFunctionErr 判断错误是否为「函数不存在」（即脚本未定义 execute）。
-func isMissingFunctionErr(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	return strings.Contains(msg, "not a function") ||
-		strings.Contains(msg, "nil") ||
-		strings.Contains(msg, "attempt to call") ||
-		strings.Contains(msg, "not found")
-}
-
 // ExecuteHook 执行挂载在某个 hook 上的所有脚本与回调（按优先级/链式）。
+// 整个 hook 链在 execMu 下串行执行：单 VM 形态下的正确性前提，
+// 同时保证 execCtxHolder 单槽不会被并发 hook 互相污染。
 func (e *Engine) ExecuteHook(ctx context.Context, hookName string, execCtx *Context) error {
+	e.execMu.Lock()
+	defer e.execMu.Unlock()
+
 	// 先执行回调（语言无关：通过 ScriptCallback.Call）
 	e.callbacksMu.RLock()
 	callbacks := e.callbacks[hookName]
@@ -412,7 +534,8 @@ func (e *Engine) ExecuteHook(ctx context.Context, hookName string, execCtx *Cont
 		}
 
 		start := time.Now()
-		err := e.Execute(ctx, script, execCtx)
+		// 已持有 execMu，走 executeLocked（Execute 会重复加锁自死锁）
+		err := e.executeLocked(ctx, script, execCtx)
 		duration := time.Since(start)
 
 		if err != nil {
@@ -519,7 +642,16 @@ func (e *Engine) LoadScriptString(ctx context.Context, scriptName, source string
 	if e.scriptEngine == nil {
 		return fmt.Errorf("no script engine available")
 	}
-	_, err := e.scriptEngine.ExecuteString(ctx, scriptName, source)
+	e.execMu.Lock()
+	defer e.execMu.Unlock()
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.VMTimeout)
+	defer cancel()
+
+	prevScript := e.execCtx.setScript(scriptName)
+	defer e.execCtx.setScript(prevScript)
+
+	_, err := e.scriptEngine.ExecuteString(timeoutCtx, scriptName, source)
 	return err
 }
 
@@ -527,11 +659,27 @@ func (e *Engine) LoadScriptString(ctx context.Context, scriptName, source string
 // 业务依赖注入（暂存于编排器，binder.Bind 执行时注入到 VM）
 ////////////////////////////////////////////////////////////////////////////////
 
+// rebind 在依赖注入变化后重放语言适配器绑定。
+//
+// 必须显式重放的原因：go-scripts 两个引擎的 RuntimeHook 都在 Init 时一次性回放完毕，
+// 而业务依赖（Redis/EventBus/OSS）只能经 Set* 在构造之后注入——不重放则模块注册
+// 发生在依赖为 nil 的时刻，cache/eventbus/oss 模块会是空的。
+// RegisterModule 为覆盖注册语义，重复 Bind 幂等。
+func (e *Engine) rebind() {
+	if e.scriptEngine == nil || e.binder == nil {
+		return
+	}
+	if err := e.buildBindHook(e.binder)(context.Background()); err != nil {
+		e.logger.Errorf(context.Background(), "rebind script modules failed: %v", err)
+	}
+}
+
 // SetRedis 注入 Redis 客户端，启用 cache API。
 func (e *Engine) SetRedis(rdb *redis.Client) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.rdb = rdb
+	e.rebind()
 	e.logger.Info(context.Background(), "Redis client configured for cache API")
 }
 
@@ -540,6 +688,7 @@ func (e *Engine) SetEventBus(manager *eventbus.Manager) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.eventbusManager = manager
+	e.rebind()
 	e.logger.Info(context.Background(), "EventBus manager configured for eventbus API")
 }
 
@@ -548,6 +697,7 @@ func (e *Engine) SetOSS(client *oss.MinIOClient) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.ossClient = client
+	e.rebind()
 	e.logger.Info(context.Background(), "OSS client configured for oss API")
 }
 
