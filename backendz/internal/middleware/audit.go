@@ -67,6 +67,8 @@ func AuditRequestIDFromContext(ctx context.Context) string {
 }
 
 // statusRecorder 包装 ResponseWriter，捕获响应状态码，供 API 审计使用。
+// 必须透传 http.Flusher：/events SSE 处理器依赖 w.(http.Flusher) 触发推送，
+// 若被遮断会导致站内信实时通知静默失效。
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
@@ -82,6 +84,13 @@ func (r *statusRecorder) Write(b []byte) (int, error) {
 		r.status = http.StatusOK
 	}
 	return r.ResponseWriter.Write(b)
+}
+
+// Flush 透传底层 ResponseWriter 的 Flush（SSE 长连接推送）。
+func (r *statusRecorder) Flush() {
+	if f, ok := r.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
 }
 
 // clientIP 提取请求来源 IP（去掉端口）。

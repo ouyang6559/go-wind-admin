@@ -5,9 +5,12 @@ package role
 
 import (
 	"context"
+	"strconv"
 	"time"
 
+	"go-wind-admin/backendz/internal/auditlog"
 	"go-wind-admin/backendz/internal/ent/gen"
+	"go-wind-admin/backendz/internal/ent/gen/operationauditlog"
 	"go-wind-admin/backendz/internal/ent/gen/role"
 	"go-wind-admin/backendz/internal/ent/gen/rolepermission"
 	"go-wind-admin/backendz/internal/middleware"
@@ -101,11 +104,11 @@ func (l *RoleUpdateLogic) RoleUpdate(req *types.UpdateRoleRequest) error {
 				continue
 			}
 			if _, perr := tx.RolePermission.Create().
-					SetRoleID(existing.ID).
-					SetPermissionID(uint32(pid)).
-					SetCreatedAt(time.Now()).
-					SetUpdatedAt(time.Now()).
-					Save(l.ctx); perr != nil {
+				SetRoleID(existing.ID).
+				SetPermissionID(uint32(pid)).
+				SetCreatedAt(time.Now()).
+				SetUpdatedAt(time.Now()).
+				Save(l.ctx); perr != nil {
 				_ = tx.Rollback()
 				logx.WithContext(l.ctx).Errorf("link role permission failed: roleID=%d permissionID=%d err=%v", existing.ID, pid, perr)
 				return xerr.ServerErrorMsg("link role permission failed")
@@ -118,6 +121,17 @@ func (l *RoleUpdateLogic) RoleUpdate(req *types.UpdateRoleRequest) error {
 		logx.WithContext(l.ctx).Errorf("commit tx failed: %v", eerr)
 		return xerr.ServerErrorMsg("commit tx failed")
 	}
+
+	// 操作审计：角色更新成功（best-effort，失败仅日志不阻断）。
+	a := operationAuditContext(l.ctx)
+	a.ResourceType = "role"
+	a.ResourceID = strconv.FormatUint(uint64(existing.ID), 10)
+	a.Action = operationauditlog.ActionUpdate
+	a.Success = true
+	if d.Name != "" {
+		a.AfterData = auditJSON(map[string]string{"name": d.Name})
+	}
+	auditlog.WriteOperation(l.ctx, l.svcCtx, a)
 
 	return nil
 }

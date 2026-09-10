@@ -2,13 +2,46 @@ package role
 
 import (
 	"context"
+	"encoding/json"
+	"net"
 
+	"go-wind-admin/backendz/internal/auditlog"
 	"go-wind-admin/backendz/internal/ent/gen"
 	"go-wind-admin/backendz/internal/ent/gen/rolepermission"
 	"go-wind-admin/backendz/internal/ent/gen/tenant"
+	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/pkg/std"
 	"go-wind-admin/backendz/internal/types"
 )
+
+// auditJSON 将任意值序列化为 JSON 字符串，供审计 before/after_data（jsonb 列）使用。
+// 直接传明文会触发 "invalid input syntax for type json"；失败时返回空串（不写该字段）。
+func auditJSON(v any) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+// operationAuditContext 从上下文提取操作审计公共字段（操作人/IP/请求 ID），
+// 供角色创建/更新/删除后写 sys_operation_audit_logs（best-effort，失败仅日志）。
+func operationAuditContext(ctx context.Context) auditlog.OperationAudit {
+	var a auditlog.OperationAudit
+	if c, ok := middleware.ClaimsFromContext(ctx); ok {
+		a.UserID = c.UserID
+		a.Username = c.Username
+	}
+	if r, ok := middleware.RequestFromContext(ctx); ok {
+		if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+			a.IP = host
+		} else {
+			a.IP = r.RemoteAddr
+		}
+	}
+	a.RequestID = middleware.AuditRequestIDFromContext(ctx)
+	return a
+}
 
 // permissionsOf 查询指定角色关联的权限 ID 列表。
 func permissionsOf(ctx context.Context, client *gen.Client, roleID uint32) ([]int64, error) {

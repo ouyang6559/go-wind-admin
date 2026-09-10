@@ -5,9 +5,12 @@ package role
 
 import (
 	"context"
+	"strconv"
 	"time"
 
+	"go-wind-admin/backendz/internal/auditlog"
 	"go-wind-admin/backendz/internal/ent/gen"
+	"go-wind-admin/backendz/internal/ent/gen/operationauditlog"
 	"go-wind-admin/backendz/internal/ent/gen/role"
 	"go-wind-admin/backendz/internal/svc"
 	"go-wind-admin/backendz/internal/types"
@@ -52,6 +55,17 @@ func (l *RoleDeleteLogic) RoleDelete(req *types.RoleDeleteReq) error {
 		logx.WithContext(l.ctx).Errorf("soft delete role failed: %v", err)
 		return xerr.ServerErrorMsg("soft delete role failed")
 	}
+
+	// 操作审计：角色删除成功（best-effort，失败仅日志不阻断）。
+	a := operationAuditContext(l.ctx)
+	a.ResourceType = "role"
+	a.ResourceID = strconv.FormatUint(uint64(existing.ID), 10)
+	a.Action = operationauditlog.ActionDelete
+	a.Success = true
+	if existing.Name != nil {
+		a.BeforeData = auditJSON(map[string]string{"name": *existing.Name})
+	}
+	auditlog.WriteOperation(l.ctx, l.svcCtx, a)
 
 	return nil
 }

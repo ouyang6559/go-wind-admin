@@ -5,9 +5,12 @@ package role
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
+	"go-wind-admin/backendz/internal/auditlog"
+	"go-wind-admin/backendz/internal/ent/gen/operationauditlog"
 	"go-wind-admin/backendz/internal/ent/gen/role"
 	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/svc"
@@ -104,6 +107,15 @@ func (l *RoleCreateLogic) RoleCreate(req *types.CreateRoleRequest) error {
 		logx.WithContext(l.ctx).Errorf("commit tx failed: %v", eerr)
 		return xerr.ServerErrorMsg("commit tx failed")
 	}
+
+	// 操作审计：角色创建成功（best-effort，失败仅日志不阻断）。
+	a := operationAuditContext(l.ctx)
+	a.ResourceType = "role"
+	a.ResourceID = strconv.FormatUint(uint64(created.ID), 10)
+	a.Action = operationauditlog.ActionCreate
+	a.Success = true
+	a.AfterData = auditJSON(map[string]string{"name": d.Name, "code": d.Code})
+	auditlog.WriteOperation(l.ctx, l.svcCtx, a)
 
 	return nil
 }
