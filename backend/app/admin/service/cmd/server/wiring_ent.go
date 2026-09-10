@@ -11,7 +11,6 @@ import (
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 
 	"go-wind-admin/app/admin/service/internal/data"
-	"go-wind-admin/app/admin/service/internal/script"
 	"go-wind-admin/app/admin/service/internal/server"
 	"go-wind-admin/app/admin/service/internal/service"
 	"go-wind-admin/pkg/authorizer"
@@ -210,7 +209,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// 平台脚本：运行时（多语言引擎）+ 管理服务
 	scriptLogRepo := data.NewScriptLogRepo(ctx, entClient)
-	scriptRuntime := script.NewRuntime(ctx, scriptRepo, redisClient, minioClient, scriptLogRepo)
+	scriptRuntime := service.NewScriptRuntime(ctx, scriptRepo, redisClient, minioClient, scriptLogRepo)
 	cleanups = append(cleanups, scriptRuntime.Close)
 	scriptService := service.NewScriptService(ctx, scriptRepo, scriptRuntime)
 	scriptLogService := service.NewScriptLogService(ctx, scriptLogRepo)
@@ -222,8 +221,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	scriptRuntime.StartResyncListener(ctx.Context())
 	cleanups = append(cleanups, scriptRuntime.StopResyncListener)
 
-	// 实体生命周期钩子：变更成功后异步触发 <entity>.after_<op> 钩子点（见 script.EntityHooksMapping）
-	script.AttachEntityHooks(entClient.Client(),
+	// 实体生命周期钩子：变更成功后异步触发 <entity>.after_<op> 钩子点（见 service.EntityHooksMapping）
+	service.AttachEntityHooks(entClient.Client(),
 		// after：异步旁路，失败只记日志
 		func(hookCtx context.Context, hookPoint string, payload map[string]any) {
 			if err := scriptRuntime.InvokeEntityHook(hookPoint, payload); err != nil {
