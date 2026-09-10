@@ -36,6 +36,12 @@ type MarkNotificationAsReadRequest {
 	RecipientIds	[]int64	`json:"recipientIds,optional"`
 }
 
+type MarkNotificationsStatusRequest {
+	UserId	int64	`json:"userId,optional"`
+	RecipientIds	[]int64	`json:"recipientIds,optional"`
+	// NewStatus 新的消息状态（0 SENT / 1 RECEIVED / 2 READ / 3 REVOKED / 4 DELETED）
+	NewStatus	int64	`json:"newStatus,optional"`
+}
 
 
 @server (
@@ -52,4 +58,7 @@ service admin-api {
 
 	@handler InternalMessageRecipientMarkNotificationAsRead
 	post /read (MarkNotificationAsReadRequest)
+
+	@handler InternalMessageRecipientMarkNotificationsStatus
+	post /status (MarkNotificationsStatusRequest)
 }

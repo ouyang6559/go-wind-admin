@@ -17,3 +17,9 @@ type MarkNotificationAsReadRequest struct {
 	UserId       int64   `json:"userId,optional"`
 	RecipientIds []int64 `json:"recipientIds,optional"`
 }
+
+type MarkNotificationsStatusRequest struct {
+	UserId       int64   `json:"userId,optional"`
+	RecipientIds []int64 `json:"recipientIds,optional"`
+	NewStatus    int64   `json:"newStatus,optional"`
+}

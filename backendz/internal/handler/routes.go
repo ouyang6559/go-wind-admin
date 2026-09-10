@@ -432,6 +432,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/read",
 				Handler: internal_message_recipient.InternalMessageRecipientMarkNotificationAsReadHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/status",
+				Handler: internal_message_recipient.InternalMessageRecipientMarkNotificationsStatusHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/admin/v1/internal-message"),
 	)
