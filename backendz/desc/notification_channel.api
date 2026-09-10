@@ -1,0 +1,87 @@
+import "common.api"
+
+// 通知渠道管理（平台级配置；一期实现 EMAIL 渠道）
+// 路由：CRUD + send-test-email 挂在 /admin/v1/notification-channels。
+
+type NotificationChannel {
+	Id	int64	`json:"id,optional"`
+	Name	string	`json:"name,optional"`
+	// ChannelType 渠道类型：0=EMAIL 1=WEBHOOK（json 字段名为 type）
+	ChannelType	int64	`json:"type,optional"`
+	SmtpHost	string	`json:"smtpHost,optional"`
+	SmtpPort	int64	`json:"smtpPort,optional"`
+	SmtpUsername	string	`json:"smtpUsername,optional"`
+	// 密码不回传：仅创建/更新时写入；HasPassword 标识是否已配置
+	HasPassword	bool	`json:"hasPassword,optional"`
+	SmtpFrom	string	`json:"smtpFrom,optional"`
+	// SmtpTls 加密方式：0=NONE 1=START_TLS 2=SSL
+	SmtpTls	int64	`json:"smtpTls,optional"`
+	Enabled	bool	`json:"enabled,optional"`
+	Remark	string	`json:"remark,optional"`
+	CreatedBy	int64	`json:"createdBy,optional"`
+	UpdatedBy	int64	`json:"updatedBy,optional"`
+	DeletedBy	int64	`json:"deletedBy,optional"`
+	CreatedAt	string	`json:"createdAt,optional"`
+	UpdatedAt	string	`json:"updatedAt,optional"`
+	DeletedAt	string	`json:"deletedAt,optional"`
+}
+
+type ListNotificationChannelResponse {
+	Items	[]NotificationChannel	`json:"items,optional"`
+	Total	string	`json:"total,optional"`
+}
+
+type GetNotificationChannelReq {
+	Id	int64	`path:"id,optional"`
+	ViewMask	string	`form:"viewMask,optional"`
+}
+
+type CreateNotificationChannelRequest {
+	Data	NotificationChannel	`json:"data,optional"`
+	// 明文密码（服务端加密存储，不落日志）
+	Password	string	`json:"password,optional"`
+}
+
+type UpdateNotificationChannelRequest {
+	Id	int64	`path:"id,optional"`
+	Data	NotificationChannel	`json:"data,optional"`
+	// 明文密码；留空表示不修改已存密码
+	Password	string	`json:"password,optional"`
+	UpdateMask	string	`json:"updateMask,optional"`
+	AllowMissing	bool	`json:"allowMissing,optional"`
+}
+
+type DeleteNotificationChannelReq {
+	Id	int64	`form:"id,optional"`
+}
+
+type SendTestEmailRequest {
+	Id	int64	`path:"id,optional"`
+	Recipient	string	`json:"recipient,optional"`
+}
+
+
+@server (
+	prefix: "/admin/v1/notification-channels"
+	group: notification_channel
+)
+
+service admin-api {
+	@handler NotificationChannelList
+	get / (PageRequest) returns (ListNotificationChannelResponse)
+
+	@handler NotificationChannelCreate
+	post / (CreateNotificationChannelRequest)
+
+	@handler NotificationChannelDelete
+	delete / (DeleteNotificationChannelReq)
+
+	@handler NotificationChannelGet
+	get /:id (GetNotificationChannelReq) returns (NotificationChannel)
+
+	@handler NotificationChannelUpdate
+	put /:id (UpdateNotificationChannelRequest)
+
+	@handler NotificationChannelSendTestEmail
+	post /:id/send-test-email (SendTestEmailRequest)
+}

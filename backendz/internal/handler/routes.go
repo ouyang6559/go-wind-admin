@@ -25,6 +25,7 @@ import (
 	login_policy "go-wind-admin/backendz/internal/handler/login_policy"
 	menu "go-wind-admin/backendz/internal/handler/menu"
 	mfa "go-wind-admin/backendz/internal/handler/mfa"
+	notification_channel "go-wind-admin/backendz/internal/handler/notification_channel"
 	operation_audit_log "go-wind-admin/backendz/internal/handler/operation_audit_log"
 	org_unit "go-wind-admin/backendz/internal/handler/org_unit"
 	permission "go-wind-admin/backendz/internal/handler/permission"
@@ -581,6 +582,42 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/admin/v1/mfa"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/",
+				Handler: notification_channel.NotificationChannelListHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/",
+				Handler: notification_channel.NotificationChannelCreateHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/",
+				Handler: notification_channel.NotificationChannelDeleteHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/:id",
+				Handler: notification_channel.NotificationChannelGetHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/:id",
+				Handler: notification_channel.NotificationChannelUpdateHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/:id/send-test-email",
+				Handler: notification_channel.NotificationChannelSendTestEmailHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/admin/v1/notification-channels"),
 	)
 
 	server.AddRoutes(
