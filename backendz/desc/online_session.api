@@ -1,0 +1,81 @@
+import "common.api"
+
+// 在线会话管理服务（在线用户列表 + 强制下线 + 个人自助会话管理）
+//
+// 会话以 Redis 中的「令牌对（access+refresh）」为粒度记录：登录/刷新轮换时写入，
+// 随 refresh token 过期（TTL）或被吊销时移除。本模块只读会话注册表并转发吊销，
+// 不持有独立存储。
+//
+// 说明：clientType 沿用 backendz 的 client_id（字符串，如 web/mobile），
+// 与 Kratos 契约中的枚举整型不同，仅作为展示/过滤，不参与 Redis 键定位
+//（会话键由 (userId, jti) 唯一确定）。
+
+// OnlineSession 一次在线会话。
+type OnlineSession {
+	// Current 是否为当前请求所属会话（仅 my-sessions 场景有意义）
+	Current	bool	`json:"current,optional"`
+	// Jti 会话令牌对 ID（唯一标识一次令牌签发）
+	Jti	string	`json:"jti,optional"`
+	UserId	uint32	`json:"userId,optional"`
+	Username	string	`json:"username,optional"`
+	TenantId	uint32	`json:"tenantId,optional"`
+	// ClientType 客户端类型（client_id）
+	ClientType	string	`json:"clientType,optional"`
+	IpAddress	string	`json:"ipAddress,optional"`
+	UserAgent	string	`json:"userAgent,optional"`
+	DeviceId	string	`json:"deviceId,optional"`
+	// LoginAt 登录时间（RFC3339；刷新轮换保留首次登录时间）
+	LoginAt	string	`json:"loginAt,optional"`
+}
+
+// ListOnlineSessionRequest 查询在线会话列表 - 请求（form 绑定）
+type ListOnlineSessionRequest {
+	// Keyword 关键词，模糊匹配用户名/IP
+	Keyword	string	`form:"keyword,optional"`
+	Page	int64	`form:"page,optional"`
+	PageSize	int64	`form:"pageSize,optional"`
+}
+
+// ListOnlineSessionResponse 查询在线会话列表 - 回应
+type ListOnlineSessionResponse {
+	Items	[]OnlineSession	`json:"items,optional"`
+	Total	uint64	`json:"total,optional"`
+}
+
+// ForceLogoutSessionRequest 强制下线指定会话 - 请求（body: "*"）
+type ForceLogoutSessionRequest {
+	// ClientType 客户端类型（client_id）
+	ClientType	string	`json:"clientType,optional"`
+	// UserId 目标用户 ID
+	UserId	uint32	`json:"userId,optional"`
+	// Jti 会话令牌对 ID
+	Jti	string	`json:"jti,optional"`
+}
+
+// RevokeMyOnlineSessionRequest 当前用户强制下线自己的指定会话 - 请求（body: "*"）
+type RevokeMyOnlineSessionRequest {
+	// ClientType 客户端类型（client_id）
+	ClientType	string	`json:"clientType,optional"`
+	// Jti 会话令牌对 ID
+	Jti	string	`json:"jti,optional"`
+}
+
+
+@server (
+	prefix: "/admin/v1/online-session"
+	group: online_session
+)
+
+service admin-api {
+	@handler OnlineSessionList
+	get /sessions (ListOnlineSessionRequest) returns (ListOnlineSessionResponse)
+
+	@handler OnlineSessionForceLogout
+	post /force-logout (ForceLogoutSessionRequest)
+
+	@handler OnlineSessionMySessions
+	get /my-sessions () returns (ListOnlineSessionResponse)
+
+	@handler OnlineSessionRevokeMy
+	post /my-sessions/revoke (RevokeMyOnlineSessionRequest)
+}

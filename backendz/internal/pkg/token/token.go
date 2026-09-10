@@ -2,6 +2,8 @@
 package token
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -37,15 +39,30 @@ func NewTokenManager(accessSecret string, accessExpire, refreshExpire time.Durat
 
 // CreateAccessToken 生成访问令牌。
 func (m *TokenManager) CreateAccessToken(uid, tid uint32, username, clientID, deviceID string) (string, error) {
-	return m.sign(m.accessSecret, m.accessExpire, uid, tid, username, clientID, deviceID)
+	return m.signWithJTI(m.accessSecret, m.accessExpire, uid, tid, username, clientID, deviceID, newJTI())
 }
 
 // CreateRefreshToken 生成刷新令牌。
 func (m *TokenManager) CreateRefreshToken(uid, tid uint32, username, clientID, deviceID string) (string, error) {
-	return m.sign(m.refreshSecret, m.refreshExpire, uid, tid, username, clientID, deviceID)
+	return m.signWithJTI(m.refreshSecret, m.refreshExpire, uid, tid, username, clientID, deviceID, newJTI())
 }
 
-func (m *TokenManager) sign(secret []byte, expire time.Duration, uid, tid uint32, username, clientID, deviceID string) (string, error) {
+// CreateTokenPair 生成一对令牌（访问+刷新）并返回本次令牌对统一的 jti。
+// 同一对令牌共享同一个 jti，用于在线会话注册表中标识一次令牌签发（会话）。
+func (m *TokenManager) CreateTokenPair(uid, tid uint32, username, clientID, deviceID string) (access, refresh, jti string, err error) {
+	jti = newJTI()
+	access, err = m.signWithJTI(m.accessSecret, m.accessExpire, uid, tid, username, clientID, deviceID, jti)
+	if err != nil {
+		return "", "", "", err
+	}
+	refresh, err = m.signWithJTI(m.refreshSecret, m.refreshExpire, uid, tid, username, clientID, deviceID, jti)
+	if err != nil {
+		return "", "", "", err
+	}
+	return access, refresh, jti, nil
+}
+
+func (m *TokenManager) signWithJTI(secret []byte, expire time.Duration, uid, tid uint32, username, clientID, deviceID, jti string) (string, error) {
 	now := time.Now()
 	claims := Claim{
 		UserID:   uid,
@@ -54,12 +71,23 @@ func (m *TokenManager) sign(secret []byte, expire time.Duration, uid, tid uint32
 		ClientID: clientID,
 		DeviceID: deviceID,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        jti,
 			ExpiresAt: jwt.NewNumericDate(now.Add(expire)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return t.SignedString(secret)
+}
+
+// newJTI 生成会话令牌对唯一 ID（32 字节随机 hex）。
+func newJTI() string {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		// 熵源不可用时回退到时间戳，仅用于保证不 panic（维持调用链不中断）
+		return time.Now().Format("20060102150405.000000000")
+	}
+	return hex.EncodeToString(buf)
 }
 
 // ParseAccessToken 校验访问令牌并返回载荷。

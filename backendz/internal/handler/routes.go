@@ -26,6 +26,7 @@ import (
 	menu "go-wind-admin/backendz/internal/handler/menu"
 	mfa "go-wind-admin/backendz/internal/handler/mfa"
 	notification_channel "go-wind-admin/backendz/internal/handler/notification_channel"
+	online_session "go-wind-admin/backendz/internal/handler/online_session"
 	operation_audit_log "go-wind-admin/backendz/internal/handler/operation_audit_log"
 	org_unit "go-wind-admin/backendz/internal/handler/org_unit"
 	permission "go-wind-admin/backendz/internal/handler/permission"
@@ -618,6 +619,32 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/admin/v1/notification-channels"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/force-logout",
+				Handler: online_session.OnlineSessionForceLogoutHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/my-sessions",
+				Handler: online_session.OnlineSessionMySessionsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/my-sessions/revoke",
+				Handler: online_session.OnlineSessionRevokeMyHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/sessions",
+				Handler: online_session.OnlineSessionListHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/admin/v1/online-session"),
 	)
 
 	server.AddRoutes(

@@ -13,6 +13,7 @@ import (
 	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/pkg/credential"
 	"go-wind-admin/backendz/internal/pkg/password"
+	"go-wind-admin/backendz/internal/pkg/session"
 	"go-wind-admin/backendz/internal/svc"
 	"go-wind-admin/backendz/internal/types"
 	"go-wind-admin/backendz/internal/xerr"
@@ -111,13 +112,28 @@ func (l *AuthenticationLoginLogic) AuthenticationLogin(req *types.LoginRequest) 
 		usernameVal = *u.Username
 	}
 
-	accessToken, aerr := l.svcCtx.Token.CreateAccessToken(u.ID, *u.TenantID, usernameVal, req.ClientId, req.DeviceId)
-	if aerr != nil {
-		return nil, xerr.ServerErrorMsg("create access token failed")
+	accessToken, refreshToken, jti, terr := l.svcCtx.Token.CreateTokenPair(u.ID, *u.TenantID, usernameVal, req.ClientId, req.DeviceId)
+	if terr != nil {
+		return nil, xerr.ServerErrorMsg("create token pair failed")
 	}
-	refreshToken, rerr := l.svcCtx.Token.CreateRefreshToken(u.ID, *u.TenantID, usernameVal, req.ClientId, req.DeviceId)
-	if rerr != nil {
-		return nil, xerr.ServerErrorMsg("create refresh token failed")
+	clientType := req.ClientType
+	if strings.TrimSpace(clientType) == "" {
+		clientType = req.ClientId
+	}
+
+	// 写入在线会话注册表（best-effort：Redis 写失败不阻断登录，仅记录日志）
+	if serr := l.svcCtx.Session.Record(l.ctx, session.Meta{
+		UID:        u.ID,
+		TenantID:   *u.TenantID,
+		Username:   usernameVal,
+		JTI:        jti,
+		ClientType: clientType,
+		IP:         l.clientIP(),
+		UserAgent:  l.userAgent(),
+		DeviceID:   req.DeviceId,
+		LoginAt:    time.Now(),
+	}); serr != nil {
+		logx.WithContext(l.ctx).Errorf("record session for user [%d] failed: %v", u.ID, serr)
 	}
 
 	// 更新最近登录信息（失败不阻断）
@@ -159,4 +175,11 @@ func (l *AuthenticationLoginLogic) clientIP() string {
 		return host
 	}
 	return r.RemoteAddr
+}
+
+func (l *AuthenticationLoginLogic) userAgent() string {
+	if r, ok := middleware.RequestFromContext(l.ctx); ok {
+		return r.UserAgent()
+	}
+	return ""
 }

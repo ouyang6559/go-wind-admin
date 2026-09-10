@@ -184,6 +184,19 @@ type MenuRouteItem struct {
 	Meta      MenuMeta        `json:"meta,optional"`
 }
 
+type OnlineSession struct {
+	Current    bool   `json:"current,optional"`
+	Jti        string `json:"jti,optional"`
+	UserId     uint32 `json:"userId,optional"`
+	Username   string `json:"username,optional"`
+	TenantId   uint32 `json:"tenantId,optional"`
+	ClientType string `json:"clientType,optional"`
+	IpAddress  string `json:"ipAddress,optional"`
+	UserAgent  string `json:"userAgent,optional"`
+	DeviceId   string `json:"deviceId,optional"`
+	LoginAt    string `json:"loginAt,optional"`
+}
+
 type PageRequest struct {
 	Page           int64  `form:"page,optional"`
 	PageSize       int64  `form:"pageSize,optional"`

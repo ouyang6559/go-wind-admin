@@ -32,6 +32,7 @@ import (
 	"menu.api"
 	"mfa.api"
 	"notification_channel.api"
+	"online_session.api"
 	"operation_audit_log.api"
 	"org_unit.api"
 	"permission.api"
