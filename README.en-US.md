@@ -1,6 +1,8 @@
-# GoWindAdmin (GoWind Admin System)
+<div align="center">
 
-> **Efficiently build enterprise-grade admin systems, making development as smooth as the wind.**
+<img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind Admin" />
+
+</div>
 
 GoWindAdmin is an out-of-the-box enterprise-grade Golang full-stack admin system scaffold.
 

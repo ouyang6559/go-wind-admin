@@ -1,10 +1,6 @@
 <div align="center">
 
-# GoWind Admin｜风行
-
-**开箱即用的企业级前后端一体中后台脚手架**
-
-> **让中后台开发如风般自由 — GoWind Admin**
+<img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind Admin｜风行" />
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev/)
