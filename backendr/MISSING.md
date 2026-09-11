@@ -9,10 +9,10 @@
 |---|---|---|
 | Go 端点总数（proto HTTP 注解） | **192** | `backend/api/protos` 全部 `google.api.http` |
 | Rust 路由注册 | **192/192（100%）** | 含冒号风格路径与斜杠别名；`mfa/{credentialId}` 与 proto 的 `{credential_id}` 为服务端参数名差异，客户端 URL 等价 |
-| **已完整实现并测试通过** | **55** | 认证 8 + 审计日志 12 + 脚本 11 + 脚本日志 3 + 通知渠道 6 + 在线会话 4 + 站内信收件箱 4 + server-monitor 1 + 任务类型/控制 5 + users/tenants exists 2 + 改密 1 + internal-message/status 1 等 |
-| **骨架（返回 501 NotImplemented）** | **141** | 集中在各业务 CRUD，见第三节清单 |
+| **已完整实现并测试通过** | **166** | 认证 8 + 用户/user_profile + 租户 exists + 任务 CRUD + MFA 7 + 审计日志 12 + 脚本 11 + 脚本日志 3 + 通知渠道 6 + 在线会话 4 + 站内信 4 + server-monitor + task 类型/控制 + menu/admin_portal/dashboard + dict/language/position/permission_group/login_policy/plan/org_unit 等大部分业务 CRUD |
+| **骨架（返回 501 NotImplemented）** | **26** | 见第三节清单 |
 
-端到端测试：`backendr/tests/e2e.sh`，**51 项断言全绿**（连续 3 轮），覆盖登录/改密/强制下线/刷新令牌重放防护/脚本 CRUD/通知渠道/审计日志等全链路。
+端到端测试：`backendr/tests/e2e.sh`，**53 项断言全绿**，覆盖登录/改密/强制下线/刷新令牌重放防护/脚本 CRUD/通知渠道/审计日志等全链路；MFA 额外全链路冒烟（注册→挑战登录→验证→错误码限次→禁用→回落单因子）通过。
 
 ## 二、本次已实现（wire 格式与 Go 完全对齐）
 
@@ -46,46 +46,44 @@
 
 **其他（8）**：`GET /server-monitor`、`GET /tasks:type-names`、`POST /tasks:start|stop|restart|control`（对齐 Go「调度器未配置」降级：500 `task scheduler is not configured`）、`GET /users:exists`、`GET /tenants:exists`、`POST /users/{user_id}/password`（AES 解密→bcrypt→撤销全部会话）
 
-## 三、遗留清单（141 个 501 骨架 + 专项功能，按建议开发顺序）
+**用户（7，新模块）**：`GET/POST /users`、`GET/PUT/DELETE /users/{id}`、`GET/DELETE /users/username/{username}`——创建 = 事务（sys_users + sys_user_credentials + sys_user_roles），列表/详情聚合角色码/部门/岗位/租户名；改密 `POST /users/{user_id}/password`
 
-### A. 标准业务 CRUD（约 100 个端点，可复制现有模板批量推进）
+**user_profile（6/7，新模块）**：`GET/PUT /me` 资料读写、绑定邮箱/手机（AES 解密 + 验证码确认）、`POST /me/password` 改密；`POST /me/avatar` 仅支持 imageUrl 直存分支（imageBase64 依赖 OSS → 501）、`DELETE /me/avatar` 骨架
 
-> 这些模块的表已由 Go/Ent 迁移建好，直接参照 **已实现模块的模板** 开发：
-> 简单列表+Get → `src/handlers/audit_logs.rs`（表驱动）；
-> 全套 CRUD → `src/handlers/script.rs` + `src/repos/script.rs`（动态 update 的占位符编号已踩平）。
+**task CRUD（6，新模块）**：`GET/POST/PUT/DELETE /tasks`、`GET /tasks/type-name/{type_name}`——sys_tasks 落库管理、typeName 注册校验（broadcast_message/tenant_expiry_scan/backup/script_task/audit_log_archive）、jsonb 字段透传
+
+**mfa（7，新模块）**：TOTP 因子注册（`POST /mfa/enroll/start` 返回 secret/otpauth URL/PNG QR + `POST /mfa/enroll/confirm` 首码校验）、登录闸门（绑定 ENABLED TOTP → 登录返回 `mfa_operation_id` 不签发 token）、`POST /mfa/verify` 通过后复用登录链路签发 token + 刷新 cookie、`GET /mfa/status|methods`、`POST /mfa/disable`（本人/平台管理员救援重置）、`DELETE /mfa/{credentialId}`。挑战走 Redis（`mfa:login:`/`mfa:enroll:`/`mfa:loginfail:`/`mfa:enrollcd:`），失败上限 3 次作废、GET+DEL Lua 原子消耗防重放；secret AES-GCM 加密落库 `sys_user_mfa_factors`
+
+## 三、遗留清单（26 个 501 骨架 + 专项功能）
+
+> 相对上一版 141 骨架，已补完：user / user_profile / task CRUD / mfa / tenant exists / menu / admin_portal / dashboard / dict / language / position / permission_group / login_policy / plan / org_unit 等。剩余按以下清单推进。
 > 注意：postgres 方言（`to_char`/`::timestamptz`/`ilike`）；时间戳参数必须显式 cast，否则 sqlx Any 以 TEXT 传参会报类型错误。
 
-| 模块 | 端点数 | 表 | 要点 |
+### A. 剩余 501 骨架（26 个端点，可直接实现）
+
+| 模块 | 端点数 | 表 / 卡点 | 建议 |
 |---|---|---|---|
-| dict_type / dict_entry / language | 6/5/6 | `sys_dict_types` `sys_dict_entries`(+i18n) `sys_languages` | language 有 BatchCreate；dict_entry 关联 type 的唯一约束 |
-| position / org_unit | 5/5 | `sys_positions` `sys_org_units` | org_unit 树形（parent_id）；查询常带 `parentId` 过滤 |
-| plan / plan_module / plan_quota | 5/5/4 | `sys_plans` `sys_plan_modules` `sys_plan_quotas` | 配额与租户用量联动（GetUsage 在 tenant 模块） |
-| login_policy / permission_group | 5/5 | `sys_login_policies` `sys_permission_groups` | login_policy 与认证链路闸门联动（当前 Rust 登录未实现策略闸门，见 D） |
-| internal_message / internal_message_category | 6/5 | `internal_messages` `internal_message_categories` | 发送事务要批量写 recipients（当前 Rust 收件箱读侧已就绪） |
-| api | 7 | `sys_apis` | 注意 hasPassword 类脱敏列；List 常按 module 分组 |
-| role | 5 | `sys_roles`(+metadata/permissions) | 角色授权要写 `sys_role_permissions` |
-| menu | 6 | `sys_menus`(+permission_menus) | 树形 + SyncMenus（见 B） |
-| file / file_transfer | 5/3 | `files` | 依赖 MinIO/OSS（`oss.yaml`），Rust 需引入 S3 兼容客户端（如 `rust-s3`/`aws-sdk-s3`） |
-| admin_portal / dashboard | 3/4 | 聚合查询 | 纯只读统计，实现成本低 |
+| tenant | 9 | `sys_tenants` CRUD + exists + usage + cleanup + with-admin | CRUD 与 exists/usage/cleanup 的 SQL 已就绪（`src/repos/tenant.rs`），仅需从 `handlers/tenant.rs` 骨架接线；with-admin 为建租户+管理员事务 |
+| permission | 6 | `sys_permissions` CRUD + `sync:perms` | CRUD 简单；sync:perms 无 proto 注册表，需手工端点清单（见 B2） |
+| file | 5 | `files` CRUD | 依赖存储后端（MinIO/OSS → `rust-s3`/`aws-sdk-s3`；本地磁盘可先落 `uploads/`） |
+| file_transfer | 3 | `file_transfers` | 同上，S3 直传/分片 |
+| redis_cache_monitor | 1 | 只读监控 | 直接实现：Redis `INFO`/`DBSIZE` + 内存统计 |
+| user_profile avatar | 2 | `POST /me/avatar`（imageBase64 分支）、`DELETE /me/avatar` | imageUrl 直存已实现；base64 分支需存储后端 |
+| script test_run | 1 | 嵌入式脚本引擎 | 见 B1 |
 
 ### B. 需要专项设计的功能（无法简单照模板）
 
-1. **user（7 个端点）**：`GET/POST /users`、`GET/PUT/DELETE /users/{id}`、`GET/DELETE /users/username/{username}`。
-   难点：创建用户 = 事务（sys_users + sys_user_credentials + sys_user_roles/memberships）；查询响应聚合角色码/部门；`GET /users` 的 query 过滤字段较多。参照 Go `internal/data/user_repo.go` 与 `user_credential_repo.go`。
+1. **script TestRun（`POST /scripts/test_run`）**：需嵌入式脚本引擎。选型建议：`mlua`（Lua 沙箱，对应 gopher-lua）+ `rquickjs`（JS）；需实现出站 HTTP 白名单（`SCRIPT_HTTP_ALLOWED_DOMAINS`，fail-closed）、hook 注册表（`GET /script/hooks` 目前返回空集合）、执行日志落 `sys_script_logs`（trigger_type="test_run"）。**报错仍返回 200 + `success:false`**。
 
-2. **tenant（5 个端点）**：`/tenants:with-admin`（创建租户+管理员用户的事务，涉及凭证播种、角色绑定、租户初始化）、`GET /tenants/{id}/usage`（跨表用量统计）、`POST /tenants/{id}/cleanup`（清理租户数据，多表事务）。
-   `tenants:exists` 已实现。
+2. **permissions/sync:perms**：Go 端从 proto 注册表全量重建 `sys_apis`（租户闸门 fail-closed 依赖它）。Rust 没有 proto 注册表，建议：手工维护一份端点清单（可从 `routes/*.rs` 静态生成），或首次由 Go 实例同步后共享同一 DB。**已部署实例新增端点必须在管理页「接口同步」重建，否则租户闸门 403**。
 
-3. **permissions/sync:perms**：Go 端从 proto 注册表全量重建 `sys_apis`（租户闸门 fail-closed 依赖它）。Rust 没有 proto 注册表，建议：手工维护一份端点清单（可从 `routes/*.rs` 静态生成），或首次由 Go 实例同步后共享同一 DB。**已部署实例新增端点必须在管理页「接口同步」重建，否则租户闸门 403**。
+3. **task 内嵌调度器**：Go 用 asynq（Redis 队列）。Rust 等价：`apalis`（redis-backed）或 tokio cron。控制端点已有「调度器未配置」降级；`ListTaskTypeName` 返回系统注册类型。创建时校验 typeName 已注册（已实现）。
 
-4. **script TestRun（`POST /scripts/test_run`）**：需要嵌入式脚本引擎。选型建议：`mlua`（Lua 沙箱，对应 gopher-lua）+ `rquickjs`（JS）；需实现出站 HTTP 白名单（`SCRIPT_HTTP_ALLOWED_DOMAINS`，fail-closed）、hook 注册表（`GET /script/hooks` 目前返回空集合）、执行日志落 `sys_script_logs`（trigger_type="test_run"）。**报错仍返回 200 + `success:false`**。
+4. **登录限流 + login_policy 闸门**：Go 有 IP+用户名双维度失败计数锁定 + login_policy 表全局/用户定向策略。Rust 登录目前只有验证码 + 凭证校验；login_policy CRUD 已实现后接线。
 
-5. **task CRUD + 内嵌调度器（6 个端点）**：`GET/POST/PUT/DELETE /tasks`、`GET /tasks/type-name/{type_name}`。
-   Go 用 asynq（Redis 队列）。Rust 等价：`apalis`（redis-backed）或 tokio cron。控制端点已有「调度器未配置」降级；`ListTaskTypeName` 返回系统注册类型（broadcast_message/tenant_expiry_scan/backup/script_task/audit_log_archive）。注意 ControlTask 要求租户上下文（平台上下文 400）、创建时校验 typeName 已注册。
+5. **审计日志中间件**：Go 用中间件逐请求落库（geo 解析、设备解析、哈希签名链）。Rust **自身流量不产生审计日志**（DB 现存的是 Go 实例写入的）。需实现 tower 中间件 + GeoIP/UA 解析 + log_hash 签名链。
 
-6. **mfa（7 个端点）**：TOTP 因子注册/验证（`sys_user_mfa_factors`）。Rust 需引入 `totp-rs`。登录链路当前未接 MFA 闸门（Go：绑定 ENABLED TOTP → 登录返回 `mfa_operation_id` 走二次验证）。前端 react 已有 MFA 挑战页，建议尽快补齐。
-
-7. **user_profile（7 个端点）**：`/me` 资料读取、改联系方式、绑定邮箱/手机、头像删除（`DELETE /me/avatar` 依赖文件存储）。改密走 `users/{id}/password` 已实现，`POST /me/password` 待做（同一套解密+哈希逻辑）。
+6. **租户闸门**：Kratos 的租户中间件按 `sys_apis` 校验端点可见性。Rust 中间件目前只做 JWT + 黑名单。
 
 ### C. 已实现但与 Go 存在行为差异（知悉即可）
 
@@ -94,18 +92,17 @@
 | server-monitor 运行时指标 | goroutine 数、GC 次数、Go 版本 | 无 goroutine 概念（0 占位）；rustc 版本（build.rs 未接入，现为常量）；进程内存 Linux /proc 可读，macOS 为 0 |
 | 刷新令牌后的 loginAt | Lua 原子轮换，继承首次登录时间 | 刷新 = 新会话条目，loginAt 重新计时 |
 | 会话元数据写入时机 | 刷新轮换原子迁移 | 刷新后 IP/UA 显示 `-`（刷新请求未带上下文） |
-| 登录策略/限流闸门 | login_policy 表 + IP/用户名双维度限流器 | 未接入（Rust 登录只有验证码+凭证校验）；login_policy CRUD 待做后接线 |
+| MFA 账户名 | Go `uid:{id}`（冒号） | totp-rs otpauth 禁止冒号，用 `uid{id}`；otpauth URL 客户端等价 |
 | JWT 算法 | RS256（密钥对） | HS256（`GW_ADMIN_JWT_SECRET`）。token 不跨后端通用，对前端透明 |
-| 审计日志写入 | 中间件逐请求落库（geo 解析、设备解析、哈希签名链） | Rust 无对应审计中间件——**Rust 自身流量不会产生审计日志**；DB 里现存的是 Go 实例写入的。需实现 tower 中间件 + GeoIP/UA 解析 + log_hash 签名链 |
 | 查询过滤 DSL | go-crud 全量（regex/date/year…） | 已实现常用子集（contains/icontains/in/gt/gte/lt/lte/isnull/range/exact），未知操作符按 exact 兜底 |
 | SQL 方言 | Ent 多方言 | 手写 SQL 为 postgres 方言（mysql 需替换 to_char/::cast/ilike） |
 
-### D. 登录链路后续需补齐的闸门（Go 已有，Rust 登录目前没有）
+### D. 登录链路闸门状态
 
-1. 登录限流（IP+用户名双维度失败计数锁定）——Go `rateLimiter`
-2. login_policy 闸门（全局 + 用户定向）——依赖 login_policy CRUD
-3. MFA 闸门（绑定 ENABLED TOTP → 返回 `mfa_operation_id`）
-4. 租户闸门（Kratos 的租户中间件按 `sys_apis` 校验端点可见性）——Rust 中间件目前只做 JWT+黑名单
+1. ~~登录限流（IP+用户名双维度失败计数锁定）~~——未做（见 B4）
+2. ~~login_policy 闸门~~——未做（CRUD 已实现，见 B4）
+3. **MFA 闸门**——✅ 已实现（绑定 ENABLED TOTP → 登录返回 `mfa_operation_id`）
+4. ~~租户闸门（Kratos 的租户中间件按 `sys_apis` 校验端点可见性）~~——未做（见 B6）
 
 ## 四、测试环境复现
 
