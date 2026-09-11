@@ -39,6 +39,7 @@ type UserCredentialRepo struct {
 	credentialTypeConverter *mapper.EnumTypeConverter[authenticationV1.UserCredential_CredentialType, usercredential.CredentialType]
 
 	passwordCrypto password.Crypto
+	configRepo     *ConfigRepo
 
 	repository *entCrud.Repository[
 		ent.UserCredentialQuery, ent.UserCredentialSelect,
@@ -50,11 +51,12 @@ type UserCredentialRepo struct {
 	]
 }
 
-func NewUserCredentialRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client], passwordCrypto password.Crypto) *UserCredentialRepo {
+func NewUserCredentialRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client], passwordCrypto password.Crypto, configRepo *ConfigRepo) *UserCredentialRepo {
 	repo := &UserCredentialRepo{
 		log:                     ctx.NewLoggerHelper("user-credentials/repo/admin-service"),
 		entClient:               entClient,
 		passwordCrypto:          passwordCrypto,
+		configRepo:              configRepo,
 		mapper:                  mapper.NewCopierMapper[authenticationV1.UserCredential, ent.UserCredential](),
 		statusConverter:         mapper.NewEnumTypeConverter[authenticationV1.UserCredential_Status, usercredential.Status](authenticationV1.UserCredential_Status_name, authenticationV1.UserCredential_Status_value),
 		identityTypeConverter:   mapper.NewEnumTypeConverter[authenticationV1.UserCredential_IdentityType, usercredential.IdentityType](authenticationV1.UserCredential_IdentityType_name, authenticationV1.UserCredential_IdentityType_value),
@@ -167,7 +169,7 @@ func (r *UserCredentialRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data 
 
 	if data.Credential != nil {
 		var newCredential string
-		newCredential, err = r.prepareCredential(r.credentialTypeConverter.ToEntity(data.CredentialType), data.GetCredential())
+		newCredential, err = r.prepareCredential(ctx, r.credentialTypeConverter.ToEntity(data.CredentialType), data.GetCredential())
 		if err != nil {
 			r.log.Errorf(ctx, "prepare new credential failed: %s", err.Error())
 			return authenticationV1.ErrorBadRequest("prepare new credential failed")
@@ -222,7 +224,7 @@ func (r *UserCredentialRepo) Update(ctx context.Context, req *authenticationV1.U
 
 	if req.Data.Credential != nil {
 		var newCredential string
-		newCredential, err = r.prepareCredential(r.credentialTypeConverter.ToEntity(req.Data.CredentialType), req.Data.GetCredential())
+		newCredential, err = r.prepareCredential(ctx, r.credentialTypeConverter.ToEntity(req.Data.CredentialType), req.Data.GetCredential())
 		if err != nil {
 			r.log.Errorf(ctx, "prepare new credential failed: %s", err.Error())
 			return authenticationV1.ErrorBadRequest("prepare new credential failed")
@@ -452,7 +454,8 @@ func (r *UserCredentialRepo) FindUserCredential(ctx context.Context, tenantID ui
 
 	if r.verifyCredential(entity.CredentialType, plainCredential, *entity.Credential) {
 		// 等保口令策略：有效期检查——超期拒绝登录，用户走重置/改密流程换新口令
-		if maxAge := passwordPolicy.MaxAgeDays(); maxAge > 0 && *entity.CredentialType == usercredential.CredentialTypePasswordHash {
+		// 阈值自 sys_config 平台参数读取（参数管理页可调，<=0 关闭）。
+		if maxAge := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMaxAgeDays, passwordPolicy.DefaultMaxAgeDays); maxAge > 0 && *entity.CredentialType == usercredential.CredentialTypePasswordHash {
 			if entity.UpdatedAt != nil && time.Since(*entity.UpdatedAt) > time.Duration(maxAge)*24*time.Hour {
 				r.log.Warnf(ctx, "password expired for user [%d] (age > %dd), login denied", *entity.UserID, maxAge)
 				return 0, authenticationV1.ErrorBadRequest("password expired, please reset your password")
@@ -493,19 +496,21 @@ func (r *UserCredentialRepo) verifyCredential(credentialType *usercredential.Cre
 	}
 }
 
-func (r *UserCredentialRepo) prepareCredential(credentialType *usercredential.CredentialType, plainCredential string) (string, error) {
+func (r *UserCredentialRepo) prepareCredential(ctx context.Context, credentialType *usercredential.CredentialType, plainCredential string) (string, error) {
 	var newCredential string
 	switch *credentialType {
 	case usercredential.CredentialTypePasswordHash:
-		// 等保口令策略：哈希前对明文做复杂度校验（覆盖创建/修改/重置全部路径）
-		if err := passwordPolicy.ValidateComplexity(plainCredential); err != nil {
+		// 等保口令策略：哈希前对明文做复杂度校验（覆盖创建/修改/重置全部路径）。
+		// 长度阈值自 sys_config 平台参数读取（参数管理页可调）。
+		if err := passwordPolicy.ValidateComplexity(plainCredential,
+			r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMinLen, passwordPolicy.DefaultMinLen)); err != nil {
 			return "", authenticationV1.ErrorBadRequest("%s", err.Error())
 		}
 		var err error
 		// 加密明文密码
 		newCredential, err = r.passwordCrypto.Encrypt(plainCredential)
 		if err != nil {
-			r.log.Errorf(context.Background(), "hash new password failed: %s", err.Error())
+			r.log.Errorf(ctx, "hash new password failed: %s", err.Error())
 			return "", authenticationV1.ErrorBadRequest("hash new password failed")
 		}
 
@@ -583,7 +588,7 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 	}
 
 	var newCredential string
-	newCredential, err = r.prepareCredential(entity.CredentialType, req.GetNewCredential())
+	newCredential, err = r.prepareCredential(ctx, entity.CredentialType, req.GetNewCredential())
 	if err != nil {
 		// 口令策略（复杂度等）错误原样透传，便于前端给出可操作的提示
 		r.log.Warnf(ctx, "prepare new credential rejected: %s", err.Error())
@@ -599,7 +604,8 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 		return err
 	}
 
-	extraInfo := appendPasswordHistory(entity.ExtraInfo, *entity.Credential, passwordPolicy.HistoryCount())
+	extraInfo := appendPasswordHistory(entity.ExtraInfo, *entity.Credential,
+		r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount))
 
 	builder := r.entClient.Client().UserCredential.Update()
 	builder.Where(tenantWhere...)
@@ -663,7 +669,7 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 	}
 
 	var newCredential string
-	newCredential, err = r.prepareCredential(entity.CredentialType, req.GetNewCredential())
+	newCredential, err = r.prepareCredential(ctx, entity.CredentialType, req.GetNewCredential())
 	if err != nil {
 		// 口令策略（复杂度等）错误原样透传，便于前端给出可操作的提示
 		r.log.Warnf(ctx, "prepare new credential rejected: %s", err.Error())
@@ -679,7 +685,8 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 		return err
 	}
 
-	extraInfo := appendPasswordHistory(entity.ExtraInfo, *entity.Credential, passwordPolicy.HistoryCount())
+	extraInfo := appendPasswordHistory(entity.ExtraInfo, *entity.Credential,
+		r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount))
 
 	builder := r.entClient.Client().UserCredential.Update()
 	builder.Where(tenantWhere...)

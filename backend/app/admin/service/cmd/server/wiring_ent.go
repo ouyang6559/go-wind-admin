@@ -84,7 +84,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	membershipOrgUnitRepo := data.NewMembershipOrgUnitRepo(ctx, entClient)
 	membershipRepo := data.NewMembershipRepo(ctx, entClient, membershipRoleRepo, membershipPositionRepo, membershipOrgUnitRepo)
 	userRepo := data.NewUserRepo(ctx, entClient, userRoleRepo, userOrgUnitRepo, userPositionRepo, membershipRepo)
-	userCredentialRepo := data.NewUserCredentialRepo(ctx, entClient, passwordCrypto)
+	configRepo := data.NewConfigRepo(ctx, entClient)
+	userCredentialRepo := data.NewUserCredentialRepo(ctx, entClient, passwordCrypto, configRepo)
 	userMfaFactorRepo := data.NewUserMfaFactorRepo(ctx, entClient)
 	loginPolicyRepo := data.NewLoginPolicyRepo(ctx, entClient)
 
@@ -144,7 +145,6 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	scriptRepo := data.NewScriptRepo(ctx, entClient)
 
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
-	configRepo := data.NewConfigRepo(ctx, entClient)
 
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
 

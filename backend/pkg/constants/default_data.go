@@ -1,15 +1,19 @@
 package constants
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
+	configV1 "go-wind-admin/api/gen/go/config/service/v1"
 	dictV1 "go-wind-admin/api/gen/go/dict/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
+
+	passwordPolicy "go-wind-admin/pkg/password"
 )
 
 const (
@@ -831,5 +835,32 @@ var DefaultMenus = []*permissionV1.Menu{
 			Order:     trans.Ptr(int32(8)),
 			Authority: []string{"sys:platform_admin"},
 		},
+	},
+}
+
+// DefaultConfigs 系统初始化内置平台参数（等保口令策略阈值）。
+// 键与默认值单源引自 pkg/password 的同名常量，保证种子行与 accessor 缺省回退一致；
+// 服务启动时按键缺一补一（键已存在、值已被管理员改过的行不覆盖），is_built_in 可改不可删。
+var DefaultConfigs = []*configV1.Config{
+	{
+		Key:       trans.Ptr(passwordPolicy.ConfigKeyMinLen),
+		Name:      trans.Ptr("Password minimum length"),
+		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultMinLen)),
+		ValueType: configV1.Config_INT.Enum(),
+		IsBuiltIn: trans.Ptr(true),
+	},
+	{
+		Key:       trans.Ptr(passwordPolicy.ConfigKeyMaxAgeDays),
+		Name:      trans.Ptr("Password maximum age in days (0 disables expiry)"),
+		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultMaxAgeDays)),
+		ValueType: configV1.Config_INT.Enum(),
+		IsBuiltIn: trans.Ptr(true),
+	},
+	{
+		Key:       trans.Ptr(passwordPolicy.ConfigKeyHistoryCount),
+		Name:      trans.Ptr("Password history retention count (0 disables history check)"),
+		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultHistoryCount)),
+		ValueType: configV1.Config_INT.Enum(),
+		IsBuiltIn: trans.Ptr(true),
 	},
 }

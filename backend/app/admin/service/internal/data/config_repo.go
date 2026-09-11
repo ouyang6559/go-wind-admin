@@ -309,6 +309,34 @@ func (r *ConfigRepo) Delete(ctx context.Context, req *configV1.DeleteConfigReque
 	return nil
 }
 
+// SeedDefaults 按键缺一补一地播种内置平台参数（启动期）：
+// 键不存在的按给定默认值创建，键已存在（含值被管理员改过）的跳过，不覆盖。
+// 与其他默认数据的表级 count==0 守卫不同——管理员自建行不应阻断内置键补种，
+// 且补种绝不能把管理员改过的阈值重置回默认。
+func (r *ConfigRepo) SeedDefaults(ctx context.Context, defaults []*configV1.Config) error {
+	for _, item := range defaults {
+		if item == nil || item.GetKey() == "" {
+			continue
+		}
+		exists, err := r.entClient.Client().SysConfig.Query().
+			Where(sysconfig.KeyEQ(item.GetKey())).
+			Exist(ctx)
+		if err != nil {
+			r.log.Errorf(ctx, "seed config %q: exists query failed: %s", item.GetKey(), err.Error())
+			return err
+		}
+		if exists {
+			continue
+		}
+		if err := r.newConfigCreate(item).Exec(ctx); err != nil {
+			r.log.Errorf(ctx, "seed config %q: insert failed: %s", item.GetKey(), err.Error())
+			return err
+		}
+		r.invalidateCacheKey(item.GetKey())
+	}
+	return nil
+}
+
 // —— 服务侧参数读取器（带缓存）——
 //
 // 其他服务通过 wiring 注入 *ConfigRepo 后按键读取运行时参数，例如：
