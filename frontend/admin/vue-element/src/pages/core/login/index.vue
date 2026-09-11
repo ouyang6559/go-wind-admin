@@ -189,8 +189,8 @@ const formComponents = {
     margin-bottom: 32px;
 
     .slogan-icon {
-      width: 280px;
-      height: 280px;
+      width: 320px;
+      height: 320px;
       filter: drop-shadow(0 8px 32px rgba(0, 107, 230, 0.3));
       animation: slogan-float 5s linear infinite;
 

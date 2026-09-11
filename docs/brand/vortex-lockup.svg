@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 240">
+  <title>GoWind 风行 — 旋涡横版组合</title>
+  <defs>
+    <linearGradient id="wg" gradientUnits="userSpaceOnUse" x1="0" y1="30" x2="0" y2="480">
+      <stop offset="0" stop-color="#70B3FF"/>
+      <stop offset=".5" stop-color="#0D74F2"/>
+      <stop offset="1" stop-color="#005AC2"/>
+    </linearGradient>
+    <linearGradient id="tg" gradientUnits="userSpaceOnUse" x1="0" y1="-12" x2="0" y2="112">
+      <stop offset="0" stop-color="#70B3FF"/>
+      <stop offset=".5" stop-color="#0D74F2"/>
+      <stop offset="1" stop-color="#005AC2"/>
+    </linearGradient>
+    <g id="Lg" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path id="cG" d="M70 22 A40 40 0 1 0 82 50 L56 50"/>
+      <circle id="cO" cx="42" cy="50" r="40"/>
+      <path id="cW" d="M10 0 L30 100 L48 30 L66 100 L86 0"/>
+      <path id="cI" d="M10 0 L10 100"/>
+      <path id="cN" d="M10 100 L10 0 L74 100 L74 0"/>
+      <path id="cD" d="M10 0 L10 100 M10 0 L24 0 A50 50 0 0 1 24 100 L10 100"/>
+    </g>
+    <g id="fx" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 86 C16 58 26 32 34 12 H86 V58 C86 78 76 88 58 88 H44"/>
+      <path d="M60 34 L36 68"/>
+      <path d="M36 42 L58 66"/>
+      <g transform="translate(124,0)">
+        <path d="M36 10 L18 32"/>
+        <path d="M38 36 L20 58"/>
+        <path d="M29 50 V90"/>
+        <path d="M50 24 H92"/>
+        <path d="M50 54 H88"/>
+        <path d="M71 54 V86 Q71 94 61 91"/>
+      </g>
+    </g>
+  </defs>
+  <g transform="translate(15,13) scale(0.42)" fill="none" stroke="url(#wg)" stroke-width="38" stroke-linecap="round">
+    <path d="M256 192 A64 64 0 1 1 193 267"/>
+    <path d="M145 320 A128 128 0 1 1 338 354" opacity=".78"/>
+    <path d="M422 352 A192 192 0 1 1 322 76" opacity=".56"/>
+  </g>
+  <g transform="translate(248,32)" fill="none" stroke="url(#tg)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#cG"/><use href="#cO" x="116"/><use href="#cW" x="234"/><use href="#cI" x="354"/><use href="#cN" x="398"/><use href="#cD" x="506"/>
+  </g>
+  <g transform="translate(250,152) scale(0.72)" fill="none" stroke="url(#tg)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#fx"/>
+  </g>
+</svg>
