@@ -94,7 +94,14 @@
 且 `Update` 在 `parent_id` 变更后按 parent 链 BFS 重算子树路径（`relocateSubtree`，
 顺带自愈历史脏数据，含移入自身后代成环检测）。
 
-**存量数据修复**（历史行 path 均为 "/"，已部署实例执行一次）：
+**权限组（`sys_permission_groups`）同款维护**：proto 注释的格式
+`/1/10/101/（包含自身且首尾带/）` 与上述约定一致，repo 三处已接线——
+`Create.setTreePath` 根节点 `/ID/`、`Update` 改父后 `relocateSubtree`、
+同步流 `BatchCreate` 后从批内根补算 + `UpdateParentIDs` 重算受影响子树
+（事务内走 `tx.Client()` 保证读到未提交的新父关系）。
+该 path 当前无运行时读方（组树按 parent_id 构建），属防御性修复。
+
+**存量数据修复**（历史行 path 均为 "/"，已部署实例执行一次；两表同构）：
 
 ```sql
 -- 按层级自根向叶执行；根节点：
