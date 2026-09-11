@@ -39,7 +39,10 @@ func main() {
 	// 必须在此收集：容器内无源码文件，不能靠读 routes.go 重建路由清单。
 	ctx.Routes = server.Routes()
 
-	// 全局中间件：注入原始请求（供 logic 读头/IP），再做 JWT 鉴权（白名单放行），最后做 API 审计
+	// 全局中间件：先归一化「无意义 JSON body」（容错前后端 DELETE/GET 发送的字面量 "null"，见 body.go），
+	// 再注入原始请求（供 logic 读头/IP），随后做 JWT 鉴权（白名单放行），最后做 API 审计。
+	// 顺序上 NormalizeJsonBody 必须最早，确保 handler 内 httpx.Parse 之前已把 body 归一无空。
+	server.Use(middleware.NormalizeJsonBody())
 	server.Use(middleware.RequestCtx())
 	server.Use(middleware.Auth(ctx))
 	server.Use(middleware.Audit(ctx))
