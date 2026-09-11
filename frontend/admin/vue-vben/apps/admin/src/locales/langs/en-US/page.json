@@ -167,7 +167,9 @@
     "tenantName": "Tenant",
     "button": {
       "create": "Create Role"
-    }
+    },
+    "dataScope": "Data Scope",
+    "orgUnits": "Authorized Org Units"
   },
   "permission": {
     "moduleName": "Permission",

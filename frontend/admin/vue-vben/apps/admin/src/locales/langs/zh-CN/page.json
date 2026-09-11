@@ -167,7 +167,9 @@
     "tenantName": "所属租户",
     "button": {
       "create": "创建角色"
-    }
+    },
+    "dataScope": "数据权限范围",
+    "orgUnits": "授权组织单元"
   },
   "permission": {
     "moduleName": "权限",

@@ -10,8 +10,10 @@ import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
+  dataScopeToColor,
   fetchListRoles,
   PaginationQuery,
+  roleDataScopeToName,
   statusList,
   statusToColor,
   statusToName,
@@ -107,6 +109,12 @@ const gridOptions: VxeGridProps<Role> = {
       slots: { default: 'status' },
       width: 95,
     },
+    {
+      title: $t('page.role.dataScope'),
+      field: 'dataScope',
+      slots: { default: 'dataScope' },
+      width: 95,
+    },
     { title: $t('ui.table.description'), field: 'description' },
     {
       title: $t('ui.table.createdAt'),
@@ -187,6 +195,11 @@ async function handleDelete(row: any) {
       <template #status="{ row }">
         <a-tag :color="statusToColor(row.status)">
           {{ statusToName(row.status) }}
+        </a-tag>
+      </template>
+      <template #dataScope="{ row }">
+        <a-tag :color="dataScopeToColor(row.dataScope)">
+          {{ roleDataScopeToName(row.dataScope) }}
         </a-tag>
       </template>
       <template #action="{ row }">

@@ -10,9 +10,11 @@ import { useVbenForm } from '#/adapter/form';
 import { type permissionservicev1_PermissionGroup as PermissionGroup } from '#/api';
 import {
   buildPermissionTree,
+  fetchListOrgUnits,
   fetchListPermissionGroups,
   fetchListPermissions,
   PaginationQuery,
+  roleDataScopeList,
   statusList,
   useCreateRole,
   useUpdateRole,
@@ -87,6 +89,41 @@ const [BaseForm, baseFormApi] = useVbenForm({
       },
     },
     {
+      component: 'Select',
+      fieldName: 'dataScope',
+      label: $t('page.role.dataScope'),
+      defaultValue: 'ALL',
+      rules: 'selectRequired',
+      componentProps: {
+        options: roleDataScopeList,
+        placeholder: $t('ui.placeholder.select'),
+      },
+    },
+    {
+      component: 'ApiTree',
+      fieldName: 'orgUnits',
+      dependencies: {
+        // 仅 SELECTED_UNITS 档展示自定义授权单元集配置
+        show: (values) => values.dataScope === 'SELECTED_UNITS',
+        triggerFields: ['dataScope'],
+      },
+      componentProps: {
+        title: $t('page.role.orgUnits'),
+        treeDefaultExpandAll: true,
+        childrenField: 'children',
+        labelField: 'name',
+        valueField: 'id',
+        api: async () => {
+          const result = await fetchListOrgUnits(
+            new PaginationQuery({
+              formValues: { status: 'ON' },
+            }),
+          );
+          return result.items;
+        },
+      },
+    },
+    {
       component: 'Textarea',
       fieldName: 'description',
       label: $t('ui.table.description'),
@@ -155,6 +192,16 @@ const [Drawer, drawerApi] = useVbenDrawer({
       finalValues.permissions.length > 0
     ) {
       finalValues.permissions = filterNumbers(values.permissions);
+    }
+
+    // 仅 SELECTED_UNITS 档提交授权单元集（含清空场景）；
+    // 其余档位不携带该字段，后端维持既有集不替换。
+    if (finalValues.dataScope === 'SELECTED_UNITS') {
+      finalValues.orgUnits = Array.isArray(values.orgUnits)
+        ? filterNumbers(values.orgUnits)
+        : [];
+    } else {
+      delete finalValues.orgUnits;
     }
 
 
