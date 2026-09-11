@@ -145,7 +145,7 @@ pub fn to_dto(
 }
 
 /// 聚合用户关联信息并转 DTO（对齐 Go enrichRelations）。
-async fn enrich_and_to_dto(repo: &UserRepo, row: &UserRow) -> Result<UserDto, AppError> {
+pub(crate) async fn enrich_and_to_dto(repo: &UserRepo, row: &UserRow) -> Result<UserDto, AppError> {
     let role_ids = repo.list_role_ids(row.id).await?;
     let org_unit_ids = repo.list_org_unit_ids(row.id).await?;
     let position_ids = repo.list_position_ids(row.id).await?;
@@ -255,7 +255,7 @@ pub struct UpdateUserBody {
 }
 
 /// gender 归一：仅接受 proto 枚举名
-fn normalize_gender(v: &str) -> Result<String, AppError> {
+pub(crate) fn normalize_gender(v: &str) -> Result<String, AppError> {
     let up = v.to_ascii_uppercase();
     match up.as_str() {
         "SECRET" | "MALE" | "FEMALE" => Ok(up),
@@ -264,7 +264,7 @@ fn normalize_gender(v: &str) -> Result<String, AppError> {
 }
 
 /// status 归一：仅接受 proto 枚举名
-fn normalize_status(v: &str) -> Result<String, AppError> {
+pub(crate) fn normalize_status(v: &str) -> Result<String, AppError> {
     let up = v.to_ascii_uppercase();
     match up.as_str() {
         "NORMAL" | "DISABLED" | "PENDING" | "LOCKED" | "EXPIRED" | "CLOSED" => Ok(up),
