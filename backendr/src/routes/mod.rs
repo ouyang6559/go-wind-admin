@@ -41,6 +41,11 @@ use crate::state::AppState;
 pub fn build_router() -> Router<AppState> {
     let mut r = Router::new();
     r = r.nest("/admin/v1", self_router());
+    r = r.merge(crate::routes::notification_channel::build());
+    r = r.merge(crate::routes::online_session::build());
+    r = r.merge(crate::routes::script::build());
+    r = r.merge(crate::routes::script_log::build());
+    r = r.merge(crate::routes::server_monitor::build());
     r
 }
 
@@ -81,5 +86,15 @@ fn self_router() -> Router<AppState> {
     r = r.merge(crate::routes::tenant::build());
     r = r.merge(crate::routes::user::build());
     r = r.merge(crate::routes::user_profile::build());
+    r = r.merge(crate::routes::notification_channel::build());
+    r = r.merge(crate::routes::online_session::build());
+    r = r.merge(crate::routes::script::build());
+    r = r.merge(crate::routes::script_log::build());
+    r = r.merge(crate::routes::server_monitor::build());
     r
 }
+pub mod notification_channel;
+pub mod online_session;
+pub mod script;
+pub mod script_log;
+pub mod server_monitor;

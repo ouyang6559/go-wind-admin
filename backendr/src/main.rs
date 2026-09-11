@@ -27,13 +27,17 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState::new(config).await;
     tracing::info!(meta = "GoWind Admin backendr (axum) start", addr = %addr);
 
-    // 4. Router
+    // 4. Router（带 ConnectInfo，登录链路记录客户端 IP）
     let app = build_router().with_state(state);
 
     // 5. 监听
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!(addr = %addr, "listening");
-    axum::serve(listener, app).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }

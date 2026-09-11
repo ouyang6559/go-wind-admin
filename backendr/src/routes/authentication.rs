@@ -11,5 +11,8 @@ pub fn build() -> Router<AppState> {
     r = r.route("/logout", axum::routing::post(h::authentication_logout));
     r = r.route("/refresh-token", axum::routing::post(h::authentication_refresh_token));
     r = r.route("/register", axum::routing::post(h::authentication_register_user));
+    // 找回/重置密码（免鉴权）
+    r = r.route("/forgot-password", axum::routing::post(h::authentication_forgot_password));
+    r = r.route("/reset-password-by-code", axum::routing::post(h::authentication_reset_password_by_code));
     r
 }

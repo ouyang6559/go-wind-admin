@@ -1,35 +1,34 @@
-//! 统一响应体。
+//! 统一响应约定：**裸 DTO**（与 Go/Kratos wire 格式一致）。
 //!
-//! 所有接口按 `{ code, message, data }` 返回；`code == 0` 表示成功。
+//! Go 端（Kratos 默认编码）成功响应直接返回 proto JSON（无 `{code,message,data}`
+//! envelope），`google.protobuf.Empty` 返回 `{}`；列表返回 `{"items":[...],"total":"N"}`
+//! （total 为 int64 的 protojson 字符串形式）。本仓所有 handler 遵循同一约定。
 
+use axum::Json;
 use serde::Serialize;
 
-use crate::error::CODE_OK;
-
-/// 统一 API 响应
-#[derive(Debug, Clone, Serialize)]
-pub struct ApiResponse<T> {
-    pub code: i64,
-    pub message: String,
-    pub data: T,
+/// 成功：直接返回业务 DTO（裸 JSON，无 envelope）
+pub fn json_ok<T: Serialize>(data: T) -> Json<T> {
+    Json(data)
 }
 
-impl<T> ApiResponse<T> {
-    pub fn ok(data: T) -> Self {
-        ApiResponse {
-            code: CODE_OK,
-            message: "ok".into(),
-            data,
+/// 成功：空对象（对齐 google.protobuf.Empty 的 protojson 序列化）
+pub fn json_empty() -> Json<serde_json::Value> {
+    Json(serde_json::json!({}))
+}
+
+/// 列表响应：`{"items":[...],"total":"N"}`（total 为字符串，对齐 protojson int64）
+#[derive(Debug, Clone, Serialize)]
+pub struct ListResponse<T: Serialize> {
+    pub items: Vec<T>,
+    pub total: String,
+}
+
+impl<T: Serialize> ListResponse<T> {
+    pub fn new(items: Vec<T>, total: u64) -> Self {
+        ListResponse {
+            items,
+            total: total.to_string(),
         }
     }
-}
-
-/// JSON 成功响应（data 为业务对象）
-pub fn json_ok<T: Serialize>(data: T) -> axum::Json<ApiResponse<T>> {
-    axum::Json(ApiResponse::ok(data))
-}
-
-/// JSON 空成功响应
-pub fn json_ok_null() -> axum::Json<ApiResponse<serde_json::Value>> {
-    axum::Json(ApiResponse::ok(serde_json::Value::Null))
 }

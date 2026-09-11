@@ -29,6 +29,8 @@ pub struct Operator {
     pub roles: Vec<String>,
     /// 当前仅支持 admin 客户端（令牌未携带 client_type，登录/登出固定 admin）
     pub client_type: String,
+    /// 当前 access token 的 jti（登出/黑名单用）
+    pub jti: String,
 }
 
 impl<S> FromRequestParts<S> for Operator
@@ -44,12 +46,17 @@ where
             .and_then(|v| v.to_str().ok());
         let token = bearer_token(header).ok_or(AppError::Unauthorized)?;
         let claims = crate::auth::verify_access_token(&state.as_ref().jwt_secret, &token)?;
+        // 吊销检查：被强制下线/登出的令牌（gw:bl:{jti}）立即失效（对齐 Go 黑名单语义）
+        if crate::auth::is_jti_blacklisted(state.as_ref(), &claims.jti).await {
+            return Err(AppError::Unauthorized);
+        }
         Ok(Operator {
             user_id: claims.uid,
             tenant_id: claims.tid,
             username: claims.sub,
             roles: claims.roc.unwrap_or_default(),
             client_type: "admin".to_string(),
+            jti: claims.jti,
         })
     }
 }

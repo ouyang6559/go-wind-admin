@@ -136,7 +136,7 @@ impl AuthenticationRepo {
     /// 更新最近登录时间/IP（失败不阻断登录）。
     pub async fn update_last_login(&self, user_id: i64, ip: &str) -> Result<(), AppError> {
         let sql = "update sys_users \
-                   set last_login_at = $1, last_login_ip = $2, updated_at = $1 \
+                   set last_login_at = $1::timestamptz, last_login_ip = $2, updated_at = $1::timestamptz \
                    where id = $3";
         let now = chrono::Utc::now().to_rfc3339();
         sqlx::query::<sqlx::Any>(sql)
@@ -189,7 +189,7 @@ impl AuthenticationRepo {
         email: Option<&str>,
     ) -> Result<i64, AppError> {
         let sql = "insert into sys_users (tenant_id, username, email, gender, status, created_at, updated_at) \
-                   values ($1, $2, $3, 'SECRET', 'NORMAL', $4, $4) returning id";
+                   values ($1, $2, $3, 'SECRET', 'NORMAL', $4::timestamptz, $4::timestamptz) returning id";
         let now = chrono::Utc::now().to_rfc3339();
         let row: (i64,) = sqlx::query_as::<sqlx::Any, (i64,)>(sql)
             .bind(tenant_id)
@@ -216,7 +216,7 @@ impl AuthenticationRepo {
     ) -> Result<(), AppError> {
         let sql = "insert into sys_user_credentials \
                    (tenant_id, user_id, identity_type, identifier, credential_type, credential, is_primary, status, created_at, updated_at) \
-                   values ($1, $2, 'USERNAME', $3, 'PASSWORD_HASH', $4, true, 'ENABLED', $5, $5)";
+                   values ($1, $2, 'USERNAME', $3, 'PASSWORD_HASH', $4, true, 'ENABLED', $5::timestamptz, $5::timestamptz)";
         let now = chrono::Utc::now().to_rfc3339();
         sqlx::query::<sqlx::Any>(sql)
             .bind(tenant_id)
@@ -232,4 +232,89 @@ impl AuthenticationRepo {
             })?;
         Ok(())
     }
+// ===================== 找回/重置密码 =====================
+
+/// 按 EMAIL 凭证查用户（不存在返回 None，调用方做防枚举静默处理）。
+pub async fn find_user_id_by_email_credential(
+    &self,
+    identifier: &str,
+) -> Result<Option<(i64, i64)>, AppError> {
+    // 返回 (tenant_id, user_id)
+    let sql = "select tenant_id, user_id from sys_user_credentials \
+               where identity_type = 'EMAIL' and identifier = $1 and status = 'ENABLED' and deleted_at is null \
+               limit 1";
+    let row: Option<(i64, i64)> =
+        sqlx::query_as::<sqlx::Any, (i64, i64)>(sql)
+            .bind(identifier)
+            .fetch_optional(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "query email credential failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+    Ok(row)
+}
+
+/// 查用户的 USERNAME 凭证标识（重置密码定位目标凭证行）。
+pub async fn get_username_identifier(&self, user_id: i64) -> Result<Option<String>, AppError> {
+    let sql = "select identifier from sys_user_credentials \
+               where user_id = $1 and identity_type = 'USERNAME' and deleted_at is null \
+               order by id limit 1";
+    let row: Option<(String,)> = sqlx::query_as::<sqlx::Any, (String,)>(sql)
+        .bind(user_id)
+        .fetch_optional(&self.db)
+        .await
+        .map_err(|e| AppError::Internal {
+            context: "query username credential failed".into(),
+            source: Some(Box::new(e)),
+        })?;
+    Ok(row.map(|r| r.0))
+}
+
+/// 重置 USERNAME 凭证的密码哈希。
+pub async fn update_password_hash(
+    &self,
+    tenant_id: i64,
+    identifier: &str,
+    password_hash: &str,
+) -> Result<u64, AppError> {
+    let sql = "update sys_user_credentials \
+               set credential = $1, updated_at = $2::timestamptz \
+               where tenant_id = $3 and identity_type = 'USERNAME' and identifier = $4 and deleted_at is null";
+    let now = chrono::Utc::now().to_rfc3339();
+    let res = sqlx::query::<sqlx::Any>(sql)
+        .bind(password_hash)
+        .bind(now)
+        .bind(tenant_id)
+        .bind(identifier)
+        .execute(&self.db)
+        .await
+        .map_err(|e| AppError::Internal {
+            context: "update password hash failed".into(),
+            source: Some(Box::new(e)),
+        })?;
+    Ok(res.rows_affected())
+}
+
+/// 第一个启用的 EMAIL 通知渠道（找回密码发信用）。
+#[allow(clippy::type_complexity)]
+pub async fn first_enabled_email_channel(
+    &self,
+) -> Result<Option<(i64, String, i64, String, Option<String>, String, String)>, AppError> {
+    // (id, smtp_host, smtp_port, smtp_username, smtp_password, smtp_from, smtp_tls)
+    let sql = "select id, coalesce(smtp_host,''), coalesce(smtp_port,0), coalesce(smtp_username,''), \
+                      smtp_password, coalesce(smtp_from,''), coalesce(smtp_tls,'START_TLS') \
+               from sys_notification_channels \
+               where type = 'EMAIL' and status = 'ON' and deleted_at is null \
+               order by id limit 1";
+    let row: Option<(i64, String, i64, String, Option<String>, String, String)> =
+        sqlx::query_as::<sqlx::Any, (i64, String, i64, String, Option<String>, String, String)>(sql)
+            .fetch_optional(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "query email channel failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+    Ok(row)
+}
 }

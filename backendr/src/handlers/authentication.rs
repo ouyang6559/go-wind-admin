@@ -1,18 +1,24 @@
 // authentication 模块 handlers。
-// 使用精确的 wire DTO（camelCase），不依赖被误生成的 dto（丢 camelCase 映射）。
+// wire 格式对齐 Go/Kratos：**裸 DTO**（无 envelope）。
+// - LoginRequest/LoginResponse：proto json_name 全部 snake_case（grant_type/access_token/expires_in…）
+// - RegisterUserResponse：userId（camelCase json_name）
+// - Captcha：captchaId/imageBase64/userInput（camelCase json_name）
+// - ForgotPassword：identifier；ResetPasswordByCode：identifier/code/new_password（snake_case）
 // refresh token 以 HttpOnly Cookie 下发（对齐 Kratos），不放入响应体。
 
+use axum::extract::connect_info::ConnectInfo;
 use axum::extract::State;
 use axum::http::header::SET_COOKIE;
 use axum::http::HeaderValue;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
 
 use crate::auth;
 use crate::error::AppError;
 use crate::middleware::Operator;
-use crate::response::ApiResponse;
+use crate::response::{json_empty, json_ok};
 use crate::services::authentication::AuthenticationService;
 use crate::state::AppState;
 
@@ -23,34 +29,38 @@ const REFRESH_COOKIE_PATH: &str = "/admin/v1/refresh-token";
 // ---------- 请求体 ----------
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct LoginBody {
     pub grant_type: Option<String>,
+    #[serde(default, alias = "clientId")]
     pub client_id: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "clientSecret")]
     pub client_secret: Option<String>,
     #[serde(default)]
     pub scope: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "redirectUri")]
     pub redirect_uri: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "userId")]
     pub user_id: Option<i64>,
+    #[serde(default)]
     pub username: Option<String>,
     #[serde(default)]
     pub email: Option<String>,
     #[serde(default)]
     pub mobile: Option<String>,
-    pub password: Option<String>,
     #[serde(default)]
+    pub password: Option<String>,
+    #[serde(default, alias = "refreshToken")]
     pub refresh_token: Option<String>,
     #[serde(default)]
     pub code: Option<String>,
+    #[serde(default, alias = "clientType")]
     pub client_type: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "deviceId")]
     pub device_id: Option<String>,
     #[serde(default)]
     pub jti: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "tenantCode")]
     pub tenant_code: Option<String>,
 }
 
@@ -62,30 +72,49 @@ pub struct VerifyCaptchaBody {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct RegisterBody {
     pub username: String,
     pub password: String,
-    #[serde(default)]
+    #[serde(default, alias = "tenant_code")]
     pub tenant_code: String,
     #[serde(default)]
     pub email: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "clientType")]
     pub client_type: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ForgotPasswordBody {
+    pub identifier: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct ResetPasswordByCodeBody {
+    pub identifier: String,
+    pub code: String,
+    pub new_password: String,
 }
 
 // ---------- 响应体 ----------
 
+/// 对齐 LoginResponse：非零值才输出（protojson 省略零值/未设置字段）。
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct LoginResp {
     pub token_type: String,
     pub access_token: String,
-    pub expires_in: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_in: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub refresh_expires_in: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mfa_operation_id: Option<String>,
 }
 
@@ -97,7 +126,6 @@ pub struct CaptchaResp {
 }
 
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct VerifyCaptchaResp {
     pub valid: bool,
 }
@@ -143,12 +171,11 @@ fn set_refresh_cookies(
 fn build_login_response(
     issue: crate::services::authentication::TokenIssue,
 ) -> (LoginResp, String) {
-    let expires_in = auth::ACCESS_TOKEN_TTL.to_string();
     (
         LoginResp {
-            token_type: "Bearer".to_string(),
+            token_type: "bearer".to_string(),
             access_token: issue.pair.access_token.clone(),
-            expires_in: expires_in.clone(),
+            expires_in: Some(auth::ACCESS_TOKEN_TTL.to_string()),
             refresh_token: None,
             scope: None,
             refresh_expires_in: None,
@@ -166,10 +193,10 @@ pub async fn authentication_generate_captcha(
 ) -> Result<impl IntoResponse, AppError> {
     let service = AuthenticationService::from_state(&state)?;
     let (captcha_id, image_base64) = service.generate_captcha().await?;
-    Ok(Json(ApiResponse::ok(CaptchaResp {
+    Ok(json_ok(CaptchaResp {
         captcha_id,
         image_base64,
-    })))
+    }))
 }
 
 pub async fn authentication_verify_captcha(
@@ -178,11 +205,12 @@ pub async fn authentication_verify_captcha(
 ) -> Result<impl IntoResponse, AppError> {
     let service = AuthenticationService::from_state(&state)?;
     let valid = service.verify_captcha(&body.captcha_id, &body.user_input).await?;
-    Ok(Json(ApiResponse::ok(VerifyCaptchaResp { valid })))
+    Ok(json_ok(VerifyCaptchaResp { valid }))
 }
 
 pub async fn authentication_login(
     State(state): State<AppState>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: axum::http::HeaderMap,
     Json(body): Json<LoginBody>,
 ) -> Result<Response, AppError> {
@@ -207,6 +235,11 @@ pub async fn authentication_login(
         .get("X-Captcha-Value")
         .and_then(|v| v.to_str().ok())
         .map(str::to_string);
+    let ua = headers
+        .get(axum::http::header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
 
     let service = AuthenticationService::from_state(&state)?;
     let issue = service
@@ -219,11 +252,13 @@ pub async fn authentication_login(
             body.client_type.as_deref(),
             captcha_id.as_deref(),
             captcha_value.as_deref(),
+            &peer.ip().to_string(),
+            &ua,
         )
         .await?;
 
     let (resp, refresh_token) = build_login_response(issue);
-    let mut response = Json(ApiResponse::ok(resp)).into_response();
+    let mut response = json_ok(resp).into_response();
     set_refresh_cookies(&mut response, &headers, &refresh_token, auth::REFRESH_TOKEN_TTL);
     Ok(response)
 }
@@ -233,8 +268,10 @@ pub async fn authentication_logout(
     operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
     let service = AuthenticationService::from_state(&state)?;
-    service.logout(&operator.client_type, operator.user_id).await?;
-    Ok(Json(ApiResponse::ok(serde_json::Value::Null)))
+    service
+        .logout(&operator.client_type, operator.user_id)
+        .await?;
+    Ok(json_empty())
 }
 
 pub async fn authentication_refresh_token(
@@ -252,13 +289,18 @@ pub async fn authentication_refresh_token(
         .unwrap_or("");
     let refresh_token = extract_refresh_cookie(cookie);
 
+    // 旧 refresh token 若已被吊销（强制下线/改密），拒绝刷新
     let service = AuthenticationService::from_state(&state)?;
+    let claims = auth::verify_refresh_token(&state.jwt_secret, &refresh_token)?;
+    if auth::is_jti_blacklisted(&state, &claims.jti).await {
+        return Err(AppError::Unauthorized);
+    }
     let issue = service
         .refresh_token(&refresh_token, body.client_type.as_deref())
         .await?;
 
     let (resp, new_refresh) = build_login_response(issue);
-    let mut response = Json(ApiResponse::ok(resp)).into_response();
+    let mut response = json_ok(resp).into_response();
     set_refresh_cookies(&mut response, &headers, &new_refresh, auth::REFRESH_TOKEN_TTL);
     Ok(response)
 }
@@ -276,7 +318,27 @@ pub async fn authentication_register_user(
             body.email.as_deref(),
         )
         .await?;
-    Ok(Json(ApiResponse::ok(RegisterResp { user_id })))
+    Ok(json_ok(RegisterResp { user_id }))
+}
+
+pub async fn authentication_forgot_password(
+    State(state): State<AppState>,
+    Json(body): Json<ForgotPasswordBody>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = AuthenticationService::from_state(&state)?;
+    service.forgot_password(&body.identifier).await?;
+    Ok(json_empty())
+}
+
+pub async fn authentication_reset_password_by_code(
+    State(state): State<AppState>,
+    Json(body): Json<ResetPasswordByCodeBody>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = AuthenticationService::from_state(&state)?;
+    service
+        .reset_password_by_code(&body.identifier, &body.code, &body.new_password)
+        .await?;
+    Ok(json_empty())
 }
 
 fn extract_refresh_cookie(cookie_header: &str) -> String {

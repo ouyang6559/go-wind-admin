@@ -35,3 +35,6 @@ pub mod task;
 pub mod tenant;
 pub mod user;
 pub mod user_profile;
+pub mod notification_channel;
+pub mod script;
+pub mod script_log;

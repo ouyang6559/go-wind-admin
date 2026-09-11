@@ -18,6 +18,11 @@ const CAPTCHA_ENABLED: bool = true;
 const CAPTCHA_REDIS_PREFIX: &str = "gowind:captcha:";
 /// 验证码有效期（秒）
 const CAPTCHA_TTL_SECS: u64 = 300;
+/// 密码重置验证码 Redis 前缀（对齐 Go `gowind:vcode:reset_password:{identifier}`）
+const RESET_VCODE_PREFIX: &str = "gowind:vcode:reset_password:";
+/// 验证码有效期：10 分钟
+const RESET_VCODE_TTL: u64 = 600;
+
 
 pub struct AuthenticationService {
     pub repo: AuthenticationRepo,
@@ -118,6 +123,8 @@ impl AuthenticationService {
         req_client_type: Option<&str>,
         captcha_id: Option<&str>,
         captcha_value: Option<&str>,
+        login_ip: &str,
+        login_ua: &str,
     ) -> Result<TokenIssue, AppError> {
         // 验证码闸门：Redis 已配置时强制校验（verify-and-delete 单次有效）
         if CAPTCHA_ENABLED && self.state.redis.is_some() {
@@ -218,7 +225,7 @@ impl AuthenticationService {
             &refresh_jti,
         )?;
 
-        // 记录会话 + 更新最近登录
+        // 记录会话 + 会话元数据（在线会话列表用）+ 更新最近登录
         let _ = auth::record_session(
             &self.state,
             &client_type,
@@ -226,7 +233,22 @@ impl AuthenticationService {
             &[pair.access_jti.clone(), pair.refresh_jti.clone()],
         )
         .await;
-        let _ = self.repo.update_last_login(user.id, "").await;
+        let _ = auth::record_session_meta(
+            &self.state,
+            &auth::SessionMeta {
+                jti: pair.access_jti.clone(),
+                client_type: client_type.clone(),
+                uid: user.id,
+                username: user.username.clone(),
+                tenant_id: user.tenant_id,
+                ip: login_ip.to_string(),
+                ua: login_ua.to_string(),
+                dev: device_id.unwrap_or("").to_string(),
+                login_at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            },
+        )
+        .await;
+        let _ = self.repo.update_last_login(user.id, login_ip).await;
 
         Ok(TokenIssue {
             pair,
@@ -234,9 +256,9 @@ impl AuthenticationService {
         })
     }
 
-    /// 登出（撤销该用户全部会话，等效于撤销所有令牌）。
+    /// 登出：撤销该用户该客户端的全部会话（黑名单全部 jti 含当前令牌）。
     pub async fn logout(&self, client_type: &str, user_id: i64) -> Result<(), AppError> {
-        auth::revoke_sessions(&self.state, client_type, user_id).await
+        auth::revoke_all_sessions(&self.state, client_type, user_id, "").await
     }
 
     /// 刷新令牌（自描述 refresh token 独立鉴权）。
@@ -276,13 +298,28 @@ impl AuthenticationService {
             &refresh_jti,
         )?;
 
-        // 撤销旧会话并记录新会话
-        let _ = auth::revoke_sessions(&self.state, &client_type, user.id).await;
+        // 撤销旧会话（黑名单旧 jti，旧 refresh token 立即失效）并记录新会话
+        let _ = auth::revoke_all_sessions(&self.state, &client_type, user.id, "").await;
         let _ = auth::record_session(
             &self.state,
             &client_type,
             user.id,
             &[pair.access_jti.clone(), pair.refresh_jti.clone()],
+        )
+        .await;
+        let _ = auth::record_session_meta(
+            &self.state,
+            &auth::SessionMeta {
+                jti: pair.access_jti.clone(),
+                client_type: client_type.clone(),
+                uid: user.id,
+                username: user.username.clone(),
+                tenant_id: user.tenant_id,
+                ip: "-".to_string(),
+                ua: "-".to_string(),
+                dev: String::new(),
+                login_at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            },
         )
         .await;
 
@@ -334,7 +371,150 @@ impl AuthenticationService {
             .await?;
         Ok(user_id)
     }
+
+// ===================== 找回/重置密码 =====================
+
+/// 忘记密码：签发 6 位重置验证码并发送邮件。
+/// 防枚举：identifier 无 EMAIL 凭证或无可用邮件渠道时静默成功（仅记日志）。
+pub async fn forgot_password(&self, identifier: &str) -> Result<(), AppError> {
+    let identifier = identifier.trim();
+    if identifier.is_empty() {
+        return Err(AppError::Validation("identifier is required".into()));
+    }
+
+    let cred = self.repo.find_user_id_by_email_credential(identifier).await?;
+    let Some((_tenant_id, user_id)) = cred else {
+        tracing::warn!(identifier, "forgot-password: no EMAIL credential, silently ok");
+        return Ok(());
+    };
+
+    // 生成 6 位数字验证码（密码学随机，单次有效 + 10 分钟 TTL）
+    use rand::Rng;
+    let code = format!("{:06}", rand::thread_rng().gen_range(0..1_000_000u32));
+
+    if let Some(client) = &self.state.redis {
+        use redis::AsyncCommands;
+        let mut con = client.get_multiplexed_tokio_connection().await.map_err(|e| {
+            AppError::Internal {
+                context: "redis connect failed".into(),
+                source: Some(Box::new(e)),
+            }
+        })?;
+        let key = format!("{RESET_VCODE_PREFIX}{identifier}");
+        let _: () = con.set_ex(&key, code.as_str(), RESET_VCODE_TTL).await.map_err(|e| {
+            AppError::Internal {
+                context: "save reset vcode failed".into(),
+                source: Some(Box::new(e)),
+            }
+        })?;
+    } else {
+        return Err(AppError::Internal {
+            context: "redis not configured; cannot issue reset code".into(),
+            source: None,
+        });
+    }
+
+    // 读取首个启用 EMAIL 渠道发送（无渠道仅记日志，静默成功防枚举）
+    let channel = self.repo.first_enabled_email_channel().await?;
+    let Some((_id, host, port, username, password, from, tls)) = channel else {
+        tracing::warn!(identifier, "forgot-password: no enabled EMAIL channel configured");
+        return Ok(());
+    };
+
+    let smtp_password = match password {
+        Some(p) if !p.is_empty() => crate::crypto::decrypt_channel_secret(&p)?,
+        _ => String::new(),
+    };
+    let cfg = crate::mailer::SmtpConfig {
+        host,
+        port: port as u16,
+        username,
+        password: smtp_password,
+        from,
+        tls,
+    };
+    let subject = "GoWind Admin 密码重置验证码";
+    let body = format!("您的密码重置验证码是：{code}，10 分钟内有效。");
+    if let Err(e) = crate::mailer::send_mail(&cfg, identifier, subject, &body).await {
+        // 发送失败：验证码已签发但邮件不可达。对外静默成功（防枚举），日志带出原始错误。
+        tracing::error!(error = %e, identifier, "forgot-password: send mail failed");
+        return Ok(());
+    }
+    let _ = user_id;
+    Ok(())
 }
+
+/// 按验证码重置密码：验码（消费型）→ 解密新密码 → 更新 USERNAME 凭证 → 撤销全部会话。
+pub async fn reset_password_by_code(
+    &self,
+    identifier: &str,
+    code: &str,
+    new_password: &str,
+) -> Result<(), AppError> {
+    let identifier = identifier.trim();
+    if identifier.is_empty() || code.trim().is_empty() {
+        return Err(AppError::Validation("invalid or expired verification code".into()));
+    }
+
+    // 消费型验码：GET 比对成功即 DEL（单次有效）
+    let client = self.state.redis.as_ref().ok_or_else(|| AppError::Internal {
+        context: "redis not configured".into(),
+        source: None,
+    })?;
+    use redis::AsyncCommands;
+    let mut con = client.get_multiplexed_tokio_connection().await.map_err(|e| {
+        AppError::Internal {
+            context: "redis connect failed".into(),
+            source: Some(Box::new(e)),
+        }
+    })?;
+    let key = format!("{RESET_VCODE_PREFIX}{identifier}");
+    let stored: Option<String> = con.get(&key).await.map_err(|e| AppError::Internal {
+        context: "get reset vcode failed".into(),
+        source: Some(Box::new(e)),
+    })?;
+    match stored {
+        Some(v) if v == code.trim() => {
+            let _: () = con.del(&key).await.map_err(|e| AppError::Internal {
+                context: "consume reset vcode failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+        }
+        _ => {
+            return Err(AppError::Validation("invalid or expired verification code".into()));
+        }
+    }
+
+    // 定位用户与 USERNAME 凭证
+    let Some((tenant_id, user_id)) = self.repo.find_user_id_by_email_credential(identifier).await? else {
+        return Err(AppError::Validation("invalid or expired verification code".into()));
+    };
+    let Some(username_ident) = self.repo.get_username_identifier(user_id).await? else {
+        return Err(AppError::NotFound("user credential not found".into()));
+    };
+
+    // 解密传输密码（AES，与登录同规）并落新哈希
+    let plain = crate::crypto::decrypt_transport_secret(new_password)?;
+    let hash = bcrypt::hash(&plain, bcrypt::DEFAULT_COST).map_err(|e| AppError::Internal {
+        context: "hash password failed".into(),
+        source: Some(Box::new(e)),
+    })?;
+    let updated = self
+        .repo
+        .update_password_hash(tenant_id, &username_ident, &hash)
+        .await?;
+    if updated == 0 {
+        return Err(AppError::NotFound("user credential not found".into()));
+    }
+
+    // 撤销该用户全部客户端类型的会话（admin/app）
+    for ct in ["admin", "app"] {
+        let _ = auth::revoke_all_sessions(&self.state, ct, user_id, "").await;
+    }
+    Ok(())
+}
+}
+
 
 /// 登录成功的结果（handler 负责把 refresh token 以 HttpOnly cookie 下发）
 pub struct TokenIssue {

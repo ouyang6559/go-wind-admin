@@ -218,3 +218,209 @@ pub async fn revoke_sessions(state: &AppState, client_type: &str, uid: i64) -> R
     })?;
     Ok(())
 }
+// ===================== 会话元数据与吊销（在线会话模块基础） =====================
+
+/// 单条在线会话元数据（对齐 Go `us:` 键存的内容，另附定位字段）。
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SessionMeta {
+    pub jti: String,
+    #[serde(rename = "clientType")]
+    pub client_type: String,
+    pub uid: i64,
+    pub username: String,
+    #[serde(rename = "tenantId")]
+    pub tenant_id: i64,
+    pub ip: String,
+    pub ua: String,
+    pub dev: String,
+    /// 登录时间（RFC3339）
+    #[serde(rename = "loginAt")]
+    pub login_at: String,
+}
+
+/// 会话元数据 key（v1：按 access jti 一会话一条；刷新轮换后 loginAt 重新计时）。
+fn session_meta_key(client_type: &str, uid: i64, jti: &str) -> String {
+    format!("gw:session:meta:{client_type}:{uid}:{jti}")
+}
+
+/// 令牌黑名单 key（存在即视为已吊销，TTL 覆盖令牌剩余有效期）。
+fn blacklist_key(jti: &str) -> String {
+    format!("gw:bl:{jti}")
+}
+
+async fn redis_conn(state: &AppState) -> Result<redis::aio::MultiplexedConnection, AppError> {
+    let client = state.redis.as_ref().ok_or_else(|| AppError::Internal {
+        context: "redis not configured".into(),
+        source: None,
+    })?;
+    client
+        .get_multiplexed_tokio_connection()
+        .await
+        .map_err(|e| AppError::Internal {
+            context: "redis connect failed".into(),
+            source: Some(Box::new(e)),
+        })
+}
+
+/// 记录会话元数据（失败由调用方决定是否阻断；登录链路中不阻断）。
+pub async fn record_session_meta(
+    state: &AppState,
+    meta: &SessionMeta,
+) -> Result<(), AppError> {
+    let payload = serde_json::to_string(meta).map_err(|e| AppError::Internal {
+        context: "serialize session meta failed".into(),
+        source: Some(Box::new(e)),
+    })?;
+    let mut con = redis_conn(state).await?;
+    use redis::AsyncCommands;
+    let key = session_meta_key(&meta.client_type, meta.uid, &meta.jti);
+    let _: () = con
+        .set_ex(&key, payload, REFRESH_TOKEN_TTL as u64)
+        .await
+        .map_err(|e| AppError::Internal {
+            context: "redis set session meta failed".into(),
+            source: Some(Box::new(e)),
+        })?;
+    Ok(())
+}
+
+/// 将 jti 加入黑名单（吊销令牌）。
+pub async fn blacklist_jti(state: &AppState, jti: &str, ttl_secs: i64) -> Result<(), AppError> {
+    let mut con = redis_conn(state).await?;
+    use redis::AsyncCommands;
+    let _: () = con
+        .set_ex(blacklist_key(jti), "1", ttl_secs.max(1) as u64)
+        .await
+        .map_err(|e| AppError::Internal {
+            context: "redis blacklist failed".into(),
+            source: Some(Box::new(e)),
+        })?;
+    Ok(())
+}
+
+/// 查询 jti 是否已被吊销（redis 不可用时跳过检查，返回 false）。
+pub async fn is_jti_blacklisted(state: &AppState, jti: &str) -> bool {
+    if state.redis.is_none() {
+        return false;
+    }
+    let Ok(mut con) = redis_conn(state).await else {
+        return false;
+    };
+    use redis::AsyncCommands;
+    let exists: Result<bool, _> = con.exists(blacklist_key(jti)).await;
+    exists.unwrap_or(false)
+}
+
+/// 强制下线单个会话：删 SET 成员 + 删元数据 + 黑名单两个 jti。
+pub async fn revoke_session_by_jti(
+    state: &AppState,
+    client_type: &str,
+    uid: i64,
+    access_jti: &str,
+    refresh_jti: Option<&str>,
+) -> Result<(), AppError> {
+    let mut con = redis_conn(state).await?;
+    use redis::AsyncCommands;
+    let set_key = session_key(client_type, uid);
+    let _: () = con.srem(&set_key, access_jti).await.map_err(|e| {
+        AppError::Internal {
+            context: "redis srem session failed".into(),
+            source: Some(Box::new(e)),
+        }
+    })?;
+    if let Some(rj) = refresh_jti {
+        let _: () = con.srem(&set_key, rj).await.map_err(|e| {
+            AppError::Internal {
+                context: "redis srem refresh session failed".into(),
+                source: Some(Box::new(e)),
+            }
+        })?;
+    }
+    let meta_key = session_meta_key(client_type, uid, access_jti);
+    let _: () = con.del(&meta_key).await.map_err(|e| AppError::Internal {
+        context: "redis del session meta failed".into(),
+        source: Some(Box::new(e)),
+    })?;
+    drop(con);
+    blacklist_jti(state, access_jti, ACCESS_TOKEN_TTL).await?;
+    if let Some(rj) = refresh_jti {
+        blacklist_jti(state, rj, REFRESH_TOKEN_TTL).await?;
+    }
+    Ok(())
+}
+
+/// 枚举全部在线会话元数据（SCAN `gw:session:meta:*`）。
+pub async fn scan_session_metas(state: &AppState) -> Result<Vec<SessionMeta>, AppError> {
+    let mut con = redis_conn(state).await?;
+    let mut metas = Vec::new();
+    let mut cursor: u64 = 0;
+    loop {
+        let (next, keys): (u64, Vec<String>) = redis::cmd("SCAN")
+            .arg(cursor)
+            .arg("MATCH")
+            .arg("gw:session:meta:*")
+            .arg("COUNT")
+            .arg(200)
+            .query_async(&mut con)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "redis scan session metas failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+        if !keys.is_empty() {
+            let values: Vec<Option<String>> = redis::cmd("MGET")
+                .arg(&keys)
+                .query_async(&mut con)
+                .await
+                .map_err(|e| AppError::Internal {
+                    context: "redis mget session metas failed".into(),
+                    source: Some(Box::new(e)),
+                })?;
+            for v in values.into_iter().flatten() {
+                if let Ok(meta) = serde_json::from_str::<SessionMeta>(&v) {
+                    metas.push(meta);
+                }
+            }
+        }
+        cursor = next;
+        if cursor == 0 {
+            break;
+        }
+    }
+    Ok(metas)
+}
+
+/// 撤销某用户某客户端的全部会话：黑名单集合中的全部 jti、删除集合与元数据。
+/// `except_jti` 用于刷新链路（新会话已在调用后写入，不会被本函数覆盖——
+/// 调用顺序为先撤销再记录）。
+pub async fn revoke_all_sessions(
+    state: &AppState,
+    client_type: &str,
+    uid: i64,
+    except_jti: &str,
+) -> Result<(), AppError> {
+    let mut con = redis_conn(state).await?;
+    use redis::AsyncCommands;
+    let set_key = session_key(client_type, uid);
+    let members: Vec<String> = con.smembers(&set_key).await.unwrap_or_default();
+    drop(con);
+    for jti in &members {
+        if jti == except_jti {
+            continue;
+        }
+        // 集合里混合 access/refresh jti，统一按最长 TTL 拉黑以稳妥覆盖
+        let _ = blacklist_jti(state, jti, REFRESH_TOKEN_TTL).await;
+        // 顺带清理元数据
+        if let Ok(mut con2) = redis_conn(state).await {
+            use redis::AsyncCommands;
+            let meta_key = session_meta_key(client_type, uid, jti);
+            let _: Result<(), _> = con2.del(&meta_key).await;
+        }
+    }
+    let mut con = redis_conn(state).await?;
+    let _: () = con.del(&set_key).await.map_err(|e| AppError::Internal {
+        context: "redis del sessions failed".into(),
+        source: Some(Box::new(e)),
+    })?;
+    Ok(())
+}

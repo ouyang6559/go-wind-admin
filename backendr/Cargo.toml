@@ -54,6 +54,8 @@ captcha_rust = "0.1"
 password-hash = "0.5"
 bcrypt = "0.15"
 aes = "0.8"
+aes-gcm = "0.10"
+sha2 = "0.10"
 cbc = { version = "0.1", features = ["alloc"] }
 cipher = "0.4"
 

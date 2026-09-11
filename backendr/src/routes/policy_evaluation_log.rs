@@ -1,6 +1,6 @@
-// policy_evaluation_log 模块路由（prefix: /admin/v1）
+// policy_evaluation_log 模块路由（prefix: /admin/v1）—— 实现统一挂在 handlers::audit_logs
 use axum::Router;
-use crate::handlers::policy_evaluation_log as h;
+use crate::handlers::audit_logs as h;
 use crate::state::AppState;
 
 pub fn build() -> Router<AppState> {
