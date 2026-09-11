@@ -41,6 +41,18 @@ func (l *AuthenticationRefreshTokenLogic) AuthenticationRefreshToken(req *types.
 		return nil, xerr.IncorrectRefreshTokenMsg()
 	}
 
+	// 会话吊销检查：登出/踢下线会删除会话记录，refresh token 随之失效，不再换发新令牌。
+	// 与登录写入一致的 best-effort 语义：Redis 异常时 fail-open（仅记日志），
+	// 仅明确「会话不存在」时拒绝。
+	if claim.ID != "" {
+		exists, serr := l.svcCtx.Session.Exists(l.ctx, claim.UserID, claim.ID)
+		if serr != nil {
+			logx.WithContext(l.ctx).Errorf("check refresh session for user [%d] jti [%s] failed: %v", claim.UserID, claim.ID, serr)
+		} else if !exists {
+			return nil, xerr.IncorrectRefreshTokenMsg()
+		}
+	}
+
 	u, uerr := l.svcCtx.Ent.User.Get(l.ctx, claim.UserID)
 	if uerr != nil {
 		return nil, xerr.IncorrectRefreshTokenMsg()

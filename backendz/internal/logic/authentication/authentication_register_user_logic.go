@@ -84,5 +84,7 @@ func (l *AuthenticationRegisterUserLogic) AuthenticationRegisterUser(req *types.
 		return nil, xerr.ServerErrorMsg("commit tx failed")
 	}
 
-	return &types.RegisterUserResponse{}, nil
+	return &types.RegisterUserResponse{
+		UserId: int64(u.ID),
+	}, nil
 }
