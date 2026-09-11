@@ -18,6 +18,7 @@ import (
 	"github.com/tx7do/go-utils/mapper"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/permission"
 	"go-wind-admin/app/admin/service/internal/data/ent/permissiongroup"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 
@@ -388,9 +389,35 @@ func (r *PermissionGroupRepo) Delete(ctx context.Context, req *permissionV1.Dele
 		return permissionV1.ErrorBadRequest("invalid parameter")
 	}
 
+	// 有子分组时拒绝：DB 对直接子级是 OnDelete SetNull，不拦会把子分组
+	// 静默提升为根，且其 path 残留已删节点的幽灵段。先删子分组再删本组。
+	childCnt, err := r.entClient.Client().PermissionGroup.Query().
+		Where(permissiongroup.ParentIDEQ(req.GetId())).
+		Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "count child permission groups failed: %s", err.Error())
+		return permissionV1.ErrorInternalServerError("count child permission groups failed")
+	}
+	if childCnt > 0 {
+		return permissionV1.ErrorBadRequest("child permission groups exist, delete them first")
+	}
+
+	// 分组下还有权限点时拒绝（group_id 可空，静默置空会丢权限点的分组归属）。
+	// 先把权限点转移或删除，再删分组。
+	permCnt, err := r.entClient.Client().Permission.Query().
+		Where(permission.GroupIDEQ(req.GetId())).
+		Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "count permissions in permission group failed: %s", err.Error())
+		return permissionV1.ErrorInternalServerError("count permissions in permission group failed")
+	}
+	if permCnt > 0 {
+		return permissionV1.ErrorBadRequest("permission points exist in this group, move or delete them first")
+	}
+
 	builder := r.entClient.Client().PermissionGroup.Delete()
 
-	_, err := r.repository.Delete(ctx, builder, func(s *sql.Selector) {
+	_, err = r.repository.Delete(ctx, builder, func(s *sql.Selector) {
 		s.Where(sql.EQ(permissiongroup.FieldID, req.GetId()))
 	})
 	if err != nil {

@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
+	"go-wind-admin/app/admin/service/internal/data/ent/position"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
@@ -29,6 +31,8 @@ import (
 type OrgUnitRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
 	log       *bLogger.Helper
+
+	userOrgUnitRepo *UserOrgUnitRepo
 
 	mapper          *mapper.CopierMapper[identityV1.OrgUnit, ent.OrgUnit]
 	typeConverter   *mapper.EnumTypeConverter[identityV1.OrgUnit_Type, orgunit.Type]
@@ -44,10 +48,11 @@ type OrgUnitRepo struct {
 	]
 }
 
-func NewOrgUnitRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client]) *OrgUnitRepo {
+func NewOrgUnitRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client], userOrgUnitRepo *UserOrgUnitRepo) *OrgUnitRepo {
 	repo := &OrgUnitRepo{
 		log:             ctx.NewLoggerHelper("org-unit/repo/admin-service"),
 		entClient:       entClient,
+		userOrgUnitRepo: userOrgUnitRepo,
 		mapper:          mapper.NewCopierMapper[identityV1.OrgUnit, ent.OrgUnit](),
 		typeConverter:   mapper.NewEnumTypeConverter[identityV1.OrgUnit_Type, orgunit.Type](identityV1.OrgUnit_Type_name, identityV1.OrgUnit_Type_value),
 		statusConverter: mapper.NewEnumTypeConverter[identityV1.OrgUnit_Status, orgunit.Status](identityV1.OrgUnit_Status_name, identityV1.OrgUnit_Status_value),
@@ -466,12 +471,50 @@ func (r *OrgUnitRepo) Delete(ctx context.Context, req *identityV1.DeleteOrgUnitR
 
 	//r.log.Info(ctx, "orgunits childrenIds to delete: ", childrenIds)
 
+	// 岗位硬性挂在单元上（org_unit_id NOT NULL，且无 DB 外键兜底）：子树内
+	// 还有岗位时拒绝删除，避免岗位随级联静默消失或产生悬挂引用。
+	// 先删除/转移子树内的岗位，再删单元。
+	posCnt, err := r.entClient.Client().Position.Query().
+		Where(position.OrgUnitIDIn(childrenIds...)).
+		Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "count positions under org units failed: %s", err.Error())
+		return identityV1.ErrorInternalServerError("count positions under org units failed")
+	}
+	if posCnt > 0 {
+		return identityV1.ErrorBadRequest(fmt.Sprintf("exist %d positions under the org unit subtree, delete or move them first", posCnt))
+	}
+
 	var ids []any
 	for _, id := range childrenIds {
 		ids = append(ids, id)
 	}
 
-	builder := r.entClient.Client().OrgUnit.Delete()
+	var tx *ent.Tx
+	tx, err = r.entClient.Client().Tx(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "start transaction failed: %s", err.Error())
+		return identityV1.ErrorInternalServerError("start transaction failed")
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				r.log.Errorf(ctx, "transaction rollback failed: %s", rollbackErr.Error())
+			}
+			return
+		}
+		if commitErr := tx.Commit(); commitErr != nil {
+			r.log.Errorf(ctx, "transaction commit failed: %s", commitErr.Error())
+			err = identityV1.ErrorInternalServerError("transaction commit failed")
+		}
+	}()
+
+	// 用户↔单元是纯绑定关系：随子树删除清理绑定行，用户本身不受影响
+	if err = r.userOrgUnitRepo.CleanRelationsByOrgUnitIDs(ctx, tx, childrenIds); err != nil {
+		return err
+	}
+
+	builder := tx.OrgUnit.Delete()
 
 	_, err = r.repository.Delete(ctx, builder, func(s *sql.Selector) {
 		s.Where(sql.In(orgunit.FieldID, ids...))

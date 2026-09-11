@@ -89,7 +89,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	loginPolicyRepo := data.NewLoginPolicyRepo(ctx, entClient)
 
 	// 组织架构与租户
-	orgUnitRepo := data.NewOrgUnitRepo(ctx, entClient)
+	orgUnitRepo := data.NewOrgUnitRepo(ctx, entClient, userOrgUnitRepo)
 	positionRepo := data.NewPositionRepo(ctx, entClient)
 	tenantRepo := data.NewTenantRepo(ctx, entClient)
 	tenantUsageRepo := data.NewTenantUsageRepo(ctx, entClient, authenticator)
