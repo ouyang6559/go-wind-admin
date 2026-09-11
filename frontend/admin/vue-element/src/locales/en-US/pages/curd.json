@@ -45,7 +45,8 @@
       "csv": "CSV (Comma Separated)(*.csv)",
       "html": "Web Page(*.html)",
       "xml": "XML Data(*.xml)",
-      "txt": "Text File(Tab Delimited)(*.txt)"
+      "txt": "Text File(Tab Delimited)(*.txt)",
+      "xlsx": "Excel Workbook(*.xlsx)"
     }
   },
   "import": {
@@ -71,6 +72,7 @@
     "noImportsAction": "importsAction not configured",
     "noDataParsed": "No data parsed",
     "readFileFailed": "Failed to read file",
+    "importFailed": "Import failed",
     "noModifyAction": "modifyAction not configured",
     "noExportAction": "exportAction not configured",
     "operationSuccess": "Operation successful"

@@ -30,6 +30,8 @@
     "disable": "禁用"
   },
   "button": {
+    "exportFormatCsv": "CSV (逗号分隔)",
+    "exportFormatXlsx": "Excel 工作簿",
     "ok": "确定",
     "confirm": "确认",
     "cancel": "取消",

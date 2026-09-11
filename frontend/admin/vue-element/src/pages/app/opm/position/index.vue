@@ -38,17 +38,33 @@ import {
   statusToName,
   fetchListOrgUnits,
   fetchListPositions,
+  useCreatePosition,
   useDeletePosition,
+  createImportsAction,
+  generateImportTemplate,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
 
 const { mutateAsync: deletePosition } = useDeletePosition();
+const { mutateAsync: createPosition } = useCreatePosition();
 
 const pageRef = ref();
 const drawerRef = ref();
 
-const pageConfig = computed<ProPageConfig>(() => ({
+const pageConfig = computed<ProPageConfig>(() => {
+  // Excel 导入字段清单：与抽屉表单一致，唯排除 orgUnitId（外键需名称解析，属后续演进）。
+  const importFields = [
+    { label: $t("pages.position.name"), prop: "name" },
+    { label: $t("pages.position.code"), prop: "code" },
+    { label: $t("pages.position.type"), prop: "type" },
+    { label: $t("common.table.status"), prop: "status" },
+    { label: $t("pages.position.headcount"), prop: "headcount" },
+    { label: $t("common.table.sortOrder"), prop: "sortOrder" },
+    { label: $t("pages.position.description"), prop: "description" },
+    { label: $t("common.table.remark"), prop: "remark" },
+  ];
+  return {
   skeleton: true,
   search: {
     grid: true,
@@ -123,9 +139,11 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deletePosition({ id: ids as any });
     },
+    importsAction: createImportsAction(importFields, (values) => createPosition(values)),
+    importTemplate: () => generateImportTemplate(importFields),
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "filter"],
+    defaultToolbar: ["refresh", "imports", "filter"],
     tableAttrs: { border: true, stripe: true },
     emptyActionText: "common.button.add",
     columns: [
@@ -174,7 +192,8 @@ const pageConfig = computed<ProPageConfig>(() => ({
       },
     ],
   },
-}));
+  };
+});
 
 function handleAdd() {
   drawerRef.value?.open({ create: true });

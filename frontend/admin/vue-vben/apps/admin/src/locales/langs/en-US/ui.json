@@ -30,6 +30,8 @@
     "disable": "Disable"
   },
   "button": {
+    "exportFormatCsv": "CSV (Comma Separated)",
+    "exportFormatXlsx": "Excel Workbook",
     "ok": "OK",
     "confirm": "Confirm",
     "cancel": "Cancel",
