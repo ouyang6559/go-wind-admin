@@ -1595,6 +1595,10 @@ func (m *SyncMenusRequest) validate(all bool) error {
 
 	}
 
+	if m.Mode != nil {
+		// no validation rules for Mode
+	}
+
 	if len(errors) > 0 {
 		return SyncMenusRequestMultiError(errors)
 	}

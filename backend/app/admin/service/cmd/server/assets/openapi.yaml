@@ -7076,6 +7076,10 @@ components:
                     type: array
                     items:
                         type: string
+                hiddenFields:
+                    type: array
+                    items:
+                        type: string
         InternalMessage:
             type: object
             properties:
@@ -7559,6 +7563,10 @@ components:
             type: object
             properties:
                 codes:
+                    type: array
+                    items:
+                        type: string
+                hiddenFields:
                     type: array
                     items:
                         type: string
@@ -9348,6 +9356,11 @@ components:
                         type: integer
                         format: uint32
                     description: SELECTED_UNITS 档位下自定义授权的组织单元ID列表
+                fieldPermissions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/RoleFieldPermission'
+                    description: 字段权限配置（角色在各资源上隐藏的字段集，黑名单语义）
                 tenantId:
                     type: integer
                     description: 租户ID，0代表系统全局角色
@@ -9380,6 +9393,18 @@ components:
                     description: 删除时间
                     format: date-time
             description: 角色
+        RoleFieldPermission:
+            type: object
+            properties:
+                resource:
+                    type: string
+                    description: 资源名（proto 消息名，如 User）
+                hiddenFields:
+                    type: array
+                    items:
+                        type: string
+                    description: 隐藏字段列表（proto 字段 json_name，如 email）
+            description: 角色字段权限条目：角色在某资源上隐藏的字段集（黑名单语义）
         SMSResult:
             type: object
             properties:
@@ -9657,6 +9682,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/Menu'
+                mode:
+                    enum:
+                        - REPLACE
+                        - MERGE
+                    type: string
+                    description: 同步模式，缺省为 REPLACE（兼容旧客户端）
+                    format: enum
         TOTPResult:
             type: object
             properties:

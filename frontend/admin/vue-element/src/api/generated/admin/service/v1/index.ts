@@ -229,9 +229,11 @@ export type permissionservicev1_MenuMeta = {
 // 查询权限码列表 - 回应
 export type ListPermissionCodeResponse = {
   codes: string[] | undefined;
+  hiddenFields: string[] | undefined;
 };
 
 export type InitialContextResponse = {
+  hiddenFields: string[] | undefined;
   menus: permissionservicev1_MenuRouteItem[] | undefined;
   permissions: string[] | undefined;
 };
@@ -4524,8 +4526,13 @@ export type permissionservicev1_DeleteMenuRequest = {
 
 export type permissionservicev1_SyncMenusRequest = {
   items: permissionservicev1_Menu[] | undefined;
+  mode?: permissionservicev1_SyncMenusRequest_Mode;
 };
 
+// 同步模式
+export type permissionservicev1_SyncMenusRequest_Mode =
+  | 'MERGE'
+  | 'REPLACE';
 // MFA（多因素认证）服务 HTTP 桥接。
 // 管理侧 RPC（GetMFAStatus/ListEnrolledMethods/StartEnrollMethod/ConfirmEnrollMethod/
 // DisableMFA/RevokeMFADevice）需登录态，走正常 auth+authz 中间件，不加 security:{}。
@@ -7890,6 +7897,7 @@ export type permissionservicev1_Role = {
   deletedAt?: wellKnownTimestamp;
   deletedBy?: number;
   description?: string;
+  fieldPermissions: permissionservicev1_RoleFieldPermission[] | undefined;
   id?: number;
   isProtected?: boolean;
   name?: string;
@@ -7921,6 +7929,12 @@ export type identityservicev1_DataScope =
   | 'SELF'
   | 'UNIT_AND_CHILD'
   | 'UNIT_ONLY';
+// 角色字段权限条目：角色在某资源上隐藏的字段集（黑名单语义）
+export type permissionservicev1_RoleFieldPermission = {
+  hiddenFields: string[] | undefined;
+  resource: string | undefined;
+};
+
 // 角色数据 - 请求
 export type permissionservicev1_GetRoleRequest = {
   code?: string;

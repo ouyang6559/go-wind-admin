@@ -169,7 +169,20 @@
       "create": "创建角色"
     },
     "dataScope": "数据权限范围",
-    "orgUnits": "授权组织单元"
+    "orgUnits": "授权组织单元",
+    "fieldPerm": {
+      "title": "字段权限",
+      "hint": "勾选的字段对该角色用户不可见：列表/详情不再显示，且不能通过创建/编辑写入（重新登录后生效）。",
+      "field": {
+        "email": "邮箱",
+        "mobile": "手机号",
+        "telephone": "固定电话",
+        "address": "地址",
+        "region": "区域",
+        "lastLoginAt": "最后登录时间",
+        "lastLoginIp": "最后登录 IP"
+      }
+    }
   },
   "permission": {
     "moduleName": "权限",
@@ -241,7 +254,7 @@
       "sync": "同步菜单"
     },
     "text": {
-      "do_you_want_sync_menus": "将把本地静态路由全量同步到后端，可能会覆盖已有菜单数据，是否继续？"
+      "do_you_want_sync_menus": "将把本地静态路由增量合并到后端菜单：按路径新增缺失菜单、原位更新已有菜单（保留菜单 ID 与角色授权）；后端多出的菜单会保留。确定继续？"
     }
   },
   "orgUnit": {

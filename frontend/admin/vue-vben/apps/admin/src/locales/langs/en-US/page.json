@@ -169,7 +169,20 @@
       "create": "Create Role"
     },
     "dataScope": "Data Scope",
-    "orgUnits": "Authorized Org Units"
+    "orgUnits": "Authorized Org Units",
+    "fieldPerm": {
+      "title": "Field Permissions",
+      "hint": "Checked fields are hidden for users with this role: removed from list/detail views and stripped from create/update payloads (takes effect after re-login).",
+      "field": {
+        "email": "Email",
+        "mobile": "Mobile",
+        "telephone": "Telephone",
+        "address": "Address",
+        "region": "Region",
+        "lastLoginAt": "Last Login At",
+        "lastLoginIp": "Last Login IP"
+      }
+    }
   },
   "permission": {
     "moduleName": "Permission",
@@ -241,7 +254,7 @@
       "sync": "Sync Menus"
     },
     "text": {
-      "do_you_want_sync_menus": "This will sync all local static routes to the server, which may overwrite existing menu data. Continue?"
+      "do_you_want_sync_menus": "Menus from the current frontend routes will be merged into the server: missing menus are added and existing ones updated in place (menu IDs and role-menu assignments are preserved); extra menus on the server are kept. Continue?"
     }
   },
   "orgUnit": {

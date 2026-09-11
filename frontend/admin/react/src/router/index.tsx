@@ -65,17 +65,9 @@ for (const [globPath, module] of Object.entries(rawPageModules)) {
   }
 }
 
-// 自动导入 modules 下的所有路由模块（仅包含业务功能路由）
-const modulesRoutes = import.meta.glob<AppRouteObject[][]>('./modules/**/*.tsx', {
-  eager: true, // 同步加载，确保路由立即生效
-});
-
-// 提取并展平所有模块路由（这些都是相对路径的业务路由）
-const businessRoutes: AppRouteObject[] = Object.values(modulesRoutes).flatMap((module) => {
-  // 模块可能导出 default 或具名导出 (如 dashboardRoutes)
-  const routes = (module as any).default || Object.values(module)[0];
-  return Array.isArray(routes) ? routes : [];
-});
+// 业务模块路由在 ./business-routes.ts 中统一提取（allRoutes 组装与菜单同步共用）
+import { businessRoutes } from './business-routes';
+export { businessRoutes };
 
 // 合并路由：将业务模块路由合并到主布局容器的 children 中
 export const allRoutes: AppRouteObject[] = [

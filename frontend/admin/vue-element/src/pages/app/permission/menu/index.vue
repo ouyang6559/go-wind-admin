@@ -64,7 +64,7 @@
 
 <script lang="ts" setup>
 import { ref } from "vue";
-import { ElTag } from "element-plus";
+import { ElMessage, ElMessageBox, ElTag } from "element-plus";
 import { Icon as IconifyIcon } from "@iconify/vue";
 
 import ProPage from "@/components/Pro/ProPage/index.vue";
@@ -73,6 +73,7 @@ import MenuDrawer from "./menu-drawer.vue";
 
 import {
   buildMenuTree,
+  buildSyncMenusRequest,
   menuTypeToColor,
   menuTypeToName,
   statusList,
@@ -80,12 +81,15 @@ import {
   statusToName,
   fetchListMenus,
   useDeleteMenu,
+  useSyncMenus,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { getRandomColor } from "@/utils/color";
 import { $t } from "@/core/i18n";
+import { accessRoutes } from "@/router/routes";
 
 const { mutateAsync: deleteMenu } = useDeleteMenu();
+const { mutateAsync: syncMenus, isPending: isSyncing } = useSyncMenus();
 
 const pageRef = ref();
 const drawerRef = ref();
@@ -143,6 +147,11 @@ const pageConfig = computed<ProPageConfig>(() => ({
         name: "collapseAll",
         label: $t("common.tree.collapse_all"),
         attrs: { icon: "SortUp" },
+      } as ToolsButton,
+      {
+        name: "syncMenus",
+        label: $t("pages.menu.sync"),
+        attrs: { icon: "Refresh", loading: isSyncing.value },
       } as ToolsButton,
     ],
     toolbarRight: ["add"],
@@ -221,12 +230,38 @@ function handleSuccess() {
 }
 
 function handleToolbar(name: string) {
+  if (name === "syncMenus") {
+    handleSyncMenus();
+    return;
+  }
   const vxeTable = pageRef.value?.tableRef?.tableRef;
   if (!vxeTable) return;
   if (name === "expandAll") {
     vxeTable.setAllTreeExpand(true);
   } else if (name === "collapseAll") {
     vxeTable.clearTreeExpand();
+  }
+}
+
+/* 同步菜单：将本地静态路由全量推送到后端（后端会清空重建，角色授权需重做） */
+async function handleSyncMenus() {
+  try {
+    await ElMessageBox.confirm($t("pages.menu.syncConfirm"), $t("pages.menu.sync"), {
+      type: "warning",
+      confirmButtonText: $t("common.button.confirm"),
+      cancelButtonText: $t("common.button.cancel"),
+    });
+  } catch {
+    return; // 用户取消确认框，非错误
+  }
+
+  try {
+    await syncMenus(buildSyncMenusRequest(accessRoutes));
+    ElMessage.success($t("common.notification.syncSuccess"));
+    pageRef.value?.refresh();
+  } catch (error) {
+    console.error("sync menus failed:", error);
+    ElMessage.error($t("common.notification.syncFailed"));
   }
 }
 

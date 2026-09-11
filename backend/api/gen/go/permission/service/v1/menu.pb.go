@@ -131,6 +131,53 @@ func (Menu_Status) EnumDescriptor() ([]byte, []int) {
 	return file_permission_service_v1_menu_proto_rawDescGZIP(), []int{0, 1}
 }
 
+// 同步模式
+type SyncMenusRequest_Mode int32
+
+const (
+	SyncMenusRequest_REPLACE SyncMenusRequest_Mode = 0 // 全量重建：清空现有菜单后按传入树重建（菜单 ID 全部变化，角色-菜单授权失效）
+	SyncMenusRequest_MERGE   SyncMenusRequest_Mode = 1 // 增量合并：按全路径匹配，已存在则原位更新（保留 ID 与角色授权），缺失才新增；数据库多出的菜单保留
+)
+
+// Enum value maps for SyncMenusRequest_Mode.
+var (
+	SyncMenusRequest_Mode_name = map[int32]string{
+		0: "REPLACE",
+		1: "MERGE",
+	}
+	SyncMenusRequest_Mode_value = map[string]int32{
+		"REPLACE": 0,
+		"MERGE":   1,
+	}
+)
+
+func (x SyncMenusRequest_Mode) Enum() *SyncMenusRequest_Mode {
+	p := new(SyncMenusRequest_Mode)
+	*p = x
+	return p
+}
+
+func (x SyncMenusRequest_Mode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SyncMenusRequest_Mode) Descriptor() protoreflect.EnumDescriptor {
+	return file_permission_service_v1_menu_proto_enumTypes[2].Descriptor()
+}
+
+func (SyncMenusRequest_Mode) Type() protoreflect.EnumType {
+	return &file_permission_service_v1_menu_proto_enumTypes[2]
+}
+
+func (x SyncMenusRequest_Mode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SyncMenusRequest_Mode.Descriptor instead.
+func (SyncMenusRequest_Mode) EnumDescriptor() ([]byte, []int) {
+	return file_permission_service_v1_menu_proto_rawDescGZIP(), []int{9, 0}
+}
+
 // 菜单
 type Menu struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -990,6 +1037,7 @@ func (x *CountMenuResponse) GetCount() uint64 {
 type SyncMenusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*Menu                `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Mode          *SyncMenusRequest_Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=permission.service.v1.SyncMenusRequest_Mode,oneof" json:"mode,omitempty"` // 同步模式
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1029,6 +1077,13 @@ func (x *SyncMenusRequest) GetItems() []*Menu {
 		return x.Items
 	}
 	return nil
+}
+
+func (x *SyncMenusRequest) GetMode() SyncMenusRequest_Mode {
+	if x != nil && x.Mode != nil {
+		return *x.Mode
+	}
+	return SyncMenusRequest_REPLACE
 }
 
 var File_permission_service_v1_menu_proto protoreflect.FileDescriptor
@@ -1195,9 +1250,14 @@ const file_permission_service_v1_menu_proto_rawDesc = "" +
 	"\bquery_byB\x0e\n" +
 	"\f_operator_id\")\n" +
 	"\x11CountMenuResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x04R\x05count\"E\n" +
+	"\x05count\x18\x01 \x01(\x04R\x05count\"\xf6\x01\n" +
 	"\x10SyncMenusRequest\x121\n" +
-	"\x05items\x18\x01 \x03(\v2\x1b.permission.service.v1.MenuR\x05items2\xb2\x04\n" +
+	"\x05items\x18\x01 \x03(\v2\x1b.permission.service.v1.MenuR\x05items\x12\x85\x01\n" +
+	"\x04mode\x18\x02 \x01(\x0e2,.permission.service.v1.SyncMenusRequest.ModeB>\xbaG;\x92\x028同步模式，缺省为 REPLACE（兼容旧客户端）H\x00R\x04mode\x88\x01\x01\"\x1e\n" +
+	"\x04Mode\x12\v\n" +
+	"\aREPLACE\x10\x00\x12\t\n" +
+	"\x05MERGE\x10\x01B\a\n" +
+	"\x05_mode2\xb2\x04\n" +
 	"\vMenuService\x12L\n" +
 	"\x04List\x12\x19.pagination.PagingRequest\x1a'.permission.service.v1.ListMenuResponse\"\x00\x12N\n" +
 	"\x05Count\x12\x19.pagination.PagingRequest\x1a(.permission.service.v1.CountMenuResponse\"\x00\x12K\n" +
@@ -1220,63 +1280,65 @@ func file_permission_service_v1_menu_proto_rawDescGZIP() []byte {
 	return file_permission_service_v1_menu_proto_rawDescData
 }
 
-var file_permission_service_v1_menu_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_permission_service_v1_menu_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_permission_service_v1_menu_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_permission_service_v1_menu_proto_goTypes = []any{
 	(Menu_Type)(0),                // 0: permission.service.v1.Menu.Type
 	(Menu_Status)(0),              // 1: permission.service.v1.Menu.Status
-	(*Menu)(nil),                  // 2: permission.service.v1.Menu
-	(*MenuMeta)(nil),              // 3: permission.service.v1.MenuMeta
-	(*MenuRouteItem)(nil),         // 4: permission.service.v1.MenuRouteItem
-	(*ListMenuResponse)(nil),      // 5: permission.service.v1.ListMenuResponse
-	(*GetMenuRequest)(nil),        // 6: permission.service.v1.GetMenuRequest
-	(*CreateMenuRequest)(nil),     // 7: permission.service.v1.CreateMenuRequest
-	(*UpdateMenuRequest)(nil),     // 8: permission.service.v1.UpdateMenuRequest
-	(*DeleteMenuRequest)(nil),     // 9: permission.service.v1.DeleteMenuRequest
-	(*CountMenuResponse)(nil),     // 10: permission.service.v1.CountMenuResponse
-	(*SyncMenusRequest)(nil),      // 11: permission.service.v1.SyncMenusRequest
-	(v1.Module)(0),                // 12: identity.service.v1.Module
-	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 14: google.protobuf.FieldMask
-	(*v11.PagingRequest)(nil),     // 15: pagination.PagingRequest
-	(*emptypb.Empty)(nil),         // 16: google.protobuf.Empty
+	(SyncMenusRequest_Mode)(0),    // 2: permission.service.v1.SyncMenusRequest.Mode
+	(*Menu)(nil),                  // 3: permission.service.v1.Menu
+	(*MenuMeta)(nil),              // 4: permission.service.v1.MenuMeta
+	(*MenuRouteItem)(nil),         // 5: permission.service.v1.MenuRouteItem
+	(*ListMenuResponse)(nil),      // 6: permission.service.v1.ListMenuResponse
+	(*GetMenuRequest)(nil),        // 7: permission.service.v1.GetMenuRequest
+	(*CreateMenuRequest)(nil),     // 8: permission.service.v1.CreateMenuRequest
+	(*UpdateMenuRequest)(nil),     // 9: permission.service.v1.UpdateMenuRequest
+	(*DeleteMenuRequest)(nil),     // 10: permission.service.v1.DeleteMenuRequest
+	(*CountMenuResponse)(nil),     // 11: permission.service.v1.CountMenuResponse
+	(*SyncMenusRequest)(nil),      // 12: permission.service.v1.SyncMenusRequest
+	(v1.Module)(0),                // 13: identity.service.v1.Module
+	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil), // 15: google.protobuf.FieldMask
+	(*v11.PagingRequest)(nil),     // 16: pagination.PagingRequest
+	(*emptypb.Empty)(nil),         // 17: google.protobuf.Empty
 }
 var file_permission_service_v1_menu_proto_depIdxs = []int32{
 	1,  // 0: permission.service.v1.Menu.status:type_name -> permission.service.v1.Menu.Status
 	0,  // 1: permission.service.v1.Menu.type:type_name -> permission.service.v1.Menu.Type
-	3,  // 2: permission.service.v1.Menu.meta:type_name -> permission.service.v1.MenuMeta
-	12, // 3: permission.service.v1.Menu.module:type_name -> identity.service.v1.Module
-	2,  // 4: permission.service.v1.Menu.children:type_name -> permission.service.v1.Menu
-	13, // 5: permission.service.v1.Menu.created_at:type_name -> google.protobuf.Timestamp
-	13, // 6: permission.service.v1.Menu.updated_at:type_name -> google.protobuf.Timestamp
-	13, // 7: permission.service.v1.Menu.deleted_at:type_name -> google.protobuf.Timestamp
-	4,  // 8: permission.service.v1.MenuRouteItem.children:type_name -> permission.service.v1.MenuRouteItem
-	3,  // 9: permission.service.v1.MenuRouteItem.meta:type_name -> permission.service.v1.MenuMeta
-	2,  // 10: permission.service.v1.ListMenuResponse.items:type_name -> permission.service.v1.Menu
-	14, // 11: permission.service.v1.GetMenuRequest.view_mask:type_name -> google.protobuf.FieldMask
-	2,  // 12: permission.service.v1.CreateMenuRequest.data:type_name -> permission.service.v1.Menu
-	2,  // 13: permission.service.v1.UpdateMenuRequest.data:type_name -> permission.service.v1.Menu
-	14, // 14: permission.service.v1.UpdateMenuRequest.update_mask:type_name -> google.protobuf.FieldMask
-	2,  // 15: permission.service.v1.SyncMenusRequest.items:type_name -> permission.service.v1.Menu
-	15, // 16: permission.service.v1.MenuService.List:input_type -> pagination.PagingRequest
-	15, // 17: permission.service.v1.MenuService.Count:input_type -> pagination.PagingRequest
-	6,  // 18: permission.service.v1.MenuService.Get:input_type -> permission.service.v1.GetMenuRequest
-	7,  // 19: permission.service.v1.MenuService.Create:input_type -> permission.service.v1.CreateMenuRequest
-	8,  // 20: permission.service.v1.MenuService.Update:input_type -> permission.service.v1.UpdateMenuRequest
-	9,  // 21: permission.service.v1.MenuService.Delete:input_type -> permission.service.v1.DeleteMenuRequest
-	11, // 22: permission.service.v1.MenuService.SyncMenus:input_type -> permission.service.v1.SyncMenusRequest
-	5,  // 23: permission.service.v1.MenuService.List:output_type -> permission.service.v1.ListMenuResponse
-	10, // 24: permission.service.v1.MenuService.Count:output_type -> permission.service.v1.CountMenuResponse
-	2,  // 25: permission.service.v1.MenuService.Get:output_type -> permission.service.v1.Menu
-	16, // 26: permission.service.v1.MenuService.Create:output_type -> google.protobuf.Empty
-	16, // 27: permission.service.v1.MenuService.Update:output_type -> google.protobuf.Empty
-	16, // 28: permission.service.v1.MenuService.Delete:output_type -> google.protobuf.Empty
-	16, // 29: permission.service.v1.MenuService.SyncMenus:output_type -> google.protobuf.Empty
-	23, // [23:30] is the sub-list for method output_type
-	16, // [16:23] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	4,  // 2: permission.service.v1.Menu.meta:type_name -> permission.service.v1.MenuMeta
+	13, // 3: permission.service.v1.Menu.module:type_name -> identity.service.v1.Module
+	3,  // 4: permission.service.v1.Menu.children:type_name -> permission.service.v1.Menu
+	14, // 5: permission.service.v1.Menu.created_at:type_name -> google.protobuf.Timestamp
+	14, // 6: permission.service.v1.Menu.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 7: permission.service.v1.Menu.deleted_at:type_name -> google.protobuf.Timestamp
+	5,  // 8: permission.service.v1.MenuRouteItem.children:type_name -> permission.service.v1.MenuRouteItem
+	4,  // 9: permission.service.v1.MenuRouteItem.meta:type_name -> permission.service.v1.MenuMeta
+	3,  // 10: permission.service.v1.ListMenuResponse.items:type_name -> permission.service.v1.Menu
+	15, // 11: permission.service.v1.GetMenuRequest.view_mask:type_name -> google.protobuf.FieldMask
+	3,  // 12: permission.service.v1.CreateMenuRequest.data:type_name -> permission.service.v1.Menu
+	3,  // 13: permission.service.v1.UpdateMenuRequest.data:type_name -> permission.service.v1.Menu
+	15, // 14: permission.service.v1.UpdateMenuRequest.update_mask:type_name -> google.protobuf.FieldMask
+	3,  // 15: permission.service.v1.SyncMenusRequest.items:type_name -> permission.service.v1.Menu
+	2,  // 16: permission.service.v1.SyncMenusRequest.mode:type_name -> permission.service.v1.SyncMenusRequest.Mode
+	16, // 17: permission.service.v1.MenuService.List:input_type -> pagination.PagingRequest
+	16, // 18: permission.service.v1.MenuService.Count:input_type -> pagination.PagingRequest
+	7,  // 19: permission.service.v1.MenuService.Get:input_type -> permission.service.v1.GetMenuRequest
+	8,  // 20: permission.service.v1.MenuService.Create:input_type -> permission.service.v1.CreateMenuRequest
+	9,  // 21: permission.service.v1.MenuService.Update:input_type -> permission.service.v1.UpdateMenuRequest
+	10, // 22: permission.service.v1.MenuService.Delete:input_type -> permission.service.v1.DeleteMenuRequest
+	12, // 23: permission.service.v1.MenuService.SyncMenus:input_type -> permission.service.v1.SyncMenusRequest
+	6,  // 24: permission.service.v1.MenuService.List:output_type -> permission.service.v1.ListMenuResponse
+	11, // 25: permission.service.v1.MenuService.Count:output_type -> permission.service.v1.CountMenuResponse
+	3,  // 26: permission.service.v1.MenuService.Get:output_type -> permission.service.v1.Menu
+	17, // 27: permission.service.v1.MenuService.Create:output_type -> google.protobuf.Empty
+	17, // 28: permission.service.v1.MenuService.Update:output_type -> google.protobuf.Empty
+	17, // 29: permission.service.v1.MenuService.Delete:output_type -> google.protobuf.Empty
+	17, // 30: permission.service.v1.MenuService.SyncMenus:output_type -> google.protobuf.Empty
+	24, // [24:31] is the sub-list for method output_type
+	17, // [17:24] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_permission_service_v1_menu_proto_init() }
@@ -1294,12 +1356,13 @@ func file_permission_service_v1_menu_proto_init() {
 	file_permission_service_v1_menu_proto_msgTypes[7].OneofWrappers = []any{
 		(*DeleteMenuRequest_Id)(nil),
 	}
+	file_permission_service_v1_menu_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_permission_service_v1_menu_proto_rawDesc), len(file_permission_service_v1_menu_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
