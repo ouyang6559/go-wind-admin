@@ -33,5 +33,17 @@
   "statusMap": {
     "ON": "启用",
     "OFF": "禁用"
+  },
+  "dataScope": "数据权限范围",
+  "dataScopePlaceholder": "请选择数据权限范围",
+  "requiredDataScope": "请选择数据权限范围",
+  "orgUnits": "授权组织单元",
+  "noOrgUnitData": "暂无组织单元数据",
+  "dataScopeMap": {
+    "ALL": "全部",
+    "UNIT_AND_CHILD": "本部门及以下",
+    "UNIT_ONLY": "本部门",
+    "SELECTED_UNITS": "自定义",
+    "SELF": "仅本人"
   }
 }

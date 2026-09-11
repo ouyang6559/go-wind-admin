@@ -33,5 +33,17 @@
   "statusMap": {
     "ON": "Active",
     "OFF": "Inactive"
+  },
+  "dataScope": "Data Scope",
+  "dataScopePlaceholder": "Select data scope",
+  "requiredDataScope": "Please select data scope",
+  "orgUnits": "Authorized Org Units",
+  "noOrgUnitData": "No org unit data",
+  "dataScopeMap": {
+    "ALL": "All",
+    "UNIT_AND_CHILD": "Department and Subordinates",
+    "UNIT_ONLY": "Department Only",
+    "SELECTED_UNITS": "Custom",
+    "SELF": "Self Only"
   }
 }
