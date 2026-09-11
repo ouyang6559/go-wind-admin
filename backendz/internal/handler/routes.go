@@ -615,7 +615,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodDelete,
-				Path:    "/",
+				Path:    "/:id",
 				Handler: notification_channel.NotificationChannelDeleteHandler(serverCtx),
 			},
 			{

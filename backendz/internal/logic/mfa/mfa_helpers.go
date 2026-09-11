@@ -2,16 +2,30 @@ package mfa
 
 import (
 	"context"
+	"net"
 	"strconv"
 
 	"go-wind-admin/backendz/internal/ent/gen"
 	"go-wind-admin/backendz/internal/ent/gen/usermfafactor"
+	"go-wind-admin/backendz/internal/middleware"
 	"go-wind-admin/backendz/internal/pkg/std"
 	"go-wind-admin/backendz/internal/types"
 )
 
 // mfaIssuer otpauth URI 中的 issuer 标识。
 const mfaIssuer = "GoWindAdmin"
+
+// mfaClientIP 从上下文取客户端 IP（与 authentication_login_logic 的 clientIP 语义一致）。
+func mfaClientIP(ctx context.Context) string {
+	r, ok := middleware.RequestFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
+	}
+	return r.RemoteAddr
+}
 
 // listFactorsByUser 列出某用户的全部 MFA 因子。
 func listFactorsByUser(ctx context.Context, client *gen.Client, tenantID, userID uint32) ([]*gen.UserMfaFactor, error) {

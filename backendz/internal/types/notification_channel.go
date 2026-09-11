@@ -9,7 +9,7 @@ type CreateNotificationChannelRequest struct {
 }
 
 type DeleteNotificationChannelReq struct {
-	Id int64 `form:"id,optional"`
+	Id int64 `path:"id,optional"`
 }
 
 type GetNotificationChannelReq struct {
@@ -19,7 +19,7 @@ type GetNotificationChannelReq struct {
 
 type ListNotificationChannelResponse struct {
 	Items []NotificationChannel `json:"items,optional"`
-	Total int64                `json:"total,optional"`
+	Total int64                 `json:"total,optional"`
 }
 
 type NotificationChannel struct {

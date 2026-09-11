@@ -79,6 +79,13 @@ func (l *MfaVerifyMFAChallengeLogic) MfaVerifyMFAChallenge(req *types.VerifyMFAC
 	}
 
 	deleteLoginChallenge(l.ctx, l.svcCtx.Rds, req.OperationId)
+
+	// MFA 通过即视为登录成功，与密码登录路径一致记录最近登录信息（对齐 backend
+	// 3963e55c 两路径语义；best-effort，失败不阻断发令牌）。
+	_, _ = l.svcCtx.Ent.User.UpdateOneID(ch.UserID).
+		SetLastLoginAt(time.Now()).
+		SetLastLoginIP(mfaClientIP(l.ctx)).
+		Save(l.ctx)
 	return &types.LoginResponse{
 		TokenType:        "Bearer",
 		AccessToken:      accessToken,

@@ -52,7 +52,7 @@ type UpdateNotificationChannelRequest {
 }
 
 type DeleteNotificationChannelReq {
-	Id	int64	`form:"id,optional"`
+	Id	int64	`path:"id,optional"`
 }
 
 type SendTestEmailRequest {
@@ -74,7 +74,7 @@ service admin-api {
 	post / (CreateNotificationChannelRequest)
 
 	@handler NotificationChannelDelete
-	delete / (DeleteNotificationChannelReq)
+	delete /:id (DeleteNotificationChannelReq)
 
 	@handler NotificationChannelGet
 	get /:id (GetNotificationChannelReq) returns (NotificationChannel)
