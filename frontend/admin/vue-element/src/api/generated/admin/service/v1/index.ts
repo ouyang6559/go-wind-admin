@@ -7638,12 +7638,14 @@ export type permissionservicev1_Role = {
   code?: string;
   createdAt?: wellKnownTimestamp;
   createdBy?: number;
+  dataScope?: identityservicev1_DataScope;
   deletedAt?: wellKnownTimestamp;
   deletedBy?: number;
   description?: string;
   id?: number;
   isProtected?: boolean;
   name?: string;
+  orgUnits: number[] | undefined;
   permissions: number[] | undefined;
   sortOrder?: number;
   status?: permissionservicev1_Role_Status;
@@ -7663,6 +7665,14 @@ export type permissionservicev1_Role_Type =
   | 'SYSTEM'
   | 'TEMPLATE'
   | 'TENANT';
+// 数据权限范围
+export type identityservicev1_DataScope =
+  | 'ALL'
+  | 'DATA_SCOPE_UNSPECIFIED'
+  | 'SELECTED_UNITS'
+  | 'SELF'
+  | 'UNIT_AND_CHILD'
+  | 'UNIT_ONLY';
 // 角色数据 - 请求
 export type permissionservicev1_GetRoleRequest = {
   code?: string;

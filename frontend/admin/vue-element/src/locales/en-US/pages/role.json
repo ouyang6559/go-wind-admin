@@ -8,5 +8,8 @@
   "status": "Status",
   "description": "Description",
   "remark": "Remark",
-  "createdAt": "Created At"
+  "createdAt": "Created At",
+  "dataScope": "Data Scope",
+  "orgUnits": "Authorized Org Units",
+  "noOrgUnitData": "No org unit data"
 }
