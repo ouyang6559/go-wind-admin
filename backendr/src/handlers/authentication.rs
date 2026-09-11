@@ -19,7 +19,7 @@ use crate::auth;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::response::{json_empty, json_ok};
-use crate::services::authentication::AuthenticationService;
+use crate::services::authentication::{AuthenticationService, LoginOutcome};
 use crate::state::AppState;
 
 const REFRESH_TOKEN_COOKIE: &str = "refresh_token";
@@ -242,7 +242,7 @@ pub async fn authentication_login(
         .to_string();
 
     let service = AuthenticationService::from_state(&state)?;
-    let issue = service
+    let outcome = service
         .login(
             username.trim(),
             &password,
@@ -257,7 +257,24 @@ pub async fn authentication_login(
         )
         .await?;
 
-    let (resp, refresh_token) = build_login_response(issue);
+    // MFA 闸门：用户绑定 TOTP 时登录返回操作 ID（不发 token、不下发 cookie），
+    // 前端跳转 MFA 挑战页（提交到 /mfa/verify）。
+    let (resp, refresh_token) = match outcome {
+        LoginOutcome::MfaChallenge(op_id) => {
+            let resp = LoginResp {
+                token_type: "bearer".to_string(),
+                access_token: String::new(),
+                expires_in: None,
+                refresh_token: None,
+                scope: None,
+                refresh_expires_in: None,
+                id_token: None,
+                mfa_operation_id: Some(op_id),
+            };
+            return Ok(json_ok(resp).into_response());
+        }
+        LoginOutcome::Token(issue) => build_login_response(issue),
+    };
     let mut response = json_ok(resp).into_response();
     set_refresh_cookies(&mut response, &headers, &refresh_token, auth::REFRESH_TOKEN_TTL);
     Ok(response)

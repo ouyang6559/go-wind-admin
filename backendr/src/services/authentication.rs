@@ -125,7 +125,7 @@ impl AuthenticationService {
         captcha_value: Option<&str>,
         login_ip: &str,
         login_ua: &str,
-    ) -> Result<TokenIssue, AppError> {
+    ) -> Result<LoginOutcome, AppError> {
         // 验证码闸门：Redis 已配置时强制校验（verify-and-delete 单次有效）
         if CAPTCHA_ENABLED && self.state.redis.is_some() {
             let cid = captcha_id.map(str::trim).unwrap_or("");
@@ -208,7 +208,42 @@ impl AuthenticationService {
         let ipa = role_codes.iter().any(|c| c == PLATFORM_ADMIN_ROLE_CODE);
         let ita = role_codes.iter().any(|c| c == TENANT_ADMIN_ROLE_CODE);
 
+        // ===== MFA 闸门：若该用户绑定了 ENABLED 的 TOTP 因子，则不签发 token， =====
+        // ===== 改为签发 mfa_operation_id，要求前端走二次验证（MfaService.VerifyMFAChallenge）。
         let client_type = self.client_type(req_client_type);
+        if let Some(db) = &self.state.db {
+            let mfa_repo = crate::repos::mfa::MfaRepo::new(db.clone());
+            let need_mfa = match mfa_repo.has_enabled_totp(user.tenant_id, user.id).await {
+                Ok(v) => v,
+                Err(e) => {
+                    // fail-closed：MFA 状态查询失败时拒绝登录，避免已绑定用户在 DB 故障时
+                    // 被降级为单因子放行（与凭证校验出错即拒登行为一致）
+                    tracing::error!(error = %e, uid = user.id, "check mfa factor failed");
+                    return Err(AppError::Internal {
+                        context: "mfa check failed".into(),
+                        source: Some(Box::new(e)),
+                    });
+                }
+            };
+            if need_mfa {
+                let mfa_service = crate::services::mfa::MfaService::from_state(&self.state)?;
+                let op_id = mfa_service
+                    .set_login_challenge(&crate::services::mfa::MfaLoginChallengeContext {
+                        user_id: user.id,
+                        tenant_id: user.tenant_id,
+                        username: user.username.clone(),
+                        client_id: client_id.map(str::to_string),
+                        device_id: device_id.map(str::to_string),
+                        client_type: client_type.clone(),
+                        role_codes: role_codes.clone(),
+                        ipa,
+                        ita,
+                    })
+                    .await?;
+                return Ok(LoginOutcome::MfaChallenge(op_id));
+            }
+        }
+
         let access_jti = auth::new_jti();
         let refresh_jti = auth::new_jti();
         let pair = auth::issue_token_pair(
@@ -244,6 +279,74 @@ impl AuthenticationService {
                 ip: login_ip.to_string(),
                 ua: login_ua.to_string(),
                 dev: device_id.unwrap_or("").to_string(),
+                login_at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            },
+        )
+        .await;
+        let _ = self.repo.update_last_login(user.id, login_ip).await;
+
+        Ok(LoginOutcome::Token(TokenIssue {
+            pair,
+            client_type,
+        }))
+    }
+
+    /// 基于 MFA 挑战上下文签发 token 并记录会话（VerifyMFAChallenge 通过后复用登录链路）。
+    #[allow(clippy::too_many_arguments)]
+    pub async fn issue_tokens_for_payload(
+        &self,
+        ctx: &crate::services::mfa::MfaLoginChallengeContext,
+        login_ip: &str,
+    ) -> Result<TokenIssue, AppError> {
+        let user = self
+            .repo
+            .get_user_by_id(ctx.user_id)
+            .await?
+            .ok_or_else(|| AppError::Forbidden("mfa verification failed".into()))?;
+        if user.status != "NORMAL" {
+            return Err(AppError::Forbidden("user is disabled".into()));
+        }
+
+        // 重新解析角色码（登录与 MFA 验证间可能发生角色变更，以最新为准）
+        let role_codes = self.repo.list_role_codes(user.id).await?;
+        let ipa = role_codes.iter().any(|c| c == PLATFORM_ADMIN_ROLE_CODE);
+        let ita = role_codes.iter().any(|c| c == TENANT_ADMIN_ROLE_CODE);
+
+        let client_type = ctx.client_type.clone();
+        let access_jti = auth::new_jti();
+        let refresh_jti = auth::new_jti();
+        let pair = auth::issue_token_pair(
+            &self.state.jwt_secret,
+            user.id,
+            user.tenant_id,
+            &user.username,
+            ctx.client_id.clone(),
+            ctx.device_id.clone(),
+            role_codes,
+            ipa,
+            ita,
+            &access_jti,
+            &refresh_jti,
+        )?;
+
+        let _ = auth::record_session(
+            &self.state,
+            &client_type,
+            user.id,
+            &[pair.access_jti.clone(), pair.refresh_jti.clone()],
+        )
+        .await;
+        let _ = auth::record_session_meta(
+            &self.state,
+            &auth::SessionMeta {
+                jti: pair.access_jti.clone(),
+                client_type: client_type.clone(),
+                uid: user.id,
+                username: user.username.clone(),
+                tenant_id: user.tenant_id,
+                ip: login_ip.to_string(),
+                ua: String::new(),
+                dev: ctx.device_id.clone().unwrap_or_default(),
                 login_at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
             },
         )
@@ -520,6 +623,12 @@ pub async fn reset_password_by_code(
 pub struct TokenIssue {
     pub pair: TokenPair,
     pub client_type: String,
+}
+
+/// 登录链路结果：直接签发 token，或要求 MFA 二次验证（并发 op_id 走 /mfa/verify）。
+pub enum LoginOutcome {
+    Token(TokenIssue),
+    MfaChallenge(String),
 }
 
 /// 恒定时间防护用假哈希（用户不存在时报错前也跑一次 bcrypt 校验）
