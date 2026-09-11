@@ -11,6 +11,13 @@
     "ON": "On",
     "OFF": "Off"
   },
+  "config": {
+    "valueType": {
+      "STRING": "String",
+      "BOOL": "Bool",
+      "INT": "Int"
+    }
+  },
   "dataAccessAuditLog": {
     "accessType": {
       "SELECT": "Select",

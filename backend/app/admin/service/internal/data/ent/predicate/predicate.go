@@ -120,6 +120,9 @@ type Script func(*sql.Selector)
 // ScriptLog is the predicate function for scriptlog builders.
 type ScriptLog func(*sql.Selector)
 
+// SysConfig is the predicate function for sysconfig builders.
+type SysConfig func(*sql.Selector)
+
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 

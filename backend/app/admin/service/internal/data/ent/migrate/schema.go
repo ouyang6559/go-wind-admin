@@ -2510,6 +2510,40 @@ var (
 			},
 		},
 	}
+	// SysConfigsColumns holds the columns for the "sys_configs" table.
+	SysConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "参数名称（展示用）"},
+		{Name: "key", Type: field.TypeString, Nullable: true, Comment: "参数键名，全局唯一，服务侧读取器按键定位"},
+		{Name: "value", Type: field.TypeString, Nullable: true, Comment: "参数键值"},
+		{Name: "value_type", Type: field.TypeEnum, Nullable: true, Comment: "参数值类型（读取器按类型解析，类型不符回退默认值）", Enums: []string{"STRING", "BOOL", "INT"}, Default: "STRING"},
+		{Name: "is_built_in", Type: field.TypeBool, Nullable: true, Comment: "是否系统内置参数（内置参数禁止删除）", Default: false},
+	}
+	// SysConfigsTable holds the schema information for the "sys_configs" table.
+	SysConfigsTable = &schema.Table{
+		Name:       "sys_configs",
+		Comment:    "系统参数表（平台全局动态 KV 运行时配置；区别于字典管理的业务枚举，两者语义不同）",
+		Columns:    SysConfigsColumns,
+		PrimaryKey: []*schema.Column{SysConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uidx_sys_configs_key",
+				Unique:  true,
+				Columns: []*schema.Column{SysConfigsColumns[8]},
+			},
+			{
+				Name:    "idx_sys_configs_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigsColumns[1]},
+			},
+		},
+	}
 	// SysTasksColumns holds the columns for the "sys_tasks" table.
 	SysTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -3148,6 +3182,7 @@ var (
 		SysRolePermissionsTable,
 		SysScriptsTable,
 		SysScriptLogsTable,
+		SysConfigsTable,
 		SysTasksTable,
 		SysTenantsTable,
 		SysUsersTable,
@@ -3354,6 +3389,11 @@ func init() {
 	}
 	SysScriptLogsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_script_logs",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysConfigsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_configs",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

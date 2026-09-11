@@ -144,6 +144,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	scriptRepo := data.NewScriptRepo(ctx, entClient)
 
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
+	configRepo := data.NewConfigRepo(ctx, entClient)
 
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
 
@@ -237,6 +238,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	)
 
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
+	configService := service.NewConfigService(ctx, configRepo)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 
@@ -258,6 +260,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		internalMessageService, internalMessageCategoryService, internalMessageRecipientService,
 		scriptService, scriptLogService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
+		configService,
 	)
 	if err != nil {
 		rollback()

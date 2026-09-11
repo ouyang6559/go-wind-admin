@@ -48,5 +48,6 @@
   "server-monitor": "Server Monitor",
   "notification-channels": "Notification Channels",
   "scripts": "Scripts",
+  "configs": "Config Management",
   "forgot-password": "Forgot Password"
 }

@@ -172,6 +172,7 @@ func NewRestServer(
 	scriptLogService *service.ScriptLogService,
 
 	// register:param ── 新模块服务形参在此行后注册(make register 工具锚点,勿删)
+	configService *service.ConfigService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
 
@@ -243,6 +244,7 @@ func NewRestServer(
 	adminV1.RegisterScriptLogServiceHTTPServer(srv, scriptLogService)
 
 	// register:route ── 新模块路由在此行后注册(make register 工具锚点,勿删)
+	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(

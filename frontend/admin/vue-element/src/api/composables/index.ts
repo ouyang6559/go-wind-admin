@@ -43,6 +43,7 @@ export * from "./file-transfer";
 export * from "./task";
 export * from "./login-policy";
 export * from "./language";
+export * from "./config";
 
 // 日志审计
 export * from "./login-audit-log";

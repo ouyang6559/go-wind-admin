@@ -464,6 +464,18 @@ func (f ScriptLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScriptLogMutation", m)
 }
 
+// The SysConfigFunc type is an adapter to allow the use of ordinary
+// function as SysConfig mutator.
+type SysConfigFunc func(context.Context, *ent.SysConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SysConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SysConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SysConfigMutation", m)
+}
+
 // The TaskFunc type is an adapter to allow the use of ordinary
 // function as Task mutator.
 type TaskFunc func(context.Context, *ent.TaskMutation) (ent.Value, error)

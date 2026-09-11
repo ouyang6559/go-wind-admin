@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -482,7 +481,7 @@ func (r *OrgUnitRepo) Delete(ctx context.Context, req *identityV1.DeleteOrgUnitR
 		return identityV1.ErrorInternalServerError("count positions under org units failed")
 	}
 	if posCnt > 0 {
-		return identityV1.ErrorBadRequest(fmt.Sprintf("exist %d positions under the org unit subtree, delete or move them first", posCnt))
+		return identityV1.ErrorBadRequest("exist %d positions under the org unit subtree, delete or move them first", posCnt)
 	}
 
 	var ids []any

@@ -3,6 +3,13 @@
     "ON": "Active",
     "OFF": "Disabled"
   },
+  "config": {
+    "valueType": {
+      "STRING": "String",
+      "BOOL": "Bool",
+      "INT": "Int"
+    }
+  },
   "enable": {
     "true": "Enabled",
     "false": "Disabled"

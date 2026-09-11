@@ -1023,6 +1023,30 @@ func (f ScriptLogMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutat
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ScriptLogMutation", m)
 }
 
+// The SysConfigQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type SysConfigQueryRuleFunc func(context.Context, *ent.SysConfigQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f SysConfigQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SysConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.SysConfigQuery", q)
+}
+
+// The SysConfigMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type SysConfigMutationRuleFunc func(context.Context, *ent.SysConfigMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f SysConfigMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.SysConfigMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.SysConfigMutation", m)
+}
+
 // The TaskQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type TaskQueryRuleFunc func(context.Context, *ent.TaskQuery) error
@@ -1326,6 +1350,8 @@ func queryFilter(q ent.Query) (Filter, error) {
 		return q.Filter(), nil
 	case *ent.ScriptLogQuery:
 		return q.Filter(), nil
+	case *ent.SysConfigQuery:
+		return q.Filter(), nil
 	case *ent.TaskQuery:
 		return q.Filter(), nil
 	case *ent.TenantQuery:
@@ -1424,6 +1450,8 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	case *ent.ScriptMutation:
 		return m.Filter(), nil
 	case *ent.ScriptLogMutation:
+		return m.Filter(), nil
+	case *ent.SysConfigMutation:
 		return m.Filter(), nil
 	case *ent.TaskMutation:
 		return m.Filter(), nil

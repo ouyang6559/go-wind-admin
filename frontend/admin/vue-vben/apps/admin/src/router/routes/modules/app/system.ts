@@ -124,6 +124,18 @@ const system: RouteRecordRaw[] = [
         },
         component: () => import('#/views/app/system/script/index.vue'),
       },
+
+      {
+        path: 'configs',
+        name: 'ConfigManagement',
+        meta: {
+          order: 12,
+          icon: 'lucide:sliders-horizontal',
+          title: $t('menu.system.config'),
+          authority: ['sys:platform_admin'],
+        },
+        component: () => import('#/views/app/system/config/index.vue'),
+      },
     ],
   },
 ];

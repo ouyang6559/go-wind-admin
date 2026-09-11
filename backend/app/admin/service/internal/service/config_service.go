@@ -1,0 +1,97 @@
+package service
+
+import (
+	"context"
+
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
+	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	"github.com/tx7do/go-utils/trans"
+	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	"go-wind-admin/app/admin/service/internal/data"
+
+	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
+	configV1 "go-wind-admin/api/gen/go/config/service/v1"
+
+	"go-wind-admin/pkg/middleware/auth"
+)
+
+type ConfigService struct {
+	adminV1.ConfigServiceHTTPServer
+
+	log *bLogger.Helper
+
+	configRepo *data.ConfigRepo
+}
+
+func NewConfigService(
+	ctx *bootstrap.Context,
+	configRepo *data.ConfigRepo,
+) *ConfigService {
+	return &ConfigService{
+		log:        ctx.NewLoggerHelper("config/service/admin-service"),
+		configRepo: configRepo,
+	}
+}
+
+func (s *ConfigService) List(ctx context.Context, req *paginationV1.PagingRequest) (*configV1.ListConfigResponse, error) {
+	return s.configRepo.List(ctx, req)
+}
+
+func (s *ConfigService) Get(ctx context.Context, req *configV1.GetConfigRequest) (*configV1.Config, error) {
+	return s.configRepo.Get(ctx, req)
+}
+
+func (s *ConfigService) Create(ctx context.Context, req *configV1.CreateConfigRequest) (*emptypb.Empty, error) {
+	if req == nil || req.Data == nil {
+		return nil, adminV1.ErrorBadRequest("invalid parameter")
+	}
+
+	// 获取操作人信息
+	operator, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Data.CreatedBy = trans.Ptr(operator.UserId)
+
+	if err = s.configRepo.Create(ctx, req); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (s *ConfigService) Update(ctx context.Context, req *configV1.UpdateConfigRequest) (*emptypb.Empty, error) {
+	if req == nil || req.Data == nil {
+		return nil, adminV1.ErrorBadRequest("invalid parameter")
+	}
+
+	// 获取操作人信息
+	operator, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Data.Id = trans.Ptr(req.GetId())
+
+	req.Data.UpdatedBy = trans.Ptr(operator.UserId)
+	if req.UpdateMask != nil {
+		req.UpdateMask.Paths = append(req.UpdateMask.Paths, "updated_by")
+	}
+
+	if err = s.configRepo.Update(ctx, req); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (s *ConfigService) Delete(ctx context.Context, req *configV1.DeleteConfigRequest) (*emptypb.Empty, error) {
+	if err := s.configRepo.Delete(ctx, req); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}

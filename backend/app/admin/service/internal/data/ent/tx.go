@@ -88,6 +88,8 @@ type Tx struct {
 	Script *ScriptClient
 	// ScriptLog is the client for interacting with the ScriptLog builders.
 	ScriptLog *ScriptLogClient
+	// SysConfig is the client for interacting with the SysConfig builders.
+	SysConfig *SysConfigClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tenant is the client for interacting with the Tenant builders.
@@ -273,6 +275,7 @@ func (tx *Tx) init() {
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.Script = NewScriptClient(tx.config)
 	tx.ScriptLog = NewScriptLogClient(tx.config)
+	tx.SysConfig = NewSysConfigClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.User = NewUserClient(tx.config)

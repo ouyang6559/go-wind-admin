@@ -27,6 +27,7 @@ export * from './file-transfer';
 // 内部消息
 export * from './internal-message';
 export * from './language';
+export * from './config';
 // 日志审计
 export * from './login-audit-log';
 

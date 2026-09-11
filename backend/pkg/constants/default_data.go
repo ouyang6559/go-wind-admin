@@ -817,4 +817,19 @@ var DefaultMenus = []*permissionV1.Menu{
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
+	{
+		Id:        trans.Ptr(uint32(66)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("ConfigManagement"),
+		Path:      trans.Ptr("configs"),
+		Component: trans.Ptr("app/system/config/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.config"),
+			Icon:      trans.Ptr("lucide:sliders-horizontal"),
+			Order:     trans.Ptr(int32(8)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
 }

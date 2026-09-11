@@ -44,6 +44,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/schema"
 	"go-wind-admin/app/admin/service/internal/data/ent/script"
 	"go-wind-admin/app/admin/service/internal/data/ent/scriptlog"
+	"go-wind-admin/app/admin/service/internal/data/ent/sysconfig"
 	"go-wind-admin/app/admin/service/internal/data/ent/task"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
@@ -1059,6 +1060,19 @@ func init() {
 	scriptlogDescID := scriptlogMixinFields0[0].Descriptor()
 	// scriptlog.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	scriptlog.IDValidator = scriptlogDescID.Validators[0].(func(uint32) error)
+	sysconfigMixin := schema.SysConfig{}.Mixin()
+	sysconfigMixinFields0 := sysconfigMixin[0].Fields()
+	_ = sysconfigMixinFields0
+	sysconfigFields := schema.SysConfig{}.Fields()
+	_ = sysconfigFields
+	// sysconfigDescIsBuiltIn is the schema descriptor for is_built_in field.
+	sysconfigDescIsBuiltIn := sysconfigFields[4].Descriptor()
+	// sysconfig.DefaultIsBuiltIn holds the default value on creation for the is_built_in field.
+	sysconfig.DefaultIsBuiltIn = sysconfigDescIsBuiltIn.Default.(bool)
+	// sysconfigDescID is the schema descriptor for id field.
+	sysconfigDescID := sysconfigMixinFields0[0].Descriptor()
+	// sysconfig.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	sysconfig.IDValidator = sysconfigDescID.Validators[0].(func(uint32) error)
 	taskMixin := schema.Task{}.Mixin()
 	task.Policy = privacy.NewPolicies(taskMixin[4], schema.Task{})
 	task.Hooks[0] = func(next ent.Mutator) ent.Mutator {
