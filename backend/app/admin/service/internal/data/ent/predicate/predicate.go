@@ -108,6 +108,9 @@ type Role func(*sql.Selector)
 // RoleMetadata is the predicate function for rolemetadata builders.
 type RoleMetadata func(*sql.Selector)
 
+// RoleOrgUnit is the predicate function for roleorgunit builders.
+type RoleOrgUnit func(*sql.Selector)
+
 // RolePermission is the predicate function for rolepermission builders.
 type RolePermission func(*sql.Selector)
 

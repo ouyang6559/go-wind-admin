@@ -39,6 +39,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/position"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
+	"go-wind-admin/app/admin/service/internal/data/ent/roleorgunit"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/schema"
 	"go-wind-admin/app/admin/service/internal/data/ent/script"
@@ -952,6 +953,30 @@ func init() {
 	rolemetadataDescID := rolemetadataMixinFields0[0].Descriptor()
 	// rolemetadata.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	rolemetadata.IDValidator = rolemetadataDescID.Validators[0].(func(uint32) error)
+	roleorgunitMixin := schema.RoleOrgUnit{}.Mixin()
+	roleorgunit.Policy = privacy.NewPolicies(roleorgunitMixin[3], schema.RoleOrgUnit{})
+	roleorgunit.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := roleorgunit.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	roleorgunitMixinFields0 := roleorgunitMixin[0].Fields()
+	_ = roleorgunitMixinFields0
+	roleorgunitMixinFields3 := roleorgunitMixin[3].Fields()
+	_ = roleorgunitMixinFields3
+	roleorgunitFields := schema.RoleOrgUnit{}.Fields()
+	_ = roleorgunitFields
+	// roleorgunitDescTenantID is the schema descriptor for tenant_id field.
+	roleorgunitDescTenantID := roleorgunitMixinFields3[0].Descriptor()
+	// roleorgunit.DefaultTenantID holds the default value on creation for the tenant_id field.
+	roleorgunit.DefaultTenantID = roleorgunitDescTenantID.Default.(uint32)
+	// roleorgunitDescID is the schema descriptor for id field.
+	roleorgunitDescID := roleorgunitMixinFields0[0].Descriptor()
+	// roleorgunit.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	roleorgunit.IDValidator = roleorgunitDescID.Validators[0].(func(uint32) error)
 	rolepermissionMixin := schema.RolePermission{}.Mixin()
 	rolepermission.Policy = privacy.NewPolicies(rolepermissionMixin[3], schema.RolePermission{})
 	rolepermission.Hooks[0] = func(next ent.Mutator) ent.Mutator {

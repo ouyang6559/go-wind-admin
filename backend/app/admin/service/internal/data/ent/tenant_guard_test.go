@@ -1,4 +1,4 @@
-package ent
+package ent_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/tx7do/go-crud/viewer"
 
+	ent "go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/dicttype"
 	_ "go-wind-admin/app/admin/service/internal/data/ent/runtime"
 )
@@ -32,13 +33,13 @@ func (m mockViewer) IsTenantContext() bool             { return m.tid > 0 }
 func (m mockViewer) IsSystemContext() bool             { return false }
 func (m mockViewer) ShouldAudit() bool                 { return false }
 
-func openGuardTestClient(t *testing.T) *Client {
+func openGuardTestClient(t *testing.T) *ent.Client {
 	t.Helper()
 	drv, err := sql.Open(dialect.Postgres, "host=127.0.0.1 port=5432 user=postgres password=*Abcd123456 dbname=gwa_guard_test sslmode=disable")
 	if err != nil {
 		t.Fatalf("open postgres: %v", err)
 	}
-	client := NewClient(Driver(drv))
+	client := ent.NewClient(ent.Driver(drv))
 
 	ctx := context.Background()
 	if err := client.Schema.Create(ctx); err != nil {
@@ -112,7 +113,7 @@ func TestTenantMutationGuard(t *testing.T) {
 }
 
 // dictTypeIDByCode 在指定租户视角下按 type_code 反查主键。
-func dictTypeIDByCode(client *Client, ctx context.Context, code string) uint32 {
+func dictTypeIDByCode(client *ent.Client, ctx context.Context, code string) uint32 {
 	row := client.DictType.Query().Where(dicttype.TypeCodeEQ(code)).OnlyX(ctx)
 	return row.ID
 }

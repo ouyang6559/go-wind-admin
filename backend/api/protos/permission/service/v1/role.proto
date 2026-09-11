@@ -7,6 +7,8 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/field_mask.proto";
 
+import "identity/service/v1/types.proto";
+
 import "pagination/v1/pagination.proto";
 
 // 角色服务
@@ -98,12 +100,22 @@ message Role {
   optional Type type = 8 [
     json_name = "type",
     (gnostic.openapi.v3.property) = {description: "角色类型"}
-  ];  // 角色类型
+  ]; // 角色类型
+
+  optional identity.service.v1.DataScope data_scope = 9 [
+    json_name = "dataScope",
+    (gnostic.openapi.v3.property) = {description: "数据权限范围"}
+  ]; // 数据权限范围
 
   repeated uint32 permissions = 10 [
     json_name = "permissions",
     (gnostic.openapi.v3.property) = {description: "绑定的权限点ID列表"}
   ]; // 绑定的权限点ID列表
+
+  repeated uint32 org_units = 11 [
+    json_name = "orgUnits",
+    (gnostic.openapi.v3.property) = {description: "SELECTED_UNITS 档位下自定义授权的组织单元ID列表"}
+  ]; // SELECTED_UNITS 档位下自定义授权的组织单元ID列表
 
   optional uint32 tenant_id = 40 [
     json_name = "tenantId",

@@ -52,6 +52,16 @@ message OperatorMetadata {
     json_name = "hn",
     (gnostic.openapi.v3.property) = {description: "发起操作的主机名称"}
   ]; // 发起操作的主机名称
+
+  repeated identity.service.v1.DataScope data_scopes = 9 [
+    json_name = "dss",
+    (gnostic.openapi.v3.property) = {description: "数据权限范围类型集合（多角色聚合）"}
+  ]; // 数据权限范围类型集合（多角色聚合）
+
+  repeated uint64 data_scope_unit_ids = 10 [
+    json_name = "dsu",
+    (gnostic.openapi.v3.property) = {description: "UNIT 类数据范围的组织单元目标集（并集）"}
+  ]; // UNIT 类数据范围的组织单元目标集（并集）
 }
 
 // 签名的元数据

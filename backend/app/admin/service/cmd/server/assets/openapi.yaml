@@ -9100,12 +9100,29 @@ components:
                     type: string
                     description: 角色类型
                     format: enum
+                dataScope:
+                    enum:
+                        - DATA_SCOPE_UNSPECIFIED
+                        - ALL
+                        - SELF
+                        - UNIT_ONLY
+                        - UNIT_AND_CHILD
+                        - SELECTED_UNITS
+                    type: string
+                    description: 数据权限范围
+                    format: enum
                 permissions:
                     type: array
                     items:
                         type: integer
                         format: uint32
                     description: 绑定的权限点ID列表
+                orgUnits:
+                    type: array
+                    items:
+                        type: integer
+                        format: uint32
+                    description: SELECTED_UNITS 档位下自定义授权的组织单元ID列表
                 tenantId:
                     type: integer
                     description: 租户ID，0代表系统全局角色

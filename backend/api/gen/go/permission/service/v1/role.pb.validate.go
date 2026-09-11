@@ -17,6 +17,8 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/protobuf/types/known/anypb"
+
+	identitypb "go-wind-admin/api/gen/go/identity/service/v1"
 )
 
 // ensure the imports are used
@@ -33,6 +35,8 @@ var (
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
 	_ = sort.Sort
+
+	_ = identitypb.DataScope(0)
 )
 
 // Validate checks the field values on Role with the rules defined in the proto
@@ -86,6 +90,10 @@ func (m *Role) validate(all bool) error {
 
 	if m.Type != nil {
 		// no validation rules for Type
+	}
+
+	if m.DataScope != nil {
+		// no validation rules for DataScope
 	}
 
 	if m.TenantId != nil {

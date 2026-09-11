@@ -56,6 +56,22 @@ func (Role) Fields() []ent.Field {
 			).
 			Default("TENANT").
 			Nillable(),
+
+		// 数据权限范围（若依式角色级数据范围）。枚举值字符串必须与
+		// identity.service.v1.DataScope 的枚举值逐字一致，否则
+		// mapper.EnumTypeConverter 直传值会在两端口径错位引发 500。
+		// 默认 ALL：存量角色迁移回填全量，管理员按角色收紧。
+		field.Enum("data_scope").
+			Comment("数据权限范围").
+			NamedValues(
+				"All", "ALL",
+				"Self", "SELF",
+				"UnitOnly", "UNIT_ONLY",
+				"UnitAndChild", "UNIT_AND_CHILD",
+				"SelectedUnits", "SELECTED_UNITS",
+			).
+			Default("ALL").
+			Nillable(),
 	}
 }
 

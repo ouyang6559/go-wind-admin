@@ -53,9 +53,9 @@ message UserTokenPayload {
   optional identity.service.v1.DataScope data_scope = 11 [
     json_name = "ds",
     (gnostic.openapi.v3.property) = {
-      description: "数据权限范围"
+      description: "数据权限范围（旧单值字段，仅为令牌平滑过渡保留）"
     }
-  ]; // 数据权限范围
+  ]; // 数据权限范围（旧单值字段，仅为令牌平滑过渡保留）
 
   optional uint32 org_unit_id = 12 [
     json_name = "ouid",
@@ -63,6 +63,20 @@ message UserTokenPayload {
       description: "当前组织单元ID"
     }
   ]; // 当前组织单元ID
+
+  repeated identity.service.v1.DataScope data_scopes = 13 [
+    json_name = "dss",
+    (gnostic.openapi.v3.property) = {
+      description: "数据权限范围类型集合（登录期由多角色配置聚合，ALL 主导，UNIT_* 已并入集合并集）"
+    }
+  ]; // 数据权限范围类型集合（登录期由多角色配置聚合，ALL 主导，UNIT_* 已并入集合并集）
+
+  repeated uint64 data_scope_unit_ids = 14 [
+    json_name = "dsu",
+    (gnostic.openapi.v3.property) = {
+      description: "UNIT 类数据范围的组织单元目标集（多角色并集，登录期展开）"
+    }
+  ]; // UNIT 类数据范围的组织单元目标集（多角色并集，登录期展开）
 
   optional bool is_platform_admin = 20 [
     json_name = "ipa",

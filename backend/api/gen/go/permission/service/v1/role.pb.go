@@ -8,7 +8,8 @@ package permissionpb
 
 import (
 	_ "github.com/google/gnostic/openapiv3"
-	v1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	v11 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	v1 "go-wind-admin/api/gen/go/identity/service/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -223,23 +224,25 @@ func (RoleMetadata_Scope) EnumDescriptor() ([]byte, []int) {
 // 角色
 type Role struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            *uint32                `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`                                                // 角色ID
-	Name          *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`                                             // 角色名称
-	Code          *string                `protobuf:"bytes,3,opt,name=code,proto3,oneof" json:"code,omitempty"`                                             // 角色标识码（如：ADMIN, VIEWER）
-	SortOrder     *uint32                `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3,oneof" json:"sort_order,omitempty"`                 // 排序顺序，值越小越靠前
-	Status        *Role_Status           `protobuf:"varint,5,opt,name=status,proto3,enum=permission.service.v1.Role_Status,oneof" json:"status,omitempty"` // 状态
-	Description   *string                `protobuf:"bytes,6,opt,name=description,proto3,oneof" json:"description,omitempty"`                               // 描述
-	IsProtected   *bool                  `protobuf:"varint,7,opt,name=is_protected,json=isProtected,proto3,oneof" json:"is_protected,omitempty"`           // 受保护角色，仅平台管理员可修改
-	Type          *Role_Type             `protobuf:"varint,8,opt,name=type,proto3,enum=permission.service.v1.Role_Type,oneof" json:"type,omitempty"`       // 角色类型
-	Permissions   []uint32               `protobuf:"varint,10,rep,packed,name=permissions,proto3" json:"permissions,omitempty"`                            // 绑定的权限点ID列表
-	TenantId      *uint32                `protobuf:"varint,40,opt,name=tenant_id,json=tenantId,proto3,oneof" json:"tenant_id,omitempty"`                   // 租户ID，0代表系统全局角色
-	TenantName    *string                `protobuf:"bytes,41,opt,name=tenant_name,json=tenantName,proto3,oneof" json:"tenant_name,omitempty"`              // 租户名称
-	CreatedBy     *uint32                `protobuf:"varint,100,opt,name=created_by,json=createdBy,proto3,oneof" json:"created_by,omitempty"`               // 创建者ID
-	UpdatedBy     *uint32                `protobuf:"varint,101,opt,name=updated_by,json=updatedBy,proto3,oneof" json:"updated_by,omitempty"`               // 更新者ID
-	DeletedBy     *uint32                `protobuf:"varint,102,opt,name=deleted_by,json=deletedBy,proto3,oneof" json:"deleted_by,omitempty"`               // 删除者用户ID
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,200,opt,name=created_at,json=createdAt,proto3,oneof" json:"created_at,omitempty"`                // 创建时间
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,201,opt,name=updated_at,json=updatedAt,proto3,oneof" json:"updated_at,omitempty"`                // 更新时间
-	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,202,opt,name=deleted_at,json=deletedAt,proto3,oneof" json:"deleted_at,omitempty"`                // 删除时间
+	Id            *uint32                `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`                                                                   // 角色ID
+	Name          *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`                                                                // 角色名称
+	Code          *string                `protobuf:"bytes,3,opt,name=code,proto3,oneof" json:"code,omitempty"`                                                                // 角色标识码（如：ADMIN, VIEWER）
+	SortOrder     *uint32                `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3,oneof" json:"sort_order,omitempty"`                                    // 排序顺序，值越小越靠前
+	Status        *Role_Status           `protobuf:"varint,5,opt,name=status,proto3,enum=permission.service.v1.Role_Status,oneof" json:"status,omitempty"`                    // 状态
+	Description   *string                `protobuf:"bytes,6,opt,name=description,proto3,oneof" json:"description,omitempty"`                                                  // 描述
+	IsProtected   *bool                  `protobuf:"varint,7,opt,name=is_protected,json=isProtected,proto3,oneof" json:"is_protected,omitempty"`                              // 受保护角色，仅平台管理员可修改
+	Type          *Role_Type             `protobuf:"varint,8,opt,name=type,proto3,enum=permission.service.v1.Role_Type,oneof" json:"type,omitempty"`                          // 角色类型
+	DataScope     *v1.DataScope          `protobuf:"varint,9,opt,name=data_scope,json=dataScope,proto3,enum=identity.service.v1.DataScope,oneof" json:"data_scope,omitempty"` // 数据权限范围
+	Permissions   []uint32               `protobuf:"varint,10,rep,packed,name=permissions,proto3" json:"permissions,omitempty"`                                               // 绑定的权限点ID列表
+	OrgUnits      []uint32               `protobuf:"varint,11,rep,packed,name=org_units,json=orgUnits,proto3" json:"org_units,omitempty"`                                     // SELECTED_UNITS 档位下自定义授权的组织单元ID列表
+	TenantId      *uint32                `protobuf:"varint,40,opt,name=tenant_id,json=tenantId,proto3,oneof" json:"tenant_id,omitempty"`                                      // 租户ID，0代表系统全局角色
+	TenantName    *string                `protobuf:"bytes,41,opt,name=tenant_name,json=tenantName,proto3,oneof" json:"tenant_name,omitempty"`                                 // 租户名称
+	CreatedBy     *uint32                `protobuf:"varint,100,opt,name=created_by,json=createdBy,proto3,oneof" json:"created_by,omitempty"`                                  // 创建者ID
+	UpdatedBy     *uint32                `protobuf:"varint,101,opt,name=updated_by,json=updatedBy,proto3,oneof" json:"updated_by,omitempty"`                                  // 更新者ID
+	DeletedBy     *uint32                `protobuf:"varint,102,opt,name=deleted_by,json=deletedBy,proto3,oneof" json:"deleted_by,omitempty"`                                  // 删除者用户ID
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,200,opt,name=created_at,json=createdAt,proto3,oneof" json:"created_at,omitempty"`                                   // 创建时间
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,201,opt,name=updated_at,json=updatedAt,proto3,oneof" json:"updated_at,omitempty"`                                   // 更新时间
+	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,202,opt,name=deleted_at,json=deletedAt,proto3,oneof" json:"deleted_at,omitempty"`                                   // 删除时间
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -330,9 +333,23 @@ func (x *Role) GetType() Role_Type {
 	return Role_SYSTEM
 }
 
+func (x *Role) GetDataScope() v1.DataScope {
+	if x != nil && x.DataScope != nil {
+		return *x.DataScope
+	}
+	return v1.DataScope(0)
+}
+
 func (x *Role) GetPermissions() []uint32 {
 	if x != nil {
 		return x.Permissions
+	}
+	return nil
+}
+
+func (x *Role) GetOrgUnits() []uint32 {
+	if x != nil {
+		return x.OrgUnits
 	}
 	return nil
 }
@@ -1420,7 +1437,7 @@ var File_permission_service_v1_role_proto protoreflect.FileDescriptor
 
 const file_permission_service_v1_role_proto_rawDesc = "" +
 	"\n" +
-	" permission/service/v1/role.proto\x12\x15permission.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\x1a\x1epagination/v1/pagination.proto\"\xba\v\n" +
+	" permission/service/v1/role.proto\x12\x15permission.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\x1a\x1fidentity/service/v1/types.proto\x1a\x1epagination/v1/pagination.proto\"\x8a\r\n" +
 	"\x04Role\x12#\n" +
 	"\x02id\x18\x01 \x01(\rB\x0e\xbaG\v\x92\x02\b角色IDH\x00R\x02id\x88\x01\x01\x12+\n" +
 	"\x04name\x18\x02 \x01(\tB\x12\xbaG\x0f\x92\x02\f角色名称H\x01R\x04name\x88\x01\x01\x12O\n" +
@@ -1430,25 +1447,28 @@ const file_permission_service_v1_role_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\x0e2\".permission.service.v1.Role.StatusB\f\xbaG\t\x92\x02\x06状态H\x04R\x06status\x88\x01\x01\x123\n" +
 	"\vdescription\x18\x06 \x01(\tB\f\xbaG\t\x92\x02\x06描述H\x05R\vdescription\x88\x01\x01\x12[\n" +
 	"\fis_protected\x18\a \x01(\bB3\xbaG0\x92\x02-受保护角色，仅平台管理员可修改H\x06R\visProtected\x88\x01\x01\x12M\n" +
-	"\x04type\x18\b \x01(\x0e2 .permission.service.v1.Role.TypeB\x12\xbaG\x0f\x92\x02\f角色类型H\aR\x04type\x88\x01\x01\x12B\n" +
+	"\x04type\x18\b \x01(\x0e2 .permission.service.v1.Role.TypeB\x12\xbaG\x0f\x92\x02\f角色类型H\aR\x04type\x88\x01\x01\x12\\\n" +
+	"\n" +
+	"data_scope\x18\t \x01(\x0e2\x1e.identity.service.v1.DataScopeB\x18\xbaG\x15\x92\x02\x12数据权限范围H\bR\tdataScope\x88\x01\x01\x12B\n" +
 	"\vpermissions\x18\n" +
-	" \x03(\rB \xbaG\x1d\x92\x02\x1a绑定的权限点ID列表R\vpermissions\x12L\n" +
-	"\ttenant_id\x18( \x01(\rB*\xbaG'\x92\x02$租户ID，0代表系统全局角色H\bR\btenantId\x88\x01\x01\x128\n" +
-	"\vtenant_name\x18) \x01(\tB\x12\xbaG\x0f\x92\x02\f租户名称H\tR\n" +
+	" \x03(\rB \xbaG\x1d\x92\x02\x1a绑定的权限点ID列表R\vpermissions\x12a\n" +
+	"\torg_units\x18\v \x03(\rBD\xbaGA\x92\x02>SELECTED_UNITS 档位下自定义授权的组织单元ID列表R\borgUnits\x12L\n" +
+	"\ttenant_id\x18( \x01(\rB*\xbaG'\x92\x02$租户ID，0代表系统全局角色H\tR\btenantId\x88\x01\x01\x128\n" +
+	"\vtenant_name\x18) \x01(\tB\x12\xbaG\x0f\x92\x02\f租户名称H\n" +
+	"R\n" +
 	"tenantName\x88\x01\x01\x125\n" +
 	"\n" +
-	"created_by\x18d \x01(\rB\x11\xbaG\x0e\x92\x02\v创建者IDH\n" +
-	"R\tcreatedBy\x88\x01\x01\x125\n" +
+	"created_by\x18d \x01(\rB\x11\xbaG\x0e\x92\x02\v创建者IDH\vR\tcreatedBy\x88\x01\x01\x125\n" +
 	"\n" +
-	"updated_by\x18e \x01(\rB\x11\xbaG\x0e\x92\x02\v更新者IDH\vR\tupdatedBy\x88\x01\x01\x12;\n" +
+	"updated_by\x18e \x01(\rB\x11\xbaG\x0e\x92\x02\v更新者IDH\fR\tupdatedBy\x88\x01\x01\x12;\n" +
 	"\n" +
-	"deleted_by\x18f \x01(\rB\x17\xbaG\x14\x92\x02\x11删除者用户IDH\fR\tdeletedBy\x88\x01\x01\x12S\n" +
+	"deleted_by\x18f \x01(\rB\x17\xbaG\x14\x92\x02\x11删除者用户IDH\rR\tdeletedBy\x88\x01\x01\x12S\n" +
 	"\n" +
-	"created_at\x18\xc8\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x12\xbaG\x0f\x92\x02\f创建时间H\rR\tcreatedAt\x88\x01\x01\x12S\n" +
+	"created_at\x18\xc8\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x12\xbaG\x0f\x92\x02\f创建时间H\x0eR\tcreatedAt\x88\x01\x01\x12S\n" +
 	"\n" +
-	"updated_at\x18\xc9\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x12\xbaG\x0f\x92\x02\f更新时间H\x0eR\tupdatedAt\x88\x01\x01\x12S\n" +
+	"updated_at\x18\xc9\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x12\xbaG\x0f\x92\x02\f更新时间H\x0fR\tupdatedAt\x88\x01\x01\x12S\n" +
 	"\n" +
-	"deleted_at\x18\xca\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x12\xbaG\x0f\x92\x02\f删除时间H\x0fR\tdeletedAt\x88\x01\x01\"\x19\n" +
+	"deleted_at\x18\xca\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x12\xbaG\x0f\x92\x02\f删除时间H\x10R\tdeletedAt\x88\x01\x01\"\x19\n" +
 	"\x06Status\x12\a\n" +
 	"\x03OFF\x10\x00\x12\x06\n" +
 	"\x02ON\x10\x01\",\n" +
@@ -1465,7 +1485,8 @@ const file_permission_service_v1_role_proto_rawDesc = "" +
 	"\a_statusB\x0e\n" +
 	"\f_descriptionB\x0f\n" +
 	"\r_is_protectedB\a\n" +
-	"\x05_typeB\f\n" +
+	"\x05_typeB\r\n" +
+	"\v_data_scopeB\f\n" +
 	"\n" +
 	"_tenant_idB\x0e\n" +
 	"\f_tenant_nameB\r\n" +
@@ -1648,60 +1669,62 @@ var file_permission_service_v1_role_proto_goTypes = []any{
 	(*RoleOverride_PermissionDelta)(nil),  // 19: permission.service.v1.RoleOverride.PermissionDelta
 	nil,                                   // 20: permission.service.v1.RoleOverride.ExtendedSettingsEntry
 	(*RoleOverride_SecurityPolicy)(nil),   // 21: permission.service.v1.RoleOverride.SecurityPolicy
-	(*timestamppb.Timestamp)(nil),         // 22: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),         // 23: google.protobuf.FieldMask
-	(*v1.PagingRequest)(nil),              // 24: pagination.PagingRequest
-	(*emptypb.Empty)(nil),                 // 25: google.protobuf.Empty
+	(v1.DataScope)(0),                     // 22: identity.service.v1.DataScope
+	(*timestamppb.Timestamp)(nil),         // 23: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),         // 24: google.protobuf.FieldMask
+	(*v11.PagingRequest)(nil),             // 25: pagination.PagingRequest
+	(*emptypb.Empty)(nil),                 // 26: google.protobuf.Empty
 }
 var file_permission_service_v1_role_proto_depIdxs = []int32{
 	0,  // 0: permission.service.v1.Role.status:type_name -> permission.service.v1.Role.Status
 	1,  // 1: permission.service.v1.Role.type:type_name -> permission.service.v1.Role.Type
-	22, // 2: permission.service.v1.Role.created_at:type_name -> google.protobuf.Timestamp
-	22, // 3: permission.service.v1.Role.updated_at:type_name -> google.protobuf.Timestamp
-	22, // 4: permission.service.v1.Role.deleted_at:type_name -> google.protobuf.Timestamp
-	19, // 5: permission.service.v1.RoleOverride.permissions:type_name -> permission.service.v1.RoleOverride.PermissionDelta
-	20, // 6: permission.service.v1.RoleOverride.extended_settings:type_name -> permission.service.v1.RoleOverride.ExtendedSettingsEntry
-	21, // 7: permission.service.v1.RoleOverride.security_policy:type_name -> permission.service.v1.RoleOverride.SecurityPolicy
-	22, // 8: permission.service.v1.RoleMetadata.last_synced_at:type_name -> google.protobuf.Timestamp
-	2,  // 9: permission.service.v1.RoleMetadata.sync_policy:type_name -> permission.service.v1.RoleMetadata.SyncPolicy
-	3,  // 10: permission.service.v1.RoleMetadata.scope:type_name -> permission.service.v1.RoleMetadata.Scope
-	5,  // 11: permission.service.v1.RoleMetadata.custom_overrides:type_name -> permission.service.v1.RoleOverride
-	22, // 12: permission.service.v1.RoleMetadata.created_at:type_name -> google.protobuf.Timestamp
-	22, // 13: permission.service.v1.RoleMetadata.updated_at:type_name -> google.protobuf.Timestamp
-	22, // 14: permission.service.v1.RoleMetadata.deleted_at:type_name -> google.protobuf.Timestamp
-	4,  // 15: permission.service.v1.ListRoleResponse.items:type_name -> permission.service.v1.Role
-	23, // 16: permission.service.v1.GetRoleRequest.view_mask:type_name -> google.protobuf.FieldMask
-	4,  // 17: permission.service.v1.CreateRoleRequest.data:type_name -> permission.service.v1.Role
-	4,  // 18: permission.service.v1.UpdateRoleRequest.data:type_name -> permission.service.v1.Role
-	23, // 19: permission.service.v1.UpdateRoleRequest.update_mask:type_name -> google.protobuf.FieldMask
-	4,  // 20: permission.service.v1.BatchCreateRolesRequest.items:type_name -> permission.service.v1.Role
-	23, // 21: permission.service.v1.GetRolesByRoleCodesRequest.view_mask:type_name -> google.protobuf.FieldMask
-	23, // 22: permission.service.v1.GetRolesByRoleIdsRequest.view_mask:type_name -> google.protobuf.FieldMask
-	24, // 23: permission.service.v1.RoleService.List:input_type -> pagination.PagingRequest
-	24, // 24: permission.service.v1.RoleService.Count:input_type -> pagination.PagingRequest
-	8,  // 25: permission.service.v1.RoleService.Get:input_type -> permission.service.v1.GetRoleRequest
-	9,  // 26: permission.service.v1.RoleService.Create:input_type -> permission.service.v1.CreateRoleRequest
-	12, // 27: permission.service.v1.RoleService.BatchCreate:input_type -> permission.service.v1.BatchCreateRolesRequest
-	10, // 28: permission.service.v1.RoleService.Update:input_type -> permission.service.v1.UpdateRoleRequest
-	11, // 29: permission.service.v1.RoleService.Delete:input_type -> permission.service.v1.DeleteRoleRequest
-	14, // 30: permission.service.v1.RoleService.GetRoleCodesByRoleIds:input_type -> permission.service.v1.GetRoleCodesByRoleIdsRequest
-	16, // 31: permission.service.v1.RoleService.GetRolesByRoleCodes:input_type -> permission.service.v1.GetRolesByRoleCodesRequest
-	17, // 32: permission.service.v1.RoleService.GetRolesByRoleIds:input_type -> permission.service.v1.GetRolesByRoleIdsRequest
-	7,  // 33: permission.service.v1.RoleService.List:output_type -> permission.service.v1.ListRoleResponse
-	18, // 34: permission.service.v1.RoleService.Count:output_type -> permission.service.v1.CountRoleResponse
-	4,  // 35: permission.service.v1.RoleService.Get:output_type -> permission.service.v1.Role
-	25, // 36: permission.service.v1.RoleService.Create:output_type -> google.protobuf.Empty
-	13, // 37: permission.service.v1.RoleService.BatchCreate:output_type -> permission.service.v1.BatchCreateRolesResponse
-	25, // 38: permission.service.v1.RoleService.Update:output_type -> google.protobuf.Empty
-	25, // 39: permission.service.v1.RoleService.Delete:output_type -> google.protobuf.Empty
-	15, // 40: permission.service.v1.RoleService.GetRoleCodesByRoleIds:output_type -> permission.service.v1.GetRoleCodesByRoleIdsResponse
-	7,  // 41: permission.service.v1.RoleService.GetRolesByRoleCodes:output_type -> permission.service.v1.ListRoleResponse
-	7,  // 42: permission.service.v1.RoleService.GetRolesByRoleIds:output_type -> permission.service.v1.ListRoleResponse
-	33, // [33:43] is the sub-list for method output_type
-	23, // [23:33] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	22, // 2: permission.service.v1.Role.data_scope:type_name -> identity.service.v1.DataScope
+	23, // 3: permission.service.v1.Role.created_at:type_name -> google.protobuf.Timestamp
+	23, // 4: permission.service.v1.Role.updated_at:type_name -> google.protobuf.Timestamp
+	23, // 5: permission.service.v1.Role.deleted_at:type_name -> google.protobuf.Timestamp
+	19, // 6: permission.service.v1.RoleOverride.permissions:type_name -> permission.service.v1.RoleOverride.PermissionDelta
+	20, // 7: permission.service.v1.RoleOverride.extended_settings:type_name -> permission.service.v1.RoleOverride.ExtendedSettingsEntry
+	21, // 8: permission.service.v1.RoleOverride.security_policy:type_name -> permission.service.v1.RoleOverride.SecurityPolicy
+	23, // 9: permission.service.v1.RoleMetadata.last_synced_at:type_name -> google.protobuf.Timestamp
+	2,  // 10: permission.service.v1.RoleMetadata.sync_policy:type_name -> permission.service.v1.RoleMetadata.SyncPolicy
+	3,  // 11: permission.service.v1.RoleMetadata.scope:type_name -> permission.service.v1.RoleMetadata.Scope
+	5,  // 12: permission.service.v1.RoleMetadata.custom_overrides:type_name -> permission.service.v1.RoleOverride
+	23, // 13: permission.service.v1.RoleMetadata.created_at:type_name -> google.protobuf.Timestamp
+	23, // 14: permission.service.v1.RoleMetadata.updated_at:type_name -> google.protobuf.Timestamp
+	23, // 15: permission.service.v1.RoleMetadata.deleted_at:type_name -> google.protobuf.Timestamp
+	4,  // 16: permission.service.v1.ListRoleResponse.items:type_name -> permission.service.v1.Role
+	24, // 17: permission.service.v1.GetRoleRequest.view_mask:type_name -> google.protobuf.FieldMask
+	4,  // 18: permission.service.v1.CreateRoleRequest.data:type_name -> permission.service.v1.Role
+	4,  // 19: permission.service.v1.UpdateRoleRequest.data:type_name -> permission.service.v1.Role
+	24, // 20: permission.service.v1.UpdateRoleRequest.update_mask:type_name -> google.protobuf.FieldMask
+	4,  // 21: permission.service.v1.BatchCreateRolesRequest.items:type_name -> permission.service.v1.Role
+	24, // 22: permission.service.v1.GetRolesByRoleCodesRequest.view_mask:type_name -> google.protobuf.FieldMask
+	24, // 23: permission.service.v1.GetRolesByRoleIdsRequest.view_mask:type_name -> google.protobuf.FieldMask
+	25, // 24: permission.service.v1.RoleService.List:input_type -> pagination.PagingRequest
+	25, // 25: permission.service.v1.RoleService.Count:input_type -> pagination.PagingRequest
+	8,  // 26: permission.service.v1.RoleService.Get:input_type -> permission.service.v1.GetRoleRequest
+	9,  // 27: permission.service.v1.RoleService.Create:input_type -> permission.service.v1.CreateRoleRequest
+	12, // 28: permission.service.v1.RoleService.BatchCreate:input_type -> permission.service.v1.BatchCreateRolesRequest
+	10, // 29: permission.service.v1.RoleService.Update:input_type -> permission.service.v1.UpdateRoleRequest
+	11, // 30: permission.service.v1.RoleService.Delete:input_type -> permission.service.v1.DeleteRoleRequest
+	14, // 31: permission.service.v1.RoleService.GetRoleCodesByRoleIds:input_type -> permission.service.v1.GetRoleCodesByRoleIdsRequest
+	16, // 32: permission.service.v1.RoleService.GetRolesByRoleCodes:input_type -> permission.service.v1.GetRolesByRoleCodesRequest
+	17, // 33: permission.service.v1.RoleService.GetRolesByRoleIds:input_type -> permission.service.v1.GetRolesByRoleIdsRequest
+	7,  // 34: permission.service.v1.RoleService.List:output_type -> permission.service.v1.ListRoleResponse
+	18, // 35: permission.service.v1.RoleService.Count:output_type -> permission.service.v1.CountRoleResponse
+	4,  // 36: permission.service.v1.RoleService.Get:output_type -> permission.service.v1.Role
+	26, // 37: permission.service.v1.RoleService.Create:output_type -> google.protobuf.Empty
+	13, // 38: permission.service.v1.RoleService.BatchCreate:output_type -> permission.service.v1.BatchCreateRolesResponse
+	26, // 39: permission.service.v1.RoleService.Update:output_type -> google.protobuf.Empty
+	26, // 40: permission.service.v1.RoleService.Delete:output_type -> google.protobuf.Empty
+	15, // 41: permission.service.v1.RoleService.GetRoleCodesByRoleIds:output_type -> permission.service.v1.GetRoleCodesByRoleIdsResponse
+	7,  // 42: permission.service.v1.RoleService.GetRolesByRoleCodes:output_type -> permission.service.v1.ListRoleResponse
+	7,  // 43: permission.service.v1.RoleService.GetRolesByRoleIds:output_type -> permission.service.v1.ListRoleResponse
+	34, // [34:44] is the sub-list for method output_type
+	24, // [24:34] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_permission_service_v1_role_proto_init() }

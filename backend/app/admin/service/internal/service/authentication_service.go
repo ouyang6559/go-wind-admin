@@ -171,6 +171,7 @@ type AuthenticationService struct {
 	tenantRepo     *data.TenantRepo
 	membershipRepo *data.MembershipRepo
 	orgUnitRepo    *data.OrgUnitRepo
+	roleOrgUnitRepo *data.RoleOrgUnitRepo
 	permissionRepo *data.PermissionRepo
 
 	authenticator *data.Authenticator
@@ -196,6 +197,7 @@ func NewAuthenticationService(
 	tenantRepo *data.TenantRepo,
 	membershipRepo *data.MembershipRepo,
 	orgUnitRepo *data.OrgUnitRepo,
+	roleOrgUnitRepo *data.RoleOrgUnitRepo,
 	permissionRepo *data.PermissionRepo,
 	authenticator *data.Authenticator,
 	clientType authenticationV1.ClientType,
@@ -215,6 +217,7 @@ func NewAuthenticationService(
 		roleRepo:           roleRepo,
 		membershipRepo:     membershipRepo,
 		orgUnitRepo:        orgUnitRepo,
+		roleOrgUnitRepo:    roleOrgUnitRepo,
 		permissionRepo:     permissionRepo,
 		authenticator:      authenticator,
 		clientType:         clientType,
@@ -333,6 +336,9 @@ func (s *AuthenticationService) authorizeAndEnrichUserTokenPayloadUserTenantRela
 	tokenPayload.Roles = roleCodes
 	fillAdminFlags(tokenPayload, roleCodes)
 
+	// 聚合角色级数据范围配置进令牌（dss/dsu 轨道；语义见 aggregateDataScopes）。
+	s.aggregateDataScopes(ctx, tokenPayload.GetTenantId(), userID, roleIDs, tokenPayload)
+
 	return nil
 }
 
@@ -409,7 +415,10 @@ func (s *AuthenticationService) authorizeAndEnrichUserTokenPayloadUserTenantRela
 		return authenticationV1.ErrorForbidden("insufficient authority")
 	}
 	tokenPayload.Roles = roleCodes
-fillAdminFlags(tokenPayload, roleCodes)
+	fillAdminFlags(tokenPayload, roleCodes)
+
+	// 聚合角色级数据范围配置进令牌（dss/dsu 轨道；语义见 aggregateDataScopes）。
+	s.aggregateDataScopes(ctx, tokenPayload.GetTenantId(), userID, validRoleIDs, tokenPayload)
 
 	return nil
 }

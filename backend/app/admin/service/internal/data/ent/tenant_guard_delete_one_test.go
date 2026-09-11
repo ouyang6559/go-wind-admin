@@ -1,4 +1,4 @@
-package ent
+package ent_test
 
 import (
 	"context"

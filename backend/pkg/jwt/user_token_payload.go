@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
@@ -23,8 +25,11 @@ const (
 	ClaimFieldClientID  = "cid"                   // 客户端 ID
 	ClaimFieldDeviceID  = "did"                   // 设备 ID
 	ClaimFieldRoleCodes = "roc"                   // 角色码列表
-	ClaimFieldDataScope = "ds"                    // 数据范围
+	ClaimFieldDataScope = "ds"                    // 数据范围（旧单值字段，仅为令牌平滑过渡保留）
 	ClaimFieldOrgUnitID = "ouid"                  // 组织单元 ID
+
+	ClaimFieldDataScopes     = "dss" // 数据范围类型集合（多角色聚合）
+	ClaimFieldDataScopeUnits = "dsu" // UNIT 类范围的组织单元目标集（并集，逗号连接十进制串）
 
 	ClaimFieldIsPlatformAdmin = "ipa" // 是否平台管理员
 	ClaimFieldIsTenantAdmin   = "ita" // 是否租户管理员
@@ -96,6 +101,22 @@ func NewUserTokenAuthClaims(
 
 	if tokenPayload.DataScope != nil {
 		authClaims[ClaimFieldDataScope] = tokenPayload.GetDataScope().String()
+	}
+	// 多角色聚合的数据范围集合：dss 为类型名数组；dsu 为单元目标集的
+	// 逗号连接十进制串（引擎无数值数组 getter，故以字符串编码）。
+	if len(tokenPayload.DataScopes) > 0 {
+		scopeNames := make([]string, 0, len(tokenPayload.DataScopes))
+		for _, s := range tokenPayload.DataScopes {
+			scopeNames = append(scopeNames, s.String())
+		}
+		authClaims[ClaimFieldDataScopes] = scopeNames
+	}
+	if len(tokenPayload.DataScopeUnitIds) > 0 {
+		unitParts := make([]string, 0, len(tokenPayload.DataScopeUnitIds))
+		for _, id := range tokenPayload.DataScopeUnitIds {
+			unitParts = append(unitParts, strconv.FormatUint(id, 10))
+		}
+		authClaims[ClaimFieldDataScopeUnits] = strings.Join(unitParts, ",")
 	}
 	if tokenPayload.OrgUnitId != nil {
 		authClaims[ClaimFieldOrgUnitID] = tokenPayload.GetOrgUnitId()
@@ -178,6 +199,30 @@ func NewUserTokenPayloadWithClaims(claims *authn.AuthClaims) (*authenticationV1.
 		v, ok := identityV1.DataScope_value[dataScope]
 		if ok {
 			payload.DataScope = trans.Ptr(identityV1.DataScope(v))
+		}
+	}
+
+	// 多角色聚合的数据范围集合（新轨道）。UNSPECIFIED 剔除；空集由
+	// viewer 构建侧的旧单值回退兜底，仍为空则库规则 fail-closed 拒绝。
+	scopeNames, err := claims.GetStrings(ClaimFieldDataScopes)
+	if err != nil {
+		bLogger.GetLogger().Error(context.Background(), fmt.Sprintf("GetStrings ClaimFieldDataScopes failed: %v", err))
+	}
+	for _, name := range scopeNames {
+		if v, ok := identityV1.DataScope_value[name]; ok && identityV1.DataScope(v) != identityV1.DataScope_DATA_SCOPE_UNSPECIFIED {
+			payload.DataScopes = append(payload.DataScopes, identityV1.DataScope(v))
+		}
+	}
+
+	unitIdsStr, err := claims.GetString(ClaimFieldDataScopeUnits)
+	if err != nil {
+		bLogger.GetLogger().Error(context.Background(), fmt.Sprintf("GetString ClaimFieldDataScopeUnits failed: %v", err))
+	}
+	if unitIdsStr != "" {
+		for _, part := range strings.Split(unitIdsStr, ",") {
+			if v, perr := strconv.ParseUint(part, 10, 64); perr == nil {
+				payload.DataScopeUnitIds = append(payload.DataScopeUnitIds, v)
+			}
 		}
 	}
 

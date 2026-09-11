@@ -45,6 +45,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/position"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
+	"go-wind-admin/app/admin/service/internal/data/ent/roleorgunit"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/script"
 	"go-wind-admin/app/admin/service/internal/data/ent/scriptlog"
@@ -136,6 +137,8 @@ type Client struct {
 	Role *RoleClient
 	// RoleMetadata is the client for interacting with the RoleMetadata builders.
 	RoleMetadata *RoleMetadataClient
+	// RoleOrgUnit is the client for interacting with the RoleOrgUnit builders.
+	RoleOrgUnit *RoleOrgUnitClient
 	// RolePermission is the client for interacting with the RolePermission builders.
 	RolePermission *RolePermissionClient
 	// Script is the client for interacting with the Script builders.
@@ -203,6 +206,7 @@ func (c *Client) init() {
 	c.Position = NewPositionClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.RoleMetadata = NewRoleMetadataClient(c.config)
+	c.RoleOrgUnit = NewRoleOrgUnitClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.Script = NewScriptClient(c.config)
 	c.ScriptLog = NewScriptLogClient(c.config)
@@ -340,6 +344,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Position:                 NewPositionClient(cfg),
 		Role:                     NewRoleClient(cfg),
 		RoleMetadata:             NewRoleMetadataClient(cfg),
+		RoleOrgUnit:              NewRoleOrgUnitClient(cfg),
 		RolePermission:           NewRolePermissionClient(cfg),
 		Script:                   NewScriptClient(cfg),
 		ScriptLog:                NewScriptLogClient(cfg),
@@ -404,6 +409,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Position:                 NewPositionClient(cfg),
 		Role:                     NewRoleClient(cfg),
 		RoleMetadata:             NewRoleMetadataClient(cfg),
+		RoleOrgUnit:              NewRoleOrgUnitClient(cfg),
 		RolePermission:           NewRolePermissionClient(cfg),
 		Script:                   NewScriptClient(cfg),
 		ScriptLog:                NewScriptLogClient(cfg),
@@ -451,9 +457,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Menu, c.NotificationChannel, c.OperationAuditLog, c.OrgUnit, c.Permission,
 		c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu,
 		c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog,
-		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.ScriptLog,
-		c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
-		c.UserPosition, c.UserRole,
+		c.Position, c.Role, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission, c.Script,
+		c.ScriptLog, c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor,
+		c.UserOrgUnit, c.UserPosition, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -470,9 +476,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Menu, c.NotificationChannel, c.OperationAuditLog, c.OrgUnit, c.Permission,
 		c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu,
 		c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog,
-		c.Position, c.Role, c.RoleMetadata, c.RolePermission, c.Script, c.ScriptLog,
-		c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor, c.UserOrgUnit,
-		c.UserPosition, c.UserRole,
+		c.Position, c.Role, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission, c.Script,
+		c.ScriptLog, c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor,
+		c.UserOrgUnit, c.UserPosition, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -549,6 +555,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Role.mutate(ctx, m)
 	case *RoleMetadataMutation:
 		return c.RoleMetadata.mutate(ctx, m)
+	case *RoleOrgUnitMutation:
+		return c.RoleOrgUnit.mutate(ctx, m)
 	case *RolePermissionMutation:
 		return c.RolePermission.mutate(ctx, m)
 	case *ScriptMutation:
@@ -5360,6 +5368,140 @@ func (c *RoleMetadataClient) mutate(ctx context.Context, m *RoleMetadataMutation
 	}
 }
 
+// RoleOrgUnitClient is a client for the RoleOrgUnit schema.
+type RoleOrgUnitClient struct {
+	config
+}
+
+// NewRoleOrgUnitClient returns a client for the RoleOrgUnit from the given config.
+func NewRoleOrgUnitClient(c config) *RoleOrgUnitClient {
+	return &RoleOrgUnitClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `roleorgunit.Hooks(f(g(h())))`.
+func (c *RoleOrgUnitClient) Use(hooks ...Hook) {
+	c.hooks.RoleOrgUnit = append(c.hooks.RoleOrgUnit, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `roleorgunit.Intercept(f(g(h())))`.
+func (c *RoleOrgUnitClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RoleOrgUnit = append(c.inters.RoleOrgUnit, interceptors...)
+}
+
+// Create returns a builder for creating a RoleOrgUnit entity.
+func (c *RoleOrgUnitClient) Create() *RoleOrgUnitCreate {
+	mutation := newRoleOrgUnitMutation(c.config, OpCreate)
+	return &RoleOrgUnitCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RoleOrgUnit entities.
+func (c *RoleOrgUnitClient) CreateBulk(builders ...*RoleOrgUnitCreate) *RoleOrgUnitCreateBulk {
+	return &RoleOrgUnitCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RoleOrgUnitClient) MapCreateBulk(slice any, setFunc func(*RoleOrgUnitCreate, int)) *RoleOrgUnitCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RoleOrgUnitCreateBulk{err: fmt.Errorf("calling to RoleOrgUnitClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RoleOrgUnitCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RoleOrgUnitCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RoleOrgUnit.
+func (c *RoleOrgUnitClient) Update() *RoleOrgUnitUpdate {
+	mutation := newRoleOrgUnitMutation(c.config, OpUpdate)
+	return &RoleOrgUnitUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RoleOrgUnitClient) UpdateOne(_m *RoleOrgUnit) *RoleOrgUnitUpdateOne {
+	mutation := newRoleOrgUnitMutation(c.config, OpUpdateOne, withRoleOrgUnit(_m))
+	return &RoleOrgUnitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RoleOrgUnitClient) UpdateOneID(id uint32) *RoleOrgUnitUpdateOne {
+	mutation := newRoleOrgUnitMutation(c.config, OpUpdateOne, withRoleOrgUnitID(id))
+	return &RoleOrgUnitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RoleOrgUnit.
+func (c *RoleOrgUnitClient) Delete() *RoleOrgUnitDelete {
+	mutation := newRoleOrgUnitMutation(c.config, OpDelete)
+	return &RoleOrgUnitDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RoleOrgUnitClient) DeleteOne(_m *RoleOrgUnit) *RoleOrgUnitDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RoleOrgUnitClient) DeleteOneID(id uint32) *RoleOrgUnitDeleteOne {
+	builder := c.Delete().Where(roleorgunit.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RoleOrgUnitDeleteOne{builder}
+}
+
+// Query returns a query builder for RoleOrgUnit.
+func (c *RoleOrgUnitClient) Query() *RoleOrgUnitQuery {
+	return &RoleOrgUnitQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRoleOrgUnit},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RoleOrgUnit entity by its id.
+func (c *RoleOrgUnitClient) Get(ctx context.Context, id uint32) (*RoleOrgUnit, error) {
+	return c.Query().Where(roleorgunit.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RoleOrgUnitClient) GetX(ctx context.Context, id uint32) *RoleOrgUnit {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RoleOrgUnitClient) Hooks() []Hook {
+	hooks := c.hooks.RoleOrgUnit
+	return append(hooks[:len(hooks):len(hooks)], roleorgunit.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *RoleOrgUnitClient) Interceptors() []Interceptor {
+	return c.inters.RoleOrgUnit
+}
+
+func (c *RoleOrgUnitClient) mutate(ctx context.Context, m *RoleOrgUnitMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RoleOrgUnitCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RoleOrgUnitUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RoleOrgUnitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RoleOrgUnitDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RoleOrgUnit mutation op: %q", m.Op())
+	}
+}
+
 // RolePermissionClient is a client for the RolePermission schema.
 type RolePermissionClient struct {
 	config
@@ -6856,8 +6998,9 @@ type (
 		MembershipRole, Menu, NotificationChannel, OperationAuditLog, OrgUnit,
 		Permission, PermissionApi, PermissionAuditLog, PermissionGroup, PermissionMenu,
 		PermissionPolicy, Plan, PlanModule, PlanQuota, PolicyEvaluationLog, Position,
-		Role, RoleMetadata, RolePermission, Script, ScriptLog, Task, Tenant, User,
-		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
+		Role, RoleMetadata, RoleOrgUnit, RolePermission, Script, ScriptLog, Task,
+		Tenant, User, UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
+		UserRole []ent.Hook
 	}
 	inters struct {
 		Api, ApiAuditLog, DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File,
@@ -6866,8 +7009,8 @@ type (
 		MembershipRole, Menu, NotificationChannel, OperationAuditLog, OrgUnit,
 		Permission, PermissionApi, PermissionAuditLog, PermissionGroup, PermissionMenu,
 		PermissionPolicy, Plan, PlanModule, PlanQuota, PolicyEvaluationLog, Position,
-		Role, RoleMetadata, RolePermission, Script, ScriptLog, Task, Tenant, User,
-		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
+		Role, RoleMetadata, RoleOrgUnit, RolePermission, Script, ScriptLog, Task,
+		Tenant, User, UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
 		UserRole []ent.Interceptor
 	}
 )
