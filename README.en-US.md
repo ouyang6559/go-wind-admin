@@ -2,6 +2,8 @@
 
 <img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind Admin" />
 
+# GoWindAdmin (GoWind Admin System)
+
 </div>
 
 GoWindAdmin is an out-of-the-box enterprise-grade Golang full-stack admin system scaffold.

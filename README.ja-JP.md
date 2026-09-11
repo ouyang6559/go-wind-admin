@@ -2,6 +2,8 @@
 
 <img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind 風行" />
 
+# GoWind Admin｜風行
+
 </div>
 
 風行（GoWind Admin）は、箱から出してすぐ使える企業向けのGolangフルスタック管理システムスキャフォールドです。

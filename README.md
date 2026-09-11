@@ -2,6 +2,8 @@
 
 <img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind Admin｜风行" />
 
+# GoWind Admin｜风行
+
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
