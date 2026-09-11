@@ -2,42 +2,63 @@
 
 <img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind Admin" />
 
-# GoWindAdmin (GoWind Admin System)
+# GoWind Admin
+
+**Out-of-the-box, enterprise-grade full-stack admin scaffold (Go + three frontends)**
+
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev/)
+[![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
+[![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
+
+[English](./README.en-US.md) | [中文](./README.md) | [日本語](./README.ja-JP.md)
 
 </div>
 
-GoWindAdmin is an out-of-the-box enterprise-grade Golang full-stack admin system scaffold.
+---
 
-The backend is based on the GO microservice framework [go-kratos](https://go-kratos.dev/), and the frontend offers three versions: `Vue3 Vben`, `Vue3 Element Plus`, and `React Antd`, balancing microservice scalability with monolithic deployment convenience.
+## Project Highlights
 
-Although built on a microservice framework, both the frontend and backend support monolithic architecture for development and deployment, flexibly adapting to different team sizes and project complexity requirements.
+- **Multi-Frontend**: Ships with `Vue3 Vben` (Ant Design Vue), `Vue3 Element Plus`, and `React19 Antd` — pick whichever fits your team
+- **Enterprise-grade RBAC**: Multi-tenant, multi-role, multi-department, menu / button / data-level permission control (Casbin / OPA / Zanzibar)
+- **Security & MLPS Compliance**: Designed against China MLPS 2.0 (Level 2/3) technical requirements — 180-day audit log retention & archiving, password policy trio, TOTP MFA, application-layer password encryption, dynamic RBAC and tenant isolation, scheduled backup rotation. See [Security & Compliance](#security--compliance-mlps-20)
+- **Microservice + Monolith**: Built on the go-kratos microservice framework, yet supports monolith-mode development and deployment — flexible for any team size
+- **Full-stack Code Generation**: Protobuf → Go API / TypeScript clients, Ent Schema → ORM, one-click CRUD scaffolding; companion desktop GUI generator and CLI ([go-wind-toolkit](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp), see [Companion Tools](#companion-tools))
+- **Production-ready**: JWT auth, SSE push, async task scheduling, distributed tracing, Swagger docs, one-click Docker deployment
 
-Easy to get started, feature-rich, deeply adapted to enterprise scenarios, helping developers quickly deliver various enterprise management system projects and significantly improve development efficiency.
-
-**English** | [中文](./README.md) | [日本語](./README.ja-JP.md)
+---
 
 ## Demo
 
-> Demo Portal: <https://demo.admin.gowind.cloud>
->
-> Vue3 Vben Demo: <https://vben.admin.gowind.cloud>
-> Vue3 Element Plus Demo: <https://ele.admin.gowind.cloud>
-> React Demo: <https://react.admin.gowind.cloud>
->
-> Backend Swagger: <https://api.demo.admin.gowind.cloud/docs/>
->
-> Default account/password: `admin` / `Abcd@1234`
+| Frontend Edition | Demo |
+|------------------|------|
+| Vue3 Vben | <https://vben.admin.gowind.cloud> |
+| Vue3 Element Plus | <https://ele.admin.gowind.cloud> |
+| React | <https://react.admin.gowind.cloud> |
+
+- Backend Swagger: <https://api.demo.admin.gowind.cloud/docs/>
+- Default account / password: `admin` / `Abcd@1234`
+
+---
 
 ## Tech Stack
 
-Adhering to the philosophy of efficient, stable, and scalable technology selection:
+<table>
+<tr><th>Layer</th><th>Technologies</th></tr>
+<tr><td><strong>Backend Framework</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
+<tr><td><strong>ORM</strong></td><td><code>Ent</code> (primary) · <code>GORM</code> (auxiliary) · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
+<tr><td><strong>Middleware</strong></td><td><code>Redis 8.0+</code> · <code>MinIO</code> (S3-compatible object storage) · <code>Jaeger</code> (tracing)</td></tr>
+<tr><td><strong>Authentication & Authorization</strong></td><td><code>JWT</code> · <code>Casbin</code> · <code>OPA</code> · <code>Zanzibar</code></td></tr>
+<tr><td><strong>Realtime</strong></td><td><code>SSE</code> (server push) · <code>Asynq</code> (async tasks)</td></tr>
+<tr><td><strong>Scripting Engine</strong></td><td><code>go-scripts</code> · <code>Lua</code> (gopher-lua) · <code>JavaScript</code> (goja) · multi-language hook plugin system</td></tr>
+<tr><td><strong>Vue Vben Edition</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code></td></tr>
+<tr><td><strong>Vue Element Edition</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code> (lightweight pure edition)</td></tr>
+<tr><td><strong>React Edition</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code> (no UMI)</td></tr>
+<tr><td><strong>Deployment & Ops</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
+</table>
 
-- **Backend**: `Golang`, `go-kratos`, `Ent ORM` / `Gorm`, `MySQL`, `Redis`, `Docker`
-- **Common Infrastructure**: `JWT Authentication`, `Casbin` / `OPA` / `Zanzibar` Authorization, `SSE Push`, `Swagger API Docs`
-- **Scripting Engine**: `go-scripts` · `Lua` (gopher-lua) · `JavaScript` (goja) · Multi-language Hook plugin system
-- **Vue Vben Edition**: `Vue3` + `TypeScript` + `Vite` + `Ant Design Vue` + `Vben Admin`
-- **Vue Element Edition**: `Vue3` + `TypeScript` + `Vite` + `Element Plus` (lightweight pure version)
-- **React Edition**: `React19` + `TypeScript` + `Vite` + `React Router` + `Zustand` + `Ant Design V6` + `@ant-design/pro-components` (**No UMI framework**)
+---
 
 ## Security & Compliance (MLPS 2.0)
 
@@ -55,7 +76,18 @@ Security capabilities are designed with reference to the technical requirements 
 
 > **Note**: MLPS evaluation covers more than technical requirements — management policies, physical environment, personnel organization, etc. This project covers the technical measures portion, providing direct support for evaluation preparation in private deployments, but it does not replace the full MLPS certification process.
 
+---
+
 ## Quick Start
+
+### Environment Requirements
+
+| Tool | Version |
+|------|---------|
+| Go | 1.22+ |
+| Node.js | >= 20.10.0 |
+| pnpm | >= 10.0.0 |
+| Docker | 20.0+ |
 
 ### Environment Scripts
 
@@ -65,14 +97,14 @@ Security capabilities are designed with reference to the technical requirements 
 
 ### Docker Deployment Modes
 
-- **full_deploy**: Starts middleware + backend application, suitable for one-click demo or production deployment.
-- **libs_only (Recommended)**: Starts middleware only, run application locally in IDE for daily development.
+- **full_deploy**: Starts middleware + backend application together, suitable for one-click demos or production deployment.
+- **libs_only (Recommended for development)**: Starts middleware only; run the application locally in your IDE for debugging.
 
 ### Backend Startup
 
 > Backend commands go through the `gow` CLI (install: `go install github.com/tx7do/go-wind-toolkit/gowind/cmd/gow@latest`, see [Companion Tools](#companion-tools)).
 
-#### Linux / macOS
+**Linux / macOS:**
 
 ```shell
 # Grant script execution permissions
@@ -91,7 +123,7 @@ gow run admin
 ./scripts/deploy/pm2_service.sh
 ```
 
-#### Windows (PowerShell Administrator)
+**Windows (PowerShell as Administrator):**
 
 ```powershell
 # Allow script execution (only needed once)
@@ -110,68 +142,116 @@ gow run admin
 
 ### Frontend Startup
 
-Frontend projects are located in the `frontend/admin` directory. Dependency installation is unified, but startup commands differ:
+All frontends live under the `frontend/admin` directory and share the same dependency installation:
 
-- React: Directory `frontend/admin/react`, command `pnpm dev`, port: `5888`
-- Vue Element: Directory `frontend/admin/vue-element`, command `pnpm dev`, port: `5777`
-- Vue Vben: Directory `frontend/admin/vue-vben`, command `pnpm dev:antd`, port: `5666`
+| Frontend Edition | Directory | Command | Port |
+|------------------|-----------|---------|------|
+| React | `frontend/admin/react` | `pnpm dev` | 5888 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 5777 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 5666 |
 
 ```shell
 # Install dependencies
 pnpm install
 
 # React Edition
-cd frontend/admin/react
-pnpm dev
+cd frontend/admin/react && pnpm dev
 
 # Vue3 Element Edition
-cd frontend/admin/vue-element
-pnpm dev
+cd frontend/admin/vue-element && pnpm dev
 
 # Vue3 Vben Edition
-cd frontend/admin/vue-vben
-pnpm dev:antd
+cd frontend/admin/vue-vben && pnpm dev:antd
 ```
+
+---
 
 ## Features
 
-| Feature                 | Description                                                                                                                                                                                                             |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| User Management         | Manage and query users, support advanced search and department-linked users; enable/disable users, set/unset manager, reset password, configure multiple roles/departments/managers, one-click login as specified user. |
-| Tenant Management       | Manage tenants. Adding a tenant auto-initializes tenant departments, default roles, and admin. Support plan configuration, enable/disable, one-click login as tenant admin.                                             |
-| Plan & Quota Management | Manage tenant subscription plans and their resource quotas (e.g. module whitelists, usage limits); supports CRUD on plans and quota items.                                                                              |
-| Role Management         | Manage roles and role groups; support user selection by role, set menu and data permissions, batch add/remove employees.                                                                                                |
-| Permission Management   | Manage permission groups, menus, and permission points; supports tree-view listing.                                                                                                                                                                                                 |
-| Organization Management | Manage organizations with tree-view listing.                                                                                                                                                                            |
-| Position Management     | Manage user positions; positions can serve as user labels.                                                                                                                               |
-| API Management          | Manage APIs, support API synchronization (mainly for selecting interfaces when adding permission points), tree-view listing, configure operation log request parameters and responses.                                  |
-| Menu Management         | Configure system menus, operation and button permission identifiers, including directories, menus, and buttons.                                                                                                                                                                                         |
-| Dictionary Management   | Manage dictionary categories and entries, support category-linked entries, server-side multi-column sorting, data import/export.                                                                                        |
-| Task Scheduler          | Manage tasks and task run logs; support create, update, delete, start, pause, and run immediately.                                                                                                                      |
-| File Management         | Manage file uploads, search files, upload to OSS or local storage, download, copy file address, delete files, support image preview (large view).                                                                       |
+### Organization & Permissions
+
+| Feature | Description |
+|---------|-------------|
+| User Management | Manage and query users with advanced search and department-linked users; enable/disable users, set/unset manager, reset password, configure multiple roles / departments / managers, one-click login as a specified user. |
+| Tenant Management | Manage tenants. Adding a tenant auto-initializes its departments, default roles, and admin. Supports plan configuration, enable/disable, and one-click login as the tenant admin. |
+| Plan & Quota Management | Manage tenant subscription plans and resource quotas (module whitelists, usage limits, etc.); CRUD for plans and quota items. |
+| Role Management | Manage roles and role groups; user selection by role, menu and data permissions, batch add/remove employees. |
+| Permission Management | Manage permission groups, menus, and permission points with tree-view listing. |
+| Organization Management | Manage organizations with tree-view listing. |
+| Position Management | Manage user positions; positions can serve as user labels. |
+| Menu Management | Configure system menus, operation permissions, and button permission identifiers — directories, menus, and buttons. |
+
+### System Features
+
+| Feature | Description |
+|---------|-------------|
+| API Management | Manage APIs with API synchronization (mainly for picking endpoints when adding permission points), tree-view listing, and operation-log request/response configuration. |
+| Dictionary Management | Manage dictionary categories and entries; category-linked entries, server-side multi-column sorting, import/export. |
+| Task Scheduler | Manage tasks and task run logs; create, update, delete, start, pause, and run immediately. |
+| File Management | Manage uploads: search, upload to OSS or local storage, download, copy file address, delete, and image preview (large view). |
 | Login Policy | Manage login restriction policies; configure restriction type, method, value, and reason for target users. |
-| Account Login | Sign in with username / email / phone number as account identifier, combinable with image captcha, login policies, and TOTP multi-factor authentication. |
-| Multi-Factor Authentication (MFA) | TOTP-based multi-factor authentication, including login challenge, personal binding management, and admin rescue reset of a user's MFA. |
-| Password Recovery | Reset password with a verification code sent to the bound email: code valid for 10 minutes, single use; all sessions revoked on success; silent handling prevents user enumeration. |
-| Notification Channels | Manage notification channels (EMAIL / SMTP); passwords stored encrypted and masked in lists; enable/disable and test sending. |
-| Server Monitoring | Read-only view of service runtime metrics (CPU cores, memory, goroutines, uptime, etc.) with auto refresh. |
-| Script System   | Script-based plugin system (Lua / JavaScript, database as source of truth, admin-UI changes take effect immediately): entity lifecycle hooks (before veto / after async), scheduled tasks (asynq), HTTP egress (domain allowlist, fail-closed), test runs and execution logs. See [docs/script_system.md](./docs/script_system.md). |
-| Language Management | Manage system-supported languages; configure language name, code, native name, enabled and default status. |
-| Message Categories      | Manage message categories (2-level custom categories) for message management category selection.                                                                                                                        |
-| Message Management      | Manage messages; send by scope (all users / specified users) with message revocation; broadcast fan-out runs on an async task queue (resumable, idempotent); view read status and read time.                                                             |
-| Internal Mail           | Manage internal messages, view details, delete, mark as read, mark all as read.                                                                                                                                         |
-| Personal Center         | View and edit personal info, view last login info, change password, bind / rebind email (verification code), etc.                                                                                                                |
-| Login Logs              | Query login logs for successful and failed logins; supports IP geolocation.                                                                                                                                             |
-| Operation Logs          | Query operation logs for normal and abnormal operations; supports IP geolocation, resource object identification, and viewing operation details.                                                                      |
-| API Logs | Query API audit logs recording API request operator, path, method, and success status; supports IP geolocation. |
-| Data Logs | Query data access audit logs; SQL is lexically masked, with involved table names and data categories automatically extracted. |
+| Account Login | Sign in with username / email / phone number, combinable with image captcha, login policies, and TOTP MFA. |
+| Multi-Factor Authentication (MFA) | TOTP-based MFA: login challenge, personal binding management, and admin rescue reset of a user's MFA. |
+| Password Recovery | Reset password via a code sent to the bound email: 10-minute single-use code, all sessions revoked on success, silent handling prevents user enumeration. |
+| Notification Channels | Manage notification channels (EMAIL / SMTP); encrypted password storage, masked in lists; enable/disable and test sending. |
+| Server Monitoring | Read-only view of runtime metrics (CPU cores, memory, goroutines, uptime, etc.) with auto refresh. |
+| Script System | Script-based plugin system (Lua / JavaScript, database as the source of truth, admin-UI changes take effect immediately): entity lifecycle hooks (before can veto / after is async), scheduled tasks (asynq), HTTP egress (domain allowlist, fail-closed), test runs and execution logs. See [docs/script_system.md](./docs/script_system.md). |
+| Language Management | Manage supported languages: name, code, native name, enabled and default status. |
+
+### Messaging & Logs
+
+| Feature | Description |
+|---------|-------------|
+| Message Categories | Manage message categories (2-level custom categories) used in message management. |
+| Message Management | Send by scope (all users / specified users) with revocation; broadcast fan-out runs on an async task queue (resumable, idempotent); view read status and read time. |
+| Internal Mail | Manage internal messages: view details, delete, mark as read, mark all as read. |
+| Login Logs | Query login logs for successful and failed logins; supports IP geolocation. |
+| Operation Logs | Query operation logs for normal and abnormal operations; supports IP geolocation, resource identification, and detail view. |
+| API Logs | Query API audit logs recording operator, path, method, and success status; supports IP geolocation. |
+| Data Logs | Query data access audit logs; SQL is lexically masked, with involved table names and data categories extracted automatically. |
 | Permission Logs | Query permission change audit logs recording operator, target object, and reason, with request snapshots retained. |
-| Policy Evaluation Logs | Query policy evaluation audit logs recording each authorization decision with evaluation context; supports trace_id correlation for troubleshooting. |
-| Redis Cache Monitor | Read-only Redis cache monitoring displaying INFO, DBSIZE, and slowlog data; performs no write operations. |
+| Policy Evaluation Logs | Query policy evaluation logs recording each authorization decision with its evaluation context; supports trace_id correlation for troubleshooting. |
+| Redis Cache Monitor | Read-only Redis monitoring displaying INFO, DBSIZE, and slowlog data; performs no write operations. |
 
 > All six audit log pages (login / operation / API / data / permission / policy evaluation) support "Export All" under the current filters, aggregating pages into a CSV export (up to 10,000 rows).
 
-## Backend Screenshots
+### Personal Center
+
+| Feature | Description |
+|---------|-------------|
+| Personal Center | View and edit personal info, check last-login info, change password, bind / rebind email (verification code), etc. |
+
+---
+
+## Project Structure
+
+```
+go-wind-admin/
+├── backend/                        # Backend project
+│   ├── api/                        # Protobuf API definitions & generated code
+│   │   ├── protos/                 # .proto sources (layered by domain)
+│   │   └── gen/go/                 # Go code generated by buf
+│   ├── app/admin/service/          # Admin service application
+│   │   ├── cmd/server/             # Entry point (main.go, wiring_ent.go DI assembly)
+│   │   ├── configs/                # Configuration files (YAML)
+│   │   └── internal/               # Business core (data/service/server)
+│   ├── pkg/                        # Shared packages
+│   │   ├── scripting/              # Multi-language scripting engine (Lua + JavaScript)
+│   │   ├── oss/                    # Object storage (MinIO)
+│   │   ├── eventbus/               # Event bus
+│   │   └── ...                     # Other utility packages
+│   ├── scripts/                    # Deployment & backup scripts (env/docker/deploy/backup)
+│   └── sql/                        # Demo data SQL (default data is seeded automatically at service startup)
+├── frontend/admin/                 # Frontend projects
+│   ├── react/                      # React 19 + Ant Design V6
+│   ├── vue-element/                # Vue 3 + Element Plus
+│   └── vue-vben/                   # Vue 3 + Ant Design Vue + Vben Admin
+└── docs/                           # Project documentation
+```
+
+---
+
+## Screenshots
 
 <table>
     <tr>
@@ -237,11 +317,24 @@ pnpm dev:antd
 - **[go-wind-toolkit / gowind-uiapp](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)** — Cross-platform desktop code generator (Go + Wails). Import SQL or connect to your database (MySQL / PostgreSQL / SQLite / SQL Server / Oracle) to generate server-side and frontend code from gRPC / RESTful templates, including simple forms. Also ships a non-interactive, JSON-output CLI (`gowind-cli`) for scripts and AI agents.
 - **[gow — GoWind CLI](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind)** — The recommended command-line entry for this project: `gow run admin` to run the service, `gow ent` / `gow api` for code generation, `gow generate` to scaffold CRUD microservices from a database DSN, and `gow extract` for progressive microservice extraction. Run it under `backend/`; it discovers `app/*/service` automatically. Prefer it over the Makefile for daily development.
 
+## Community & Contribution
+
+Welcome to join the GoWind Admin community. The documents below describe how to contribute code, report issues, and disclose security vulnerabilities:
+
+- [Contributing Guide](./CONTRIBUTING.md) — development environment, codegen conventions, commit conventions and the PR process
+- [Code of Conduct](./.github/CODE_OF_CONDUCT.md) — community interaction expectations
+- [Security Policy](./SECURITY.md) — vulnerability disclosure process and scope
+- [Changelog](./CHANGELOG.md) — release notes
+- Issue templates: [Bug Report](./.github/ISSUE_TEMPLATE/bug_report.md) · [Feature Request](./.github/ISSUE_TEMPLATE/feature_request.md)
+- [PR Template](./.github/PULL_REQUEST_TEMPLATE.md)
+
 ## Contact
 
 - WeChat: `yang_lin_bo` (note: `go-wind-admin`)
 - Juejin column: [go-wind-admin](https://juejin.cn/column/7541283508041826367)
 
-## Thanks to JetBrains for providing free GoLand & WebStorm
+## Acknowledgements
 
-[![avatar](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)](https://jb.gg/OpenSource)
+[![JetBrains](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)](https://jb.gg/OpenSource)
+
+Thanks to JetBrains for providing free GoLand & WebStorm open-source licenses.
