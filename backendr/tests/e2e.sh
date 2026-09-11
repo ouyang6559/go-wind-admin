@@ -110,7 +110,7 @@ chk task-slash-alias 500 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 100)"
 
 # 错误格式
 IM=$(curl -s $R/online-session/my-sessions)
-chk error-format(kratos) 200 200 "$(echo "$IM"|head -c 120)"
+chk error-format-kratos 200 200 "$(echo "$IM"|head -c 120)"
 
 # 登出
 LO=$(rt -X POST $R/logout); chk logout 200 "$(echo "$LO"|tail -1)" "$(echo "$LO"|head -c 100)"
