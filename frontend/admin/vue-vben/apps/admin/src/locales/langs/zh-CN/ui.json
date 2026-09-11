@@ -278,5 +278,13 @@
       "NETWORK_READ_TIMEOUT_ERROR": "网络读取超时",
       "NETWORK_CONNECT_TIMEOUT_ERROR": "网络连接超时"
     }
+  },
+  "import": {
+    "title": "导入数据",
+    "uploadText": "将文件拖到此处，或点击上传",
+    "uploadHint": "仅支持 .xlsx 格式文件",
+    "downloadTemplate": "下载导入模板",
+    "importSuccess": "导入成功（{count} 行）",
+    "importFailed": "导入失败"
   }
 }

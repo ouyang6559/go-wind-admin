@@ -73,6 +73,7 @@ import {
   scriptLanguageToTagType,
   useDeleteScript,
   useUpdateScript,
+  createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
@@ -138,7 +139,8 @@ const pageConfig = computed<ProPageConfig>(() => ({
       } as ToolsButton,
     ],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "filter"],
+    exportsAction: createPagedExportAction(fetchListScripts),
+    defaultToolbar: ["refresh", "filter", "exports"],
     tableAttrs: { border: true, stripe: false },
     columns: [
       { type: "index", label: $t("common.table.seq"), width: 60 },

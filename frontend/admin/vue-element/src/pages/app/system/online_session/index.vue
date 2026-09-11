@@ -40,7 +40,9 @@ import type { online_sessionservicev1_OnlineSession as OnlineSession } from "@/a
 import {
   fetchListOnlineSessions,
   useForceLogoutSession,
+  createPagedExportAction,
 } from "@/api/composables";
+import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
 
 const { mutateAsync: forceLogout } = useForceLogoutSession();
@@ -75,9 +77,15 @@ const pageConfig = computed<ProPageConfig>(() => ({
       });
       return { items: result.items || [], total: result.total || 0 };
     },
+    exportsAction: createPagedExportAction((query: PaginationQuery) =>
+      fetchListOnlineSessions({
+        page: Number(query.paging?.page) || 1,
+        pageSize: Number(query.paging?.pageSize) || 1000,
+        keyword: (query.formValues?.keyword as string) || undefined,
+      }),),
     toolbar: [],
     toolbarRight: [],
-    defaultToolbar: ["refresh", "filter"],
+    defaultToolbar: ["refresh", "filter", "exports"],
     tableAttrs: { border: true, stripe: false },
     columns: [
       { type: "index", label: $t("common.table.seq"), width: 60 },
