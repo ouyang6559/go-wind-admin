@@ -4,6 +4,7 @@
 // Delete 为硬删除（Go 端 TimeAt mixin 无软删拦截器）。
 
 use sqlx::AnyPool;
+use sqlx::Row;
 
 use crate::error::AppError;
 
