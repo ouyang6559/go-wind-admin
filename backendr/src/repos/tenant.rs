@@ -208,7 +208,7 @@ impl TenantRepo {
         for p in &params {
             q = q.bind(p);
         }
-        let row: Option<(i64,)> = q.fetch_optional(&self.db).await.map_err(|e| {
+        let row = q.fetch_optional(&self.db).await.map_err(|e| {
             AppError::Internal {
                 context: "check tenant existence failed".into(),
                 source: Some(Box::new(e)),
@@ -623,9 +623,9 @@ pub async fn create_tenant_with_admin(
     let now = chrono::Utc::now().to_rfc3339();
 
     // 1. 创建租户
-    let ten_status = tenant.status.unwrap_or("ON");
-    let ten_type = tenant.r#type.unwrap_or("PAID");
-    let ten_audit = tenant.audit_status.unwrap_or("APPROVED");
+    let ten_status = tenant.status.as_deref().unwrap_or("ON");
+    let ten_type = tenant.r#type.as_deref().unwrap_or("PAID");
+    let ten_audit = tenant.audit_status.as_deref().unwrap_or("APPROVED");
     let ten_sql = "insert into sys_tenants \
                    (name, code, domain, logo_url, industry, status, type, audit_status, \
                     subscription_plan, expired_at, plan_id, created_by, created_at, updated_at) \
