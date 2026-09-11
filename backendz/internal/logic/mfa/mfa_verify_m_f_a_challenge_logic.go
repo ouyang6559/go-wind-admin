@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go-wind-admin/backendz/internal/ent/gen/usermfafactor"
+	"go-wind-admin/backendz/internal/pkg/session"
 	"go-wind-admin/backendz/internal/pkg/std"
 	"go-wind-admin/backendz/internal/svc"
 	"go-wind-admin/backendz/internal/types"
@@ -60,13 +61,21 @@ func (l *MfaVerifyMFAChallengeLogic) MfaVerifyMFAChallenge(req *types.VerifyMFAC
 		SetLastUsedAt(time.Now()).
 		Save(l.ctx)
 
-	accessToken, aerr := l.svcCtx.Token.CreateAccessToken(ch.UserID, ch.TenantID, ch.Username, ch.ClientType, "")
-	if aerr != nil {
-		return nil, xerr.ServerErrorMsg("create access token failed")
+	accessToken, refreshToken, jti, terr := l.svcCtx.Token.CreateTokenPair(ch.UserID, ch.TenantID, ch.Username, ch.ClientType, "")
+	if terr != nil {
+		return nil, xerr.ServerErrorMsg("create token pair failed")
 	}
-	refreshToken, rerr := l.svcCtx.Token.CreateRefreshToken(ch.UserID, ch.TenantID, ch.Username, ch.ClientType, "")
-	if rerr != nil {
-		return nil, xerr.ServerErrorMsg("create refresh token failed")
+	// 与登录/刷新一致：MFA 通过即视为一次登录，写入在线会话注册表（best-effort）。
+	// 若不复用统一 jti + 会话记录，令牌对会被鉴权中间件的会话吊销检查误判为已下线。
+	if serr := l.svcCtx.Session.Record(l.ctx, session.Meta{
+		UID:        ch.UserID,
+		TenantID:   ch.TenantID,
+		Username:   ch.Username,
+		JTI:        jti,
+		ClientType: ch.ClientType,
+		LoginAt:    time.Now(),
+	}); serr != nil {
+		logx.WithContext(l.ctx).Errorf("record mfa session for user [%d] failed: %v", ch.UserID, serr)
 	}
 
 	deleteLoginChallenge(l.ctx, l.svcCtx.Rds, req.OperationId)

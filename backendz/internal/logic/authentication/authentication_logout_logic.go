@@ -26,7 +26,6 @@ func NewAuthenticationLogoutLogic(ctx context.Context, svcCtx *svc.ServiceContex
 }
 
 func (l *AuthenticationLogoutLogic) AuthenticationLogout() error {
-	// 成功解析到身份即视为登出完成（JWT 无状态；如需服务端吊销可在此接入黑名单）。
 	var userID uint32
 	var username string
 	claims, ok := middleware.ClaimsFromContext(l.ctx)
@@ -35,6 +34,13 @@ func (l *AuthenticationLogoutLogic) AuthenticationLogout() error {
 	} else {
 		userID = claims.UserID
 		username = claims.Username
+		// 吊销当前会话（按 jti 删除令牌对会话记录），使旧 access/refresh token 失效。
+		// 与我的会话/踢下线/重置密码共用同一会话注册表，语义一致。
+		if claims.ID != "" {
+			if err := l.svcCtx.Session.Revoke(l.ctx, userID, claims.ID); err != nil {
+				logx.WithContext(l.ctx).Errorf("revoke session for user [%d] jti [%s] failed: %v", userID, claims.ID, err)
+			}
+		}
 	}
 
 	// 登出审计（best-effort，失败仅记日志不阻断登出）。

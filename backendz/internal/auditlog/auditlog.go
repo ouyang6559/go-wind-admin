@@ -54,7 +54,8 @@ func WriteLogin(ctx context.Context, s *svc.ServiceContext, a LoginAudit) {
 		SetRequestID(a.RequestID).
 		SetActionType(a.Action).
 		SetStatus(a.Status).
-		SetLoginMethod(a.Method)
+		SetLoginMethod(a.Method).
+		SetCreatedAt(time.Now())
 	if a.UserID > 0 {
 		b.SetUserID(a.UserID)
 	}
@@ -120,7 +121,8 @@ func WriteAPI(ctx context.Context, s *svc.ServiceContext, a APIRequest) {
 		SetRequestID(a.RequestID).
 		SetLatencyMs(a.LatencyMS).
 		SetSuccess(a.Success).
-		SetStatusCode(a.StatusCode)
+		SetStatusCode(a.StatusCode).
+		SetCreatedAt(time.Now())
 	if a.UserID > 0 {
 		b.SetUserID(a.UserID)
 	}
@@ -145,7 +147,8 @@ func WriteOperation(ctx context.Context, s *svc.ServiceContext, a OperationAudit
 		SetResourceType(a.ResourceType).
 		SetResourceID(a.ResourceID).
 		SetAction(a.Action).
-		SetSuccess(a.Success)
+		SetSuccess(a.Success).
+		SetCreatedAt(time.Now())
 	if a.UserID > 0 {
 		b.SetUserID(a.UserID)
 	}
@@ -179,7 +182,8 @@ func WritePermissionChange(ctx context.Context, s *svc.ServiceContext, a Permiss
 		SetTargetType(a.TargetType).
 		SetTargetID(a.TargetID).
 		SetTargetName(a.TargetName).
-		SetAction(a.Action)
+		SetAction(a.Action).
+		SetCreatedAt(time.Now())
 	if a.OperatorID > 0 {
 		b.SetOperatorID(a.OperatorID)
 	}
@@ -213,7 +217,8 @@ func WriteDataAccess(ctx context.Context, s *svc.ServiceContext, a DataAccessAud
 		SetTableName(a.TableName).
 		SetDataID(a.DataID).
 		SetAccessType(a.AccessType).
-		SetSuccess(a.Success)
+		SetSuccess(a.Success).
+		SetCreatedAt(time.Now())
 	if a.UserID > 0 {
 		b.SetUserID(a.UserID)
 	}

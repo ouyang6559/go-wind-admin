@@ -8,6 +8,8 @@ import (
 
 	xhttp "github.com/zeromicro/x/http"
 
+	"github.com/zeromicro/go-zero/core/logx"
+
 	"go-wind-admin/backendz/internal/pkg/token"
 	"go-wind-admin/backendz/internal/pkg/viewer"
 	"go-wind-admin/backendz/internal/svc"
@@ -81,6 +83,19 @@ func Auth(svcCtx *svc.ServiceContext) func(next http.HandlerFunc) http.HandlerFu
 			if err != nil {
 				xhttp.JsonBaseResponseCtx(ctx, w, xerr.UnauthorizedMsg("invalid or expired token"))
 				return
+			}
+
+			// 会话吊销检查：登出/踢下线/重置密码会删除会话记录，令牌随之失效。
+			// 会话注册表与登录写入一致地保持 best-effort：Redis 异常时 fail-open（仅记日志），
+			// 只在明确返回「会话不存在」时拒绝。
+			if claims.ID != "" {
+				exists, serr := svcCtx.Session.Exists(ctx, claims.UserID, claims.ID)
+				if serr != nil {
+					logx.WithContext(ctx).Errorf("check session for user [%d] jti [%s] failed: %v", claims.UserID, claims.ID, serr)
+				} else if !exists {
+					xhttp.JsonBaseResponseCtx(ctx, w, xerr.UnauthorizedMsg("session revoked"))
+					return
+				}
 			}
 
 			ctx = context.WithValue(ctx, claimsContextKey, claims)
