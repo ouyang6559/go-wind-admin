@@ -1,11 +1,7 @@
 <template>
   <div class="login-layout">
-    <!-- 顶部 Logo 区域 -->
+    <!-- 顶部工具栏（对齐 react：仅右上角主题/语言，不放品牌信息） -->
     <div class="login-header">
-      <div class="header-left">
-        <el-image :src="logo" class="header-logo" fit="contain" />
-        <span class="header-title">{{ t("core.login.headerTitle") }}</span>
-      </div>
       <div class="header-right">
         <ThemeSwitch class="header-icon" />
         <LangSelect class="header-icon" size="text-20px" />
@@ -38,9 +34,12 @@
             <p class="form-subtitle">{{ t("core.login.welcomeSubtitle") }}</p>
           </div>
 
-          <transition name="fade-slide" mode="out-in">
-            <component :is="formComponents[component]" class="auth-panel__form" />
-          </transition>
+          <!-- 登录表单卡片（对齐 react：24px 圆角 + 边框 + 主色柔影） -->
+          <div class="form-card">
+            <transition name="fade-slide" mode="out-in">
+              <component :is="formComponents[component]" class="auth-panel__form" />
+            </transition>
+          </div>
         </div>
 
         <!-- 版权信息 - 放在右侧面板最底部 -->
@@ -53,7 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import logo from "@/assets/images/logo.png";
 import ThemeSwitch from "@/components/ThemeSwitch/index.vue";
 import SloganIcon from "./icons/slogan.vue";
 
@@ -90,29 +88,8 @@ const formComponents = {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 20px 40px;
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    .header-logo {
-      width: 24px;
-      height: 24px;
-    }
-
-    .header-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #f8fafc;
-
-      html:not(.dark) & {
-        color: #1a1d28;
-      }
-    }
-  }
 
   .header-right {
     display: flex;
@@ -186,11 +163,11 @@ const formComponents = {
   }
 
   .brand-illustration {
-    margin-bottom: 32px;
+    margin-bottom: 36px;
 
     .slogan-icon {
-      width: 320px;
-      height: 320px;
+      width: 360px;
+      height: 360px;
       filter: drop-shadow(0 8px 32px rgba(0, 107, 230, 0.3));
       animation: slogan-float 5s linear infinite;
 
@@ -206,10 +183,11 @@ const formComponents = {
 
   .brand-info {
     .brand-title {
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       color: #f8fafc;
-      margin: 0 0 8px 0;
+      margin: 0 0 14px 0;
 
       html:not(.dark) & {
         color: #1a1d28;
@@ -217,7 +195,8 @@ const formComponents = {
     }
 
     .brand-desc {
-      font-size: 13px;
+      font-size: 15px;
+      line-height: 1.6;
       color: #9ca3af;
       margin: 0;
 
@@ -228,15 +207,15 @@ const formComponents = {
   }
 }
 
-// 右侧登录表单
+// 右侧登录表单（对齐 react UserLayout：面板占 48% 宽、表单内容居中，避免大屏下贴右缘）
 .login-form-wrapper {
-  width: 520px;
-  min-width: 480px;
+  width: 48%;
+  min-width: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 40px;
+  padding: 64px 56px;
   background-color: #111827;
   position: relative;
 
@@ -246,7 +225,7 @@ const formComponents = {
 
   .login-form-container {
     width: 100%;
-    max-width: 380px;
+    max-width: 420px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -272,16 +251,30 @@ const formComponents = {
         }
       }
 
-      .form-subtitle {
-        font-size: 13px;
-        color: #6b7a8d;
-        margin: 0;
+    .form-subtitle {
+      font-size: 13px;
+      color: #6b7a8d;
+      margin: 0;
 
-        html:not(.dark) & {
-          color: #6b7280;
-        }
+      html:not(.dark) & {
+        color: #6b7280;
       }
     }
+  }
+
+  // 登录表单卡片（对齐 react：实底表面色 + 24px 大圆角 + 主色柔影）
+  .form-card {
+    padding: 32px;
+    border-radius: 24px;
+    background-color: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px -8px rgba(0, 107, 230, 0.18);
+
+    html:not(.dark) & {
+      background-color: #ffffff;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+  }
 
     .form-section-title {
       font-size: 15px;
