@@ -737,126 +737,6 @@ func (x *ValidateTokenResponse) GetIsBlocked() bool {
 	return false
 }
 
-type RegisterUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`                                                        // 用户名
-	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`                                                        // 登入密码
-	TenantCode    string                 `protobuf:"bytes,3,opt,name=tenant_code,json=tenantCode,proto3" json:"tenant_code,omitempty"`                                  // 租户代码
-	Email         *string                `protobuf:"bytes,4,opt,name=email,proto3,oneof" json:"email,omitempty"`                                                        // 电子邮件地址
-	ClientType    *ClientType            `protobuf:"varint,5,opt,name=client_type,proto3,enum=authentication.service.v1.ClientType,oneof" json:"client_type,omitempty"` // 客户端类型
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegisterUserRequest) Reset() {
-	*x = RegisterUserRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegisterUserRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegisterUserRequest) ProtoMessage() {}
-
-func (x *RegisterUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegisterUserRequest.ProtoReflect.Descriptor instead.
-func (*RegisterUserRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *RegisterUserRequest) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-func (x *RegisterUserRequest) GetPassword() string {
-	if x != nil {
-		return x.Password
-	}
-	return ""
-}
-
-func (x *RegisterUserRequest) GetTenantCode() string {
-	if x != nil {
-		return x.TenantCode
-	}
-	return ""
-}
-
-func (x *RegisterUserRequest) GetEmail() string {
-	if x != nil && x.Email != nil {
-		return *x.Email
-	}
-	return ""
-}
-
-func (x *RegisterUserRequest) GetClientType() ClientType {
-	if x != nil && x.ClientType != nil {
-		return *x.ClientType
-	}
-	return ClientType_admin
-}
-
-type RegisterUserResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        uint32                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegisterUserResponse) Reset() {
-	*x = RegisterUserResponse{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegisterUserResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegisterUserResponse) ProtoMessage() {}
-
-func (x *RegisterUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegisterUserResponse.ProtoReflect.Descriptor instead.
-func (*RegisterUserResponse) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *RegisterUserResponse) GetUserId() uint32 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
 // 忘记密码 - 请求（identifier 为已绑定的邮箱）
 type ForgotPasswordRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -867,7 +747,7 @@ type ForgotPasswordRequest struct {
 
 func (x *ForgotPasswordRequest) Reset() {
 	*x = ForgotPasswordRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[7]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +759,7 @@ func (x *ForgotPasswordRequest) String() string {
 func (*ForgotPasswordRequest) ProtoMessage() {}
 
 func (x *ForgotPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[7]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +772,7 @@ func (x *ForgotPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForgotPasswordRequest.ProtoReflect.Descriptor instead.
 func (*ForgotPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{7}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ForgotPasswordRequest) GetIdentifier() string {
@@ -915,7 +795,7 @@ type ResetPasswordByCodeRequest struct {
 
 func (x *ResetPasswordByCodeRequest) Reset() {
 	*x = ResetPasswordByCodeRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[8]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -927,7 +807,7 @@ func (x *ResetPasswordByCodeRequest) String() string {
 func (*ResetPasswordByCodeRequest) ProtoMessage() {}
 
 func (x *ResetPasswordByCodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[8]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -940,7 +820,7 @@ func (x *ResetPasswordByCodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordByCodeRequest.ProtoReflect.Descriptor instead.
 func (*ResetPasswordByCodeRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{8}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ResetPasswordByCodeRequest) GetIdentifier() string {
@@ -975,7 +855,7 @@ type WhoAmIResponse struct {
 
 func (x *WhoAmIResponse) Reset() {
 	*x = WhoAmIResponse{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[9]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -987,7 +867,7 @@ func (x *WhoAmIResponse) String() string {
 func (*WhoAmIResponse) ProtoMessage() {}
 
 func (x *WhoAmIResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[9]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +880,7 @@ func (x *WhoAmIResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WhoAmIResponse.ProtoReflect.Descriptor instead.
 func (*WhoAmIResponse) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{9}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *WhoAmIResponse) GetUserId() uint32 {
@@ -1027,7 +907,7 @@ type GetAccessTokensRequest struct {
 
 func (x *GetAccessTokensRequest) Reset() {
 	*x = GetAccessTokensRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[10]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1039,7 +919,7 @@ func (x *GetAccessTokensRequest) String() string {
 func (*GetAccessTokensRequest) ProtoMessage() {}
 
 func (x *GetAccessTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[10]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1052,7 +932,7 @@ func (x *GetAccessTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccessTokensRequest.ProtoReflect.Descriptor instead.
 func (*GetAccessTokensRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{10}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetAccessTokensRequest) GetUserId() uint32 {
@@ -1078,7 +958,7 @@ type GetAccessTokensResponse struct {
 
 func (x *GetAccessTokensResponse) Reset() {
 	*x = GetAccessTokensResponse{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[11]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1090,7 +970,7 @@ func (x *GetAccessTokensResponse) String() string {
 func (*GetAccessTokensResponse) ProtoMessage() {}
 
 func (x *GetAccessTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[11]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1103,7 +983,7 @@ func (x *GetAccessTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccessTokensResponse.ProtoReflect.Descriptor instead.
 func (*GetAccessTokensResponse) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{11}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetAccessTokensResponse) GetAccessTokens() []string {
@@ -1131,7 +1011,7 @@ type BlockTokenRequest struct {
 
 func (x *BlockTokenRequest) Reset() {
 	*x = BlockTokenRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[12]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1143,7 +1023,7 @@ func (x *BlockTokenRequest) String() string {
 func (*BlockTokenRequest) ProtoMessage() {}
 
 func (x *BlockTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[12]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1156,7 +1036,7 @@ func (x *BlockTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockTokenRequest.ProtoReflect.Descriptor instead.
 func (*BlockTokenRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{12}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *BlockTokenRequest) GetUserId() uint32 {
@@ -1243,7 +1123,7 @@ type UnblockTokenRequest struct {
 
 func (x *UnblockTokenRequest) Reset() {
 	*x = UnblockTokenRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[13]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1255,7 +1135,7 @@ func (x *UnblockTokenRequest) String() string {
 func (*UnblockTokenRequest) ProtoMessage() {}
 
 func (x *UnblockTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[13]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1268,7 +1148,7 @@ func (x *UnblockTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnblockTokenRequest.ProtoReflect.Descriptor instead.
 func (*UnblockTokenRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{13}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UnblockTokenRequest) GetUserId() uint32 {
@@ -1335,7 +1215,7 @@ type BlockTokenResponse struct {
 
 func (x *BlockTokenResponse) Reset() {
 	*x = BlockTokenResponse{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[14]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1347,7 +1227,7 @@ func (x *BlockTokenResponse) String() string {
 func (*BlockTokenResponse) ProtoMessage() {}
 
 func (x *BlockTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[14]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1360,7 +1240,7 @@ func (x *BlockTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockTokenResponse.ProtoReflect.Descriptor instead.
 func (*BlockTokenResponse) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{14}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *BlockTokenResponse) GetBlockedUntil() *timestamppb.Timestamp {
@@ -1383,7 +1263,7 @@ type RevokeTokenByIdRequest struct {
 
 func (x *RevokeTokenByIdRequest) Reset() {
 	*x = RevokeTokenByIdRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[15]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1395,7 +1275,7 @@ func (x *RevokeTokenByIdRequest) String() string {
 func (*RevokeTokenByIdRequest) ProtoMessage() {}
 
 func (x *RevokeTokenByIdRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[15]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1408,7 +1288,7 @@ func (x *RevokeTokenByIdRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeTokenByIdRequest.ProtoReflect.Descriptor instead.
 func (*RevokeTokenByIdRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{15}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RevokeTokenByIdRequest) GetJti() string {
@@ -1449,7 +1329,7 @@ type GenerateCaptchaResponse struct {
 
 func (x *GenerateCaptchaResponse) Reset() {
 	*x = GenerateCaptchaResponse{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[16]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1461,7 +1341,7 @@ func (x *GenerateCaptchaResponse) String() string {
 func (*GenerateCaptchaResponse) ProtoMessage() {}
 
 func (x *GenerateCaptchaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[16]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1474,7 +1354,7 @@ func (x *GenerateCaptchaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateCaptchaResponse.ProtoReflect.Descriptor instead.
 func (*GenerateCaptchaResponse) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{16}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GenerateCaptchaResponse) GetCaptchaId() string {
@@ -1501,7 +1381,7 @@ type VerifyCaptchaRequest struct {
 
 func (x *VerifyCaptchaRequest) Reset() {
 	*x = VerifyCaptchaRequest{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[17]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1513,7 +1393,7 @@ func (x *VerifyCaptchaRequest) String() string {
 func (*VerifyCaptchaRequest) ProtoMessage() {}
 
 func (x *VerifyCaptchaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[17]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1526,7 +1406,7 @@ func (x *VerifyCaptchaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyCaptchaRequest.ProtoReflect.Descriptor instead.
 func (*VerifyCaptchaRequest) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{17}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *VerifyCaptchaRequest) GetCaptchaId() string {
@@ -1552,7 +1432,7 @@ type VerifyCaptchaResponse struct {
 
 func (x *VerifyCaptchaResponse) Reset() {
 	*x = VerifyCaptchaResponse{}
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[18]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1564,7 +1444,7 @@ func (x *VerifyCaptchaResponse) String() string {
 func (*VerifyCaptchaResponse) ProtoMessage() {}
 
 func (x *VerifyCaptchaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authentication_service_v1_authentication_proto_msgTypes[18]
+	mi := &file_authentication_service_v1_authentication_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1577,7 +1457,7 @@ func (x *VerifyCaptchaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyCaptchaResponse.ProtoReflect.Descriptor instead.
 func (*VerifyCaptchaResponse) Descriptor() ([]byte, []int) {
-	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{18}
+	return file_authentication_service_v1_authentication_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *VerifyCaptchaResponse) GetValid() bool {
@@ -1673,18 +1553,7 @@ const file_authentication_service_v1_authentication_proto_rawDesc = "" +
 	"\n" +
 	"is_blocked\x18\x03 \x01(\bB+\xbaG(\x92\x02%令牌是否被阻塞/列入黑名单R\tisBlockedB\n" +
 	"\n" +
-	"\b_payload\"\xff\x02\n" +
-	"\x13RegisterUserRequest\x124\n" +
-	"\busername\x18\x01 \x01(\tB\x18\xfaB\x06r\x04\x10\x03\x18@\xbaG\f\x92\x02\t用户名R\busername\x128\n" +
-	"\bpassword\x18\x02 \x01(\tB\x1c\xfaB\ar\x05\x10\b\x18\x80\x01\xbaG\x0f\x92\x02\f登入密码R\bpassword\x12:\n" +
-	"\vtenant_code\x18\x03 \x01(\tB\x19\xfaB\x04r\x02\x18 \xbaG\x0f\x92\x02\f租户代码R\n" +
-	"tenantCode\x12=\n" +
-	"\x05email\x18\x04 \x01(\tB\"\xfaB\ar\x05\x18\xfe\x01`\x01\xbaG\x15\x92\x02\x12电子邮件地址H\x00R\x05email\x88\x01\x01\x12c\n" +
-	"\vclient_type\x18\x05 \x01(\x0e2%.authentication.service.v1.ClientTypeB\x15\xbaG\x12\x92\x02\x0f客户端类型H\x01R\vclient_type\x88\x01\x01B\b\n" +
-	"\x06_emailB\x0e\n" +
-	"\f_client_type\"?\n" +
-	"\x14RegisterUserResponse\x12'\n" +
-	"\auser_id\x18\x01 \x01(\rB\x0e\xbaG\v\x92\x02\b用户IDR\x06userId\"n\n" +
+	"\b_payload\"n\n" +
 	"\x15ForgotPasswordRequest\x12F\n" +
 	"\n" +
 	"identifier\x18\x01 \x01(\tB!\xbaG\x1e\x92\x02\x1b登录账号或绑定邮箱H\x00R\n" +
@@ -1767,11 +1636,11 @@ const file_authentication_service_v1_authentication_proto_rawDesc = "" +
 	"\x1aTOKEN_CATEGORY_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +
 	"\x06ACCESS\x10\x01\x12\v\n" +
-	"\aREFRESH\x10\x022\xa0\v\n" +
+	"\aREFRESH\x10\x022\xad\n" +
+	"\n" +
 	"\x15AuthenticationService\x12\\\n" +
 	"\x05Login\x12'.authentication.service.v1.LoginRequest\x1a(.authentication.service.v1.LoginResponse\"\x00\x12L\n" +
-	"\x06Logout\x12(.authentication.service.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\"\x00\x12q\n" +
-	"\fRegisterUser\x12..authentication.service.v1.RegisterUserRequest\x1a/.authentication.service.v1.RegisterUserResponse\"\x00\x12\\\n" +
+	"\x06Logout\x12(.authentication.service.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
 	"\x0eForgotPassword\x120.authentication.service.v1.ForgotPasswordRequest\x1a\x16.google.protobuf.Empty\"\x00\x12f\n" +
 	"\x13ResetPasswordByCode\x125.authentication.service.v1.ResetPasswordByCodeRequest\x1a\x16.google.protobuf.Empty\"\x00\x12c\n" +
 	"\fRefreshToken\x12'.authentication.service.v1.LoginRequest\x1a(.authentication.service.v1.LoginResponse\"\x00\x12t\n" +
@@ -1799,7 +1668,7 @@ func file_authentication_service_v1_authentication_proto_rawDescGZIP() []byte {
 }
 
 var file_authentication_service_v1_authentication_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_authentication_service_v1_authentication_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_authentication_service_v1_authentication_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_authentication_service_v1_authentication_proto_goTypes = []any{
 	(GrantType)(0),                     // 0: authentication.service.v1.GrantType
 	(TokenType)(0),                     // 1: authentication.service.v1.TokenType
@@ -1810,24 +1679,22 @@ var file_authentication_service_v1_authentication_proto_goTypes = []any{
 	(*LogoutRequest)(nil),              // 6: authentication.service.v1.LogoutRequest
 	(*ValidateTokenRequest)(nil),       // 7: authentication.service.v1.ValidateTokenRequest
 	(*ValidateTokenResponse)(nil),      // 8: authentication.service.v1.ValidateTokenResponse
-	(*RegisterUserRequest)(nil),        // 9: authentication.service.v1.RegisterUserRequest
-	(*RegisterUserResponse)(nil),       // 10: authentication.service.v1.RegisterUserResponse
-	(*ForgotPasswordRequest)(nil),      // 11: authentication.service.v1.ForgotPasswordRequest
-	(*ResetPasswordByCodeRequest)(nil), // 12: authentication.service.v1.ResetPasswordByCodeRequest
-	(*WhoAmIResponse)(nil),             // 13: authentication.service.v1.WhoAmIResponse
-	(*GetAccessTokensRequest)(nil),     // 14: authentication.service.v1.GetAccessTokensRequest
-	(*GetAccessTokensResponse)(nil),    // 15: authentication.service.v1.GetAccessTokensResponse
-	(*BlockTokenRequest)(nil),          // 16: authentication.service.v1.BlockTokenRequest
-	(*UnblockTokenRequest)(nil),        // 17: authentication.service.v1.UnblockTokenRequest
-	(*BlockTokenResponse)(nil),         // 18: authentication.service.v1.BlockTokenResponse
-	(*RevokeTokenByIdRequest)(nil),     // 19: authentication.service.v1.RevokeTokenByIdRequest
-	(*GenerateCaptchaResponse)(nil),    // 20: authentication.service.v1.GenerateCaptchaResponse
-	(*VerifyCaptchaRequest)(nil),       // 21: authentication.service.v1.VerifyCaptchaRequest
-	(*VerifyCaptchaResponse)(nil),      // 22: authentication.service.v1.VerifyCaptchaResponse
-	(*UserTokenPayload)(nil),           // 23: authentication.service.v1.UserTokenPayload
-	(*durationpb.Duration)(nil),        // 24: google.protobuf.Duration
-	(*timestamppb.Timestamp)(nil),      // 25: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),              // 26: google.protobuf.Empty
+	(*ForgotPasswordRequest)(nil),      // 9: authentication.service.v1.ForgotPasswordRequest
+	(*ResetPasswordByCodeRequest)(nil), // 10: authentication.service.v1.ResetPasswordByCodeRequest
+	(*WhoAmIResponse)(nil),             // 11: authentication.service.v1.WhoAmIResponse
+	(*GetAccessTokensRequest)(nil),     // 12: authentication.service.v1.GetAccessTokensRequest
+	(*GetAccessTokensResponse)(nil),    // 13: authentication.service.v1.GetAccessTokensResponse
+	(*BlockTokenRequest)(nil),          // 14: authentication.service.v1.BlockTokenRequest
+	(*UnblockTokenRequest)(nil),        // 15: authentication.service.v1.UnblockTokenRequest
+	(*BlockTokenResponse)(nil),         // 16: authentication.service.v1.BlockTokenResponse
+	(*RevokeTokenByIdRequest)(nil),     // 17: authentication.service.v1.RevokeTokenByIdRequest
+	(*GenerateCaptchaResponse)(nil),    // 18: authentication.service.v1.GenerateCaptchaResponse
+	(*VerifyCaptchaRequest)(nil),       // 19: authentication.service.v1.VerifyCaptchaRequest
+	(*VerifyCaptchaResponse)(nil),      // 20: authentication.service.v1.VerifyCaptchaResponse
+	(*UserTokenPayload)(nil),           // 21: authentication.service.v1.UserTokenPayload
+	(*durationpb.Duration)(nil),        // 22: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),      // 23: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),              // 24: google.protobuf.Empty
 }
 var file_authentication_service_v1_authentication_proto_depIdxs = []int32{
 	0,  // 0: authentication.service.v1.LoginRequest.grant_type:type_name -> authentication.service.v1.GrantType
@@ -1836,47 +1703,44 @@ var file_authentication_service_v1_authentication_proto_depIdxs = []int32{
 	2,  // 3: authentication.service.v1.LogoutRequest.client_type:type_name -> authentication.service.v1.ClientType
 	2,  // 4: authentication.service.v1.ValidateTokenRequest.client_type:type_name -> authentication.service.v1.ClientType
 	3,  // 5: authentication.service.v1.ValidateTokenRequest.token_category:type_name -> authentication.service.v1.TokenCategory
-	23, // 6: authentication.service.v1.ValidateTokenResponse.payload:type_name -> authentication.service.v1.UserTokenPayload
-	2,  // 7: authentication.service.v1.RegisterUserRequest.client_type:type_name -> authentication.service.v1.ClientType
-	2,  // 8: authentication.service.v1.GetAccessTokensRequest.client_type:type_name -> authentication.service.v1.ClientType
-	2,  // 9: authentication.service.v1.BlockTokenRequest.client_type:type_name -> authentication.service.v1.ClientType
-	24, // 10: authentication.service.v1.BlockTokenRequest.duration:type_name -> google.protobuf.Duration
-	2,  // 11: authentication.service.v1.UnblockTokenRequest.client_type:type_name -> authentication.service.v1.ClientType
-	25, // 12: authentication.service.v1.BlockTokenResponse.blocked_until:type_name -> google.protobuf.Timestamp
-	2,  // 13: authentication.service.v1.RevokeTokenByIdRequest.client_type:type_name -> authentication.service.v1.ClientType
-	4,  // 14: authentication.service.v1.AuthenticationService.Login:input_type -> authentication.service.v1.LoginRequest
-	6,  // 15: authentication.service.v1.AuthenticationService.Logout:input_type -> authentication.service.v1.LogoutRequest
-	9,  // 16: authentication.service.v1.AuthenticationService.RegisterUser:input_type -> authentication.service.v1.RegisterUserRequest
-	11, // 17: authentication.service.v1.AuthenticationService.ForgotPassword:input_type -> authentication.service.v1.ForgotPasswordRequest
-	12, // 18: authentication.service.v1.AuthenticationService.ResetPasswordByCode:input_type -> authentication.service.v1.ResetPasswordByCodeRequest
-	4,  // 19: authentication.service.v1.AuthenticationService.RefreshToken:input_type -> authentication.service.v1.LoginRequest
-	7,  // 20: authentication.service.v1.AuthenticationService.ValidateToken:input_type -> authentication.service.v1.ValidateTokenRequest
-	14, // 21: authentication.service.v1.AuthenticationService.GetAccessTokens:input_type -> authentication.service.v1.GetAccessTokensRequest
-	19, // 22: authentication.service.v1.AuthenticationService.RevokeTokenById:input_type -> authentication.service.v1.RevokeTokenByIdRequest
-	16, // 23: authentication.service.v1.AuthenticationService.BlockToken:input_type -> authentication.service.v1.BlockTokenRequest
-	17, // 24: authentication.service.v1.AuthenticationService.UnblockToken:input_type -> authentication.service.v1.UnblockTokenRequest
-	26, // 25: authentication.service.v1.AuthenticationService.WhoAmI:input_type -> google.protobuf.Empty
-	26, // 26: authentication.service.v1.AuthenticationService.GenerateCaptcha:input_type -> google.protobuf.Empty
-	21, // 27: authentication.service.v1.AuthenticationService.VerifyCaptcha:input_type -> authentication.service.v1.VerifyCaptchaRequest
-	5,  // 28: authentication.service.v1.AuthenticationService.Login:output_type -> authentication.service.v1.LoginResponse
-	26, // 29: authentication.service.v1.AuthenticationService.Logout:output_type -> google.protobuf.Empty
-	10, // 30: authentication.service.v1.AuthenticationService.RegisterUser:output_type -> authentication.service.v1.RegisterUserResponse
-	26, // 31: authentication.service.v1.AuthenticationService.ForgotPassword:output_type -> google.protobuf.Empty
-	26, // 32: authentication.service.v1.AuthenticationService.ResetPasswordByCode:output_type -> google.protobuf.Empty
-	5,  // 33: authentication.service.v1.AuthenticationService.RefreshToken:output_type -> authentication.service.v1.LoginResponse
-	8,  // 34: authentication.service.v1.AuthenticationService.ValidateToken:output_type -> authentication.service.v1.ValidateTokenResponse
-	15, // 35: authentication.service.v1.AuthenticationService.GetAccessTokens:output_type -> authentication.service.v1.GetAccessTokensResponse
-	26, // 36: authentication.service.v1.AuthenticationService.RevokeTokenById:output_type -> google.protobuf.Empty
-	18, // 37: authentication.service.v1.AuthenticationService.BlockToken:output_type -> authentication.service.v1.BlockTokenResponse
-	26, // 38: authentication.service.v1.AuthenticationService.UnblockToken:output_type -> google.protobuf.Empty
-	13, // 39: authentication.service.v1.AuthenticationService.WhoAmI:output_type -> authentication.service.v1.WhoAmIResponse
-	20, // 40: authentication.service.v1.AuthenticationService.GenerateCaptcha:output_type -> authentication.service.v1.GenerateCaptchaResponse
-	22, // 41: authentication.service.v1.AuthenticationService.VerifyCaptcha:output_type -> authentication.service.v1.VerifyCaptchaResponse
-	28, // [28:42] is the sub-list for method output_type
-	14, // [14:28] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	21, // 6: authentication.service.v1.ValidateTokenResponse.payload:type_name -> authentication.service.v1.UserTokenPayload
+	2,  // 7: authentication.service.v1.GetAccessTokensRequest.client_type:type_name -> authentication.service.v1.ClientType
+	2,  // 8: authentication.service.v1.BlockTokenRequest.client_type:type_name -> authentication.service.v1.ClientType
+	22, // 9: authentication.service.v1.BlockTokenRequest.duration:type_name -> google.protobuf.Duration
+	2,  // 10: authentication.service.v1.UnblockTokenRequest.client_type:type_name -> authentication.service.v1.ClientType
+	23, // 11: authentication.service.v1.BlockTokenResponse.blocked_until:type_name -> google.protobuf.Timestamp
+	2,  // 12: authentication.service.v1.RevokeTokenByIdRequest.client_type:type_name -> authentication.service.v1.ClientType
+	4,  // 13: authentication.service.v1.AuthenticationService.Login:input_type -> authentication.service.v1.LoginRequest
+	6,  // 14: authentication.service.v1.AuthenticationService.Logout:input_type -> authentication.service.v1.LogoutRequest
+	9,  // 15: authentication.service.v1.AuthenticationService.ForgotPassword:input_type -> authentication.service.v1.ForgotPasswordRequest
+	10, // 16: authentication.service.v1.AuthenticationService.ResetPasswordByCode:input_type -> authentication.service.v1.ResetPasswordByCodeRequest
+	4,  // 17: authentication.service.v1.AuthenticationService.RefreshToken:input_type -> authentication.service.v1.LoginRequest
+	7,  // 18: authentication.service.v1.AuthenticationService.ValidateToken:input_type -> authentication.service.v1.ValidateTokenRequest
+	12, // 19: authentication.service.v1.AuthenticationService.GetAccessTokens:input_type -> authentication.service.v1.GetAccessTokensRequest
+	17, // 20: authentication.service.v1.AuthenticationService.RevokeTokenById:input_type -> authentication.service.v1.RevokeTokenByIdRequest
+	14, // 21: authentication.service.v1.AuthenticationService.BlockToken:input_type -> authentication.service.v1.BlockTokenRequest
+	15, // 22: authentication.service.v1.AuthenticationService.UnblockToken:input_type -> authentication.service.v1.UnblockTokenRequest
+	24, // 23: authentication.service.v1.AuthenticationService.WhoAmI:input_type -> google.protobuf.Empty
+	24, // 24: authentication.service.v1.AuthenticationService.GenerateCaptcha:input_type -> google.protobuf.Empty
+	19, // 25: authentication.service.v1.AuthenticationService.VerifyCaptcha:input_type -> authentication.service.v1.VerifyCaptchaRequest
+	5,  // 26: authentication.service.v1.AuthenticationService.Login:output_type -> authentication.service.v1.LoginResponse
+	24, // 27: authentication.service.v1.AuthenticationService.Logout:output_type -> google.protobuf.Empty
+	24, // 28: authentication.service.v1.AuthenticationService.ForgotPassword:output_type -> google.protobuf.Empty
+	24, // 29: authentication.service.v1.AuthenticationService.ResetPasswordByCode:output_type -> google.protobuf.Empty
+	5,  // 30: authentication.service.v1.AuthenticationService.RefreshToken:output_type -> authentication.service.v1.LoginResponse
+	8,  // 31: authentication.service.v1.AuthenticationService.ValidateToken:output_type -> authentication.service.v1.ValidateTokenResponse
+	13, // 32: authentication.service.v1.AuthenticationService.GetAccessTokens:output_type -> authentication.service.v1.GetAccessTokensResponse
+	24, // 33: authentication.service.v1.AuthenticationService.RevokeTokenById:output_type -> google.protobuf.Empty
+	16, // 34: authentication.service.v1.AuthenticationService.BlockToken:output_type -> authentication.service.v1.BlockTokenResponse
+	24, // 35: authentication.service.v1.AuthenticationService.UnblockToken:output_type -> google.protobuf.Empty
+	11, // 36: authentication.service.v1.AuthenticationService.WhoAmI:output_type -> authentication.service.v1.WhoAmIResponse
+	18, // 37: authentication.service.v1.AuthenticationService.GenerateCaptcha:output_type -> authentication.service.v1.GenerateCaptchaResponse
+	20, // 38: authentication.service.v1.AuthenticationService.VerifyCaptcha:output_type -> authentication.service.v1.VerifyCaptchaResponse
+	26, // [26:39] is the sub-list for method output_type
+	13, // [13:26] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_authentication_service_v1_authentication_proto_init() }
@@ -1894,24 +1758,23 @@ func file_authentication_service_v1_authentication_proto_init() {
 	file_authentication_service_v1_authentication_proto_msgTypes[3].OneofWrappers = []any{}
 	file_authentication_service_v1_authentication_proto_msgTypes[4].OneofWrappers = []any{}
 	file_authentication_service_v1_authentication_proto_msgTypes[5].OneofWrappers = []any{}
-	file_authentication_service_v1_authentication_proto_msgTypes[7].OneofWrappers = []any{}
-	file_authentication_service_v1_authentication_proto_msgTypes[8].OneofWrappers = []any{}
-	file_authentication_service_v1_authentication_proto_msgTypes[12].OneofWrappers = []any{
+	file_authentication_service_v1_authentication_proto_msgTypes[6].OneofWrappers = []any{}
+	file_authentication_service_v1_authentication_proto_msgTypes[10].OneofWrappers = []any{
 		(*BlockTokenRequest_Token)(nil),
 		(*BlockTokenRequest_Jti)(nil),
 	}
-	file_authentication_service_v1_authentication_proto_msgTypes[13].OneofWrappers = []any{
+	file_authentication_service_v1_authentication_proto_msgTypes[11].OneofWrappers = []any{
 		(*UnblockTokenRequest_Token)(nil),
 		(*UnblockTokenRequest_Jti)(nil),
 	}
-	file_authentication_service_v1_authentication_proto_msgTypes[15].OneofWrappers = []any{}
+	file_authentication_service_v1_authentication_proto_msgTypes[13].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authentication_service_v1_authentication_proto_rawDesc), len(file_authentication_service_v1_authentication_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   19,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

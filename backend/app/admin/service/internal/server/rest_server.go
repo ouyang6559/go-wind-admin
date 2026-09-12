@@ -79,9 +79,6 @@ func NewRestMiddleware(
 	// add white list for authentication.
 	rpc.AddWhiteList(
 		adminV1.OperationAuthenticationServiceLogin,
-		// 注册接口在 proto 中声明免鉴权（security:{}）且登录页注册流程无 token，
-		// 此前白名单遗漏导致注册接口 401（前端注册页从未可用）
-		adminV1.OperationAuthenticationServiceRegisterUser,
 		adminV1.OperationAuthenticationServiceGenerateCaptcha,
 		adminV1.OperationAuthenticationServiceVerifyCaptcha,
 		// 刷新令牌接口免鉴权：refresh token 现以 HttpOnly Cookie 传输且为自描述 JWT，
@@ -101,16 +98,16 @@ func NewRestMiddleware(
 	)
 
 	ms = append(ms, selector.Server(
-			auth.Server(
-				auth.WithAccessTokenChecker(accessTokenChecker),
-				auth.WithTenantAccessChecker(tenantAccessChecker),
-				auth.WithInjectMetadata(false),
-				auth.WithInjectEnt(true),
-			),
-			authz.Server(newEvalLoggingEngine(authorizer.Engine(), policyEvaluationLogRepo)),
-		).
-			Match(rpc.NewRestWhiteListMatcher()).
-			Build(),
+		auth.Server(
+			auth.WithAccessTokenChecker(accessTokenChecker),
+			auth.WithTenantAccessChecker(tenantAccessChecker),
+			auth.WithInjectMetadata(false),
+			auth.WithInjectEnt(true),
+		),
+		authz.Server(newEvalLoggingEngine(authorizer.Engine(), policyEvaluationLogRepo)),
+	).
+		Match(rpc.NewRestWhiteListMatcher()).
+		Build(),
 	)
 
 	return ms

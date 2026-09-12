@@ -30,17 +30,6 @@ service AuthenticationService {
     };
   }
 
-  rpc RegisterUser (authentication.service.v1.RegisterUserRequest) returns (authentication.service.v1.RegisterUserResponse) {
-    option (google.api.http) = {
-      post: "/admin/v1/register"
-      body: "*"
-    };
-
-    option(gnostic.openapi.v3.operation) = {
-      security: {}
-    };
-  }
-
   // 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
   rpc ForgotPassword (authentication.service.v1.ForgotPasswordRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {

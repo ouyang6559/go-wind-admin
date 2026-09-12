@@ -14,7 +14,6 @@ import { ElNotification } from "element-plus";
 import {
   login as authLogin,
   logout as authLogout,
-  registerUser as authRegisterUser,
   generateCaptcha as authGenerateCaptcha,
   getMyPermissionCode,
   getMe,
@@ -268,14 +267,6 @@ async function logout(redirect: boolean = true) {
   await _doLogout(redirect);
 }
 
-async function register(username: string, password: string) {
-  return await authRegisterUser({
-    username,
-    password: encryptPassword(password),
-    tenantCode: "master",
-  });
-}
-
 async function getCaptcha() {
   return await authGenerateCaptcha();
 }
@@ -345,7 +336,6 @@ export function useAuth() {
     // 强制登出：纯前端清理+跳转，不调后端 logout API。
     // 用于改密成功等 token 已被后端吊销的场景，避免登出请求再吃 401。
     forceLogout: () => _doLogout(true),
-    register,
     getCaptcha,
     fetchUserInfo,
     fetchAccessCodes,

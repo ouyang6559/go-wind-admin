@@ -36,7 +36,6 @@
   "auth": "Authentication",
   "login": "Login",
   "mfaChallenge": "MFA Verification",
-  "register": "Register",
   "error-pages": "Error",
   "unauthorized": "Unauthorized",
   "forbidden": "Forbidden",

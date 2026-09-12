@@ -1003,9 +1003,6 @@ export interface AuthenticationService {
   Logout(
     request: wellKnownEmpty,
   ): Promise<wellKnownEmpty>;
-  RegisterUser(
-    request: authenticationservicev1_RegisterUserRequest,
-  ): Promise<authenticationservicev1_RegisterUserResponse>;
   // 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
   ForgotPassword(
     request: authenticationservicev1_ForgotPasswordRequest,
@@ -1047,14 +1044,6 @@ export function createAuthenticationServiceClient(
         service: 'AuthenticationService',
         method: 'Logout',
       }) as Promise<wellKnownEmpty>;
-    },
-    RegisterUser(request) {
-      const path = `admin/v1/register`;
-      const body = JSON.stringify(request);
-      return transport.unary(path, 'POST', body, {
-        service: 'AuthenticationService',
-        method: 'RegisterUser',
-      }) as Promise<authenticationservicev1_RegisterUserResponse>;
     },
     ForgotPassword(request) {
       const path = `admin/v1/forgot-password`;
@@ -1150,18 +1139,6 @@ export type authenticationservicev1_LoginResponse = {
 export type authenticationservicev1_TokenType =
   | 'bearer'
   | 'mac';
-export type authenticationservicev1_RegisterUserRequest = {
-  client_type?: authenticationservicev1_ClientType;
-  email?: string;
-  password: string | undefined;
-  tenantCode: string | undefined;
-  username: string | undefined;
-};
-
-export type authenticationservicev1_RegisterUserResponse = {
-  userId: number | undefined;
-};
-
 // 忘记密码 - 请求（identifier 为已绑定的邮箱）
 export type authenticationservicev1_ForgotPasswordRequest = {
   identifier?: string;

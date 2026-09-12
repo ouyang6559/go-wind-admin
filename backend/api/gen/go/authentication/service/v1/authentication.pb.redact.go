@@ -73,17 +73,6 @@ func (s *redactedAuthenticationServiceServer) Logout(ctx context.Context, in *Lo
 	return res, err
 }
 
-// RegisterUser is the redacted wrapper for the actual AuthenticationServiceServer.RegisterUser method
-// Unary RPC
-func (s *redactedAuthenticationServiceServer) RegisterUser(ctx context.Context, in *RegisterUserRequest) (*RegisterUserResponse, error) {
-	res, err := s.srv.RegisterUser(ctx, in)
-	if !s.bypass.CheckInternal(ctx) {
-		// Apply redaction to the response
-		redact.Apply(res)
-	}
-	return res, err
-}
-
 // ForgotPassword is the redacted wrapper for the actual AuthenticationServiceServer.ForgotPassword method
 // Unary RPC
 func (s *redactedAuthenticationServiceServer) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest) (*emptypb.Empty, error) {
@@ -319,38 +308,6 @@ func (x *ValidateTokenResponse) Redact() {
 	// Safe field: IsValid
 
 	// Safe field: IsBlocked
-}
-
-// Ensure RegisterUserRequest implements the Redactor interface at compile time.
-var _ redact.Redactor = (*RegisterUserRequest)(nil)
-
-// Redact method implementation for RegisterUserRequest
-func (x *RegisterUserRequest) Redact() {
-	if x == nil {
-		return
-	}
-
-	// Safe field: Username
-
-	// Safe field: Password
-
-	// Safe field: TenantCode
-
-	// Safe field: Email
-
-	// Safe field: ClientType
-}
-
-// Ensure RegisterUserResponse implements the Redactor interface at compile time.
-var _ redact.Redactor = (*RegisterUserResponse)(nil)
-
-// Redact method implementation for RegisterUserResponse
-func (x *RegisterUserResponse) Redact() {
-	if x == nil {
-		return
-	}
-
-	// Safe field: UserId
 }
 
 // Ensure ForgotPasswordRequest implements the Redactor interface at compile time.

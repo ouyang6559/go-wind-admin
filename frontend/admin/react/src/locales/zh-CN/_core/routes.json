@@ -36,7 +36,6 @@
   "auth": "认证",
   "login": "登录",
   "mfaChallenge": "MFA 验证",
-  "register": "注册",
   "error-pages": "错误",
   "unauthorized": "未授权",
   "forbidden": "无权限",
