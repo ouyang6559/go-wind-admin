@@ -128,6 +128,19 @@ impl TaskRepo {
         Ok(row.map(map_row))
     }
 
+    /// 全量任务（调度器 start_all 用，跨租户，按 typeName 去重依赖上层）。
+    pub async fn list_all(&self) -> Result<Vec<TaskRow>, AppError> {
+        let sql = format!("select {SELECT_COLS} from sys_tasks where deleted_at is null");
+        let rows = sqlx::query_as::<sqlx::Any, TaskTuple>(&sql)
+            .fetch_all(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "list all tasks failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+        Ok(rows.into_iter().map(map_row).collect())
+    }
+
     /// 按 type_name 查询（须具名租户上下文，平台上下文在 handler 拦截）。
     pub async fn get_by_type_name(
         &self,

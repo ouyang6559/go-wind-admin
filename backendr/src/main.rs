@@ -27,6 +27,16 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState::new(config).await;
     tracing::info!(meta = "GoWind Admin backendr (axum) start", addr = %addr);
 
+    // 启动内嵌任务调度器：注册启用中的 PERIODIC 任务 + 系统级常驻任务
+    {
+        let sched = state.scheduler.clone();
+        tokio::spawn(async move {
+            if let Err(e) = sched.start_all().await {
+                tracing::warn!(error = %e, "task scheduler start_all failed (continuing)");
+            }
+        });
+    }
+
     // 4. Router（带 ConnectInfo，登录链路记录客户端 IP）+ 操作审计中间件
     // 先用 with_state 注入的中介器需要 AppState；Layer 须在 with_state 之前应用于路由。
     let app = build_router()

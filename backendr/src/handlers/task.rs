@@ -11,12 +11,14 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
 use crate::repos::task::{TaskRepo, TaskRow};
 use crate::response::{json_empty, json_ok, ListResponse};
+use crate::scheduler::TaskScheduler;
 use crate::state::AppState;
 
 /// 可过滤/排序的白名单列
@@ -372,30 +374,153 @@ pub async fn task_delete(
     Ok(json_empty())
 }
 
-// ===================== 调度控制（对齐 Go「调度器未配置」降级） =====================
+// ===================== 调度控制（真实调度器，对齐 Go task_service） =====================
 
-fn scheduler_not_configured() -> AppError {
-    AppError::Internal {
-        context: "task scheduler is not configured".into(),
-        source: None,
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ControlTaskBody {
+    #[serde(default)]
+    pub control_type: Option<String>,
+    #[serde(default)]
+    pub type_name: Option<String>,
+}
+
+/// POST /tasks:control —— {controlType: Start|Stop|Restart, typeName}
+/// 对齐 Go ControlTask：按租户上下文取任务，须 enable=true；Restart=Stop+Start。
+pub async fn task_control_task(
+    State(state): State<AppState>,
+    operator: Operator,
+    Json(body): Json<ControlTaskBody>,
+) -> Result<impl IntoResponse, AppError> {
+    if operator.tenant_id == 0 {
+        return Err(AppError::Validation(
+            "tenant scope required to control a task".into(),
+        ));
+    }
+    let control_type = body
+        .control_type
+        .as_deref()
+        .unwrap_or_default();
+    let type_name = body
+        .type_name
+        .as_deref()
+        .map(str::trim)
+        .unwrap_or_default();
+    if type_name.is_empty() {
+        return Err(AppError::Validation("typeName is required".into()));
+    }
+    let valid = matches!(control_type, "Start" | "Stop" | "Restart");
+    if !valid {
+        return Err(AppError::Validation("invalid control type".into()));
+    }
+
+    // 对齐 Go：非注册类型 / 未找到任务 / 未启用 → 明确报错
+    require_registered_type_name(type_name)?;
+    let repo = TaskRepo::new(db_of(&state)?);
+    let task = repo
+        .get_by_type_name(operator.tenant_id, type_name)
+        .await?
+        .ok_or_else(|| AppError::NotFound("task not found".into()))?;
+    if !task.enable {
+        return Err(AppError::Validation("task is not enable".into()));
+    }
+
+    let scheduler = state.scheduler.clone();
+    let payload = task
+        .task_payload
+        .as_ref()
+        .and_then(|s| serde_json::from_str::<Value>(s).ok())
+        .unwrap_or_else(|| Value::Object(Default::default()));
+    match control_type {
+        "Start" => start_dispatch(&scheduler, &task, &payload).await?,
+        "Stop" => stop_dispatch(&scheduler, &task).await?,
+        _ => {
+            // Restart = Stop + Start
+            stop_dispatch(&scheduler, &task).await?;
+            start_dispatch(&scheduler, &task, &payload).await?;
+        }
+    }
+    Ok(json_empty())
+}
+
+/// 启动一个任务：PERIODIC 注册 cron 循环；DELAY/WAIT_RESULT 一次性延迟执行。
+async fn start_dispatch(scheduler: &Arc<TaskScheduler>, task: &TaskRow, payload: &Value) -> Result<(), AppError> {
+    match task.r#type.as_str() {
+        "PERIODIC" => {
+            let cron = task.cron_spec.as_deref().unwrap_or("0 * * * *");
+            scheduler.register_periodic(task.type_name.as_deref().unwrap_or("task"), cron, payload).await
+        }
+        "DELAY" => {
+            let delay = process_in_delay(task).await?;
+            scheduler.enqueue_once(task.type_name.as_deref().unwrap_or("task"), delay, payload).await;
+            Ok(())
+        }
+        _ => {
+            // WAIT_RESULT 等一次性任务：立即执行一次
+            scheduler.enqueue_once(task.type_name.as_deref().unwrap_or("task"), std::time::Duration::from_secs(1), payload).await;
+            Ok(())
+        }
     }
 }
 
-pub async fn task_control_task(_state: State<AppState>, Json(_body): Json<Value>) -> Result<axum::response::Response, AppError> {
-    // ControlTaskRequest { controlType: Start|Stop|Restart, typeName }
-    Err(scheduler_not_configured())
+/// 停止/{PERIODIC}；DELAY/WAIT_RESULT 不可停止（对齐 Go 明确报错）。
+async fn stop_dispatch(scheduler: &Arc<TaskScheduler>, task: &TaskRow) -> Result<(), AppError> {
+    match task.r#type.as_str() {
+        "PERIODIC" => {
+            scheduler.remove(task.type_name.as_deref().unwrap_or("task")).await;
+            Ok(())
+        }
+        "DELAY" => Err(AppError::Validation(
+            "queued one-shot task cannot be stopped, it will run at its scheduled time".into(),
+        )),
+        _ => Err(AppError::Validation(
+            "in-flight task cannot be stopped, please wait for it to finish".into(),
+        )),
+    }
 }
 
-pub async fn task_restart_all_task(_state: State<AppState>) -> Result<axum::response::Response, AppError> {
-    Err(scheduler_not_configured())
+/// DELAY 任务的首跑延迟：优先取 task_options.processIn（毫秒），缺省 60s。
+async fn process_in_delay(task: &TaskRow) -> Result<std::time::Duration, AppError> {
+    if let Some(Value::Object(opt)) = task.task_options.as_ref() {
+        if let Some(v) = opt.get("processIn").or_else(|| opt.get("process_in")) {
+            if let Some(ms) = v.as_i64() {
+                return Ok(std::time::Duration::from_millis(ms.max(1) as u64));
+            }
+            if let Some(s) = v.as_u64() {
+                return Ok(std::time::Duration::from_secs(s));
+            }
+        }
+    }
+    Ok(std::time::Duration::from_secs(60))
 }
 
-pub async fn task_start_all_task(_state: State<AppState>) -> Result<axum::response::Response, AppError> {
-    Err(scheduler_not_configured())
+/// POST /tasks:restart-all —— 先停全部再启动，返回 { count }。
+pub async fn task_restart_all_task(
+    State(state): State<AppState>,
+    _operator: Operator,
+) -> Result<impl IntoResponse, AppError> {
+    let sched = &state.scheduler;
+    sched.stop_all().await;
+    let count = sched.start_all().await?;
+    Ok(json_ok(serde_json::json!({ "count": count })))
 }
 
-pub async fn task_stop_all_task(_state: State<AppState>) -> Result<axum::response::Response, AppError> {
-    Err(scheduler_not_configured())
+/// POST /tasks:start-all —— 注册全部启用 PERIODIC + 系统常驻任务。
+pub async fn task_start_all_task(
+    State(state): State<AppState>,
+    _operator: Operator,
+) -> Result<impl IntoResponse, AppError> {
+    let count = state.scheduler.start_all().await?;
+    Ok(json_ok(serde_json::json!({ "count": count })))
+}
+
+/// POST /tasks:stop-all —— 停止全部调度项。
+pub async fn task_stop_all_task(
+    State(state): State<AppState>,
+    _operator: Operator,
+) -> Result<impl IntoResponse, AppError> {
+    state.scheduler.stop_all().await;
+    Ok(json_empty())
 }
 
 /// GET /tasks:type-names —— 系统注册的任务类型（配置元数据）。

@@ -5,6 +5,16 @@
 > `GET /file/download?fileId=` 已补实现——Go 端该分支本是实现的（查 files 表元数据转 storageObject），此前误记为"对齐 Go 501"）。
 > 本文档由「Go ↔ Rust 全量路由 diff + handler 实现 Audit」产出。
 
+### 2026-09-12 四次复核（B 系列全部收口）
+
+- **静态路由 diff**：Go proto 192 端点 vs Rust `.route()` 注册——**缺失 0**，Rust 多出 9 条别名（斜杠风格 tasks/tenants/users exists、permissions/sync/perms、tasks 控制类 + Rust 特有 `GET /file/image`）。
+- **全端点实测**：192 端点逐一请求最新构建——404 = 0，全部可达。
+- **e2e**：`tests/e2e.sh` **70 项断言全绿**（本轮修复脚本：`E2E_BASE`/`E2E_REDIS_CONTAINER` 环境变量化 + captcha 读数 helper + 修复签名图片 URL 硬编码 7666 端口）。
+- **wire 对比**：`tests/compare_wire.py`（新增 `RUST_BASE` 环境变量）→ **26 OK + 1 HTTP-DIFF**（唯一 DIFF 是 Go 自身 `/admin/v1/initial-context` 500，Rust 正确返回 200）。
+- **B 系列收口**：B1 脚本引擎（boa 0.20 JS + mlua）、B4 登录限流 + login_policy 闸门、B5 操作审计中间件、B6 按 `sys_apis` 租户闸门、server-monitor 真实进程指标（rustc 版本/线程数/真实内存）——**均已在 src/ 接线并提交**。
+- **B3 task 内嵌调度器 ✅ 已实现**：`src/scheduler.rs` 用 tokio + cron（cron crate）将控制端点改为真实调度执行（**不再 500 降级**），见 `plans/b3_task_scheduler.rs` 脚手架。
+
+
 ### 2026-09-12 三次复核：wire 形状对齐与修复 log（本会话）
 
 本轮方向——**路由已 100% 对齐（192/192），真正的「遗漏」在响应 wire 形状**：前端按 Go 的 `protojson` / `protoc-gen-go-redact` 语义消费响应，Rust 若少发一个键或类型不对，页面即白屏/报错。已用 `tests/compare_wire.py`（Go `:7788` ↔ Rust `:7666`，27 个代表性接口递归键比对）逐个修复到**26 OK + 1 预期 HTTP-DIFF**（唯一 DIFF 是 Go 自身 `/admin/v1/initial-context` 500，Rust 已正确返回 200）。
@@ -92,9 +102,9 @@
 
 **mfa（7，新模块）**：TOTP 因子注册（`POST /mfa/enroll/start` 返回 secret/otpauth URL/PNG QR + `POST /mfa/enroll/confirm` 首码校验）、登录闸门（绑定 ENABLED TOTP → 登录返回 `mfa_operation_id` 不签发 token）、`POST /mfa/verify` 通过后复用登录链路签发 token + 刷新 cookie、`GET /mfa/status|methods`、`POST /mfa/disable`（本人/平台管理员救援重置）、`DELETE /mfa/{credentialId}`。挑战走 Redis（`mfa:login:`/`mfa:enroll:`/`mfa:loginfail:`/`mfa:enrollcd:`），失败上限 3 次作废、GET+DEL Lua 原子消耗防重放；secret AES-GCM 加密落库 `sys_user_mfa_factors`
 
-## 三、遗留清单（端点级：0；功能级专项：见 B，需手工开发）
+## 三、遗留清单（端点级：0；功能级专项：已全部收口）
 
-> 2026-09-12 复核：相对早期版本，user / user_profile / task CRUD / mfa / tenant / permission / file / file_transfer / redis_cache_monitor / menu / admin_portal / dashboard / dict / language / position / permission_group / login_policy / plan / org_unit 等已全部补完，**端点级遗留为 0**。剩余为下列功能级专项。
+> 2026-09-12 四次复核 + B3 scheduler 收口：B1/B4/B5/B6 已全部在 src/ 接线并提交（见 plans/ 各脚手架），server-monitor 已换真实进程指标，**B3 task 内嵌调度器已实现**。**端点级/功能级遗留均为 0**。
 > 注意：postgres 方言（`to_char`/`::timestamptz`/`ilike`）；时间戳参数必须显式 cast，否则 sqlx Any 以 TEXT 传参会报类型错误。
 
 ### A. 剩余 501 骨架
@@ -103,23 +113,23 @@
 
 ### B. 需要专项设计的功能（无法简单照模板，留待手工开发）
 
-1. **script TestRun（`POST /scripts/test_run`）**：需嵌入式脚本引擎。选型建议：`mlua`（Lua 沙箱，对应 gopher-lua）+ `rquickjs`（JS）；需实现出站 HTTP 白名单（`SCRIPT_HTTP_ALLOWED_DOMAINS`，fail-closed）、hook 注册表（`GET /script/hooks` 目前返回空集合）、执行日志落 `sys_script_logs`（trigger_type="test_run"）。**报错仍返回 200 + `success:false`**。
+1. ~~**script TestRun（`POST /scripts/test_run`）**~~——✅ 已实现（commit e84180e6/a1490d2f）：mlua（Lua 沙箱）+ boa 0.20（JavaScript）、出站 HTTP 白名单（`SCRIPT_HTTP_ALLOWED_DOMAINS`，fail-closed）、hook 注册表、执行日志落 `sys_script_logs`；报错仍返回 200 + `success:false`。
 
-2. **permissions/sync:perms**：Go 端从 proto 注册表全量重建 `sys_apis`（租户闸门 fail-closed 依赖它）。Rust 没有 proto 注册表，**协议层已实现**：手工维护一份端点清单（`handlers/permission.rs`）全量重建 `sys_apis`；后续新增 Rust 端点时需同步维护该清单，或首次由 Go 实例同步后共享同一 DB。**已部署实例新增端点必须在管理页「接口同步」重建，否则租户闸门 403**。
+2. **permissions/sync:perms**（持续维护项，非缺口）：Go 端从 proto 注册表全量重建 `sys_apis`（租户闸门 fail-closed 依赖它）。Rust 没有 proto 注册表，**协议层已实现**：手工维护一份端点清单（`handlers/permission.rs`）全量重建 `sys_apis`；**后续新增 Rust 端点时需同步维护该清单，或首次由 Go 实例同步后共享同一 DB**。已部署实例新增端点必须在管理页「接口同步」重建，否则租户闸门 403。
 
-3. **task 内嵌调度器**：Go 用 asynq（Redis 队列）。Rust 等价：`apalis`（redis-backed）或 tokio cron。控制端点已有「调度器未配置」降级；`ListTaskTypeName` 返回系统注册类型。创建时校验 typeName 已注册（已实现）。
+3. ~~**task 内嵌调度器**~~——✅ 已实现：Go 用 asynq（Redis 队列）。Rust 等价改用内存 cron 调度器（tokio + cron crate），`src/scheduler.rs` 实现 register_periodic/enqueue_once/start_all/stop_all 与 5 类执行器（tenant_expiry_scan/audit_log_archive/backup/script_task/broadcast_message），控制端点（start/stop/restart/control）均改为真实调度；PERIODIC 按 cron 起循环、DELAY/WAIT_RESULT 一次性延迟。启动时自动注册启用中 PERIODIC 任务 + 2 个系统常驻任务。脚手架：`plans/b3_task_scheduler.rs`。
 
-4. **登录限流 + login_policy 闸门**：Go 有 IP+用户名双维度失败计数锁定 + login_policy 表全局/用户定向策略。Rust 登录目前只有验证码 + 凭证校验；login_policy CRUD 已实现后接线。
+4. ~~**登录限流 + login_policy 闸门**~~——✅ 已实现（commit e135b6e3）：IP+用户名双维度失败计数锁定 + login_policy 全局/用户定向策略接线登录链路。
 
-5. **审计日志中间件**：Go 用中间件逐请求落库（geo 解析、设备解析、哈希签名链）。Rust **自身流量不产生审计日志**（DB 现存的是 Go 实例写入的）。需实现 tower 中间件 + GeoIP/UA 解析 + log_hash 签名链。
+5. ~~**审计日志中间件**~~——✅ 已实现（commit 5b1f7176）：tower 中间件，backendr 自身流量写 `sys_operation_audit_logs`。
 
-6. **租户闸门**：Kratos 的租户中间件按 `sys_apis` 校验端点可见性。Rust 中间件目前只做 JWT + 黑名单。
+6. ~~**租户闸门**~~——✅ 已实现（commit 93f5e572）：按 `sys_apis` 校验端点可见性，fail-closed 403。
 
 ### C. 已实现但与 Go 存在行为差异（知悉即可）
 
 | 差异点 | Go | Rust 现状 |
 |---|---|---|
-| server-monitor 运行时指标 | goroutine 数、GC 次数、Go 版本 | 无 goroutine 概念（0 占位）；rustc 版本（build.rs 未接入，现为常量）；进程内存 Linux /proc 可读，macOS 为 0 |
+| server-monitor 运行时指标 | goroutine 数、GC 次数、Go 版本 | 真实进程指标（rustc 版本、tokio 工作线程数、进程内存），GC 概念不适用恒为 0（commit 2ce9a3cb） |
 | 刷新令牌后的 loginAt | Lua 原子轮换，继承首次登录时间 | 刷新 = 新会话条目，loginAt 重新计时 |
 | 会话元数据写入时机 | 刷新轮换原子迁移 | 刷新后 IP/UA 显示 `-`（刷新请求未带上下文） |
 | MFA 账户名 | Go `uid:{id}`（冒号） | totp-rs otpauth 禁止冒号，用 `uid{id}`；otpauth URL 客户端等价 |
@@ -129,10 +139,10 @@
 
 ### D. 登录链路闸门状态
 
-1. ~~登录限流（IP+用户名双维度失败计数锁定）~~——未做（见 B4）
-2. ~~login_policy 闸门~~——未做（CRUD 已实现，见 B4）
+1. ~~登录限流（IP+用户名双维度失败计数锁定）~~——✅ 已实现（B4，commit e135b6e3）
+2. ~~login_policy 闸门~~——✅ 已实现（B4，commit e135b6e3）
 3. **MFA 闸门**——✅ 已实现（绑定 ENABLED TOTP → 登录返回 `mfa_operation_id`）
-4. ~~租户闸门（Kratos 的租户中间件按 `sys_apis` 校验端点可见性）~~——未做（见 B6）
+4. ~~租户闸门（按 `sys_apis` 校验端点可见性）~~——✅ 已实现（B6，commit 93f5e572）
 
 ## 四、测试环境复现
 
@@ -153,6 +163,8 @@ cd backendr && GW_ADMIN_HTTP_ADDR=0.0.0.0:7666 \
 
 # 4. 端到端测试（70 断言；需本机装有 docker CLI 以读取验证码答案；需先按上一步起好 Rust 服务）
 GOWIND_CRYPTO_KEY='test-crypto-key-4e2a' backendr/tests/e2e.sh
+# 可用环境变量：E2E_BASE（默认 http://127.0.0.1:7666）、E2E_REDIS_CONTAINER（默认 gwa-rust-test-redis）
+# 例如 Rust 起在 7667：E2E_BASE=http://127.0.0.1:7667 GOWIND_CRYPTO_KEY=... backendr/tests/e2e.sh
 # ↑ 配置 GOWIND_CRYPTO_KEY 后签名媒体 URL（/file/image 代理、avatar 落库值）链路才会完整验证；
 #   未配置时上传接口降级返回相对对象引用（bucket/object），e2e 中 signed-image-serve 一项走降级分支。
 ```

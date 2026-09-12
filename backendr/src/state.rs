@@ -18,6 +18,8 @@ pub struct AppState {
     pub redis: Option<redis::Client>,
     /// JWT 密钥
     pub jwt_secret: String,
+    /// task 内嵌调度器引擎（cron 调度 + 执行器）——自身持 DB/Redis 引用
+    pub scheduler: Arc<crate::scheduler::TaskScheduler>,
 }
 
 impl AppState {
@@ -49,11 +51,17 @@ impl AppState {
         };
 
         let jwt_secret = config.jwt_secret.clone();
+        let scheduler = crate::scheduler::TaskScheduler::new(
+            db.clone(),
+            redis.clone(),
+            jwt_secret.clone(),
+        );
         AppState {
             config: Arc::new(config),
             db,
             redis,
             jwt_secret,
+            scheduler,
         }
     }
 }

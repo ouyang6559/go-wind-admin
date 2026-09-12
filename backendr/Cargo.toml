@@ -82,6 +82,9 @@ totp-rs = { version = "5.7.2", features = ["otpauth", "qr", "gen_secret"] }
 # server-monitor 进程运行时指标（跨平台 RSS/虚拟内存、线程数；替代 /proc 单平台占位）
 sysinfo = "0.33"
 
+# task 内嵌调度器引擎（等保/周期任务真实调度；对齐 Go asynq cron 语义）
+cron = "0.12"
+
 # 脚本执行引擎（test_run）：Lua 用 mlua（vendored），JavaScript 用 boa_engine（纯 Rust）
 mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
 boa_engine = "0.20"
