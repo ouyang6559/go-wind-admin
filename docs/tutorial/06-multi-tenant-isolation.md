@@ -64,13 +64,17 @@ Create 强制覆盖 tenant_id 防伪造；显式改 tenant_id 值仅放行"同�
 
 ## 6. 套餐联动（plan / billing）
 
-租户绑定的套餐决定：可用模块白名单（与 Api 表闸门联动）、到期后的只读降级。套餐与配额的
-管理页在「套餐管理 / 配额管理」。运维侧注意：租户报 403 或只读，先查套餐模块白名单与到期时间，
-再查接口同步。
+租户绑定的套餐决定两件事：可用**模块白名单**（闸门第 3 段，与 Api 表模块归类联动）与
+**到期处置**——三档：READONLY 即时只读降级（闸门第 2 段）；BLOCK_LOGIN / FREEZE 经
+小时级系统扫描任务把租户状态置 EXPIRED / FREEZE 并吊销该租户全部用户令牌，随后由
+"非 ON 即拒"路径接管。套餐与配额的管理页在「套餐管理 / 配额管理」。运维侧注意：
+租户报 403 或只读，先查套餐模块白名单与到期时间，再查接口同步。全链语义、生效时延、
+续费恢复流程见套餐专文。
 
 ## 深读
 
 - [tenant_isolation.md](../tenant_isolation.md) —— 租户隔离唯一权威：上下文链路、HTTP 闸门、数据层读写隔离全形态、覆盖边界（含 access_keys 缺冗余层记录）、接入步骤、租户 403 排障决策树
+- [plan_billing.md](../plan_billing.md) —— 套餐与计费管控唯一权威：三档到期策略全链路、模块白名单上线 checklist、配额与用量计量、租户数据清理
 - [data_scope_design.md](../data_scope_design.md) —— 数据范围唯一权威（五档/聚合/接入/运维/边界）
 - [frontend_authority.md](../frontend_authority.md) —— 字段级权限（字段轴，与本章行级轴正交）
 - `backend/app/admin/service/internal/data/ent/schema/tenant_mutation_guard.go`、

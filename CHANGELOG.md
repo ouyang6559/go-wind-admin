@@ -109,6 +109,13 @@
   的 register 行随之消失）。
 
 ### 修复
+- 修复 MFA 登录成功路径 refresh token 走响应体：与主登录路径不一致（HttpOnly Cookie），
+  造成 refresh 暴露在 JS 可读响应体、且 MFA 用户会话的静默续期从未生效（前端仅认 Cookie）。
+  改为统一走 HttpOnly Cookie 下发。详见 `docs/authentication.md`。
+- 修复 `sys_access_keys`（AK/SK 凭证表）为 33 张带租户表中唯一缺仓内租户写隔离守卫
+  `TenantMutationGuardPolicy` 的表：补挂守卫（库层 TenantPrivacy 为主、仓内守卫为冗余
+  第二道防线的全量双防线），并新增守卫单测钉住跨租户 Update/Delete 0 行命中。
+  详见 `docs/tenant_isolation.md`。
 - 修复空库全新部署后 admin 无法登录（GitHub issue #58）：默认密码 `admin`
   不满足等保口令复杂度策略，初始化种入默认凭证时被静默拒绝——用户行已建、
   凭证行缺失且错误被吞，重启后初始化不再触发，admin 永久登录失败。

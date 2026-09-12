@@ -122,9 +122,11 @@ UNSPECIFIED 剔除、空集不兜底（交库规则 fail-closed），语义见 d
 枚举映射：ent `api.BusinessModule` ↔ proto `identityV1.Module`（checker 内两张 switch 表）。
 白名单查询用 `SystemViewerContext`（闸门自身跨租户查询的合法通道）。
 
-**注意**：`expiry_policy` 的 BLOCK_LOGIN / FREEZE 两个档位**当前未在闸门实现**（闸门只做 READONLY 降级；
-BLOCK_LOGIN/FREEZE 语义需在登录链路落地，见 [authentication.md](./authentication.md) 第 2 章的租户状态检查——
-登录时会拒绝非 ON 租户，效果上近似 BLOCK_LOGIN；FREEZE 的差异化语义未实现）。
+**注意**：闸门本体只实现 READONLY 档的只读降级——这是刻意的分工：BLOCK_LOGIN / FREEZE 两档
+经**小时级到期扫描任务**（`AsyncTenantExpiryScan` → `EnforceExpiryPolicies`）把租户状态置
+EXPIRED / FREEZE 并吊销该租户全部用户令牌，随后由本闸门第 1 段（status!=ON 拒）与登录链路的
+租户状态检查接管。三档完整语义、生效时延与恢复流程见
+[plan_billing.md](./plan_billing.md) 第 4 节。
 
 ### 4.3 Api 表的生成与同步（`internal/service/api_service.go`）
 
@@ -230,6 +232,6 @@ Create 分支：租户上下文**强制覆盖** `SetTenantID(viewer.tid)`（防�
 |---|---|---|
 | ~~`sys_access_keys` 缺仓内守卫~~ | **已修复（2026-09-12）**：schema 补挂 `Policy()` + `gow ent` 重生成 + 守卫单测钉住（第 6 节修复记录） | — |
 | ~~`tenant_mutation_guard.go` 文件头注释过时~~ | **已修复（2026-09-12）**：注释已更新为"库层已全覆盖、本守卫为冗余第二道防线"并保留历史说明 | — |
-| `expiry_policy` 的 BLOCK_LOGIN/FREEZE | 闸门未实现（仅 READONLY）；登录链路拒绝非 ON 租户近似 BLOCK_LOGIN | 明确语义后落地或从管理页选项撤下 |
+| ~~`expiry_policy` 的 BLOCK_LOGIN/FREEZE 未实现~~ | **此前记载有误，实为已实现**：经小时级到期扫描任务的状态映射执行（[plan_billing.md](./plan_billing.md) 第 4 节）；闸门分工只承担 READONLY 即时降级 | FREEZE 与 EXPIRED 效果等价为已知设计现状（plan_billing 第 10 节），如需差异化再立项 |
 | entql feature | 守卫与库层的 `WhereP` 注入依赖 entql 生成的 `WhereP` 方法 | schema 生成配置中必须保持 entql feature 开启，关掉=两道写隔离同时静默失效 |
 | gorm 路径隔离 | 未深验证 | 接入 gorm 租户表前核实库侧行为并补测 |
