@@ -369,12 +369,54 @@ pub async fn api_delete(
     Ok(json_empty())
 }
 
-/// POST /apis/sync：Rust 端无 proto/OpenAPI 注册表可重建，且 sys_apis 为租户闸门依据，
-/// 实现为幂等 no-op（保留现有数据），返回 google.protobuf.Empty。
+/// POST /apis/sync：全量重建 sys_apis。
+///
+/// Rust 端无 proto/OpenAPI 注册表，改用**手工维护的端点清单**（`crate::api_manifest::ENDPOINTS`）
+/// 作为重建依据，对齐 Go `SyncApis` 的 truncate + 全量重插语义（Go 由 OpenAPI 重插）。
+///
+/// 运维约定：**新增端点时必须在 `src/api_manifest.rs` 中登记**，并在管理页触发本接口触发
+/// 全量重建；否则 `sys_apis` 缺失该端点，租户访问闸门会对它 fail-closed 403。
+///
+/// scope 固定 ADMIN、status 固定 ON（对齐 Go OpenAPI 重建时未显式设置的默认）。
 pub async fn api_sync_apis(
-    State(_state): State<AppState>,
-    _operator: Operator,
+    State(state): State<AppState>,
+    operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
+    let db = crate::handlers::script::db_of(&state)?;
+    let repo = ApiRepo::new(db);
+
+    // truncate：清空 sys_apis（对齐 Go repo.Truncate）。删除失败则整体失败。
+    repo.truncate().await?;
+
+    // 全量重插：逐条 best-effort（对齐 Go `_ = Update` 忽略单条失败）。
+    let mut ok = 0usize;
+    let mut failed = 0usize;
+    for ep in crate::api_manifest::ENDPOINTS {
+        let op = format!("{} {}", ep.method, ep.path);
+        let module = ep.business_module.unwrap_or("UNSPECIFIED");
+        match repo
+            .create(
+                Some(&op),
+                Some(ep.path),
+                Some(ep.method),
+                Some(module),
+                None,
+                ep.business_module,
+                None,
+                Some("ADMIN"),
+                Some("ON"),
+                operator.user_id,
+            )
+            .await
+        {
+            Ok(_) => ok += 1,
+            Err(e) => {
+                failed += 1;
+                tracing::error!(error = %e, path = ep.path, method = ep.method, "sync api insert failed");
+            }
+        }
+    }
+    tracing::info!(ok, failed, total = crate::api_manifest::ENDPOINTS.len(), "api sync completed");
     Ok(json_empty())
 }
 

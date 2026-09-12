@@ -23,4 +23,5 @@ pub mod scripting;
 pub mod services;
 pub mod state;
 pub mod storage;
+pub mod api_manifest;
 pub mod auth;

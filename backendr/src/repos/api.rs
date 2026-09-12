@@ -282,4 +282,17 @@ impl ApiRepo {
             })?;
         Ok(res.rows_affected())
     }
+
+    /// 清空全部 API 资源（对齐 Go `repo.Truncate`，用于 SyncApis 全量重建）。
+    pub async fn truncate(&self) -> Result<(), AppError> {
+        let sql = "delete from sys_apis";
+        sqlx::query::<sqlx::Any>(sql)
+            .execute(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "truncate apis failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+        Ok(())
+    }
 }
