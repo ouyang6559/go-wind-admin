@@ -21,6 +21,11 @@ export async function updateAccessKey(id: number, values: Record<string, any>) {
   });
 }
 
+/** 重置密钥：生成新 SK 明文返回一次（旧 SK 立即失效于交换） */
+export async function resetAccessKeySecret(id: string) {
+  return apiClient.accessKeyService.ResetSecret({ id: id as any });
+}
+
 /** 删除凭证 */
 export async function deleteAccessKey(id: string) {
   return apiClient.accessKeyService.Delete({ id: id as any });

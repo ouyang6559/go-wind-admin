@@ -1,17 +1,22 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, Popconfirm, Tag, App } from 'antd';
+import { Button, Modal, Popconfirm, Tag, Typography, App } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { access_keyservicev1_AccessKey as AccessKey } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
-import { fetchListAccessKeys, useDeleteAccessKey } from '@/api/hooks/access-key';
+import {
+  fetchListAccessKeys,
+  useDeleteAccessKey,
+  useResetAccessKeySecret,
+} from '@/api/hooks/access-key';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 import AccessKeyDrawer from './components/AccessKeyDrawer';
@@ -27,6 +32,10 @@ export default function AccessKeyPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [selected, setSelected] = useState<AccessKey>();
+
+  const resetMutation = useResetAccessKeySecret();
+  const [resetSecretFor, setResetSecretFor] = useState<AccessKey>();
+  const [resetSecretValue, setResetSecretValue] = useState<string | null>(null);
 
   const deleteMutation = useDeleteAccessKey({
     onSuccess: () => {
@@ -99,6 +108,26 @@ export default function AccessKeyPage() {
         >
           <EditOutlined />
         </a>,
+        <a
+          key="reset"
+          title={t('resetSecret')}
+          onClick={() => {
+            resetMutation.mutate(
+              { id: record.id! },
+              {
+                onSuccess: (resp) => {
+                  message.success(t('resetSuccess'));
+                  setResetSecretFor(record);
+                  setResetSecretValue(resp.secret ?? null);
+                },
+                onError: (error: Error) =>
+                  message.error(error.message || t('resetFailed')),
+              },
+            );
+          }}
+        >
+          <ReloadOutlined />
+        </a>,
         <Popconfirm
           key="delete"
           title={t('deleteConfirmTitle')}
@@ -169,6 +198,34 @@ export default function AccessKeyPage() {
           bordered
         />
       </div>
+      <Modal
+        title={t('secretDialogTitle')}
+        open={resetSecretValue !== null}
+        onOk={() => {
+          setResetSecretValue(null);
+          setResetSecretFor(undefined);
+          actionRef.current?.reload();
+        }}
+        onCancel={() => {
+          setResetSecretValue(null);
+          setResetSecretFor(undefined);
+        }}
+        cancelButtonProps={{ style: { display: 'none' } }}
+        width={560}
+      >
+        <Typography.Paragraph type="warning">
+          {t('secretDialogHint')}
+        </Typography.Paragraph>
+        <Typography.Paragraph copyable={{ text: resetSecretValue ?? '' }}>
+          <Typography.Text code style={{ wordBreak: 'break-all' }}>
+            {resetSecretValue}
+          </Typography.Text>
+        </Typography.Paragraph>
+        <Typography.Text type="secondary">
+          {t('resetSecretFor')}:{' '}
+          {resetSecretFor?.accessKey}
+        </Typography.Text>
+      </Modal>
       <AccessKeyDrawer
         open={drawerOpen}
         mode={drawerMode}

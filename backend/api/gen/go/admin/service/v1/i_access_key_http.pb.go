@@ -27,6 +27,7 @@ const OperationAccessKeyServiceDelete = "/admin.service.v1.AccessKeyService/Dele
 const OperationAccessKeyServiceGet = "/admin.service.v1.AccessKeyService/Get"
 const OperationAccessKeyServiceIssueToken = "/admin.service.v1.AccessKeyService/IssueToken"
 const OperationAccessKeyServiceList = "/admin.service.v1.AccessKeyService/List"
+const OperationAccessKeyServiceResetSecret = "/admin.service.v1.AccessKeyService/ResetSecret"
 const OperationAccessKeyServiceUpdate = "/admin.service.v1.AccessKeyService/Update"
 
 type AccessKeyServiceHTTPServer interface {
@@ -40,6 +41,8 @@ type AccessKeyServiceHTTPServer interface {
 	IssueToken(context.Context, *v11.IssueTokenRequest) (*v11.IssueTokenResponse, error)
 	// List 分页查询访问凭证列表
 	List(context.Context, *v1.PagingRequest) (*v11.ListAccessKeyResponse, error)
+	// ResetSecret 重置密钥：生成新 Secret（响应明文返回一次）
+	ResetSecret(context.Context, *v11.ResetAccessKeySecretRequest) (*v11.CreateAccessKeyResponse, error)
 	// Update 更新访问凭证（名称/状态/过期时间）
 	Update(context.Context, *v11.UpdateAccessKeyRequest) (*emptypb.Empty, error)
 }
@@ -51,6 +54,7 @@ func RegisterAccessKeyServiceHTTPServer(s *http.Server, srv AccessKeyServiceHTTP
 	r.POST("/admin/v1/access-keys", _AccessKeyService_Create0_HTTP_Handler(srv))
 	r.PUT("/admin/v1/access-keys/{id}", _AccessKeyService_Update0_HTTP_Handler(srv))
 	r.DELETE("/admin/v1/access-keys/{id}", _AccessKeyService_Delete0_HTTP_Handler(srv))
+	r.PUT("/admin/v1/access-keys/{id}/secret", _AccessKeyService_ResetSecret0_HTTP_Handler(srv))
 	r.POST("/admin/v1/access-keys/token", _AccessKeyService_IssueToken0_HTTP_Handler(srv))
 }
 
@@ -164,6 +168,31 @@ func _AccessKeyService_Delete0_HTTP_Handler(srv AccessKeyServiceHTTPServer) func
 	}
 }
 
+func _AccessKeyService_ResetSecret0_HTTP_Handler(srv AccessKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v11.ResetAccessKeySecretRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAccessKeyServiceResetSecret)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetSecret(ctx, req.(*v11.ResetAccessKeySecretRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v11.CreateAccessKeyResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AccessKeyService_IssueToken0_HTTP_Handler(srv AccessKeyServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v11.IssueTokenRequest
@@ -197,6 +226,8 @@ type AccessKeyServiceHTTPClient interface {
 	IssueToken(ctx context.Context, req *v11.IssueTokenRequest, opts ...http.CallOption) (rsp *v11.IssueTokenResponse, err error)
 	// List 分页查询访问凭证列表
 	List(ctx context.Context, req *v1.PagingRequest, opts ...http.CallOption) (rsp *v11.ListAccessKeyResponse, err error)
+	// ResetSecret 重置密钥：生成新 Secret（响应明文返回一次）
+	ResetSecret(ctx context.Context, req *v11.ResetAccessKeySecretRequest, opts ...http.CallOption) (rsp *v11.CreateAccessKeyResponse, err error)
 	// Update 更新访问凭证（名称/状态/过期时间）
 	Update(ctx context.Context, req *v11.UpdateAccessKeyRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 }
@@ -273,6 +304,20 @@ func (c *AccessKeyServiceHTTPClientImpl) List(ctx context.Context, in *v1.Paging
 	opts = append(opts, http.Operation(OperationAccessKeyServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ResetSecret 重置密钥：生成新 Secret（响应明文返回一次）
+func (c *AccessKeyServiceHTTPClientImpl) ResetSecret(ctx context.Context, in *v11.ResetAccessKeySecretRequest, opts ...http.CallOption) (*v11.CreateAccessKeyResponse, error) {
+	var out v11.CreateAccessKeyResponse
+	pattern := "/admin/v1/access-keys/{id}/secret"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAccessKeyServiceResetSecret))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

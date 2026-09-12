@@ -806,6 +806,10 @@
     "create": "新建凭证",
     "deleteConfirm": "Delete this {moduleName}? Machine token exchange stops immediately.",
     "lastUsed": "Last Used",
-    "createdAt": "Created At"
+    "createdAt": "Created At",
+    "resetSecret": "重置密钥",
+    "resetConfirm": "生成新密钥？旧密钥立即失效，已签发的令牌在过期前仍有效。",
+    "resetSuccess": "密钥已重置",
+    "resetFailed": "重置失败"
   }
 }

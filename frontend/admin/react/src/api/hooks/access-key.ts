@@ -7,6 +7,7 @@ import type {
   access_keyservicev1_CreateAccessKeyRequest,
   access_keyservicev1_CreateAccessKeyResponse,
   access_keyservicev1_DeleteAccessKeyRequest,
+  access_keyservicev1_ResetAccessKeySecretRequest,
 } from '@/api/generated/admin/service/v1';
 
 /** 非组件上下文取列表（ProTable request / 菜单同步构建器） */
@@ -52,6 +53,20 @@ export function useDeleteAccessKey(
 ) {
   return useMutation({
     mutationFn: (req) => apiClient.accessKeyService.Delete(req),
+    ...options,
+  });
+}
+
+/** 重置密钥：生成新 SK 明文返回一次（旧 SK 立即失效于交换） */
+export function useResetAccessKeySecret(
+  options?: UseMutationOptions<
+    access_keyservicev1_CreateAccessKeyResponse,
+    Error,
+    access_keyservicev1_ResetAccessKeySecretRequest
+  >,
+) {
+  return useMutation({
+    mutationFn: (req) => apiClient.accessKeyService.ResetSecret(req),
     ...options,
   });
 }

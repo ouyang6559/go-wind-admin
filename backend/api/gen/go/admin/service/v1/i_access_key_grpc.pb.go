@@ -22,12 +22,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AccessKeyService_List_FullMethodName       = "/admin.service.v1.AccessKeyService/List"
-	AccessKeyService_Get_FullMethodName        = "/admin.service.v1.AccessKeyService/Get"
-	AccessKeyService_Create_FullMethodName     = "/admin.service.v1.AccessKeyService/Create"
-	AccessKeyService_Update_FullMethodName     = "/admin.service.v1.AccessKeyService/Update"
-	AccessKeyService_Delete_FullMethodName     = "/admin.service.v1.AccessKeyService/Delete"
-	AccessKeyService_IssueToken_FullMethodName = "/admin.service.v1.AccessKeyService/IssueToken"
+	AccessKeyService_List_FullMethodName        = "/admin.service.v1.AccessKeyService/List"
+	AccessKeyService_Get_FullMethodName         = "/admin.service.v1.AccessKeyService/Get"
+	AccessKeyService_Create_FullMethodName      = "/admin.service.v1.AccessKeyService/Create"
+	AccessKeyService_Update_FullMethodName      = "/admin.service.v1.AccessKeyService/Update"
+	AccessKeyService_Delete_FullMethodName      = "/admin.service.v1.AccessKeyService/Delete"
+	AccessKeyService_ResetSecret_FullMethodName = "/admin.service.v1.AccessKeyService/ResetSecret"
+	AccessKeyService_IssueToken_FullMethodName  = "/admin.service.v1.AccessKeyService/IssueToken"
 )
 
 // AccessKeyServiceClient is the client API for AccessKeyService service.
@@ -46,6 +47,8 @@ type AccessKeyServiceClient interface {
 	Update(ctx context.Context, in *v11.UpdateAccessKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除访问凭证
 	Delete(ctx context.Context, in *v11.DeleteAccessKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 重置密钥：生成新 Secret（响应明文返回一次）
+	ResetSecret(ctx context.Context, in *v11.ResetAccessKeySecretRequest, opts ...grpc.CallOption) (*v11.CreateAccessKeyResponse, error)
 	// 令牌交换（机器对机器）：AK/SK 换短期 JWT。免鉴权端点——本身即是认证。
 	IssueToken(ctx context.Context, in *v11.IssueTokenRequest, opts ...grpc.CallOption) (*v11.IssueTokenResponse, error)
 }
@@ -108,6 +111,16 @@ func (c *accessKeyServiceClient) Delete(ctx context.Context, in *v11.DeleteAcces
 	return out, nil
 }
 
+func (c *accessKeyServiceClient) ResetSecret(ctx context.Context, in *v11.ResetAccessKeySecretRequest, opts ...grpc.CallOption) (*v11.CreateAccessKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v11.CreateAccessKeyResponse)
+	err := c.cc.Invoke(ctx, AccessKeyService_ResetSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *accessKeyServiceClient) IssueToken(ctx context.Context, in *v11.IssueTokenRequest, opts ...grpc.CallOption) (*v11.IssueTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v11.IssueTokenResponse)
@@ -134,6 +147,8 @@ type AccessKeyServiceServer interface {
 	Update(context.Context, *v11.UpdateAccessKeyRequest) (*emptypb.Empty, error)
 	// 删除访问凭证
 	Delete(context.Context, *v11.DeleteAccessKeyRequest) (*emptypb.Empty, error)
+	// 重置密钥：生成新 Secret（响应明文返回一次）
+	ResetSecret(context.Context, *v11.ResetAccessKeySecretRequest) (*v11.CreateAccessKeyResponse, error)
 	// 令牌交换（机器对机器）：AK/SK 换短期 JWT。免鉴权端点——本身即是认证。
 	IssueToken(context.Context, *v11.IssueTokenRequest) (*v11.IssueTokenResponse, error)
 	mustEmbedUnimplementedAccessKeyServiceServer()
@@ -160,6 +175,9 @@ func (UnimplementedAccessKeyServiceServer) Update(context.Context, *v11.UpdateAc
 }
 func (UnimplementedAccessKeyServiceServer) Delete(context.Context, *v11.DeleteAccessKeyRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedAccessKeyServiceServer) ResetSecret(context.Context, *v11.ResetAccessKeySecretRequest) (*v11.CreateAccessKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetSecret not implemented")
 }
 func (UnimplementedAccessKeyServiceServer) IssueToken(context.Context, *v11.IssueTokenRequest) (*v11.IssueTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IssueToken not implemented")
@@ -275,6 +293,24 @@ func _AccessKeyService_Delete_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccessKeyService_ResetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v11.ResetAccessKeySecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccessKeyServiceServer).ResetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccessKeyService_ResetSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccessKeyServiceServer).ResetSecret(ctx, req.(*v11.ResetAccessKeySecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AccessKeyService_IssueToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v11.IssueTokenRequest)
 	if err := dec(in); err != nil {
@@ -319,6 +355,10 @@ var AccessKeyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _AccessKeyService_Delete_Handler,
+		},
+		{
+			MethodName: "ResetSecret",
+			Handler:    _AccessKeyService_ResetSecret_Handler,
 		},
 		{
 			MethodName: "IssueToken",

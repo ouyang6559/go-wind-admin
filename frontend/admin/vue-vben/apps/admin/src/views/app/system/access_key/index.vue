@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, useVbenDrawer, type VbenFormProps } from '@vben/common-ui';
-import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
+import { LucideFilePenLine, LucideRefreshCw, LucideTrash2 } from '@vben/icons';
 
 import { notification } from 'ant-design-vue';
 
@@ -13,6 +13,7 @@ import {
   fetchListAccessKeys,
   PaginationQuery,
   useDeleteAccessKey,
+  useResetAccessKeySecret,
 } from '#/api';
 import { type access_keyservicev1_AccessKey as AccessKey } from '#/api';
 import TableExportButton from '#/components/TableExportButton.vue';
@@ -21,6 +22,16 @@ import { $t } from '#/locales';
 import AccessKeyDrawer from './access-key-drawer.vue';
 
 const { mutateAsync: deleteAccessKey } = useDeleteAccessKey();
+
+function copyResetSecret() {
+  navigator.clipboard?.writeText(resetSecretValue.value).catch((err: unknown) => {
+    console.error('copy secret failed:', err);
+  });
+}
+const resetMutation = useResetAccessKeySecret();
+const resetSecretVisible = ref(false);
+const resetSecretValue = ref('');
+const resettingId = ref(0);
 
 const formOptions: VbenFormProps = {
   collapsed: false,
@@ -117,6 +128,25 @@ function handleEdit(row: any) {
   openDrawer(false, row);
 }
 
+function handleResetSecret(row: AccessKey) {
+  if (!row.id) return;
+  resettingId.value = row.id;
+  resetMutation.mutate(
+    { id: row.id },
+    {
+      onSuccess: (resp) => {
+        notification.success({ message: $t('page.accessKey.resetSuccess') });
+        resetSecretValue.value = resp.secret ?? '';
+        resetSecretVisible.value = true;
+        gridApi.reload();
+      },
+      onError: () => {
+        notification.error({ message: $t('page.accessKey.resetFailed') });
+      },
+    },
+  );
+}
+
 function handleDelete(row: AccessKey) {
   if (!row.id) return;
   deleteAccessKey({ id: row.id }).then(
@@ -171,6 +201,12 @@ void exportFetcher;
           @click="handleEdit(row)"
         />
         <a-popconfirm
+          :title="$t('page.accessKey.resetConfirm')"
+          @confirm="handleResetSecret(row)"
+        >
+          <a-button type="link" :icon="h(LucideRefreshCw)" />
+        </a-popconfirm>
+        <a-popconfirm
           :title="
             $t('page.accessKey.deleteConfirm', {
               moduleName: $t('page.accessKey.moduleName'),
@@ -183,5 +219,25 @@ void exportFetcher;
       </template>
     </Grid>
     <Drawer />
+
+    <a-modal
+      v-model:open="resetSecretVisible"
+      :title="$t('page.accessKey.resetSecret')"
+      :cancel-button-props="{ style: { display: 'none' } }"
+      :mask-closable="false"
+      width="560px"
+      @ok="resetSecretVisible = false"
+    >
+      <a-alert
+        type="warning"
+        :message="$t('page.accessKey.secretDialogHint')"
+        class="mb-3"
+      />
+      <a-input :value="resetSecretValue" readonly>
+        <template #addonAfter>
+          <a @click="copyResetSecret">{{ $t('page.accessKey.secretCopied') }}</a>
+        </template>
+      </a-input>
+    </a-modal>
   </Page>
 </template>

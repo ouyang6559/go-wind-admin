@@ -21,8 +21,14 @@
   "updateSuccess": "更新成功",
   "deleteSuccess": "删除成功",
   "fetchFailed": "获取数据失败",
-  "statusMap": { "ON": "启用", "OFF": "停用" },
+  "statusMap": {
+    "ON": "启用",
+    "OFF": "停用"
+  },
   "secretDialogTitle": "请立即保存密钥（Secret）",
-  "secretDialogHint": "密钥仅此一次明文展示，服务端只保存 SHA-256 摘要，关闭后无法再查看。请复制并妥善保管。",
-  "secretCopied": "密钥已复制"
+  "secretDialogHint": "密钥仅此一次明文展示，服务端只保存 SHA-256 摘要，关闭后无法再查看。",
+  "secretCopied": "密钥已复制",
+  "resetSecret": "重置密钥",
+  "resetSuccess": "密钥已重置",
+  "resetFailed": "重置失败"
 }

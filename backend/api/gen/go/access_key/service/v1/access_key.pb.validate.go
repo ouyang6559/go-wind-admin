@@ -1271,6 +1271,111 @@ var _ interface {
 	ErrorName() string
 } = CreateAccessKeyResponseValidationError{}
 
+// Validate checks the field values on ResetAccessKeySecretRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ResetAccessKeySecretRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ResetAccessKeySecretRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ResetAccessKeySecretRequestMultiError, or nil if none found.
+func (m *ResetAccessKeySecretRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ResetAccessKeySecretRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	if len(errors) > 0 {
+		return ResetAccessKeySecretRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ResetAccessKeySecretRequestMultiError is an error wrapping multiple
+// validation errors returned by ResetAccessKeySecretRequest.ValidateAll() if
+// the designated constraints aren't met.
+type ResetAccessKeySecretRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ResetAccessKeySecretRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ResetAccessKeySecretRequestMultiError) AllErrors() []error { return m }
+
+// ResetAccessKeySecretRequestValidationError is the validation error returned
+// by ResetAccessKeySecretRequest.Validate if the designated constraints
+// aren't met.
+type ResetAccessKeySecretRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ResetAccessKeySecretRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ResetAccessKeySecretRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ResetAccessKeySecretRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ResetAccessKeySecretRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ResetAccessKeySecretRequestValidationError) ErrorName() string {
+	return "ResetAccessKeySecretRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ResetAccessKeySecretRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sResetAccessKeySecretRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ResetAccessKeySecretRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ResetAccessKeySecretRequestValidationError{}
+
 // Validate checks the field values on IssueTokenRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.

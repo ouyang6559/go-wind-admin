@@ -21,8 +21,14 @@
   "updateSuccess": "Updated successfully",
   "deleteSuccess": "Deleted successfully",
   "fetchFailed": "Failed to load data",
-  "statusMap": { "ON": "Enabled", "OFF": "Disabled" },
+  "statusMap": {
+    "ON": "Enabled",
+    "OFF": "Disabled"
+  },
   "secretDialogTitle": "Save your Secret now",
-  "secretDialogHint": "The secret is shown only once; the server stores only its SHA-256 digest. Copy and store it safely before closing.",
-  "secretCopied": "Secret copied"
+  "secretDialogHint": "The secret is shown only once; the server stores only its SHA-256 digest.",
+  "secretCopied": "Secret copied",
+  "resetSecret": "Reset Secret",
+  "resetSuccess": "Secret reset",
+  "resetFailed": "Reset failed"
 }

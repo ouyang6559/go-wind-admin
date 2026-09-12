@@ -1,5 +1,5 @@
 <template>
-  <ProPage ref="pageRef" :config="pageConfig" @add="handleAdd" @edit="handleEdit">
+  <ProPage ref="pageRef" :config="pageConfig" @add="handleAdd" @edit="handleEdit" @operate="handleOperate">
     <!-- 状态 -->
     <template #status="scope: any">
       <ElTag size="small" :type="scope.row.status === 'ON' ? 'success' : 'info'">
@@ -10,11 +10,33 @@
 
   <!-- 创建/编辑抽屉 -->
   <AccessKeyDrawer ref="drawerRef" @success="handleSuccess" />
+
+  <!-- 重置后的新密钥（一次性展示） -->
+  <ElDialog
+    v-model="secretVisible"
+    :title="t('pages.access_key.secretDialogTitle')"
+    width="560px"
+    align-center
+    :close-on-click-modal="false"
+    @closed="handleSecretClosed"
+  >
+    <ElAlert type="warning" :closable="false" :title="t('pages.access_key.secretDialogHint')" />
+    <ElInput :model-value="createdSecret" readonly class="secret-input">
+      <template #append>
+        <ElButton @click="copySecret">{{ t('pages.access_key.secretCopied') }}</ElButton>
+      </template>
+    </ElInput>
+    <template #footer>
+      <ElButton type="primary" @click="secretVisible = false">
+        {{ t("common.button.confirm") }}
+      </ElButton>
+    </template>
+  </ElDialog>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed } from "vue";
-import { ElTag } from "element-plus";
+import { ElTag, ElDialog, ElAlert, ElInput, ElButton, ElMessage, ElMessageBox } from "element-plus";
 
 import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
@@ -24,6 +46,7 @@ import {
   createPagedExportAction,
   deleteAccessKey,
   fetchListAccessKeys,
+  resetAccessKeySecret,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 
@@ -31,6 +54,8 @@ const { t } = useI18n();
 
 const pageRef = ref();
 const drawerRef = ref();
+const createdSecret = ref("");
+const secretVisible = ref(false);
 
 const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
@@ -105,6 +130,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
         cellType: "tool",
         buttons: [
           { name: "edit", label: t("common.button.edit"), icon: "lucide:pen-line" },
+          { name: "reset", label: t("resetSecret"), icon: "lucide:key-round" },
           {
             name: "delete",
             label: t("common.button.delete"),
@@ -128,10 +154,48 @@ function handleEdit(row: any) {
 function handleSuccess() {
   pageRef.value?.refresh();
 }
+
+function copySecret() {
+  navigator.clipboard?.writeText(createdSecret.value).catch((err: unknown) => {
+    console.error("copy secret failed:", err);
+  });
+  ElMessage.success(t("pages.access_key.secretCopied"));
+}
+
+function handleSecretClosed() {
+  createdSecret.value = "";
+  handleSuccess();
+}
+
+async function handleOperate(data: { name: string; row: any }) {
+  if (data.name !== "reset") return;
+  try {
+    await ElMessageBox.confirm(t("resetConfirm"), t("resetSecret"), {
+      type: "warning",
+    });
+  } catch {
+    return; // 用户取消：不是错误
+  }
+  try {
+    const resp = await resetAccessKeySecret(data.row.id);
+    createdSecret.value = resp.secret ?? "";
+    secretVisible.value = true;
+    ElMessage.success(t("resetSuccess"));
+  } catch (err: any) {
+    console.error("reset secret failed:", err);
+    ElMessage.error(err?.message || t("resetFailed"));
+  }
+}
 </script>
 
 <style lang="scss" scoped>
 :deep(.el-tag) {
   text-transform: none;
+}
+</style>
+
+<style lang="scss" scoped>
+.secret-input {
+  margin-top: 12px;
 }
 </style>

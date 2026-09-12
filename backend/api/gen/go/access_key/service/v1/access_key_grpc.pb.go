@@ -21,12 +21,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AccessKeyService_List_FullMethodName   = "/access_key.service.v1.AccessKeyService/List"
-	AccessKeyService_Count_FullMethodName  = "/access_key.service.v1.AccessKeyService/Count"
-	AccessKeyService_Get_FullMethodName    = "/access_key.service.v1.AccessKeyService/Get"
-	AccessKeyService_Create_FullMethodName = "/access_key.service.v1.AccessKeyService/Create"
-	AccessKeyService_Update_FullMethodName = "/access_key.service.v1.AccessKeyService/Update"
-	AccessKeyService_Delete_FullMethodName = "/access_key.service.v1.AccessKeyService/Delete"
+	AccessKeyService_List_FullMethodName        = "/access_key.service.v1.AccessKeyService/List"
+	AccessKeyService_Count_FullMethodName       = "/access_key.service.v1.AccessKeyService/Count"
+	AccessKeyService_Get_FullMethodName         = "/access_key.service.v1.AccessKeyService/Get"
+	AccessKeyService_Create_FullMethodName      = "/access_key.service.v1.AccessKeyService/Create"
+	AccessKeyService_Update_FullMethodName      = "/access_key.service.v1.AccessKeyService/Update"
+	AccessKeyService_Delete_FullMethodName      = "/access_key.service.v1.AccessKeyService/Delete"
+	AccessKeyService_ResetSecret_FullMethodName = "/access_key.service.v1.AccessKeyService/ResetSecret"
 )
 
 // AccessKeyServiceClient is the client API for AccessKeyService service.
@@ -47,6 +48,9 @@ type AccessKeyServiceClient interface {
 	Update(ctx context.Context, in *UpdateAccessKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除访问凭证
 	Delete(ctx context.Context, in *DeleteAccessKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 重置密钥：生成新 Secret（旧 Secret 立即失效于新令牌交换；
+	// 已签发的机器令牌在自身过期前仍然有效）
+	ResetSecret(ctx context.Context, in *ResetAccessKeySecretRequest, opts ...grpc.CallOption) (*CreateAccessKeyResponse, error)
 }
 
 type accessKeyServiceClient struct {
@@ -117,6 +121,16 @@ func (c *accessKeyServiceClient) Delete(ctx context.Context, in *DeleteAccessKey
 	return out, nil
 }
 
+func (c *accessKeyServiceClient) ResetSecret(ctx context.Context, in *ResetAccessKeySecretRequest, opts ...grpc.CallOption) (*CreateAccessKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateAccessKeyResponse)
+	err := c.cc.Invoke(ctx, AccessKeyService_ResetSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccessKeyServiceServer is the server API for AccessKeyService service.
 // All implementations must embed UnimplementedAccessKeyServiceServer
 // for forward compatibility.
@@ -135,6 +149,9 @@ type AccessKeyServiceServer interface {
 	Update(context.Context, *UpdateAccessKeyRequest) (*emptypb.Empty, error)
 	// 删除访问凭证
 	Delete(context.Context, *DeleteAccessKeyRequest) (*emptypb.Empty, error)
+	// 重置密钥：生成新 Secret（旧 Secret 立即失效于新令牌交换；
+	// 已签发的机器令牌在自身过期前仍然有效）
+	ResetSecret(context.Context, *ResetAccessKeySecretRequest) (*CreateAccessKeyResponse, error)
 	mustEmbedUnimplementedAccessKeyServiceServer()
 }
 
@@ -162,6 +179,9 @@ func (UnimplementedAccessKeyServiceServer) Update(context.Context, *UpdateAccess
 }
 func (UnimplementedAccessKeyServiceServer) Delete(context.Context, *DeleteAccessKeyRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedAccessKeyServiceServer) ResetSecret(context.Context, *ResetAccessKeySecretRequest) (*CreateAccessKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetSecret not implemented")
 }
 func (UnimplementedAccessKeyServiceServer) mustEmbedUnimplementedAccessKeyServiceServer() {}
 func (UnimplementedAccessKeyServiceServer) testEmbeddedByValue()                          {}
@@ -292,6 +312,24 @@ func _AccessKeyService_Delete_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccessKeyService_ResetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetAccessKeySecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccessKeyServiceServer).ResetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccessKeyService_ResetSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccessKeyServiceServer).ResetSecret(ctx, req.(*ResetAccessKeySecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccessKeyService_ServiceDesc is the grpc.ServiceDesc for AccessKeyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -322,6 +360,10 @@ var AccessKeyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _AccessKeyService_Delete_Handler,
+		},
+		{
+			MethodName: "ResetSecret",
+			Handler:    _AccessKeyService_ResetSecret_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

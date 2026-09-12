@@ -235,6 +235,19 @@ func (r *AccessKeyRepo) Delete(ctx context.Context, req *accesskeyV1.DeleteAcces
 	return nil
 }
 
+// UpdateSecretHash 重置密钥摘要（轮换）。旧的已签发机器令牌在自身过期前仍有效。
+func (r *AccessKeyRepo) UpdateSecretHash(ctx context.Context, id uint32, secretHash string) error {
+	err := r.entClient.Client().AccessKey.UpdateOneID(id).
+		SetSecretHash(secretHash).
+		SetUpdatedAt(time.Now()).
+		Exec(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "update access key secret hash failed: %s", err.Error())
+		return adminV1.ErrorInternalServerError("update secret failed")
+	}
+	return nil
+}
+
 // GetByAccessKeyBySystem 按访问键查询凭证（系统旁路视图，绕过租户 scope）——
 // 仅供令牌交换（免鉴权流程）使用：交换发生时请求尚无任何 viewer。
 func (r *AccessKeyRepo) GetByAccessKeyBySystem(ctx context.Context, accessKey string) (*ent.AccessKey, error) {

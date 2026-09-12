@@ -42,6 +42,14 @@ service AccessKeyService {
     option (google.api.http) = { delete: "/admin/v1/access-keys/{id}" };
   }
 
+  // 重置密钥：生成新 Secret（响应明文返回一次）
+  rpc ResetSecret (access_key.service.v1.ResetAccessKeySecretRequest) returns (access_key.service.v1.CreateAccessKeyResponse) {
+    option (google.api.http) = {
+      put: "/admin/v1/access-keys/{id}/secret"
+      body: "*"
+    };
+  }
+
   // 令牌交换（机器对机器）：AK/SK 换短期 JWT。免鉴权端点——本身即是认证。
   rpc IssueToken (access_key.service.v1.IssueTokenRequest) returns (access_key.service.v1.IssueTokenResponse) {
     option (google.api.http) = {

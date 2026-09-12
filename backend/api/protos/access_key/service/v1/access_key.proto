@@ -29,6 +29,10 @@ service AccessKeyService {
 
   // 删除访问凭证
   rpc Delete (DeleteAccessKeyRequest) returns (google.protobuf.Empty) {}
+
+  // 重置密钥：生成新 Secret（旧 Secret 立即失效于新令牌交换；
+  // 已签发的机器令牌在自身过期前仍然有效）
+  rpc ResetSecret (ResetAccessKeySecretRequest) returns (CreateAccessKeyResponse) {}
 }
 
 // OpenAPI 访问凭证（AK/SK）
@@ -156,6 +160,11 @@ message CountAccessKeyResponse {
 message CreateAccessKeyResponse {
   AccessKey data = 1; // 凭证（不含 secret 摘要）
   string secret = 2; // 密钥明文（仅本次返回，请妥善保存）
+}
+
+// 重置密钥 - 请求
+message ResetAccessKeySecretRequest {
+  uint32 id = 1; // 凭证ID
 }
 
 // 令牌交换 - 请求（机器对机器：AK/SK 换取短期 JWT）

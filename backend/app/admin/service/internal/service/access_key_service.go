@@ -187,6 +187,37 @@ func (s *AccessKeyService) IssueToken(ctx context.Context, req *accesskeyV1.Issu
 	}, nil
 }
 
+// ResetSecret 重置密钥（轮换）：生成新 SK 并更新摘要，新 SK 明文仅本次返回。
+// 注意：旧 SK 的交换被立即阻断（摘要已变），但此前已签发的机器令牌在过期前仍有效。
+func (s *AccessKeyService) ResetSecret(ctx context.Context, req *accesskeyV1.ResetAccessKeySecretRequest) (*accesskeyV1.CreateAccessKeyResponse, error) {
+	if req == nil || req.GetId() == 0 {
+		return nil, adminV1.ErrorBadRequest("id is required")
+	}
+
+	secret, err := randomToken(secretPrefix, secretBytes)
+	if err != nil {
+		s.log.Errorf(ctx, "generate secret failed: %s", err.Error())
+		return nil, adminV1.ErrorInternalServerError("generate secret failed")
+	}
+	secretHash := hashSecret(secret)
+
+	if err = s.repo.UpdateSecretHash(ctx, req.GetId(), secretHash); err != nil {
+		return nil, err
+	}
+
+	entity, err := s.repo.Get(ctx, &accesskeyV1.GetAccessKeyRequest{
+		QueryBy: &accesskeyV1.GetAccessKeyRequest_Id{Id: req.GetId()},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &accesskeyV1.CreateAccessKeyResponse{
+		Data:   entity,
+		Secret: secret,
+	}, nil
+}
+
 func (s *AccessKeyService) Count(ctx context.Context, req *paginationV1.PagingRequest) (*accesskeyV1.CountAccessKeyResponse, error) {
 	return s.repo.Count(ctx, req)
 }
