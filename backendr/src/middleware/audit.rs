@@ -119,15 +119,22 @@ pub async fn audit(State(state): State<AppState>, req: Request, next: Next) -> R
         .and_then(|v| v.to_str().ok())
         .and_then(|h| bearer_token(Some(h)))
         .and_then(|tok| crate::auth::verify_access_token(&state.jwt_secret, &tok).ok());
+    // 未认证（无有效操作者）请求不写操作审计——对齐 Go：操作审计中间件挂在
+    // 认证后的路由组，未认证请求先被 401 拦下，故 Go 的操作审计行身份字段恒定非空。
+    // 若这里也为未认证请求落库，会产生 tenant_id/user_id/username 全 NULL 的行，
+    // 与 Go wire 不一致（前端列表缺身份列）。
+    let Some(operator) = operator else {
+        return next.run(req).await;
+    };
     let ip = client_ip(&req);
 
     let resp = next.run(req).await;
 
     let success = resp.status().is_success();
     let status_code = resp.status().as_u16();
-    let username = operator.as_ref().map(|c| c.sub.clone());
-    let user_id = operator.as_ref().map(|c| c.uid);
-    let tenant_id = operator.as_ref().map(|c| c.tid);
+    let username = operator.sub.clone();
+    let user_id = operator.uid;
+    let tenant_id = operator.tid;
     // CreatedAt 显式写非空（仓库既有约定：mixin 无默认值会落 NULL）
     let created_at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Nanos, true);
     let request_id = uuid::Uuid::new_v4().to_string();
