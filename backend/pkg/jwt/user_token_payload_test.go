@@ -155,3 +155,55 @@ func TestNewUserTokenPayloadWithJwtMapClaims(t *testing.T) {
 		assert.Equal(t, ou, payload.GetOrgUnitId())
 	}
 }
+
+// TestNewUserTokenDataScopesRoundTrip 验证多角色聚合数据范围（dss/dsu 轨道）
+// 的 claims 序列化与解析往返一致性。
+func TestNewUserTokenDataScopesRoundTrip(t *testing.T) {
+	ou := uint32(7)
+	uid := uint32(3)
+	tid := uint32(4)
+	dsUnits := []uint64{7, 8}
+
+	payload := NewUserTokenPayload(
+		"bob", uid, tid, &ou, []string{"editor"},
+		nil, nil, nil,
+	)
+	payload.DataScopes = []identityV1.DataScope{
+		identityV1.DataScope_SELF,
+		identityV1.DataScope_UNIT_ONLY,
+	}
+	payload.DataScopeUnitIds = dsUnits
+
+	claims := NewUserTokenAuthClaims(payload, nil)
+	assert.NotNil(t, claims)
+
+	parsed, err := NewUserTokenPayloadWithClaims(claims)
+	assert.NoError(t, err)
+	assert.NotNil(t, parsed)
+
+	assert.ElementsMatch(t,
+		[]identityV1.DataScope{
+			identityV1.DataScope_SELF,
+			identityV1.DataScope_UNIT_ONLY,
+		},
+		parsed.GetDataScopes())
+	assert.ElementsMatch(t, dsUnits, parsed.GetDataScopeUnitIds())
+}
+
+// TestNewUserTokenPayloadWithClaimsLegacyDsFallback 验证旧令牌（仅单值 ds 声明，
+// 无 dss）的解析回退：单值字段照常落位，repeated 字段保持为空，
+// 由 viewer 构建侧 BuildDataScopes 做单元素回退。
+func TestNewUserTokenPayloadWithClaimsLegacyDsFallback(t *testing.T) {
+	claims := &authn.AuthClaims{}
+	(*claims)[authn.ClaimFieldSubject] = "legacy"
+	(*claims)[ClaimFieldUserID] = uint32(3)
+	(*claims)[ClaimFieldTenantID] = uint32(4)
+	(*claims)[ClaimFieldDataScope] = identityV1.DataScope_ALL.String()
+
+	payload, err := NewUserTokenPayloadWithClaims(claims)
+	assert.NoError(t, err)
+	assert.NotNil(t, payload)
+	assert.Equal(t, identityV1.DataScope_ALL, payload.GetDataScope())
+	assert.Empty(t, payload.GetDataScopes())
+	assert.Empty(t, payload.GetDataScopeUnitIds())
+}

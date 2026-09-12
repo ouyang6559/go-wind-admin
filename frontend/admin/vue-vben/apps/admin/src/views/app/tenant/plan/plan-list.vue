@@ -9,6 +9,7 @@ import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import {
   type identityservicev1_Plan as Plan,
   planExpiryPolicyToColor,
@@ -125,6 +126,9 @@ const gridEvents: VxeGridListeners<Plan> = {
   },
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  planViewStore.fetchPlanList(page, pageSize, {});
+
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions,
   formOptions,
@@ -185,6 +189,7 @@ async function handleDelete(row: any) {
       <a-button type="primary" @click="handleCreate">
         {{ $t('page.plan.button.create') }}
       </a-button>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #version="{ row }">
       <a-tag :color="planVersionToColor(row.version)">

@@ -22,6 +22,7 @@ import {
   useDeleteLoginPolicy,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import LoginPolicyDrawer from './login-policy-drawer.vue';
 
@@ -128,6 +129,9 @@ const gridOptions: VxeGridProps<LoginPolicy> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListLoginPolicies(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -188,6 +192,7 @@ async function handleDelete(row: any) {
         <a-button type="primary" class="mr-2" @click="handleCreate">
           {{ $t('page.loginPolicy.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="login-policies" />
       </template>
       <template #type="{ row }">
         <a-tag :color="loginPolicyTypeToColor(row.type)">

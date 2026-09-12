@@ -11,6 +11,13 @@
     "ON": "开启",
     "OFF": "关闭"
   },
+  "config": {
+    "valueType": {
+      "STRING": "字符串",
+      "BOOL": "布尔",
+      "INT": "整数"
+    }
+  },
   "dataAccessAuditLog": {
     "accessType": {
       "SELECT": "查询",
@@ -261,5 +268,14 @@
     "INTERNAL_MESSAGE": "站内消息",
     "FILE": "文件管理",
     "TASK": "任务调度"
+  },
+  "role": {
+    "dataScope": {
+      "ALL": "全部",
+      "SELECTED_UNITS": "自定义",
+      "UNIT_AND_CHILD": "本部门及以下",
+      "UNIT_ONLY": "本部门",
+      "SELF": "仅本人"
+    }
   }
 }

@@ -10,7 +10,6 @@ import {
   loginMutation,
   logoutMutation,
   refreshTokenMutation,
-  registerMutation,
   verifyMfaMutation,
 } from '@/api';
 import { startRefreshTimer, stopRefreshTimer, disconnectSSEServer } from '@/hooks/useTokenRefresh';
@@ -45,7 +44,6 @@ export interface AuthState {
 
   // UI 状态
   loginLoading: boolean;
-  registerLoading: boolean;
   error: string | null;
 
   // 动作
@@ -62,7 +60,6 @@ export interface AuthState {
     totpCode: string,
     onSuccess?: () => void,
   ) => Promise<void>;
-  register: (params: { username: string; password: string }) => Promise<void>;
   logout: (redirect?: boolean) => Promise<void>;
   refreshToken: () => Promise<string>;
   reauthenticate: () => void;
@@ -141,7 +138,6 @@ export const useAuthStore = create<AuthState>()(
       userInfo: null,
       mfaOperationId: null,
       loginLoading: false,
-      registerLoading: false,
       error: null,
 
       // 登录
@@ -218,27 +214,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // 注册
-      register: async (params) => {
-        set({ registerLoading: true, error: null });
-
-        const password = encryptPassword(params.password);
-
-        try {
-          // 调用注册 API（API 内部已处理密码加密）
-          await registerMutation.execute({
-            username: params.username,
-            password: password,
-            tenantCode: '',
-          });
-        } catch (err: any) {
-          const errorMsg = err?.message || i18next.t('auth:registerFailed');
-          set({ error: errorMsg });
-          throw err;
-        } finally {
-          set({ registerLoading: false });
-        }
-      },
 
       // 登出（主动，调后端接口）
       // 清除状态后由 React 组件响应状态变化自然重定向
@@ -266,8 +241,7 @@ export const useAuthStore = create<AuthState>()(
             userInfo: null,
             error: null,
             loginLoading: false,
-            registerLoading: false,
-          });
+              });
         }
       },
 
@@ -316,7 +290,6 @@ export const useAuthStore = create<AuthState>()(
           mfaOperationId: null,
           error: null,
           loginLoading: false,
-          registerLoading: false,
         });
       },
 

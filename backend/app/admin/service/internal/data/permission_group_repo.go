@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -16,6 +18,7 @@ import (
 	"github.com/tx7do/go-utils/mapper"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/permission"
 	"go-wind-admin/app/admin/service/internal/data/ent/permissiongroup"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 
@@ -233,6 +236,21 @@ func (r *PermissionGroupRepo) BatchCreate(ctx context.Context, permissionGroups 
 		return nil, permissionV1.ErrorInternalServerError("batch insert permission groups failed")
 	}
 
+	// 批量插入不经过 setTreePath，路径为 NULL：从批内根（父不在批内的节点）
+	// 逐棵重算，BFS 沿 parent_id 自动覆盖同批的父子链。
+	inBatch := make(map[uint32]bool, len(entities))
+	for _, entity := range entities {
+		inBatch[entity.ID] = true
+	}
+	for _, entity := range entities {
+		if entity.ParentID != nil && *entity.ParentID != 0 && inBatch[*entity.ParentID] {
+			continue // 批内子节点由其批内父的 relocate 覆盖
+		}
+		if err = r.relocateSubtree(ctx, r.entClient.Client(), entity.ID); err != nil {
+			return nil, err
+		}
+	}
+
 	for _, entity := range entities {
 		dto := r.mapper.ToDTO(entity)
 		dtos = append(dtos, dto)
@@ -309,6 +327,12 @@ func (r *PermissionGroupRepo) Update(ctx context.Context, req *permissionV1.Upda
 		return err
 	}
 
+	// parent_id 变更后重算本节点及全部后代的物化路径（path 是树形结构的
+	// 权威物化形态，挂载关系变了路径必须跟着走）。
+	if req.Data.ParentId != nil {
+		return r.relocateSubtree(ctx, r.entClient.Client(), req.GetId())
+	}
+
 	return nil
 }
 
@@ -348,6 +372,14 @@ func (r *PermissionGroupRepo) UpdateParentIDs(ctx context.Context, parentIDs map
 		}
 	}
 
+	// 提交前重算受影响节点及其子树的物化路径（re-parent 后旧路径全部失效）。
+	// 必须走 tx.Client()：relocate 要读到本事务内未提交的新 parent_id。
+	for permID := range parentIDs {
+		if err = r.relocateSubtree(ctx, tx.Client(), permID); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -357,9 +389,35 @@ func (r *PermissionGroupRepo) Delete(ctx context.Context, req *permissionV1.Dele
 		return permissionV1.ErrorBadRequest("invalid parameter")
 	}
 
+	// 有子分组时拒绝：DB 对直接子级是 OnDelete SetNull，不拦会把子分组
+	// 静默提升为根，且其 path 残留已删节点的幽灵段。先删子分组再删本组。
+	childCnt, err := r.entClient.Client().PermissionGroup.Query().
+		Where(permissiongroup.ParentIDEQ(req.GetId())).
+		Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "count child permission groups failed: %s", err.Error())
+		return permissionV1.ErrorInternalServerError("count child permission groups failed")
+	}
+	if childCnt > 0 {
+		return permissionV1.ErrorBadRequest("child permission groups exist, delete them first")
+	}
+
+	// 分组下还有权限点时拒绝（group_id 可空，静默置空会丢权限点的分组归属）。
+	// 先把权限点转移或删除，再删分组。
+	permCnt, err := r.entClient.Client().Permission.Query().
+		Where(permission.GroupIDEQ(req.GetId())).
+		Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "count permissions in permission group failed: %s", err.Error())
+		return permissionV1.ErrorInternalServerError("count permissions in permission group failed")
+	}
+	if permCnt > 0 {
+		return permissionV1.ErrorBadRequest("permission points exist in this group, move or delete them first")
+	}
+
 	builder := r.entClient.Client().PermissionGroup.Delete()
 
-	_, err := r.repository.Delete(ctx, builder, func(s *sql.Selector) {
+	_, err = r.repository.Delete(ctx, builder, func(s *sql.Selector) {
 		s.Where(sql.EQ(permissiongroup.FieldID, req.GetId()))
 	})
 	if err != nil {
@@ -437,8 +495,99 @@ func (r *PermissionGroupRepo) setTreePath(ctx context.Context, tx *ent.Tx, entit
 		}
 	}
 	err = tx.PermissionGroup.UpdateOneID(entity.ID).
-		SetPath(entCrud.ComputeTreePath(parentPath, entity.ID)).
+		SetPath(r.computeGroupTreePath(parentPath, entity.ID)).
 		Exec(ctx)
 
 	return err
+}
+
+// computeGroupTreePath 物化路径：根节点 "/ID/"（各根前缀互不相同），子孙节点
+// "/父路径/ID/"，与 proto 注释的 "/1/10/101/（包含自身）" 格式一致。
+// 不能直接用 entCrud.ComputeTreePath：它对空父路径返回 "/"，会让所有根节点
+// 共享同一前缀（org_unit 同款问题）。
+func (r *PermissionGroupRepo) computeGroupTreePath(parentPath string, nodeID uint32) string {
+	if parentPath == "" {
+		return "/" + strconv.FormatUint(uint64(nodeID), 10) + "/"
+	}
+	return entCrud.ComputeTreePath(parentPath, nodeID)
+}
+
+// relocateSubtree 以 parent_id 链为准，BFS 重算 node 及其全部后代的物化路径。
+// 不按旧 path 前缀扫描：历史/同步写入的数据可能存着脏路径（"/" 或 NULL），
+// 按 parent 链走可顺带自愈；移动到自身后代下会成环，检测到即拒绝。
+// client 由调用方给：事务内（如 UpdateParentIDs 的 tx.Client()）传事务客户端，
+// 保证读到同事务内未提交的 parent 变更。
+func (r *PermissionGroupRepo) relocateSubtree(ctx context.Context, client *ent.Client, nodeID uint32) error {
+	node, err := client.PermissionGroup.Query().
+		Where(permissiongroup.IDEQ(nodeID)).
+		Select(permissiongroup.FieldPath, permissiongroup.FieldParentID).
+		Only(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "relocate subtree: query permission group [%d] failed: %s", nodeID, err.Error())
+		return permissionV1.ErrorInternalServerError("query permission group failed")
+	}
+
+	var parentPath string
+	if node.ParentID != nil && *node.ParentID != 0 {
+		var parent *ent.PermissionGroup
+		parent, err = client.PermissionGroup.Query().
+			Where(permissiongroup.IDEQ(*node.ParentID)).
+			Select(permissiongroup.FieldPath).
+			Only(ctx)
+		if err != nil {
+			r.log.Errorf(ctx, "relocate subtree: query parent permission group [%d] failed: %s", *node.ParentID, err.Error())
+			return permissionV1.ErrorInternalServerError("query parent permission group failed")
+		}
+		if parent.Path != nil {
+			parentPath = *parent.Path
+		}
+		if parentPath != "" && strings.Contains(parentPath, "/"+strconv.FormatUint(uint64(nodeID), 10)+"/") {
+			return permissionV1.ErrorBadRequest("cannot move permission group under its own descendant")
+		}
+	}
+
+	type queueItem struct {
+		id         uint32
+		parentPath string
+	}
+	visited := map[uint32]bool{nodeID: true}
+	queue := []queueItem{{id: nodeID, parentPath: parentPath}}
+	for len(queue) > 0 {
+		it := queue[0]
+		queue = queue[1:]
+
+		newPath := r.computeGroupTreePath(it.parentPath, it.id)
+		cur, cerr := client.PermissionGroup.Query().
+			Where(permissiongroup.IDEQ(it.id)).
+			Select(permissiongroup.FieldPath).
+			Only(ctx)
+		if cerr != nil {
+			r.log.Errorf(ctx, "relocate subtree: query permission group [%d] failed: %s", it.id, cerr.Error())
+			return permissionV1.ErrorInternalServerError("query permission group failed")
+		}
+		if cur.Path == nil || *cur.Path != newPath {
+			if _, uerr := client.PermissionGroup.UpdateOneID(it.id).SetPath(newPath).Save(ctx); uerr != nil {
+				r.log.Errorf(ctx, "relocate subtree: update permission group [%d] path failed: %s", it.id, uerr.Error())
+				return permissionV1.ErrorInternalServerError("update permission group path failed")
+			}
+		}
+
+		children, cerr := client.PermissionGroup.Query().
+			Where(permissiongroup.ParentIDEQ(it.id)).
+			Select(permissiongroup.FieldID).
+			All(ctx)
+		if cerr != nil {
+			r.log.Errorf(ctx, "relocate subtree: query children of [%d] failed: %s", it.id, cerr.Error())
+			return permissionV1.ErrorInternalServerError("query permission group children failed")
+		}
+		for _, ch := range children {
+			if visited[ch.ID] {
+				continue
+			}
+			visited[ch.ID] = true
+			queue = append(queue, queueItem{id: ch.ID, parentPath: newPath})
+		}
+	}
+
+	return nil
 }

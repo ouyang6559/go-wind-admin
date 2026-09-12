@@ -1,15 +1,23 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  UploadOutlined,
+} from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { identityservicev1_Position as Position } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
-import { fetchListPositions, useDeletePosition } from '@/api/hooks/position';
+import { fetchListPositions, useCreatePosition, useDeletePosition } from '@/api/hooks/position';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import ImportModal from '@/components/common/ImportModal';
+import type { ImportField } from '@/utils/import';
 import {
   getStatusMap,
   getStatusOptions,
@@ -34,6 +42,20 @@ const PositionManagement = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
+
+  // Excel 导入：字段与创建表单一致，唯排除 orgUnitId（外键需名称解析，属后续演进）
+  const [importOpen, setImportOpen] = useState(false);
+  const createMutation = useCreatePosition();
+  const importFields: ImportField[] = [
+    { label: t('name'), prop: 'name' },
+    { label: t('code'), prop: 'code' },
+    { label: t('type'), prop: 'type' },
+    { label: t('status'), prop: 'status' },
+    { label: t('headcount'), prop: 'headcount' },
+    { label: t('sortOrder'), prop: 'sortOrder' },
+    { label: t('description'), prop: 'description' },
+    { label: t('remark'), prop: 'remark' },
+  ];
 
   const statusMap = getStatusMap(t);
   const positionTypeMap = getPositionTypeMap(t);
@@ -198,6 +220,7 @@ const PositionManagement = () => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListPositions} columns={columns} filename="positions" />,
               <Button
                 key="create"
                 type="primary"
@@ -209,6 +232,13 @@ const PositionManagement = () => {
                 }}
               >
                 {t('create')}
+              </Button>,
+              <Button
+                key="import"
+                icon={<UploadOutlined />}
+                onClick={() => setImportOpen(true)}
+              >
+                {t('common:import.title')}
               </Button>,
             ]}
             options={{
@@ -236,6 +266,18 @@ const PositionManagement = () => {
         }}
         onSuccess={() => {
           actionRef.current?.reload();
+        }}
+      />
+
+      {/* Excel 导入 */}
+      <ImportModal
+        open={importOpen}
+        fields={importFields}
+        createRow={(values) => createMutation.mutateAsync({ data: values })}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          actionRef.current?.reload();
+          queryClient.invalidateQueries({ queryKey: ['listPositions'] });
         }}
       />
     </>

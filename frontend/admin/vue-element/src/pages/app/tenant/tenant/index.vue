@@ -53,6 +53,7 @@ import {
   tenantTypeToName,
   fetchListTenants,
   useDeleteTenant,
+  createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
@@ -127,6 +128,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deleteTenant({ id: ids as any });
     },
+    exportsAction: createPagedExportAction(fetchListTenants),
     toolbar: [],
     toolbarRight: ["add"],
     defaultToolbar: ["refresh", "exports", "imports", "filter"],

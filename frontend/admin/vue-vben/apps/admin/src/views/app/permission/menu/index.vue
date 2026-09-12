@@ -25,6 +25,7 @@ import {
 import { type permissionservicev1_Menu as Menu } from '#/api';
 import { accessRoutes } from '#/router/routes';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 import { getRandomColor } from '#/utils/color';
 
 import MenuDrawer from './menu-drawer.vue';
@@ -149,6 +150,9 @@ const gridOptions: VxeGridProps<Menu> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListMenus(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -254,6 +258,7 @@ function normalizeAuthority(authority: unknown): string[] {
         <a-button class="mr-2" @click="collapseAll">
           {{ $t('ui.tree.collapse_all') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="menus" />
       </template>
       <template #title="{ row }">
         <div class="flex w-full items-center gap-1">

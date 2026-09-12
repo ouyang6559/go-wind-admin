@@ -27,6 +27,7 @@ export * from './file-transfer';
 // 内部消息
 export * from './internal-message';
 export * from './language';
+export * from './config';
 // 日志审计
 export * from './login-audit-log';
 
@@ -42,6 +43,7 @@ export * from './permission-audit-log';
 export * from './permission-group';
 export * from './policy-evaluation-log';
 
+export * from './access_key';
 export * from './position';
 export * from './plan';
 export * from './redis-cache-monitor';

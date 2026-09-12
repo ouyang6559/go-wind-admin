@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Popover, Switch, Tag, Tooltip, App } from 'antd';
 import { ApiOutlined, CodeOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, PlusOutlined, PlayCircleOutlined } from '@ant-design/icons';
@@ -248,6 +249,7 @@ const ScriptManagement = () => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListScripts} columns={columns} filename="scripts" />,
               <Popover
                 key="hookPoints"
                 title={t('hookPointsTitle')}

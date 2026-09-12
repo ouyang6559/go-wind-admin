@@ -2,13 +2,13 @@ import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import { DownloadOutlined } from '@ant-design/icons';
-import { Button, Tag, App } from 'antd';
+import { Button, Dropdown, Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { auditservicev1_OperationAuditLog as OperationAuditLog } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
 import { TABLE } from '@/config/constants';
 import { fetchListOperationAuditLogs } from '@/api/hooks/operation-audit-log';
-import { exportAuditLogsToCsv } from '@/utils/csv';
+import { exportAuditLogs, type AuditExportFormat } from '@/utils/csv';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 import {
@@ -129,7 +129,7 @@ const OperationAuditLogPage = () => {
   ];
 
   // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
-  const handleExport = async () => {
+  const handleExport = async (format: AuditExportFormat) => {
     const exportColumns = columns
       .filter((c) => c.dataIndex && !c.hideInTable)
       .map((c) => ({
@@ -137,12 +137,12 @@ const OperationAuditLogPage = () => {
         title: typeof c.title === 'string' ? c.title : String(c.dataIndex),
       }));
     try {
-      await exportAuditLogsToCsv({
+      await exportAuditLogs({
         fetcher: (q) => fetchListOperationAuditLogs(q),
         filename: `operation-audit-logs-${Date.now()}.csv`,
         columns: exportColumns,
         params: latestParamsRef.current,
-      });
+      }, format);
     } catch (error: any) {
       message.error(error?.message || 'Export failed');
     }
@@ -200,13 +200,18 @@ const OperationAuditLogPage = () => {
             showQuickJumper: true,
           }}
           toolBarRender={() => [
-            <Button
-              key="export-csv"
-              icon={<DownloadOutlined />}
-              onClick={handleExport}
+            <Dropdown
+              key="export"
+              menu={{
+                items: [
+                  { key: 'csv', label: t('exportCsv') },
+                  { key: 'xlsx', label: t('exportXlsx') },
+                ],
+                onClick: ({ key }) => handleExport(key as AuditExportFormat),
+              }}
             >
-              {t('export')}
-            </Button>,
+              <Button icon={<DownloadOutlined />}>{t('export')}</Button>
+            </Dropdown>,
           ]}
 
           options={{

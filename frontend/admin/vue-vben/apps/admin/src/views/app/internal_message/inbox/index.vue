@@ -10,6 +10,7 @@ import { useUserStore } from '@vben/stores';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import { type internal_messageservicev1_InternalMessageRecipient as InternalMessageRecipient } from '#/api';
 import {
   fetchListUserInbox,
@@ -133,6 +134,9 @@ const gridOptions: VxeGridProps<InternalMessageRecipient> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListUserInbox(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -201,6 +205,10 @@ async function handleDelete(row: any) {
 <template>
   <Page auto-content-height>
     <Grid :table-title="$t('page.user.detail.tab.internalMessage')">
+      <template #toolbar-tools>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
+      </template>
+
       <template #title="{ row }">
         <!-- 未读消息标题加粗，便于和已读区分 -->
         <span

@@ -230,5 +230,22 @@
       "598": "网络读取超时",
       "599": "网络连接超时"
     }
+  },
+  "import": {
+    "title": "导入数据",
+    "uploadText": "将文件拖到此处，或点击上传",
+    "uploadHint": "仅支持 .xlsx 格式文件",
+    "downloadTemplate": "下载导入模板",
+    "importSuccess": "导入成功（{{count}} 行）",
+    "importFailed": "导入失败",
+    "noDataParsed": "未解析到数据",
+    "readFileFailed": "读取文件失败"
+  },
+  "export": {
+    "title": "导出",
+    "csv": "CSV (逗号分隔)",
+    "xlsx": "Excel 工作簿",
+    "success": "已导出 {count} 行",
+    "failed": "导出失败"
   }
 }

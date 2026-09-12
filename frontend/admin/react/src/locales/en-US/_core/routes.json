@@ -36,7 +36,6 @@
   "auth": "Authentication",
   "login": "Login",
   "mfaChallenge": "MFA Verification",
-  "register": "Register",
   "error-pages": "Error",
   "unauthorized": "Unauthorized",
   "forbidden": "Forbidden",
@@ -48,5 +47,7 @@
   "server-monitor": "Server Monitor",
   "notification-channels": "Notification Channels",
   "scripts": "Scripts",
-  "forgot-password": "Forgot Password"
+  "configs": "Config Management",
+  "forgot-password": "Forgot Password",
+  "accessKeys": "OpenAPI Credentials"
 }

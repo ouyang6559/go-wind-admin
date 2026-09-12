@@ -5,6 +5,8 @@ import { useGetUser } from '@/api/hooks/user';
 import { getGenderMap } from '../constants';
 import { getCharColor, getRandomColor } from '@/utils/color';
 import { formatDateTime } from '@/utils/date';
+import { useUserStore } from '@/stores/user';
+import { isFieldHidden } from '@/core/access';
 
 interface BasicInfoPageProps {
   userId: number | undefined;
@@ -18,6 +20,7 @@ const BasicInfoPage: React.FC<BasicInfoPageProps> = ({ userId }) => {
   const { t: tUser } = useTranslation('user');
   const genderMap = getGenderMap(tUser);
   const { token } = theme.useToken();
+  const hiddenFieldEntries = useUserStore((s) => s.hiddenFields);
 
   const { data, isLoading } = useGetUser({ id: userId ?? 0 }, { enabled: !!userId } as any);
 
@@ -73,11 +76,15 @@ const BasicInfoPage: React.FC<BasicInfoPageProps> = ({ userId }) => {
         </div>
       </div>
 
-      {/* 详细信息区 */}
+      {/* 详细信息区（字段权限：被隐藏字段整项不渲染） */}
       <Descriptions column={2} size="middle" labelStyle={{ color: token.colorTextSecondary }}>
         <Descriptions.Item label={t('desc.nickname')}>{user.nickname || '-'}</Descriptions.Item>
-        <Descriptions.Item label={t('desc.email')}>{user.email || '-'}</Descriptions.Item>
-        <Descriptions.Item label={t('desc.mobile')}>{user.mobile || '-'}</Descriptions.Item>
+        {!isFieldHidden(hiddenFieldEntries, 'User', 'email') && (
+          <Descriptions.Item label={t('desc.email')}>{user.email || '-'}</Descriptions.Item>
+        )}
+        {!isFieldHidden(hiddenFieldEntries, 'User', 'mobile') && (
+          <Descriptions.Item label={t('desc.mobile')}>{user.mobile || '-'}</Descriptions.Item>
+        )}
         <Descriptions.Item label={t('desc.tenantName')}>{user.tenantName || '-'}</Descriptions.Item>
         <Descriptions.Item label={t('desc.orgUnitName')}>
           {(user.orgUnitNames ?? []).length > 0
@@ -95,17 +102,25 @@ const BasicInfoPage: React.FC<BasicInfoPageProps> = ({ userId }) => {
               ))
             : '-'}
         </Descriptions.Item>
-        <Descriptions.Item label={t('desc.region')}>{user.region || '-'}</Descriptions.Item>
-        <Descriptions.Item label={t('desc.address')}>{user.address || '-'}</Descriptions.Item>
+        {!isFieldHidden(hiddenFieldEntries, 'User', 'region') && (
+          <Descriptions.Item label={t('desc.region')}>{user.region || '-'}</Descriptions.Item>
+        )}
+        {!isFieldHidden(hiddenFieldEntries, 'User', 'address') && (
+          <Descriptions.Item label={t('desc.address')}>{user.address || '-'}</Descriptions.Item>
+        )}
         <Descriptions.Item label={t('desc.createdAt')}>
           {formatDateTime(user.createdAt)}
         </Descriptions.Item>
-        <Descriptions.Item label={t('desc.lastLoginAt')}>
-          {formatDateTime(user.lastLoginAt)}
-        </Descriptions.Item>
-        <Descriptions.Item label={t('desc.lastLoginIp')}>
-          {user.lastLoginIp || '-'}
-        </Descriptions.Item>
+        {!isFieldHidden(hiddenFieldEntries, 'User', 'lastLoginAt') && (
+          <Descriptions.Item label={t('desc.lastLoginAt')}>
+            {formatDateTime(user.lastLoginAt)}
+          </Descriptions.Item>
+        )}
+        {!isFieldHidden(hiddenFieldEntries, 'User', 'lastLoginIp') && (
+          <Descriptions.Item label={t('desc.lastLoginIp')}>
+            {user.lastLoginIp || '-'}
+          </Descriptions.Item>
+        )}
       </Descriptions>
     </div>
   );

@@ -6,16 +6,19 @@ import {
   ProFormDigit,
   ProFormTextArea,
   ProFormRadio,
+  ProFormSelect,
+  ProFormDependency,
 } from '@ant-design/pro-components';
-import { App, Tree, Spin } from 'antd';
+import { App, Tree, Spin, Checkbox } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { permissionservicev1_Role as Role } from '@/api/generated/admin/service/v1';
 import { useCreateRole, useUpdateRole } from '@/api/hooks/role';
 import { fetchListPermissionGroups } from '@/api/hooks/permission-group';
 import { fetchListPermissions } from '@/api/hooks/permission';
+import { fetchListOrgUnits } from '@/api/hooks/org-unit';
 import { PaginationQuery } from '@/core';
-import { getStatusOptions, buildPermissionTree, extractLeafIds } from '../constants';
+import { getStatusOptions, getDataScopeOptions, buildPermissionTree, extractLeafIds, buildOrgUnitTree, getUserFieldPermissionOptions } from '../constants';
 
 interface RoleDrawerProps {
   open: boolean;
@@ -39,6 +42,11 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
   const [checkedKeys, setCheckedKeys] = useState<number[]>([]);
   const [treeVersion, setTreeVersion] = useState(0);
   const [treeLoading, setTreeLoading] = useState(false);
+  const [unitTreeData, setUnitTreeData] = useState<any[]>([]);
+  const [unitCheckedKeys, setUnitCheckedKeys] = useState<number[]>([]);
+  const [unitTreeVersion, setUnitTreeVersion] = useState(0);
+  // 字段权限：User 资源上勾选隐藏的字段（json_name）
+  const [userHiddenFields, setUserHiddenFields] = useState<string[]>([]);
 
   // 加载权限树数据
   useEffect(() => {
@@ -67,6 +75,18 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
     }
   }, [open]);
 
+  // 加载组织单元树（SELECTED_UNITS 自定义授权集配置用）
+  useEffect(() => {
+    if (open) {
+      fetchListOrgUnits(new PaginationQuery({ formValues: { status: 'ON' } }))
+        .then((res) => {
+          setUnitTreeData(buildOrgUnitTree((res?.items || []) as any[]));
+          setUnitTreeVersion((v) => v + 1);
+        })
+        .catch(() => setUnitTreeData([]));
+    }
+  }, [open]);
+
   // 编辑模式填充表单
   useEffect(() => {
     if (open && mode === 'edit' && data) {
@@ -76,6 +96,7 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
           code: data.code || '',
           sortOrder: (data as any).sortOrder ?? 1,
           status: data.status || 'ON',
+          dataScope: data.dataScope || 'ALL',
           description: (data as any).description || '',
         });
       }, 0);
@@ -84,6 +105,22 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
       if (Array.isArray(perms)) {
         setCheckedKeys(perms.filter((v: any) => typeof v === 'number'));
       }
+      // SELECTED_UNITS 时回填已配置的授权单元集
+      if (data.dataScope === 'SELECTED_UNITS') {
+        const units = (data as any).orgUnits;
+        if (Array.isArray(units)) {
+          setUnitCheckedKeys(units.filter((v: any) => typeof v === 'number'));
+        }
+      }
+      // 回填字段权限（User 资源的隐藏字段集）
+      const fpEntry = Array.isArray((data as any).fieldPermissions)
+        ? (data as any).fieldPermissions.find((e: any) => e?.resource === 'User')
+        : undefined;
+      setUserHiddenFields(
+        Array.isArray(fpEntry?.hiddenFields)
+          ? fpEntry.hiddenFields.filter((v: any) => typeof v === 'string')
+          : [],
+      );
     }
   }, [open, mode, data]);
 
@@ -121,6 +158,17 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
         permissions: extractLeafIds(checkedKeys, treeData),
       };
 
+      // 仅 SELECTED_UNITS 档提交授权单元集（含清空场景）；
+      // 其余档位不携带该字段，后端维持既有集不替换。
+      if (values.dataScope === 'SELECTED_UNITS') {
+        payload.orgUnits = unitCheckedKeys.filter((v) => typeof v === 'number');
+      }
+
+      // 字段权限始终随表单提交（含清空场景）：抽屉所见即保存后的最终态。
+      payload.fieldPermissions = userHiddenFields.length > 0
+        ? [{ resource: 'User', hiddenFields: userHiddenFields }]
+        : [];
+
       if (mode === 'create') {
         await createMutation.mutateAsync({ data: payload });
       } else if (data?.id) {
@@ -140,12 +188,15 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
         if (!visible) {
           formRef.current?.resetFields();
           setCheckedKeys([]);
+          setUnitCheckedKeys([]);
+          setUserHiddenFields([]);
           onClose();
         }
       }}
       initialValues={{
         sortOrder: 1,
         status: 'ON',
+        dataScope: 'ALL',
       }}
       onFinish={handleSubmit}
       submitter={{
@@ -192,6 +243,46 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
         fieldProps={{ optionType: 'button', buttonStyle: 'solid' }}
       />
 
+      <ProFormSelect
+        name="dataScope"
+        label={t('dataScope')}
+        placeholder={t('dataScopePlaceholder')}
+        options={getDataScopeOptions(t)}
+        rules={[{ required: true, message: t('requiredDataScope') }]}
+        fieldProps={{ allowClear: false }}
+      />
+
+      <ProFormDependency name={['dataScope']}>
+        {({ dataScope }) =>
+          dataScope === 'SELECTED_UNITS' ? (
+            <div className="mb-6">
+              <label className="block mb-2 text-sm font-medium text-[color:var(--ant-color-text)]">
+                {t('orgUnits')}
+              </label>
+              {unitTreeData.length > 0 ? (
+                <div className="rounded-lg border border-white/10 bg-white/5 p-2.5 dark:border-white/8 dark:bg-zinc-800/40">
+                  <Tree
+                    checkable
+                    checkedKeys={unitCheckedKeys}
+                    onCheck={(checked) => {
+                      setUnitCheckedKeys(checked as number[]);
+                    }}
+                    treeData={unitTreeData}
+                    defaultExpandAll
+                    key={unitTreeVersion}
+                    className="max-h-80 overflow-auto"
+                  />
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-[color:var(--ant-color-border)] py-4 text-center text-sm text-[color:var(--ant-color-text-quaternary)]">
+                  {t('noOrgUnitData')}
+                </div>
+              )}
+            </div>
+          ) : null
+        }
+      </ProFormDependency>
+
       <ProFormTextArea
         name="description"
         label={t('description')}
@@ -225,6 +316,24 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
             </div>
           )}
         </Spin>
+      </div>
+
+      {/* 字段权限：勾选 = 对该角色用户隐藏（黑名单语义，User 资源试点） */}
+      <div className="mb-6">
+        <label className="block mb-2 text-sm font-medium text-[color:var(--ant-color-text)]">
+          {t('fieldPerm.title')}
+        </label>
+        <div className="rounded-lg border border-white/10 bg-white/5 p-2.5 dark:border-white/8 dark:bg-zinc-800/40">
+          <p className="mb-2 text-xs text-[color:var(--ant-color-text-quaternary)]">
+            {t('fieldPerm.hint')}
+          </p>
+          <Checkbox.Group
+            value={userHiddenFields}
+            onChange={(vals) => setUserHiddenFields(vals as string[])}
+            options={getUserFieldPermissionOptions(t)}
+            className="flex flex-col gap-2"
+          />
+        </div>
       </div>
     </DrawerForm>
   );

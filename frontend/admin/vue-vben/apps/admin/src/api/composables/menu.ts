@@ -189,7 +189,8 @@ export function buildSyncMenusRequest(
   const items = routes
     .map((route) => routeToMenu(route))
     .filter((item): item is permissionservicev1_Menu => item !== null);
-  return { items };
+  // UI 固定走 MERGE（保 ID、不废角色授权）；REPLACE 仅保留在 API 层供全量重建使用
+  return { items, mode: 'MERGE' };
 }
 
 // ==============================

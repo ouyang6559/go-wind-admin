@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// AccessKey is the client for interacting with the AccessKey builders.
+	AccessKey *AccessKeyClient
 	// Api is the client for interacting with the Api builders.
 	Api *APIClient
 	// ApiAuditLog is the client for interacting with the ApiAuditLog builders.
@@ -78,14 +80,20 @@ type Tx struct {
 	Position *PositionClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
+	// RoleFieldPermission is the client for interacting with the RoleFieldPermission builders.
+	RoleFieldPermission *RoleFieldPermissionClient
 	// RoleMetadata is the client for interacting with the RoleMetadata builders.
 	RoleMetadata *RoleMetadataClient
+	// RoleOrgUnit is the client for interacting with the RoleOrgUnit builders.
+	RoleOrgUnit *RoleOrgUnitClient
 	// RolePermission is the client for interacting with the RolePermission builders.
 	RolePermission *RolePermissionClient
 	// Script is the client for interacting with the Script builders.
 	Script *ScriptClient
 	// ScriptLog is the client for interacting with the ScriptLog builders.
 	ScriptLog *ScriptLogClient
+	// SysConfig is the client for interacting with the SysConfig builders.
+	SysConfig *SysConfigClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tenant is the client for interacting with the Tenant builders.
@@ -233,6 +241,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.AccessKey = NewAccessKeyClient(tx.config)
 	tx.Api = NewAPIClient(tx.config)
 	tx.ApiAuditLog = NewApiAuditLogClient(tx.config)
 	tx.DataAccessAuditLog = NewDataAccessAuditLogClient(tx.config)
@@ -266,10 +275,13 @@ func (tx *Tx) init() {
 	tx.PolicyEvaluationLog = NewPolicyEvaluationLogClient(tx.config)
 	tx.Position = NewPositionClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
+	tx.RoleFieldPermission = NewRoleFieldPermissionClient(tx.config)
 	tx.RoleMetadata = NewRoleMetadataClient(tx.config)
+	tx.RoleOrgUnit = NewRoleOrgUnitClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.Script = NewScriptClient(tx.config)
 	tx.ScriptLog = NewScriptLogClient(tx.config)
+	tx.SysConfig = NewSysConfigClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.User = NewUserClient(tx.config)
@@ -287,7 +299,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Api.QueryXXX(), the query will be executed
+// applies a query, for example: AccessKey.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

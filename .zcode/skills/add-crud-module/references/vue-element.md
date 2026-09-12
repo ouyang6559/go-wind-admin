@@ -273,7 +273,7 @@ Top-level domain entry wraps with `component: Layout`, `redirect`, `meta.order` 
 
 2. **`listAction` MUST call `fetchListXxx`, not `useListXxx`.** `useQuery` must run synchronously at setup top-level; it can't be called from an async callback.
 
-3. **Update MUST carry `updateMask`.** `useUpdate<Entity>` builds it via `makeUpdateMask(Object.keys(values))`. Forgetting it is the most common "edited but nothing changed" bug.
+3. **Update MUST carry `updateMask`.** `useUpdate<Entity>` builds it via `makeUpdateMask(Object.keys(values))`. The backend filters the DTO down to the masked fields; an omitted mask means NO filtering — every populated field in the submitted DTO is written (stale form data corrupts untouched columns).
 
 4. **`PaginationQuery` must be `new`-ed.** Plain object literal breaks `.toRawParams()`. It auto-strips empty values from `formValues`.
 

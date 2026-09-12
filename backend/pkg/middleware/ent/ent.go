@@ -31,7 +31,11 @@ func Server() middleware.Middleware {
 				data.GetTenantId(),
 				data.GetOrgUnitId(),
 				traceID,
-				data.GetDataScope(),
+				appViewer.BuildDataScopes(
+					data.GetDataScopes(),
+					data.GetDataScopeUnitIds(),
+					data.GetDataScope(),
+				),
 			)
 			ctx = viewer.WithContext(ctx, userViewer)
 

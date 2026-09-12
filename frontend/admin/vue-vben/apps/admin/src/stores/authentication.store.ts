@@ -155,6 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     userStore.setUserInfo(userInfo);
     accessStore.setAccessCodes(fetchAccessCodeResult.codes ?? []);
+    accessStore.setHiddenFields(fetchAccessCodeResult.hiddenFields ?? []);
 
     if (accessStore.loginExpired) {
       accessStore.setLoginExpired(false);
@@ -319,6 +320,7 @@ export const useAuthStore = defineStore('auth', () => {
       const wasAccessChecked = accessStore.isAccessChecked;
       accessStore.setIsAccessChecked(false);
       accessStore.setAccessCodes([]);
+      accessStore.setHiddenFields([]);
 
       if (preferences.app.loginExpiredMode === 'modal' && wasAccessChecked) {
         accessStore.setLoginExpired(true);
@@ -471,6 +473,7 @@ export const useAuthStore = defineStore('auth', () => {
         : [];
       userPermissionCodes = [...roles, ...codes];
       accessStore.setAccessCodes(userPermissionCodes);
+      accessStore.setHiddenFields(fetchAccessCodeResult.hiddenFields ?? []);
     } else {
       userPermissionCodes = [
         ...(userStore.userInfo.roles || []),

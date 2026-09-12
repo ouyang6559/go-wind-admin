@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { DeleteOutlined, CheckOutlined } from '@ant-design/icons';
@@ -224,6 +225,7 @@ const InboxList = () => {
             reload: true,
           }}
           toolBarRender={() => [
+            <TableExportButton key="export" fetcher={fetchListUserInbox} columns={columns} filename="im-inbox" />,
             <Button
               key="mark-all-read"
               icon={<CheckOutlined />}

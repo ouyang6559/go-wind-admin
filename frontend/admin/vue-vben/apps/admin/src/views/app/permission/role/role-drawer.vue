@@ -10,9 +10,11 @@ import { useVbenForm } from '#/adapter/form';
 import { type permissionservicev1_PermissionGroup as PermissionGroup } from '#/api';
 import {
   buildPermissionTree,
+  fetchListOrgUnits,
   fetchListPermissionGroups,
   fetchListPermissions,
   PaginationQuery,
+  roleDataScopeList,
   statusList,
   useCreateRole,
   useUpdateRole,
@@ -87,6 +89,41 @@ const [BaseForm, baseFormApi] = useVbenForm({
       },
     },
     {
+      component: 'Select',
+      fieldName: 'dataScope',
+      label: $t('page.role.dataScope'),
+      defaultValue: 'ALL',
+      rules: 'selectRequired',
+      componentProps: {
+        options: roleDataScopeList,
+        placeholder: $t('ui.placeholder.select'),
+      },
+    },
+    {
+      component: 'ApiTree',
+      fieldName: 'orgUnits',
+      dependencies: {
+        // 仅 SELECTED_UNITS 档展示自定义授权单元集配置
+        show: (values) => values.dataScope === 'SELECTED_UNITS',
+        triggerFields: ['dataScope'],
+      },
+      componentProps: {
+        title: $t('page.role.orgUnits'),
+        treeDefaultExpandAll: true,
+        childrenField: 'children',
+        labelField: 'name',
+        valueField: 'id',
+        api: async () => {
+          const result = await fetchListOrgUnits(
+            new PaginationQuery({
+              formValues: { status: 'ON' },
+            }),
+          );
+          return result.items;
+        },
+      },
+    },
+    {
       component: 'Textarea',
       fieldName: 'description',
       label: $t('ui.table.description'),
@@ -126,6 +163,25 @@ const [BaseForm, baseFormApi] = useVbenForm({
         },
       },
     },
+    {
+      // 字段权限：勾选 = 对该角色用户隐藏（黑名单语义，User 资源试点）。
+      // value 与后端 identity User proto 字段 json_name 逐字一致。
+      component: 'CheckboxGroup',
+      fieldName: 'userHiddenFields',
+      defaultValue: [],
+      label: $t('page.role.fieldPerm.title'),
+      componentProps: {
+        options: [
+          { label: $t('page.role.fieldPerm.field.email'), value: 'email' },
+          { label: $t('page.role.fieldPerm.field.mobile'), value: 'mobile' },
+          { label: $t('page.role.fieldPerm.field.telephone'), value: 'telephone' },
+          { label: $t('page.role.fieldPerm.field.address'), value: 'address' },
+          { label: $t('page.role.fieldPerm.field.region'), value: 'region' },
+          { label: $t('page.role.fieldPerm.field.lastLoginAt'), value: 'lastLoginAt' },
+          { label: $t('page.role.fieldPerm.field.lastLoginIp'), value: 'lastLoginIp' },
+        ],
+      },
+    },
   ],
 });
 
@@ -157,6 +213,32 @@ const [Drawer, drawerApi] = useVbenDrawer({
       finalValues.permissions = filterNumbers(values.permissions);
     }
 
+    // 仅 SELECTED_UNITS 档提交授权单元集（含清空场景）；
+    // 其余档位不携带该字段，后端维持既有集不替换。
+    if (finalValues.dataScope === 'SELECTED_UNITS') {
+      finalValues.orgUnits = Array.isArray(values.orgUnits)
+        ? filterNumbers(values.orgUnits)
+        : [];
+    } else {
+      delete finalValues.orgUnits;
+    }
+
+    // 字段权限始终随表单提交（含清空场景）：抽屉所见即保存后的最终态。
+    // userHiddenFields 是表单专用中间字段，不是 Role proto 字段，提交前必须移除。
+    finalValues.fieldPermissions =
+      Array.isArray(finalValues.userHiddenFields) &&
+      finalValues.userHiddenFields.length > 0
+        ? [
+            {
+              resource: 'User',
+              hiddenFields: finalValues.userHiddenFields.filter(
+                (v: any) => typeof v === 'string',
+              ),
+            },
+          ]
+        : [];
+    delete finalValues.userHiddenFields;
+
 
     try {
       await (data.value?.create
@@ -185,8 +267,19 @@ const [Drawer, drawerApi] = useVbenDrawer({
       // 获取传入的数据
       data.value = drawerApi.getData<Record<string, any>>();
 
-      // 为表单赋值
-      baseFormApi.setValues(data.value?.row);
+      // 为表单赋值。注意：setValues 必须只调一次——连调两次时后一次会清掉
+      // 前一次刚设置的值（vee-validate setValues 非合并语义），因此把字段权限
+      // 的中间态 userHiddenFields 合并在同一次调用里。
+      const row = data.value?.row;
+      const fpEntry = Array.isArray(row?.fieldPermissions)
+        ? row.fieldPermissions.find((e: any) => e?.resource === 'User')
+        : undefined;
+      baseFormApi.setValues({
+        ...(row ?? {}),
+        userHiddenFields: Array.isArray(fpEntry?.hiddenFields)
+          ? fpEntry.hiddenFields.filter((v: any) => typeof v === 'string')
+          : [],
+      });
 
       // setLoading(true);
       setLoading(false);

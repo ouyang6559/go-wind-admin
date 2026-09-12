@@ -38,7 +38,6 @@
     "welcomeSubtitle": "请输入您的账户信息以开始管理您的系统",
     "copyright": "Copyright © 2026 GoWind",
     "login": "登 录",
-    "register": "注 册",
     "username": "用户名 / 邮箱 / 手机号",
     "password": "密码",
     "tenantCode": "租户编号（留空为平台登录）",
@@ -83,11 +82,6 @@
     "clearAll": "清空",
     "viewAll": "查看所有消息",
     "detail": "通知详情"
-  },
-  "register": {
-    "register": "注册",
-    "haveAccount": "已有账号？",
-    "login": "登 录"
   },
   "resetPwd": {
     "resetPassword": "重置密码",

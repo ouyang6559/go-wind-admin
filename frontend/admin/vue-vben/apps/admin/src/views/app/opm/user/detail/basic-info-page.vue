@@ -9,13 +9,21 @@ import { Avatar, Descriptions, DescriptionsItem } from 'ant-design-vue';
 
 import { type identityservicev1_User as User } from '#/api';
 import { fetchUser, genderToColor, genderToName } from '#/api';
+import { parseResourceHiddenFields } from '#/utils';
 import { getRandomColor } from '#/utils/color';
+import { useAccessStore } from '@vben/stores';
 
 const props = defineProps({
   userId: { type: Number, default: undefined },
 });
 
 const data = ref<User>();
+
+// 字段权限：User 资源上被隐藏的字段整项不渲染（隐藏集仅随登录聚合，取一次快照）
+const userHiddenFields = parseResourceHiddenFields(
+  useAccessStore().hiddenFields,
+  'User',
+);
 
 /**
  * 重新加载用户信息
@@ -69,16 +77,16 @@ reload();
             {{ role }}
           </a-tag>
         </DescriptionsItem>
-        <DescriptionsItem :label="$t('page.user.detail.desc.mobile')">
+        <DescriptionsItem v-if="!userHiddenFields.has('mobile')" :label="$t('page.user.detail.desc.mobile')">
           {{ data?.mobile }}
         </DescriptionsItem>
-        <DescriptionsItem :label="$t('page.user.detail.desc.email')">
+        <DescriptionsItem v-if="!userHiddenFields.has('email')" :label="$t('page.user.detail.desc.email')">
           {{ data?.email }}
         </DescriptionsItem>
-        <DescriptionsItem :label="$t('page.user.detail.desc.region')">
+        <DescriptionsItem v-if="!userHiddenFields.has('region')" :label="$t('page.user.detail.desc.region')">
           {{ data?.region }}
         </DescriptionsItem>
-        <DescriptionsItem :label="$t('page.user.detail.desc.address')">
+        <DescriptionsItem v-if="!userHiddenFields.has('address')" :label="$t('page.user.detail.desc.address')">
           {{ data?.address }}
         </DescriptionsItem>
         <DescriptionsItem :label="$t('page.user.detail.desc.tenantName')">
@@ -107,10 +115,10 @@ reload();
         <DescriptionsItem :label="$t('ui.table.createdAt')">
           {{ formatDateTime(data?.createdAt ?? '') }}
         </DescriptionsItem>
-        <DescriptionsItem :label="$t('page.user.detail.desc.lastLoginAt')">
+        <DescriptionsItem v-if="!userHiddenFields.has('lastLoginAt')" :label="$t('page.user.detail.desc.lastLoginAt')">
           {{ data?.lastLoginAt }}
         </DescriptionsItem>
-        <DescriptionsItem :label="$t('page.user.detail.desc.lastLoginIp')">
+        <DescriptionsItem v-if="!userHiddenFields.has('lastLoginIp')" :label="$t('page.user.detail.desc.lastLoginIp')">
           {{ data?.lastLoginIp }}
         </DescriptionsItem>
       </Descriptions>

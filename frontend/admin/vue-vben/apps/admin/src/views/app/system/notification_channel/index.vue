@@ -16,6 +16,7 @@ import {
   useSendTestEmail,
   useUpdateNotificationChannel,
 } from '#/api';
+import TableExportButton from '#/components/TableExportButton.vue';
 import type {
   notification_channelservicev1_NotificationChannel as NotificationChannel,
 } from '#/api/generated/admin/service/v1';
@@ -98,6 +99,9 @@ const gridOptions: VxeGridProps<NotificationChannel> = {
     },
   ],
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListNotificationChannels({ page, pageSize });
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -251,6 +255,7 @@ async function handleTestSend() {
         <a-button type="primary" class="mr-2" @click="openCreate">
           {{ $t('page.notificationChannel.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="notification-channels" />
       </template>
       <template #type>
         <a-tag color="blue">{{ $t('page.notificationChannel.typeEmail') }}</a-tag>

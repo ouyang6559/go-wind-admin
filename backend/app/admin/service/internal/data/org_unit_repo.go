@@ -3,6 +3,8 @@ package data
 import (
 	"context"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -19,6 +21,7 @@ import (
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
+	"go-wind-admin/app/admin/service/internal/data/ent/position"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
@@ -27,6 +30,8 @@ import (
 type OrgUnitRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
 	log       *bLogger.Helper
+
+	userOrgUnitRepo *UserOrgUnitRepo
 
 	mapper          *mapper.CopierMapper[identityV1.OrgUnit, ent.OrgUnit]
 	typeConverter   *mapper.EnumTypeConverter[identityV1.OrgUnit_Type, orgunit.Type]
@@ -42,10 +47,11 @@ type OrgUnitRepo struct {
 	]
 }
 
-func NewOrgUnitRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client]) *OrgUnitRepo {
+func NewOrgUnitRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client], userOrgUnitRepo *UserOrgUnitRepo) *OrgUnitRepo {
 	repo := &OrgUnitRepo{
 		log:             ctx.NewLoggerHelper("org-unit/repo/admin-service"),
 		entClient:       entClient,
+		userOrgUnitRepo: userOrgUnitRepo,
 		mapper:          mapper.NewCopierMapper[identityV1.OrgUnit, ent.OrgUnit](),
 		typeConverter:   mapper.NewEnumTypeConverter[identityV1.OrgUnit_Type, orgunit.Type](identityV1.OrgUnit_Type_name, identityV1.OrgUnit_Type_value),
 		statusConverter: mapper.NewEnumTypeConverter[identityV1.OrgUnit_Status, orgunit.Status](identityV1.OrgUnit_Status_name, identityV1.OrgUnit_Status_value),
@@ -360,8 +366,94 @@ func (r *OrgUnitRepo) Update(ctx context.Context, req *identityV1.UpdateOrgUnitR
 			s.Where(sql.EQ(orgunit.FieldID, req.GetId()))
 		},
 	)
+	if err != nil {
+		return err
+	}
+
+	// parent_id 变更后重算本节点及全部后代的物化路径（path 前缀是数据范围
+	// UNIT_AND_CHILD 展开的依据，挂载关系变了路径必须跟着走）。
+	if req.Data.ParentId != nil {
+		if err = r.relocateSubtree(ctx, req.GetId()); err != nil {
+			return err
+		}
+	}
 
 	return err
+}
+
+// relocateSubtree 以 parent_id 链为准，BFS 重算 node 及其全部后代的物化路径。
+// 不按旧 path 前缀扫描：历史数据可能存着脏路径（如全表都是 "/"），按 parent 链
+// 走可顺带自愈；移动到自身后代下会成环，检测到即拒绝。
+func (r *OrgUnitRepo) relocateSubtree(ctx context.Context, nodeID uint32) error {
+	client := r.entClient.Client()
+
+	node, err := client.OrgUnit.Query().
+		Where(orgunit.IDEQ(nodeID)).
+		Select(orgunit.FieldPath, orgunit.FieldParentID).
+		Only(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "relocate subtree: query org unit [%d] failed: %s", nodeID, err.Error())
+		return identityV1.ErrorInternalServerError("query org unit failed")
+	}
+
+	var parentPath string
+	if node.ParentID != nil && *node.ParentID != 0 {
+		var parent *ent.OrgUnit
+		parent, err = client.OrgUnit.Query().
+			Where(orgunit.IDEQ(*node.ParentID)).
+			Select(orgunit.FieldPath).
+			Only(ctx)
+		if err != nil {
+			r.log.Errorf(ctx, "relocate subtree: query parent org unit [%d] failed: %s", *node.ParentID, err.Error())
+			return identityV1.ErrorInternalServerError("query parent org unit failed")
+		}
+		if parent.Path != nil {
+			parentPath = *parent.Path
+		}
+		if parentPath != "" && strings.Contains(parentPath, "/"+strconv.FormatUint(uint64(nodeID), 10)+"/") {
+			return identityV1.ErrorBadRequest("cannot move org unit under its own descendant")
+		}
+	}
+
+	type queueItem struct {
+		id         uint32
+		parentPath string
+	}
+	queue := []queueItem{{id: nodeID, parentPath: parentPath}}
+	for len(queue) > 0 {
+		it := queue[0]
+		queue = queue[1:]
+
+		newPath := r.computeUnitTreePath(it.parentPath, it.id)
+		cur, cerr := client.OrgUnit.Query().
+			Where(orgunit.IDEQ(it.id)).
+			Select(orgunit.FieldPath).
+			Only(ctx)
+		if cerr != nil {
+			r.log.Errorf(ctx, "relocate subtree: query org unit [%d] failed: %s", it.id, cerr.Error())
+			return identityV1.ErrorInternalServerError("query org unit failed")
+		}
+		if cur.Path == nil || *cur.Path != newPath {
+			if _, uerr := client.OrgUnit.UpdateOneID(it.id).SetPath(newPath).Save(ctx); uerr != nil {
+				r.log.Errorf(ctx, "relocate subtree: update org unit [%d] path failed: %s", it.id, uerr.Error())
+				return identityV1.ErrorInternalServerError("update org unit path failed")
+			}
+		}
+
+		children, cerr := client.OrgUnit.Query().
+			Where(orgunit.ParentIDEQ(it.id)).
+			Select(orgunit.FieldID).
+			All(ctx)
+		if cerr != nil {
+			r.log.Errorf(ctx, "relocate subtree: query children of [%d] failed: %s", it.id, cerr.Error())
+			return identityV1.ErrorInternalServerError("query org unit children failed")
+		}
+		for _, ch := range children {
+			queue = append(queue, queueItem{id: ch.ID, parentPath: newPath})
+		}
+	}
+
+	return nil
 }
 
 func (r *OrgUnitRepo) Delete(ctx context.Context, req *identityV1.DeleteOrgUnitRequest) error {
@@ -378,12 +470,50 @@ func (r *OrgUnitRepo) Delete(ctx context.Context, req *identityV1.DeleteOrgUnitR
 
 	//r.log.Info(ctx, "orgunits childrenIds to delete: ", childrenIds)
 
+	// 岗位硬性挂在单元上（org_unit_id NOT NULL，且无 DB 外键兜底）：子树内
+	// 还有岗位时拒绝删除，避免岗位随级联静默消失或产生悬挂引用。
+	// 先删除/转移子树内的岗位，再删单元。
+	posCnt, err := r.entClient.Client().Position.Query().
+		Where(position.OrgUnitIDIn(childrenIds...)).
+		Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "count positions under org units failed: %s", err.Error())
+		return identityV1.ErrorInternalServerError("count positions under org units failed")
+	}
+	if posCnt > 0 {
+		return identityV1.ErrorBadRequest("exist %d positions under the org unit subtree, delete or move them first", posCnt)
+	}
+
 	var ids []any
 	for _, id := range childrenIds {
 		ids = append(ids, id)
 	}
 
-	builder := r.entClient.Client().OrgUnit.Delete()
+	var tx *ent.Tx
+	tx, err = r.entClient.Client().Tx(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "start transaction failed: %s", err.Error())
+		return identityV1.ErrorInternalServerError("start transaction failed")
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				r.log.Errorf(ctx, "transaction rollback failed: %s", rollbackErr.Error())
+			}
+			return
+		}
+		if commitErr := tx.Commit(); commitErr != nil {
+			r.log.Errorf(ctx, "transaction commit failed: %s", commitErr.Error())
+			err = identityV1.ErrorInternalServerError("transaction commit failed")
+		}
+	}()
+
+	// 用户↔单元是纯绑定关系：随子树删除清理绑定行，用户本身不受影响
+	if err = r.userOrgUnitRepo.CleanRelationsByOrgUnitIDs(ctx, tx, childrenIds); err != nil {
+		return err
+	}
+
+	builder := tx.OrgUnit.Delete()
 
 	_, err = r.repository.Delete(ctx, builder, func(s *sql.Selector) {
 		s.Where(sql.In(orgunit.FieldID, ids...))
@@ -396,6 +526,9 @@ func (r *OrgUnitRepo) Delete(ctx context.Context, req *identityV1.DeleteOrgUnitR
 	return nil
 }
 
+// setTreePath 计算并落库节点的物化路径：根节点 "/ID/"，子孙节点 "/父路径/ID/"。
+// 不能直接用 entCrud.ComputeTreePath 落库：它对空父路径返回 "/"，会让所有根节点
+// 共享同一前缀，数据范围 UNIT_AND_CHILD 的 path 前缀展开会因此误匹配全表。
 func (r *OrgUnitRepo) setTreePath(ctx context.Context, tx *ent.Tx, entity *ent.OrgUnit) (err error) {
 	var parentPath string
 	if entity.ParentID != nil {
@@ -415,8 +548,93 @@ func (r *OrgUnitRepo) setTreePath(ctx context.Context, tx *ent.Tx, entity *ent.O
 		}
 	}
 	err = tx.OrgUnit.UpdateOneID(entity.ID).
-		SetPath(entCrud.ComputeTreePath(parentPath, entity.ID)).
+		SetPath(r.computeUnitTreePath(parentPath, entity.ID)).
 		Exec(ctx)
 
 	return err
+}
+
+// computeUnitTreePath 物化路径：根节点 "/ID/"（各根前缀互不相同），
+// 子孙节点沿用库函数的 "/父路径/ID/" 拼接。
+func (r *OrgUnitRepo) computeUnitTreePath(parentPath string, nodeID uint32) string {
+	if parentPath == "" {
+		return "/" + strconv.FormatUint(uint64(nodeID), 10) + "/"
+	}
+	return entCrud.ComputeTreePath(parentPath, nodeID)
+}
+
+// ListOrgUnitIDsInTenant 返回 ids 中属于指定租户的子集（跨租户剔除）。
+// 登录聚合上下文为 privacy.Allow（绕过租户隐私层），本方法内的显式租户谓词
+// 是该路径上唯一的租户防线。
+func (r *OrgUnitRepo) ListOrgUnitIDsInTenant(ctx context.Context, tenantID uint32, ids []uint32) ([]uint32, error) {
+	if len(ids) == 0 {
+		return []uint32{}, nil
+	}
+
+	intIDs, err := r.entClient.Client().OrgUnit.Query().
+		Where(
+			orgunit.IDIn(ids...),
+			orgunit.TenantIDEQ(tenantID),
+		).
+		IDs(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query org unit ids in tenant failed: %s", err.Error())
+		return nil, identityV1.ErrorInternalServerError("query org unit ids in tenant failed")
+	}
+
+	result := make([]uint32, len(intIDs))
+	for i, v := range intIDs {
+		result[i] = uint32(v)
+	}
+	return result, nil
+}
+
+// ListSelfAndDescendantOrgUnitIds 返回种子单元集及其全部后代的并集
+// （含种子自身），以 path 前缀匹配展开，全程限定指定租户。
+// UNIT_AND_CHILD 数据范围的登录期展开专用；登录上下文为 privacy.Allow，
+// 显式租户谓词是该路径上唯一的租户防线。
+func (r *OrgUnitRepo) ListSelfAndDescendantOrgUnitIds(ctx context.Context, tenantID uint32, seeds []uint32) ([]uint32, error) {
+	if len(seeds) == 0 {
+		return []uint32{}, nil
+	}
+
+	seedPaths, err := r.entClient.Client().OrgUnit.Query().
+		Where(
+			orgunit.IDIn(seeds...),
+			orgunit.TenantIDEQ(tenantID),
+		).
+		Select(orgunit.FieldPath).
+		Strings(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query seed org unit paths failed: %s", err.Error())
+		return nil, identityV1.ErrorInternalServerError("query seed org unit paths failed")
+	}
+
+	var pathPreds []predicate.OrgUnit
+	for _, p := range seedPaths {
+		if p == "" {
+			continue
+		}
+		pathPreds = append(pathPreds, orgunit.PathHasPrefix(p))
+	}
+	if len(pathPreds) == 0 {
+		return []uint32{}, nil
+	}
+
+	intIDs, err := r.entClient.Client().OrgUnit.Query().
+		Where(
+			orgunit.TenantIDEQ(tenantID),
+			orgunit.Or(pathPreds...),
+		).
+		IDs(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "expand org unit descendants failed: %s", err.Error())
+		return nil, identityV1.ErrorInternalServerError("expand org unit descendants failed")
+	}
+
+	result := make([]uint32, len(intIDs))
+	for i, v := range intIDs {
+		result[i] = uint32(v)
+	}
+	return result, nil
 }

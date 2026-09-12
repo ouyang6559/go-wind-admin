@@ -26,7 +26,6 @@ const OperationAuthenticationServiceGenerateCaptcha = "/admin.service.v1.Authent
 const OperationAuthenticationServiceLogin = "/admin.service.v1.AuthenticationService/Login"
 const OperationAuthenticationServiceLogout = "/admin.service.v1.AuthenticationService/Logout"
 const OperationAuthenticationServiceRefreshToken = "/admin.service.v1.AuthenticationService/RefreshToken"
-const OperationAuthenticationServiceRegisterUser = "/admin.service.v1.AuthenticationService/RegisterUser"
 const OperationAuthenticationServiceResetPasswordByCode = "/admin.service.v1.AuthenticationService/ResetPasswordByCode"
 const OperationAuthenticationServiceVerifyCaptcha = "/admin.service.v1.AuthenticationService/VerifyCaptcha"
 
@@ -41,7 +40,6 @@ type AuthenticationServiceHTTPServer interface {
 	Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// RefreshToken 刷新认证令牌
 	RefreshToken(context.Context, *v1.LoginRequest) (*v1.LoginResponse, error)
-	RegisterUser(context.Context, *v1.RegisterUserRequest) (*v1.RegisterUserResponse, error)
 	// ResetPasswordByCode 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
 	ResetPasswordByCode(context.Context, *v1.ResetPasswordByCodeRequest) (*emptypb.Empty, error)
 	// VerifyCaptcha 验证验证码
@@ -52,7 +50,6 @@ func RegisterAuthenticationServiceHTTPServer(s *http.Server, srv AuthenticationS
 	r := s.Route("/")
 	r.POST("/admin/v1/login", _AuthenticationService_Login0_HTTP_Handler(srv))
 	r.POST("/admin/v1/logout", _AuthenticationService_Logout0_HTTP_Handler(srv))
-	r.POST("/admin/v1/register", _AuthenticationService_RegisterUser0_HTTP_Handler(srv))
 	r.POST("/admin/v1/forgot-password", _AuthenticationService_ForgotPassword0_HTTP_Handler(srv))
 	r.POST("/admin/v1/reset-password-by-code", _AuthenticationService_ResetPasswordByCode0_HTTP_Handler(srv))
 	r.POST("/admin/v1/refresh-token", _AuthenticationService_RefreshToken0_HTTP_Handler(srv))
@@ -100,28 +97,6 @@ func _AuthenticationService_Logout0_HTTP_Handler(srv AuthenticationServiceHTTPSe
 			return err
 		}
 		reply := out.(*emptypb.Empty)
-		return ctx.Result(200, reply)
-	}
-}
-
-func _AuthenticationService_RegisterUser0_HTTP_Handler(srv AuthenticationServiceHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in v1.RegisterUserRequest
-		if err := ctx.Bind(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAuthenticationServiceRegisterUser)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.RegisterUser(ctx, req.(*v1.RegisterUserRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*v1.RegisterUserResponse)
 		return ctx.Result(200, reply)
 	}
 }
@@ -244,7 +219,6 @@ type AuthenticationServiceHTTPClient interface {
 	Logout(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// RefreshToken 刷新认证令牌
 	RefreshToken(ctx context.Context, req *v1.LoginRequest, opts ...http.CallOption) (rsp *v1.LoginResponse, err error)
-	RegisterUser(ctx context.Context, req *v1.RegisterUserRequest, opts ...http.CallOption) (rsp *v1.RegisterUserResponse, err error)
 	// ResetPasswordByCode 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
 	ResetPasswordByCode(ctx context.Context, req *v1.ResetPasswordByCodeRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// VerifyCaptcha 验证验证码
@@ -321,19 +295,6 @@ func (c *AuthenticationServiceHTTPClientImpl) RefreshToken(ctx context.Context, 
 	pattern := "/admin/v1/refresh-token"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAuthenticationServiceRefreshToken))
-	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-func (c *AuthenticationServiceHTTPClientImpl) RegisterUser(ctx context.Context, in *v1.RegisterUserRequest, opts ...http.CallOption) (*v1.RegisterUserResponse, error) {
-	var out v1.RegisterUserResponse
-	pattern := "/admin/v1/register"
-	path := binding.EncodeURL(pattern, in, false)
-	opts = append(opts, http.Operation(OperationAuthenticationServiceRegisterUser))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

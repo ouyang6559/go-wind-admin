@@ -29,6 +29,9 @@ managed:
       path: audit/service/v1
       value: go-wind-admin/api/gen/go/audit/service/v1;auditpb
     - file_option: go_package
+      path: access_key/service/v1
+      value: go-wind-admin/api/gen/go/access_key/service/v1;accesskeypb
+    - file_option: go_package
       path: authentication/service/v1
       value: go-wind-admin/api/gen/go/authentication/service/v1;authenticationpb
     - file_option: go_package
@@ -58,6 +61,9 @@ managed:
     - file_option: go_package
       path: script/service/v1
       value: go-wind-admin/api/gen/go/script/service/v1;scriptpb
+    - file_option: go_package
+      path: config/service/v1
+      value: go-wind-admin/api/gen/go/config/service/v1;configpb
 
 plugins:
   # generate go code

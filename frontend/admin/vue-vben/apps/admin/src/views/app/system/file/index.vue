@@ -20,6 +20,7 @@ import {
   useUploadFile,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import FileDrawer from './file-drawer.vue';
 
@@ -114,6 +115,9 @@ const gridOptions: VxeGridProps<File> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListFiles(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer] = useVbenDrawer({
@@ -197,6 +201,7 @@ async function handleDelete(row: any) {
             {{ $t('page.file.button.upload') }}
           </a-button>
         </Upload>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="files" />
       </template>
       <template #provider="{ row }">
         <a-tag :color="ossProviderColor(row.provider)">

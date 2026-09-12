@@ -167,6 +167,21 @@
     "tenantName": "Tenant",
     "button": {
       "create": "Create Role"
+    },
+    "dataScope": "Data Scope",
+    "orgUnits": "Authorized Org Units",
+    "fieldPerm": {
+      "title": "Field Permissions",
+      "hint": "Checked fields are hidden for users with this role: removed from list/detail views and stripped from create/update payloads (takes effect after re-login).",
+      "field": {
+        "email": "Email",
+        "mobile": "Mobile",
+        "telephone": "Telephone",
+        "address": "Address",
+        "region": "Region",
+        "lastLoginAt": "Last Login At",
+        "lastLoginIp": "Last Login IP"
+      }
     }
   },
   "permission": {
@@ -239,7 +254,10 @@
       "sync": "Sync Menus"
     },
     "text": {
-      "do_you_want_sync_menus": "This will sync all local static routes to the server, which may overwrite existing menu data. Continue?"
+      "do_you_want_sync_menus": "Menus from the current frontend routes will be merged into the server: missing menus are added and existing ones updated in place (menu IDs and role-menu assignments are preserved); extra menus on the server are kept. Continue?"
+    },
+    "system": {
+      "accessKeys": "OpenAPI Credentials"
     }
   },
   "orgUnit": {
@@ -279,6 +297,19 @@
     "headcount": "Headcount",
     "button": {
       "create": "Create Position"
+    }
+  },
+  "config": {
+    "moduleName": "Config",
+    "name": "Name",
+    "key": "Key",
+    "value": "Value",
+    "valueType": "Value Type",
+    "isBuiltIn": "Built-in",
+    "builtInTag": "Built-in",
+    "customTag": "Custom",
+    "button": {
+      "create": "New Config"
     }
   },
   "tenant": {
@@ -746,5 +777,27 @@
     "logPurge": "Purge >90d",
     "logPurgeConfirmDesc": "This deletes all execution logs older than 90 days. Continue?",
     "logPurgeSuccess": "Purged {count} log entries"
+  },
+  "accessKey": {
+    "moduleName": "credential",
+    "name": "Credential Name",
+    "status": "Status",
+    "statusOn": "Enabled",
+    "statusOff": "Disabled",
+    "expiresAt": "Expires At",
+    "expiresAtHint": "Leave empty for no expiry",
+    "lastUsedAt": "Last Used",
+    "secretDialogTitle": "Save your Secret now",
+    "secretDialogHint": "The secret is shown only once; the server stores only its SHA-256 digest.",
+    "secretCopied": "Secret copied",
+    "accessKeyLabel": "Access Key",
+    "create": "New Credential",
+    "deleteConfirm": "Delete this {moduleName}? Machine token exchange stops immediately.",
+    "lastUsed": "Last Used",
+    "createdAt": "Created At",
+    "resetSecret": "Reset Secret",
+    "resetConfirm": "Generate a new secret? The old secret stops working immediately; issued tokens stay valid until expiry.",
+    "resetSuccess": "Secret reset",
+    "resetFailed": "Reset failed"
   }
 }

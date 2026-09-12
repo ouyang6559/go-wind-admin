@@ -145,14 +145,35 @@ async function handleSubmit(values: Record<string, any>) {
 </script>
 
 <template>
-  <AuthenticationLogin
-    :form-schema="formSchema"
-    :loading="authStore.loginLoading"
-    :show-code-login="false"
-    :show-forget-password="false"
-    :show-qrcode-login="false"
-    :show-register="false"
-    :show-third-party-login="false"
-    @submit="handleSubmit"
-  />
+  <!-- 对齐 react：标题/描述在卡片外，登录表单包一张 24px 圆角卡片（边框 + 主色柔影） -->
+  <div>
+    <div class="mb-7">
+      <h2
+        class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
+      >
+        {{ $t('authentication.welcomeBack') }} 👋🏻
+      </h2>
+      <p class="text-muted-foreground text-sm lg:text-md">
+        {{ $t('authentication.loginSubtitle') }}
+      </p>
+    </div>
+
+    <div
+      class="rounded-3xl border border-border bg-card p-8 shadow-[0_12px_40px_-8px_rgba(0,107,230,0.18)]"
+    >
+      <AuthenticationLogin
+        :form-schema="formSchema"
+        :loading="authStore.loginLoading"
+        :show-code-login="false"
+        :show-forget-password="false"
+        :show-qrcode-login="false"
+        :show-register="false"
+        :show-third-party-login="false"
+        @submit="handleSubmit"
+      >
+        <!-- 内置标题已移到卡片外，置空默认标题块 -->
+        <template #title><span class="hidden"></span></template>
+      </AuthenticationLogin>
+    </div>
+  </div>
 </template>

@@ -10,6 +10,7 @@ import { isEqual } from '@vben/utils';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import {
   statusList,
   statusToColor,
@@ -133,6 +134,9 @@ const gridOptions: VxeGridProps<Permission> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  permissionViewStore.fetchPermissionList(permissionViewStore.currentGroupId, page, pageSize, {});
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -233,6 +237,7 @@ watch(
           {{ $t('page.permission.button.syncPermissions') }}
         </a-button>
       </a-popconfirm>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #status="{ row }">
       <a-tag :color="statusToColor(row.status)">

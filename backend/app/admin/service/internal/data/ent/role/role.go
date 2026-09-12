@@ -44,6 +44,8 @@ const (
 	FieldIsProtected = "is_protected"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldDataScope holds the string denoting the data_scope field in the database.
+	FieldDataScope = "data_scope"
 	// Table holds the table name of the role in the database.
 	Table = "sys_roles"
 )
@@ -66,6 +68,7 @@ var Columns = []string{
 	FieldCode,
 	FieldIsProtected,
 	FieldType,
+	FieldDataScope,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -153,6 +156,35 @@ func TypeValidator(_type Type) error {
 	}
 }
 
+// DataScope defines the type for the "data_scope" enum field.
+type DataScope string
+
+// DataScopeAll is the default value of the DataScope enum.
+const DefaultDataScope = DataScopeAll
+
+// DataScope values.
+const (
+	DataScopeAll           DataScope = "ALL"
+	DataScopeSelf          DataScope = "SELF"
+	DataScopeUnitOnly      DataScope = "UNIT_ONLY"
+	DataScopeUnitAndChild  DataScope = "UNIT_AND_CHILD"
+	DataScopeSelectedUnits DataScope = "SELECTED_UNITS"
+)
+
+func (ds DataScope) String() string {
+	return string(ds)
+}
+
+// DataScopeValidator is a validator for the "data_scope" field enum values. It is called by the builders before save.
+func DataScopeValidator(ds DataScope) error {
+	switch ds {
+	case DataScopeAll, DataScopeSelf, DataScopeUnitOnly, DataScopeUnitAndChild, DataScopeSelectedUnits:
+		return nil
+	default:
+		return fmt.Errorf("role: invalid enum value for data_scope field: %q", ds)
+	}
+}
+
 // OrderOption defines the ordering options for the Role queries.
 type OrderOption func(*sql.Selector)
 
@@ -234,4 +266,9 @@ func ByIsProtected(opts ...sql.OrderTermOption) OrderOption {
 // ByType orders the results by the type field.
 func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByDataScope orders the results by the data_scope field.
+func ByDataScope(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDataScope, opts...).ToFunc()
 }

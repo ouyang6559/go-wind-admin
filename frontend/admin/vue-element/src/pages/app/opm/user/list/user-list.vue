@@ -77,6 +77,8 @@ import { ElMessageBox, ElNotification, ElTag } from "element-plus";
 
 import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
+import type { ProFormField } from "@/components/Pro/ProForm/types";
+import type { ProTableColumn } from "@/components/Pro/ProTable/types";
 import UserDrawer from "./user-drawer.vue";
 
 import {
@@ -90,10 +92,11 @@ import {
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
+import { parseResourceHiddenFields } from "@/core/access";
 import { router } from "@/router";
 import { getRandomColor } from "@/utils/color";
 import { useUserViewStore } from "./user-view.state";
-import { useAppUserStore } from "@/stores";
+import { useAccessStore, useAppUserStore } from "@/stores";
 
 const { mutateAsync: deleteUser } = useDeleteUser();
 const userViewStore = useUserViewStore();
@@ -116,7 +119,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
   search: {
     grid: true,
-    fields: [
+    fields: ([
       {
         type: "input",
         label: $t("pages.user.form.username"),
@@ -198,7 +201,9 @@ const pageConfig = computed<ProPageConfig>(() => ({
           }
         },
       },
-    ],
+    ] satisfies ProFormField[]).filter(
+      (f) => !userHiddenFields.value.has(f.field as string)
+    ),
   },
 
   table: {
@@ -214,7 +219,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
     toolbarRight: ["add"],
     defaultToolbar: ["refresh", "filter"],
     tableAttrs: { border: true, stripe: true, height: "auto" },
-    columns: [
+    columns: ([
       { type: "index", label: $t("common.table.seq"), width: 60 },
       { prop: "username", label: $t("pages.user.table.username"), width: 120 },
       { prop: "realname", label: $t("pages.user.table.realname"), width: 100 },
@@ -280,12 +285,20 @@ const pageConfig = computed<ProPageConfig>(() => ({
           },
         ],
       },
-    ],
+    ] satisfies ProTableColumn<any>[]).filter(
+      (col) => !userHiddenFields.value.has(col.prop as string)
+    ),
   },
 }));
 
 // 仅平台侧操作者（tenantId=0）显示救援重置；非平台用户由后端 403 兜底
 const isPlatformSide = computed(() => Number(useAppUserStore().userInfo?.tenantId ?? 0) === 0);
+
+// 字段权限：当前用户在 User 资源上被隐藏的字段，命中的列整列不渲染
+const accessStore = useAccessStore();
+const userHiddenFields = computed(() =>
+  parseResourceHiddenFields(accessStore.hiddenFields, "User")
+);
 
 function handleAdd() {
   drawerRef.value?.open({ create: true });

@@ -23,15 +23,27 @@ func TestValidateComplexity(t *testing.T) {
 	}
 	for _, c := range cases {
 		// 修正期望：按四类计数重新判断
-		got := ValidateComplexity(c.pw)
+		got := ValidateComplexity(c.pw, DefaultMinLen)
 		classes := countClasses(c.pw)
-		wantOK := len(c.pw) >= MinLen() && classes >= 3
+		wantOK := len(c.pw) >= DefaultMinLen && classes >= 3
 		if wantOK && got != nil {
 			t.Errorf("ValidateComplexity(%q) = %v, want nil (classes=%d)", c.pw, got, classes)
 		}
 		if !wantOK && got == nil {
 			t.Errorf("ValidateComplexity(%q) = nil, want error (classes=%d)", c.pw, classes)
 		}
+	}
+}
+
+func TestValidateComplexityMinLenFromCaller(t *testing.T) {
+	// minLen 由调用方传入（sys_config 的 sys.password.minLen）：
+	// 同一 7 位四类口令，minLen=8 拒绝、minLen=7 放行。
+	const pw = "Abc123!"
+	if err := ValidateComplexity(pw, 8); err == nil {
+		t.Errorf("ValidateComplexity(%q, 8) = nil, want error (len=%d < 8)", pw, len(pw))
+	}
+	if err := ValidateComplexity(pw, 7); err != nil {
+		t.Errorf("ValidateComplexity(%q, 7) = %v, want nil", pw, err)
 	}
 }
 

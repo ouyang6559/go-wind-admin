@@ -82,17 +82,20 @@ func (UserRole_Status) EnumDescriptor() ([]byte, []int) {
 
 // 用户与角色关联关系
 type UserRole struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            *uint32                `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`                                                                    // ID
-	UserId        *uint32                `protobuf:"varint,2,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`                                              // 用户ID
-	TenantId      *uint32                `protobuf:"varint,3,opt,name=tenant_id,json=tenantId,proto3,oneof" json:"tenant_id,omitempty"`                                        // 租户ID
-	RoleId        *uint32                `protobuf:"varint,4,opt,name=role_id,json=roleId,proto3,oneof" json:"role_id,omitempty"`                                              // 角色ID
-	IsPrimary     *bool                  `protobuf:"varint,6,opt,name=is_primary,json=isPrimary,proto3,oneof" json:"is_primary,omitempty"`                                     // 是否主角色
-	Status        *UserRole_Status       `protobuf:"varint,7,opt,name=status,proto3,enum=permission.service.v1.UserRole_Status,oneof" json:"status,omitempty"`                 // 状态
-	AssignedAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=assigned_at,json=assignedAt,proto3,oneof" json:"assigned_at,omitempty"`                                  // 分配时间（UTC）
-	AssignedBy    *uint32                `protobuf:"varint,11,opt,name=assigned_by,json=assignedBy,proto3,oneof" json:"assigned_by,omitempty"`                                 // 分配者用户 ID
-	StartAt       *timestamppb.Timestamp `protobuf:"bytes,50,opt,name=start_at,json=startAt,proto3,oneof" json:"start_at,omitempty"`                                           // 生效时间
-	EndAt         *timestamppb.Timestamp `protobuf:"bytes,51,opt,name=end_at,json=endAt,proto3,oneof" json:"end_at,omitempty"`                                                 // 失效时间
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         *uint32                `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`                                                    // ID
+	UserId     *uint32                `protobuf:"varint,2,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`                              // 用户ID
+	TenantId   *uint32                `protobuf:"varint,3,opt,name=tenant_id,json=tenantId,proto3,oneof" json:"tenant_id,omitempty"`                        // 租户ID
+	RoleId     *uint32                `protobuf:"varint,4,opt,name=role_id,json=roleId,proto3,oneof" json:"role_id,omitempty"`                              // 角色ID
+	IsPrimary  *bool                  `protobuf:"varint,6,opt,name=is_primary,json=isPrimary,proto3,oneof" json:"is_primary,omitempty"`                     // 是否主角色
+	Status     *UserRole_Status       `protobuf:"varint,7,opt,name=status,proto3,enum=permission.service.v1.UserRole_Status,oneof" json:"status,omitempty"` // 状态
+	AssignedAt *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=assigned_at,json=assignedAt,proto3,oneof" json:"assigned_at,omitempty"`                  // 分配时间（UTC）
+	AssignedBy *uint32                `protobuf:"varint,11,opt,name=assigned_by,json=assignedBy,proto3,oneof" json:"assigned_by,omitempty"`                 // 分配者用户 ID
+	StartAt    *timestamppb.Timestamp `protobuf:"bytes,50,opt,name=start_at,json=startAt,proto3,oneof" json:"start_at,omitempty"`                           // 生效时间
+	EndAt      *timestamppb.Timestamp `protobuf:"bytes,51,opt,name=end_at,json=endAt,proto3,oneof" json:"end_at,omitempty"`                                 // 失效时间
+	// 【遗留·未接线】assignment 级数据范围是早期"用户-角色"维度授权的设计残留，
+	// 无存储落表、无读写链路（V1 数据范围见 role.proto 的 Role.data_scope）。
+	// 字段号保留防止复用；接入前先补 assignment 级覆盖语义的完整设计。
 	DataScope     *v1.DataScope          `protobuf:"varint,80,opt,name=data_scope,json=dataScope,proto3,enum=identity.service.v1.DataScope,oneof" json:"data_scope,omitempty"` // 数据权限范围
 	CreatedBy     *uint32                `protobuf:"varint,100,opt,name=created_by,json=createdBy,proto3,oneof" json:"created_by,omitempty"`                                   // 创建者ID
 	UpdatedBy     *uint32                `protobuf:"varint,101,opt,name=updated_by,json=updatedBy,proto3,oneof" json:"updated_by,omitempty"`                                   // 更新者ID

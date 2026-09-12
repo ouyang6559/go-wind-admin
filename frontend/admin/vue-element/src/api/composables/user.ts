@@ -19,6 +19,7 @@ import { makeUpdateMask, type PaginationQuery } from "@/core/transport/rest";
 import { apiClient } from "@/api/client";
 import { queryClient } from "@/plugins/vue-query";
 import { i18n } from "@/core/i18n";
+import { encryptPassword } from "@/utils";
 
 const t = i18n.global.t;
 
@@ -125,12 +126,17 @@ export function useUpdateUser(
   options?: UseMutationOptions<{}, Error, { id: number; values: Record<string, any> }>
 ) {
   return useMutation({
-    mutationFn: ({ id, values }: { id: number; values: Record<string, any> }) =>
-      apiClient.userService.Update({
+    // proto UpdateUserRequest.password 是顶层字段且要求 AES 密文：
+    // 留在 data/updateMask 里后端读不到，会静默跳过重置密码（200 但密码未变）
+    mutationFn: ({ id, values }: { id: number; values: Record<string, any> }) => {
+      const { password, ...data } = values ?? {};
+      return apiClient.userService.Update({
         id,
-        data: { ...values } as any,
-        updateMask: makeUpdateMask(Object.keys(values ?? {})),
-      }),
+        data: data as any,
+        password: password ? encryptPassword(String(password)) : undefined,
+        updateMask: makeUpdateMask(Object.keys(data)),
+      });
+    },
     ...options,
   });
 }
@@ -155,10 +161,15 @@ export function useUserExists(
 // 修改用户密码（管理员）
 // ==============================
 export function useEditUserPassword(
-  options?: UseMutationOptions<{}, Error, identityservicev1_EditUserPasswordRequest>
+  options?: UseMutationOptions<{}, Error, identityservicev1_EditUserPasswordRequest>,
 ) {
   return useMutation({
-    mutationFn: (data) => apiClient.userService.EditUserPassword(data),
+    // 后端 NeedDecrypt 要求 AES 密文传输（与登录同规），明文会被当密文解密导致校验必败
+    mutationFn: (data) =>
+      apiClient.userService.EditUserPassword({
+        ...data,
+        newPassword: data.newPassword ? encryptPassword(data.newPassword) : data.newPassword,
+      }),
     ...options,
   });
 }

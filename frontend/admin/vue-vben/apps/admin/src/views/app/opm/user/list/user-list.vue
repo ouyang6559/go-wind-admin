@@ -10,7 +10,8 @@ import { isEqual } from '@vben/utils';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { useUserStore } from '@vben/stores';
+import TableExportButton from '#/components/TableExportButton.vue';
+import { useAccessStore, useUserStore } from '@vben/stores';
 import { type identityservicev1_User as User } from '#/api';
 import {
   disableMfa,
@@ -26,6 +27,7 @@ import {
 } from '#/api';
 import { $t } from '#/locales';
 import { router } from '#/router';
+import { parseResourceHiddenFields } from '#/utils';
 import { getRandomColor } from '#/utils/color';
 
 import UserDrawer from './user-drawer.vue';
@@ -33,6 +35,13 @@ import { useUserViewStore } from './user-view.state';
 
 const { mutateAsync: deleteUser } = useDeleteUser();
 const userViewStore = useUserViewStore();
+
+// 字段权限：当前用户在 User 资源上被隐藏的字段，命中的列整列不渲染。
+// 隐藏集仅随登录聚合（重新登录后生效），setup 时取一次快照即可。
+const userHiddenFields = parseResourceHiddenFields(
+  useAccessStore().hiddenFields,
+  'User',
+);
 
 const formOptions: VbenFormProps = {
   // 默认展开
@@ -190,7 +199,7 @@ const gridOptions: VxeGridProps<User> = {
     },
   },
 
-  columns: [
+  columns: ([
     { title: $t('ui.table.seq'), type: 'seq', width: 50 },
     { title: $t('page.user.table.username'), field: 'username', width: 120 },
     { title: $t('page.user.table.realname'), field: 'realname', width: 100 },
@@ -245,7 +254,9 @@ const gridOptions: VxeGridProps<User> = {
       // 列宽 120 时删除按钮溢出 fixed 列容器被裁剪，无法点击
       width: 160,
     },
-  ],
+  ] satisfies VxeGridProps<User>['columns']).filter(
+    (col) => !userHiddenFields.has(col.field as string),
+  ),
 };
 
 const gridEvents: VxeGridListeners<User> = {
@@ -253,6 +264,9 @@ const gridEvents: VxeGridListeners<User> = {
     handleDetail(row);
   },
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  userViewStore.fetchUserList(page, pageSize, {});
 
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions,
@@ -345,6 +359,7 @@ watch(
       <a-button type="primary" @click="handleCreate">
         {{ $t('page.user.button.create') }}
       </a-button>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #status="{ row }">
       <a-tag :color="userStatusToColor(row.status)">

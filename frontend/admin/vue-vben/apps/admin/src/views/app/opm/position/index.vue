@@ -1,7 +1,7 @@
 ﻿<script lang="ts" setup>
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, useVbenDrawer, type VbenFormProps } from '@vben/common-ui';
 import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
@@ -19,10 +19,14 @@ import {
   statusList,
   statusToColor,
   statusToName,
+  useCreatePosition,
   useDeletePosition,
 } from '#/api';
 import { type identityservicev1_Position as Position } from '#/api';
+import ImportModal from '#/components/ImportModal.vue';
+import type { ImportField } from '#/utils/import';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import PositionDrawer from './position-drawer.vue';
 
@@ -177,7 +181,28 @@ const gridOptions: VxeGridProps<Position> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListPositions(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
+
+// Excel 导入：字段与创建表单一致，唯排除 orgUnitId（外键需名称解析，属后续演进）
+const { mutateAsync: createPosition } = useCreatePosition();
+const importOpen = ref(false);
+const importFields: ImportField[] = [
+  { label: $t('page.position.name'), prop: 'name' },
+  { label: $t('page.position.code'), prop: 'code' },
+  { label: $t('page.position.type'), prop: 'type' },
+  { label: $t('ui.table.status'), prop: 'status' },
+  { label: $t('page.position.headcount'), prop: 'headcount' },
+  { label: $t('ui.table.sortOrder'), prop: 'sortOrder' },
+  { label: $t('page.position.description'), prop: 'description' },
+  { label: $t('ui.table.remark'), prop: 'remark' },
+];
+
+function handleImportSuccess() {
+  gridApi.reload();
+}
 
 const [Drawer, drawerApi] = useVbenDrawer({
   // 连接抽离的组件
@@ -236,6 +261,10 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.position.button.create') }}
         </a-button>
+        <a-button class="mr-2" @click="importOpen = true">
+          {{ $t('ui.import.title') }}
+        </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="positions" />
       </template>
       <template #status="{ row }">
         <a-tag :color="statusToColor(row.status)">
@@ -268,5 +297,12 @@ async function handleDelete(row: any) {
       </template>
     </Grid>
     <Drawer />
+    <ImportModal
+      :open="importOpen"
+      :fields="importFields"
+      :create-row="(values: Record<string, any>) => createPosition(values)"
+      @close="importOpen = false"
+      @success="handleImportSuccess"
+    />
   </Page>
 </template>

@@ -124,6 +124,30 @@ const system: RouteRecordRaw[] = [
         },
         component: () => import('#/views/app/system/script/index.vue'),
       },
+
+      {
+        path: 'configs',
+        name: 'ConfigManagement',
+        meta: {
+          order: 12,
+          icon: 'lucide:sliders-horizontal',
+          title: $t('menu.system.config'),
+          authority: ['sys:platform_admin'],
+        },
+        component: () => import('#/views/app/system/config/index.vue'),
+      },
+
+      {
+        path: 'access-keys',
+        name: 'AccessKeyManagement',
+        meta: {
+          order: 13,
+          icon: 'lucide:key-round',
+          title: $t('menu.system.accessKeys'),
+          authority: ['sys:platform_admin'],
+        },
+        component: () => import('#/views/app/system/access_key/index.vue'),
+      },
     ],
   },
 ];

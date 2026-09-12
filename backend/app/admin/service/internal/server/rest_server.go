@@ -79,9 +79,6 @@ func NewRestMiddleware(
 	// add white list for authentication.
 	rpc.AddWhiteList(
 		adminV1.OperationAuthenticationServiceLogin,
-		// 注册接口在 proto 中声明免鉴权（security:{}）且登录页注册流程无 token，
-		// 此前白名单遗漏导致注册接口 401（前端注册页从未可用）
-		adminV1.OperationAuthenticationServiceRegisterUser,
 		adminV1.OperationAuthenticationServiceGenerateCaptcha,
 		adminV1.OperationAuthenticationServiceVerifyCaptcha,
 		// 刷新令牌接口免鉴权：refresh token 现以 HttpOnly Cookie 传输且为自描述 JWT，
@@ -93,6 +90,8 @@ func NewRestMiddleware(
 		adminV1.OperationMfaServiceVerifyMFAChallenge,
 		// 找回密码两个端点免鉴权：验证码发送与凭码重置，
 		// 重置成功后会吊销该用户全部会话。
+		// OpenAPI 令牌交换免鉴权：AK/SK 本身即为认证凭据。
+		adminV1.OperationAccessKeyServiceIssueToken,
 		adminV1.OperationAuthenticationServiceForgotPassword,
 		adminV1.OperationAuthenticationServiceResetPasswordByCode,
 		//OperationFileTransferServiceDownloadFile,
@@ -101,16 +100,16 @@ func NewRestMiddleware(
 	)
 
 	ms = append(ms, selector.Server(
-			auth.Server(
-				auth.WithAccessTokenChecker(accessTokenChecker),
-				auth.WithTenantAccessChecker(tenantAccessChecker),
-				auth.WithInjectMetadata(false),
-				auth.WithInjectEnt(true),
-			),
-			authz.Server(newEvalLoggingEngine(authorizer.Engine(), policyEvaluationLogRepo)),
-		).
-			Match(rpc.NewRestWhiteListMatcher()).
-			Build(),
+		auth.Server(
+			auth.WithAccessTokenChecker(accessTokenChecker),
+			auth.WithTenantAccessChecker(tenantAccessChecker),
+			auth.WithInjectMetadata(false),
+			auth.WithInjectEnt(true),
+		),
+		authz.Server(newEvalLoggingEngine(authorizer.Engine(), policyEvaluationLogRepo)),
+	).
+		Match(rpc.NewRestWhiteListMatcher()).
+		Build(),
 	)
 
 	return ms
@@ -172,6 +171,8 @@ func NewRestServer(
 	scriptLogService *service.ScriptLogService,
 
 	// register:param ── 新模块服务形参在此行后注册(make register 工具锚点,勿删)
+	accessKeyService *service.AccessKeyService,
+	configService *service.ConfigService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
 
@@ -209,7 +210,11 @@ func NewRestServer(
 	adminV1.RegisterPolicyEvaluationLogServiceHTTPServer(srv, policyEvaluationLogService)
 	adminV1.RegisterPermissionAuditLogServiceHTTPServer(srv, permissionAuditLogService)
 
-	adminV1.RegisterUserServiceHTTPServer(srv, adminV1.RedactedUserServiceServer(&userServiceServerAdapter{UserServiceHTTPServer: userService}, nil))
+	// 字段权限装饰器在最内层（紧贴业务实现），静态脱敏 redact 在外层兜底；
+	// 两者都按"清值"裁剪，protojson 默认不输出未填充字段，效果等价于移除字段。
+	adminV1.RegisterUserServiceHTTPServer(srv, adminV1.RedactedUserServiceServer(
+		service.NewFieldPermissionUserServiceServer(&userServiceServerAdapter{UserServiceHTTPServer: userService}),
+		nil))
 	adminV1.RegisterOrgUnitServiceHTTPServer(srv, orgUnitService)
 	adminV1.RegisterRoleServiceHTTPServer(srv, roleService)
 	adminV1.RegisterPositionServiceHTTPServer(srv, positionService)
@@ -243,6 +248,8 @@ func NewRestServer(
 	adminV1.RegisterScriptLogServiceHTTPServer(srv, scriptLogService)
 
 	// register:route ── 新模块路由在此行后注册(make register 工具锚点,勿删)
+	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
+	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(

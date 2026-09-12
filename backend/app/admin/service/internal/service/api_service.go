@@ -222,7 +222,11 @@ func (s *ApiService) syncWithOpenAPI(ctx context.Context) error {
 
 	for i, res := range apiList {
 		res.Id = trans.Ptr(uint32(i + 1))
+		// 请求自身的 id 必须同步设置：repo.Update 的 id==0 守卫在
+		// AllowMissing 分支之前，缺省时整批请求被静默弹回（历史上
+		// 接口同步因此从未写入任何行）。
 		_ = s.repo.Update(ctx, &permissionV1.UpdateApiRequest{
+			Id:           res.GetId(),
 			AllowMissing: trans.Ptr(true),
 			Data:         res,
 		})

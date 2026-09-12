@@ -8,8 +8,6 @@ import {
   type authenticationservicev1_GenerateCaptchaResponse,
   type authenticationservicev1_LoginRequest,
   type authenticationservicev1_LoginResponse,
-  type authenticationservicev1_RegisterUserRequest,
-  type authenticationservicev1_RegisterUserResponse,
 } from '@/api/generated/admin/service/v1';
 import { apiClient } from '@/api/client';
 import { queryClient } from '@/core';
@@ -69,30 +67,6 @@ export const logoutMutation = queryClient.getMutationCache().build(queryClient, 
 });
 
 // ------------------------------
-// 注册用户（Mutation）
-// ------------------------------
-export function useRegisterUser(
-  options?: UseMutationOptions<
-    authenticationservicev1_RegisterUserResponse,
-    Error,
-    authenticationservicev1_RegisterUserRequest
-  >,
-) {
-  return useMutation({
-    mutationFn: (req) => apiClient.authenticationService.RegisterUser(req),
-    ...options,
-  });
-}
-
-// ------------------------------
-// 注册用户（Mutation - GET）
-// ------------------------------
-export const registerMutation = queryClient.getMutationCache().build(queryClient, {
-  mutationKey: ['register'],
-  mutationFn: apiClient.authenticationService.RegisterUser,
-  retry: 0,
-});
-
 // ------------------------------
 // 刷新 Token（Mutation）
 // ------------------------------

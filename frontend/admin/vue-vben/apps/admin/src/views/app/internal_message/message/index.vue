@@ -23,6 +23,7 @@ import {
   useDeleteInternalMessage,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import InternalMessageDrawer from './internal-message-drawer.vue';
 
@@ -171,6 +172,9 @@ const gridOptions: VxeGridProps<InternalMessage> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListInternalMessages(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -231,6 +235,7 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.internalMessage.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="im-messages" />
       </template>
       <template #status="{ row }">
         <a-tag :color="internalMessageStatusColor(row.status)">

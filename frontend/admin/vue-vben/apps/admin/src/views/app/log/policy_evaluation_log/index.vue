@@ -19,7 +19,7 @@ import {
 } from '#/api';
 import { type permissionservicev1_PolicyEvaluationLog as PolicyEvaluationLog } from '#/api';
 import { $t } from '#/locales';
-import { downloadCsv } from '#/utils/csv';
+import { downloadTableFile } from '#/utils/csv';
 
 import PolicyEvaluationLogDetailDrawer from './policy-evaluation-log-detail-drawer.vue';
 
@@ -269,7 +269,9 @@ function handleView(row: PolicyEvaluationLog) {
 }
 
 // 导出全部：按当前条件聚合拉取（上限 1 万行）生成 CSV
-async function handleExportAll() {
+async function handleExportAll(info: { key: string | number }) {
+  const format = String(info.key);
+  if (format !== 'csv' && format !== 'xlsx') return;
   const pageSize = 1000;
   const maxRows = 10000;
   const rows: any[] = [];
@@ -285,7 +287,7 @@ async function handleExportAll() {
   const cols = gridColumns
     .filter((c) => c.field)
     .map((c) => ({ title: c.title as string, key: c.field as string }));
-  downloadCsv(`policy-evaluation-logs-${Date.now()}.csv`, cols, rows.slice(0, maxRows));
+  await downloadTableFile(format, `policy-evaluation-logs-${Date.now()}`, cols, rows.slice(0, maxRows));
 }
 
 </script>
@@ -294,9 +296,15 @@ async function handleExportAll() {
   <Page auto-content-height>
     <Grid :table-title="$t('menu.log.policyEvaluationLog')">
       <template #toolbar-tools>
-        <a-button class="mr-2" @click="handleExportAll">
-          {{ $t('ui.button.exportAll') }}
-        </a-button>
+        <a-dropdown class="mr-2">
+          <a-button>{{ $t('ui.button.exportAll') }}</a-button>
+          <template #overlay>
+            <a-menu @click="handleExportAll">
+              <a-menu-item key="csv">{{ $t('ui.button.exportFormatCsv') }}</a-menu-item>
+              <a-menu-item key="xlsx">{{ $t('ui.button.exportFormatXlsx') }}</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
       </template>
       <template #result="{ row }">
         <a-tag :color="successToColor(row.result)">

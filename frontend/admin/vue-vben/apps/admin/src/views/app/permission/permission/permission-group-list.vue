@@ -10,6 +10,7 @@ import { isEqual } from '@vben/utils';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import {
   statusList,
   statusToColor,
@@ -141,6 +142,9 @@ const gridEvents: VxeGridListeners<PermissionGroup> = {
   },
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  permissionViewStore.fetchGroupList(page, pageSize, {});
+
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions,
   gridEvents,
@@ -228,6 +232,7 @@ watch(
       <a-button class="mr-2" @click="collapseAll">
         {{ $t('ui.tree.collapse_all') }}
       </a-button>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #status="{ row }">
       <a-tag :color="statusToColor(row.status)">
