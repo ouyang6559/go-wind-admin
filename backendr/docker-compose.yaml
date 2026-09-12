@@ -41,6 +41,7 @@ services:
       - app-tier
     ports:
       - "7666:7666"
+      - "7789:7789"
     depends_on:
       - postgres
       - redis
@@ -48,13 +49,28 @@ services:
       - TZ=Asia/Shanghai
       - GW_ADMIN_ENV=prod
       - GW_ADMIN_HTTP_ADDR=0.0.0.0:7666
+      # SSE 网关（站内信实时推送；前端 VITE_SSE_URL 指向 :7789/events）。off 关闭
+      - GW_ADMIN_SSE_ADDR=0.0.0.0:7789
       - GW_ADMIN_DATABASE_URL=postgres://postgres:*Abcd123456@postgres:5432/gwa
       - GW_ADMIN_REDIS_URL=redis://:*Abcd123456@redis:6379/0
       - GW_ADMIN_JWT_SECRET=dev-secret-change-me
       - GW_ADMIN_DEFAULT_TENANT_ID=1
       - GW_ADMIN_MAX_BODY_BYTES=10485760
+      # 签名媒体 URL / 渠道密码 AES 密钥（缺省时头像只存相对引用，前端破图；通道密码解密 fail-open）
+      - GOWIND_CRYPTO_KEY=dev-secret-crypto-key-4e2a
+      # 上传与备份/归档落盘目录（Dockerfile 已 chown 给 appuser）
+      - GW_ADMIN_UPLOAD_DIR=/app/uploads
+      - BACKUP_DIR=/app/data/backup
+      - AUDIT_ARCHIVE_DIR=/app/data/audit-archive
+    volumes:
+      - uploads:/app/uploads
+      - data:/app/data
     build:
       context: ./  # 指定 Dockerfile 所在的上下文路径
       dockerfile: Dockerfile
       args:
         APP_VERSION: 0.1.0
+
+volumes:
+  uploads:
+  data:

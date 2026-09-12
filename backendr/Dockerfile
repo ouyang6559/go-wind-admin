@@ -44,6 +44,12 @@ COPY --from=builder /src/backendr /app/bin/server
 # 创建一个名为 appuser 的非 root 用户
 RUN useradd --create-home --shell /usr/sbin/nologin appuser
 
+# 创建可写数据目录（上传文件 + 备份/归档），供非 root 的 appuser 使用。
+# 相关默认路径：GW_ADMIN_UPLOAD_DIR=uploads(→/app/uploads)、backup(./data/backup)、
+# audit archive(./data/audit-archive)。若目录不可写，上传/头像/备份会 500。
+RUN mkdir -p /app/uploads /app/data/backup /app/data/audit-archive \
+    && chown -R appuser:appuser /app/uploads /app/data
+
 # 切换到非特权用户
 USER appuser
 
