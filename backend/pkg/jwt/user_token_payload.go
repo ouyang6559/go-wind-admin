@@ -31,6 +31,8 @@ const (
 	ClaimFieldDataScopes     = "dss" // 数据范围类型集合（多角色聚合）
 	ClaimFieldDataScopeUnits = "dsu" // UNIT 类范围的组织单元目标集（并集，逗号连接十进制串）
 
+	ClaimFieldHiddenFields = "hfs" // 字段权限隐藏字段集（"资源.字段" 串，多角色并集）
+
 	ClaimFieldIsPlatformAdmin = "ipa" // 是否平台管理员
 	ClaimFieldIsTenantAdmin   = "ita" // 是否租户管理员
 )
@@ -117,6 +119,10 @@ func NewUserTokenAuthClaims(
 			unitParts = append(unitParts, strconv.FormatUint(id, 10))
 		}
 		authClaims[ClaimFieldDataScopeUnits] = strings.Join(unitParts, ",")
+	}
+	// 字段权限隐藏字段集（"资源.字段" 串数组），读路径裁剪与写路径剥离共用。
+	if len(tokenPayload.HiddenFields) > 0 {
+		authClaims[ClaimFieldHiddenFields] = tokenPayload.HiddenFields
 	}
 	if tokenPayload.OrgUnitId != nil {
 		authClaims[ClaimFieldOrgUnitID] = tokenPayload.GetOrgUnitId()
@@ -226,6 +232,14 @@ func NewUserTokenPayloadWithClaims(claims *authn.AuthClaims) (*authenticationV1.
 		}
 	}
 
+	hiddenFields, err := claims.GetStrings(ClaimFieldHiddenFields)
+	if err != nil {
+		bLogger.GetLogger().Error(context.Background(), fmt.Sprintf("GetStrings ClaimFieldHiddenFields failed: %v", err))
+	}
+	if hiddenFields != nil {
+		payload.HiddenFields = hiddenFields
+	}
+
 	orgUnitID, err := claims.GetUint32(ClaimFieldOrgUnitID)
 	if err != nil {
 		bLogger.GetLogger().Error(context.Background(), fmt.Sprintf("GetUint32 ClaimFieldOrgUnitID failed: %v", err))
@@ -310,6 +324,16 @@ func NewUserTokenPayloadWithJwtMapClaims(claims jwt.MapClaims) (*authenticationV
 
 		default:
 			return nil, errors.New("invalid roleCodes type")
+		}
+	}
+
+	// 字段权限隐藏字段集：同样两值断言，类型不符则跳过（审计中间件路径解析的是
+	// 客户端可伪造的令牌，任何 claim 都不可信）。
+	if hiddenFields, ok := claims[ClaimFieldHiddenFields].([]interface{}); ok {
+		for _, hf := range hiddenFields {
+			if hfStr, hfOk := hf.(string); hfOk {
+				payload.HiddenFields = append(payload.HiddenFields, hfStr)
+			}
 		}
 	}
 

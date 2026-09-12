@@ -78,6 +78,13 @@ message UserTokenPayload {
     }
   ]; // UNIT 类数据范围的组织单元目标集（多角色并集，登录期展开）
 
+  repeated string hidden_fields = 15 [
+    json_name = "hfs",
+    (gnostic.openapi.v3.property) = {
+      description: "字段权限隐藏字段集（\"资源.字段\" 串，多角色并集，登录期聚合；命中字段读写两侧被剔除）"
+    }
+  ]; // 字段权限隐藏字段集（"资源.字段" 串，多角色并集，登录期聚合）
+
   optional bool is_platform_admin = 20 [
     json_name = "ipa",
     (gnostic.openapi.v3.property) = {

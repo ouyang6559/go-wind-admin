@@ -102,6 +102,18 @@
           </template>
         </ElTree>
       </ElFormItem>
+
+      <!-- 字段权限：勾选 = 对该角色用户隐藏（黑名单语义，User 资源试点） -->
+      <ElFormItem :label="$t('pages.role.fieldPerm.title')">
+        <div class="field-perm-box">
+          <div class="field-perm-hint">{{ $t("pages.role.fieldPerm.hint") }}</div>
+          <ElCheckboxGroup v-model="userHiddenFields">
+            <ElCheckbox v-for="item in fieldPermOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </ElCheckbox>
+          </ElCheckboxGroup>
+        </div>
+      </ElFormItem>
     </ElForm>
 
     <template #footer>
@@ -165,6 +177,21 @@ const formData = reactive({
 
 // 组织单元树数据（SELECTED_UNITS 档位的自定义授权集）
 const orgUnitTreeData = ref<any[]>([]);
+
+// 字段权限：User 资源上勾选隐藏的字段（proto 字段 json_name）
+const userHiddenFields = ref<string[]>([]);
+
+// 可勾选字段：value 与后端 identity User proto 字段 json_name 逐字一致，
+// 提交后经登录聚合写入令牌，命中字段在响应侧被裁剪。
+const fieldPermOptions = [
+  { value: "email", label: $t("pages.role.fieldPerm.field.email") },
+  { value: "mobile", label: $t("pages.role.fieldPerm.field.mobile") },
+  { value: "telephone", label: $t("pages.role.fieldPerm.field.telephone") },
+  { value: "address", label: $t("pages.role.fieldPerm.field.address") },
+  { value: "region", label: $t("pages.role.fieldPerm.field.region") },
+  { value: "lastLoginAt", label: $t("pages.role.fieldPerm.field.lastLoginAt") },
+  { value: "lastLoginIp", label: $t("pages.role.fieldPerm.field.lastLoginIp") },
+];
 
 // 表单验证规则
 const formRules = {
@@ -254,6 +281,14 @@ async function open(data?: { create: boolean; row?: any }) {
       if (formData.dataScope === "SELECTED_UNITS" && Array.isArray(data.row.orgUnits)) {
         unitTreeRef.value?.setCheckedKeys(data.row.orgUnits);
       }
+
+      // 回填字段权限（User 资源的隐藏字段集）
+      const fpEntry = Array.isArray(data.row.fieldPermissions)
+        ? data.row.fieldPermissions.find((e: any) => e?.resource === "User")
+        : undefined;
+      userHiddenFields.value = Array.isArray(fpEntry?.hiddenFields)
+        ? fpEntry.hiddenFields.filter((v: any) => typeof v === "string")
+        : [];
     }
   } finally {
     pageLoading.value = false;
@@ -286,6 +321,7 @@ function resetForm() {
   permissionTreeRef.value?.setCheckedKeys([]);
   unitTreeRef.value?.setCheckedKeys([]);
   orgUnitTreeData.value = [];
+  userHiddenFields.value = [];
 }
 
 // 提交表单
@@ -311,6 +347,12 @@ async function handleSubmit() {
       const unitCheckedKeys = unitTreeRef.value?.getCheckedKeys(false) || [];
       values.orgUnits = unitCheckedKeys.filter((key: any) => typeof key === "number");
     }
+
+    // 字段权限始终随表单提交（含清空场景）：抽屉所见即保存后的最终态。
+    values.fieldPermissions =
+      userHiddenFields.value.length > 0
+        ? [{ resource: "User", hiddenFields: [...userHiddenFields.value] }]
+        : [];
 
     if (isCreate.value) {
       await createRole(values);
@@ -367,6 +409,20 @@ defineExpose({
   font-size: 14px;
   border: 1px dashed var(--el-border-color);
   border-radius: var(--el-border-radius-base);
+  color: var(--el-text-color-secondary);
+}
+
+.field-perm-box {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+}
+
+.field-perm-hint {
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--el-text-color-secondary);
 }
 </style>

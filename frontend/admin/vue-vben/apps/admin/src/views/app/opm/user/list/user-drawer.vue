@@ -21,12 +21,21 @@ import {
   type identityservicev1_OrgUnit as OrgUnit,
   type identityservicev1_Position as Position,
 } from '#/api';
+import { useAccessStore } from '@vben/stores';
+import { parseResourceHiddenFields } from '#/utils';
 
 import { useUserViewStore } from './user-view.state';
 
 const { mutateAsync: createUser } = useCreateUser();
 const { mutateAsync: updateUser } = useUpdateUser();
 const userViewStore = useUserViewStore();
+
+// 字段权限：被隐藏的 User 字段不渲染、不提交（后端响应/写入两侧还会再兜底裁剪）。
+// 隐藏集仅随登录聚合，setup 时取一次快照即可。
+const userHiddenFields = parseResourceHiddenFields(
+  useAccessStore().hiddenFields,
+  'User',
+);
 
 const data = ref();
 
@@ -217,6 +226,12 @@ const [BaseForm, baseFormApi] = useVbenForm({
         allowClear: true,
       },
       rules: 'required',
+      dependencies: {
+        show: () => !userHiddenFields.has('email'),
+        // vben 的依赖 watch 对空 triggerFields 直接跳过（不执行 show），
+        // 必须给一个恒存在的触发字段；隐藏集本身按会话不变。
+        triggerFields: ['username'],
+      },
     },
     {
       component: 'Input',
@@ -225,6 +240,10 @@ const [BaseForm, baseFormApi] = useVbenForm({
       componentProps: {
         placeholder: $t('ui.placeholder.input'),
         allowClear: true,
+      },
+      dependencies: {
+        show: () => !userHiddenFields.has('mobile'),
+        triggerFields: ['username'],
       },
     },
 
@@ -278,6 +297,11 @@ const [Drawer, drawerApi] = useVbenDrawer({
       // proto CreateUserRequest.password 是顶层字段，放在 data 里会被后端当成未设置。
       // 注意 rest 变量不能叫 data，会遮蔽外层抽屉的 data ref
       const { password, ...userData } = values;
+      // 被字段权限隐藏的字段整项剔除，避免把空值当成显式清空提交
+      for (const entry of userHiddenFields) {
+        delete (userData as any)[entry];
+        delete (values as any)[entry];
+      }
       await (data.value?.create
         ? createUser({ data: userData, password })
         : updateUser({ id: data.value.row.id, values }));

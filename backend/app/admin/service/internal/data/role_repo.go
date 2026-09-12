@@ -51,6 +51,8 @@ type RoleRepo struct {
 	roleOrgUnitRepo    *RoleOrgUnitRepo
 	permissionRepo     *PermissionRepo
 	roleMetadataRepo   *RoleMetadataRepo
+
+	roleFieldPermissionRepo *RoleFieldPermissionRepo
 }
 
 func NewRoleRepo(
@@ -60,6 +62,7 @@ func NewRoleRepo(
 	roleOrgUnitRepo *RoleOrgUnitRepo,
 	permissionRepo *PermissionRepo,
 	roleMetadataRepo *RoleMetadataRepo,
+	roleFieldPermissionRepo *RoleFieldPermissionRepo,
 ) *RoleRepo {
 	repo := &RoleRepo{
 		log:       ctx.NewLoggerHelper("role/repo/admin-service"),
@@ -81,6 +84,8 @@ func NewRoleRepo(
 		rolePermissionRepo: rolePermissionRepo,
 		roleOrgUnitRepo:    roleOrgUnitRepo,
 		roleMetadataRepo:   roleMetadataRepo,
+
+		roleFieldPermissionRepo: roleFieldPermissionRepo,
 	}
 
 	repo.init()
@@ -150,9 +155,16 @@ func (r *RoleRepo) List(ctx context.Context, req *paginationV1.PagingRequest) (*
 		return &permissionV1.ListRoleResponse{Total: 0, Items: nil}, nil
 	}
 
+	roleIDs := make([]uint32, 0, len(ret.Items))
+	for _, item := range ret.Items {
+		roleIDs = append(roleIDs, item.GetId())
+	}
+	fieldPermGroups, _ := r.roleFieldPermissionRepo.ListHiddenFieldGroupsByRoleIDs(ctx, roleIDs)
+
 	for _, item := range ret.Items {
 		_ = r.fillPermissionIDs(ctx, item)
 		_ = r.fillOrgUnitIDs(ctx, item)
+		item.FieldPermissions = fieldPermGroups[item.GetId()]
 	}
 
 	return &permissionV1.ListRoleResponse{
@@ -180,6 +192,17 @@ func (r *RoleRepo) fillOrgUnitIDs(ctx context.Context, dto *permissionV1.Role) e
 		return err
 	}
 	dto.OrgUnits = orgUnitIDs
+	return nil
+}
+
+// fillFieldPermissions 填充角色字段权限配置
+func (r *RoleRepo) fillFieldPermissions(ctx context.Context, dto *permissionV1.Role) error {
+	fieldPerms, err := r.roleFieldPermissionRepo.ListFieldPermissions(ctx, dto.GetId())
+	if err != nil {
+		r.log.Errorf(ctx, "list field permissions failed: %s", err.Error())
+		return err
+	}
+	dto.FieldPermissions = fieldPerms
 	return nil
 }
 
@@ -333,6 +356,7 @@ func (r *RoleRepo) Get(ctx context.Context, req *permissionV1.GetRoleRequest) (*
 
 	_ = r.fillPermissionIDs(ctx, dto)
 	_ = r.fillOrgUnitIDs(ctx, dto)
+	_ = r.fillFieldPermissions(ctx, dto)
 
 	return dto, err
 }
@@ -510,6 +534,16 @@ func (r *RoleRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data *permissio
 		}
 	}
 
+	// 写入字段权限配置（黑名单语义的隐藏字段集）
+	if len(data.FieldPermissions) > 0 {
+		if err = r.roleFieldPermissionRepo.ReplaceFieldPermissions(ctx, tx,
+			data.GetTenantId(), data.GetCreatedBy(),
+			ret.ID, data.FieldPermissions); err != nil {
+			r.log.Errorf(ctx, "assign field permissions to role failed: %s", err.Error())
+			return nil, permissionV1.ErrorInternalServerError("assign field permissions to role failed")
+		}
+	}
+
 	return r.mapper.ToDTO(ret), nil
 }
 
@@ -566,11 +600,15 @@ func (r *RoleRepo) Update(ctx context.Context, req *permissionV1.UpdateRoleReque
 	updatePermissions := req.UpdateMask != nil && hasPath("permissions", req.UpdateMask)
 	updateOrgUnits := req.UpdateMask != nil &&
 		(hasPath("org_units", req.UpdateMask) || hasPath("orgUnits", req.UpdateMask))
+	updateFieldPermissions := req.UpdateMask != nil &&
+		(hasPath("field_permissions", req.UpdateMask) || hasPath("fieldPermissions", req.UpdateMask))
 	if req.UpdateMask != nil {
 		req.UpdateMask.Paths = utils.FilterBlacklist(req.UpdateMask.GetPaths(), []string{
 			"permissions",
 			"org_units",
 			"orgUnits",
+			"field_permissions",
+			"fieldPermissions",
 		})
 	}
 
@@ -584,6 +622,10 @@ func (r *RoleRepo) Update(ctx context.Context, req *permissionV1.UpdateRoleReque
 	}
 	if updateOrgUnits {
 		wantOrgUnits = slices.Clone(req.Data.GetOrgUnits())
+	}
+	var wantFieldPermissions []*permissionV1.RoleFieldPermission
+	if updateFieldPermissions {
+		wantFieldPermissions = req.Data.GetFieldPermissions()
 	}
 
 	var entity *permissionV1.Role
@@ -644,6 +686,16 @@ func (r *RoleRepo) Update(ctx context.Context, req *permissionV1.UpdateRoleReque
 		}
 	}
 
+	// 处理字段权限配置：只要用户提交了 fieldPermissions（含清空场景），即整体替换。
+	if updateFieldPermissions {
+		if err = r.roleFieldPermissionRepo.ReplaceFieldPermissions(ctx, tx,
+			entity.GetTenantId(), req.Data.GetUpdatedBy(),
+			req.GetId(), wantFieldPermissions); err != nil {
+			r.log.Errorf(ctx, "replace field permissions of role failed: %s", err.Error())
+			return permissionV1.ErrorInternalServerError("replace field permissions of role failed")
+		}
+	}
+
 	return nil
 }
 
@@ -696,6 +748,10 @@ func (r *RoleRepo) Delete(ctx context.Context, req *permissionV1.DeleteRoleReque
 	}
 
 	if err = r.roleOrgUnitRepo.CleanOrgUnits(ctx, tx, req.GetId()); err != nil {
+		return err
+	}
+
+	if err = r.roleFieldPermissionRepo.CleanFieldPermissions(ctx, tx, req.GetId()); err != nil {
 		return err
 	}
 

@@ -165,12 +165,13 @@ type AuthenticationService struct {
 	userRepo           data.UserRepo
 	userCredentialRepo *data.UserCredentialRepo
 
-	roleRepo        *data.RoleRepo
-	tenantRepo      *data.TenantRepo
-	membershipRepo  *data.MembershipRepo
-	orgUnitRepo     *data.OrgUnitRepo
-	roleOrgUnitRepo *data.RoleOrgUnitRepo
-	permissionRepo  *data.PermissionRepo
+	roleRepo                *data.RoleRepo
+	tenantRepo              *data.TenantRepo
+	membershipRepo          *data.MembershipRepo
+	orgUnitRepo             *data.OrgUnitRepo
+	roleOrgUnitRepo         *data.RoleOrgUnitRepo
+	roleFieldPermissionRepo *data.RoleFieldPermissionRepo
+	permissionRepo          *data.PermissionRepo
 
 	authenticator *data.Authenticator
 	clientType    authenticationV1.ClientType
@@ -196,6 +197,7 @@ func NewAuthenticationService(
 	membershipRepo *data.MembershipRepo,
 	orgUnitRepo *data.OrgUnitRepo,
 	roleOrgUnitRepo *data.RoleOrgUnitRepo,
+	roleFieldPermissionRepo *data.RoleFieldPermissionRepo,
 	permissionRepo *data.PermissionRepo,
 	authenticator *data.Authenticator,
 	clientType authenticationV1.ClientType,
@@ -216,6 +218,7 @@ func NewAuthenticationService(
 		membershipRepo:          membershipRepo,
 		orgUnitRepo:             orgUnitRepo,
 		roleOrgUnitRepo:         roleOrgUnitRepo,
+		roleFieldPermissionRepo: roleFieldPermissionRepo,
 		permissionRepo:          permissionRepo,
 		authenticator:           authenticator,
 		clientType:              clientType,
@@ -337,6 +340,8 @@ func (s *AuthenticationService) authorizeAndEnrichUserTokenPayloadUserTenantRela
 
 	// 聚合角色级数据范围配置进令牌（dss/dsu 轨道；语义见 aggregateDataScopes）。
 	s.aggregateDataScopes(ctx, tokenPayload.GetTenantId(), userID, roleIDs, tokenPayload)
+	// 聚合角色级字段权限配置进令牌（hfs 轨道；语义见 aggregateHiddenFields）。
+	s.aggregateHiddenFields(ctx, tokenPayload.GetTenantId(), roleIDs, tokenPayload)
 
 	return nil
 }
@@ -418,6 +423,8 @@ func (s *AuthenticationService) authorizeAndEnrichUserTokenPayloadUserTenantRela
 
 	// 聚合角色级数据范围配置进令牌（dss/dsu 轨道；语义见 aggregateDataScopes）。
 	s.aggregateDataScopes(ctx, tokenPayload.GetTenantId(), userID, validRoleIDs, tokenPayload)
+	// 聚合角色级字段权限配置进令牌（hfs 轨道；语义见 aggregateHiddenFields）。
+	s.aggregateHiddenFields(ctx, tokenPayload.GetTenantId(), validRoleIDs, tokenPayload)
 
 	return nil
 }

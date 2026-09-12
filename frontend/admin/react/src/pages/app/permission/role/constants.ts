@@ -137,6 +137,22 @@ export function getDataScopeOptions(t: TFn) {
   }));
 }
 
+// ========== 字段权限（User 资源试点） ==========
+
+// 可勾选字段：value 与后端 identity User proto 字段 json_name 逐字一致，
+// 提交后经登录聚合写入令牌，命中字段在响应侧被裁剪。
+export function getUserFieldPermissionOptions(t: TFn) {
+  return [
+    { value: 'email', label: t('fieldPerm.field.email') },
+    { value: 'mobile', label: t('fieldPerm.field.mobile') },
+    { value: 'telephone', label: t('fieldPerm.field.telephone') },
+    { value: 'address', label: t('fieldPerm.field.address') },
+    { value: 'region', label: t('fieldPerm.field.region') },
+    { value: 'lastLoginAt', label: t('fieldPerm.field.lastLoginAt') },
+    { value: 'lastLoginIp', label: t('fieldPerm.field.lastLoginIp') },
+  ];
+}
+
 // ========== 组织单元树（SELECTED_UNITS 自定义授权集） ==========
 
 interface OrgTreeNode {

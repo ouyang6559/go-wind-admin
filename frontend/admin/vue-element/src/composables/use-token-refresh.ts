@@ -110,6 +110,7 @@ export async function reauthenticate(): Promise<void> {
     const wasAccessChecked = accessStore.isAccessChecked;
     accessStore.setIsAccessChecked(false);
     accessStore.setAccessCodes([]);
+    accessStore.setHiddenFields([]);
 
     if (preferences.app.loginExpiredMode === "modal" && wasAccessChecked) {
       accessStore.setLoginExpired(true);

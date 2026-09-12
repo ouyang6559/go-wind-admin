@@ -185,6 +185,7 @@ async function applySuccessfulLogin(
   const userStore = useAppUserStore();
   userStore.setUserInfo(userInfo);
   accessStore.setAccessCodes(fetchAccessCodeResult.codes ?? []);
+  accessStore.setHiddenFields(fetchAccessCodeResult.hiddenFields ?? []);
 
   if (accessStore.loginExpired) {
     accessStore.setLoginExpired(false);
@@ -304,6 +305,7 @@ async function getUserPermissionCodes() {
       // 只存权限码，角色码由 userStore.userRoles 管理
       const codes = fetchAccessCodeResult ? (fetchAccessCodeResult.codes ?? []) : [];
       accessStore.setAccessCodes(codes);
+      accessStore.setHiddenFields(fetchAccessCodeResult?.hiddenFields ?? []);
     } catch (error: unknown) {
       // 网络异常：抛出特定标记，让路由守卫跳转错误页而非白屏
       if (isNetworkError(error)) {

@@ -207,7 +207,11 @@ func NewRestServer(
 	adminV1.RegisterPolicyEvaluationLogServiceHTTPServer(srv, policyEvaluationLogService)
 	adminV1.RegisterPermissionAuditLogServiceHTTPServer(srv, permissionAuditLogService)
 
-	adminV1.RegisterUserServiceHTTPServer(srv, adminV1.RedactedUserServiceServer(&userServiceServerAdapter{UserServiceHTTPServer: userService}, nil))
+	// 字段权限装饰器在最内层（紧贴业务实现），静态脱敏 redact 在外层兜底；
+	// 两者都按"清值"裁剪，protojson 默认不输出未填充字段，效果等价于移除字段。
+	adminV1.RegisterUserServiceHTTPServer(srv, adminV1.RedactedUserServiceServer(
+		service.NewFieldPermissionUserServiceServer(&userServiceServerAdapter{UserServiceHTTPServer: userService}),
+		nil))
 	adminV1.RegisterOrgUnitServiceHTTPServer(srv, orgUnitService)
 	adminV1.RegisterRoleServiceHTTPServer(srv, roleService)
 	adminV1.RegisterPositionServiceHTTPServer(srv, positionService)

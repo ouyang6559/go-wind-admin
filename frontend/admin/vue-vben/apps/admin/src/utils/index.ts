@@ -145,3 +145,4 @@ export function extractLeafIds(checkedKeys: unknown[], treeData: any[]): number[
 }
 
 export * from './crypto';
+export * from './field-permission';
