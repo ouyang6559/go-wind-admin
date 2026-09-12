@@ -10,7 +10,7 @@ frontend/admin/
 ├── react/                  React 19 + antd 6 + ProComponents + TanStack Query + zustand
 ├── vue-element/            Vue 3 + Element Plus + vxe-table + TanStack vue-query + Pinia
 └── vue-vben/               Vben Admin 5.x monorepo（apps/admin + packages/*）+ Ant Design Vue
-docs/                       后端部署/开发环境/前端权限等专题文档
+docs/                       文档体系（总入口 docs/README.md：教程层 docs/tutorial/ + 参考层专题文档）
 ```
 
 ## 三端门禁（必须保持全绿）
@@ -62,6 +62,7 @@ gow 未覆盖的任务（三端 TS 生成 `make ts`、OpenAPI `make openapi`、`
 
 ## 文档索引
 
+- **文档总入口（两层索引：教程层 + 参考层）**：`docs/README.md`；渐进教程系列（面向采用者的 9 章学习路径）在 `docs/tutorial/`
 - 各端规范：`frontend/admin/{react,vue-element,vue-vben}/AGENTS.md`
 - 后端：`docs/backend_project_struct.md`、`docs/backend_deploy.md`、`docs/audit-log-producer-design.md`
 - 前端权限模型：`docs/frontend_authority.md`
