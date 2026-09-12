@@ -4340,26 +4340,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/LoginResponse'
-    /admin/v1/register:
-        post:
-            tags:
-                - AuthenticationService
-            operationId: AuthenticationService_RegisterUser
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/RegisterUserRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/RegisterUserResponse'
-            security:
-                - {}
     /admin/v1/reset-password-by-code:
         post:
             tags:
@@ -9216,34 +9196,9 @@ components:
                     items:
                         $ref: '#/components/schemas/SlowLogEntry'
             description: Redis缓存监控信息
-        RegisterUserRequest:
             type: object
             properties:
-                username:
-                    type: string
-                    description: 用户名
-                password:
-                    type: string
-                    description: 登入密码
-                tenantCode:
-                    type: string
-                    description: 租户代码
-                email:
-                    type: string
-                    description: 电子邮件地址
-                client_type:
-                    enum:
-                        - admin
-                        - app
-                    type: string
-                    description: 客户端类型
-                    format: enum
-        RegisterUserResponse:
-            type: object
-            properties:
-                userId:
                     type: integer
-                    description: 用户ID
                     format: uint32
         ResetPasswordByCodeRequest:
             type: object
