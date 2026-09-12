@@ -4,6 +4,7 @@
  */
 
 // 认证相关
+export * from './access-key';
 export * from './auth';
 
 // 管理门户相关

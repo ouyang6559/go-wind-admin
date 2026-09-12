@@ -48,5 +48,6 @@
   "notification-channels": "Notification Channels",
   "scripts": "Scripts",
   "configs": "Config Management",
-  "forgot-password": "Forgot Password"
+  "forgot-password": "Forgot Password",
+  "accessKeys": "OpenAPI Credentials"
 }

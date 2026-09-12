@@ -31,6 +31,7 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"TaskService":                    identityV1.Module_TASK,
 	"LoginPolicyService":             identityV1.Module_SYSTEM,
 	"ConfigService":                  identityV1.Module_SYSTEM,
+	"AccessKeyService":               identityV1.Module_SYSTEM,
 
 	"TenantService":                  identityV1.Module_TENANT,
 	"PlanService":                    identityV1.Module_TENANT,

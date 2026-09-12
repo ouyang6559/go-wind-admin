@@ -43,6 +43,7 @@ export * from './permission-audit-log';
 export * from './permission-group';
 export * from './policy-evaluation-log';
 
+export * from './access_key';
 export * from './position';
 export * from './plan';
 export * from './redis-cache-monitor';

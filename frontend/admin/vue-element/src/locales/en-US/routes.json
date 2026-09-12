@@ -43,7 +43,8 @@
     "serverMonitor": "Server Monitor",
     "notificationChannels": "Notification Channels",
     "scripts": "Scripts",
-    "config": "Config Management"
+    "config": "Config Management",
+    "accessKeys": "OpenAPI Credentials"
   },
   "tenant": {
     "moduleName": "Tenant Management",

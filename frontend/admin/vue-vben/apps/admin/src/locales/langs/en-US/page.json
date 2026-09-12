@@ -255,6 +255,9 @@
     },
     "text": {
       "do_you_want_sync_menus": "Menus from the current frontend routes will be merged into the server: missing menus are added and existing ones updated in place (menu IDs and role-menu assignments are preserved); extra menus on the server are kept. Continue?"
+    },
+    "system": {
+      "accessKeys": "OpenAPI Credentials"
     }
   },
   "orgUnit": {
@@ -774,5 +777,23 @@
     "logPurge": "Purge >90d",
     "logPurgeConfirmDesc": "This deletes all execution logs older than 90 days. Continue?",
     "logPurgeSuccess": "Purged {count} log entries"
+  },
+  "accessKey": {
+    "moduleName": "credential",
+    "name": "Credential Name",
+    "status": "Status",
+    "statusOn": "Enabled",
+    "statusOff": "Disabled",
+    "expiresAt": "Expires At",
+    "expiresAtHint": "Leave empty for no expiry",
+    "lastUsedAt": "Last Used",
+    "secretDialogTitle": "Save your Secret now",
+    "secretDialogHint": "The secret is shown only once; the server stores only its SHA-256 digest.",
+    "secretCopied": "Secret copied",
+    "accessKeyLabel": "Access Key",
+    "create": "New Credential",
+    "deleteConfirm": "Delete this {moduleName}? Machine token exchange stops immediately.",
+    "lastUsed": "Last Used",
+    "createdAt": "Created At"
   }
 }
