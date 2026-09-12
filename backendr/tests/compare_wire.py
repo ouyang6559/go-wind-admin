@@ -5,11 +5,12 @@ Usage: python3 compare_wire.py <go_token> <rust_token>
 Compares JSON key structure (and scalar values for identity) of paired endpoints.
 """
 import json
+import os
 import sys
 import urllib.request
 
 GO = "http://localhost:7788"
-RUST = "http://localhost:7666"
+RUST = os.environ.get("RUST_BASE", "http://localhost:7666")
 
 PATHS = [
     "/admin/v1/users?page=1&pageSize=3",

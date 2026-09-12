@@ -1,6 +1,8 @@
 #!/bin/bash
-R=http://127.0.0.1:7666/admin/v1
+R=${E2E_BASE:-http://127.0.0.1:7666}/admin/v1
+REDIS_CONTAINER=${E2E_REDIS_CONTAINER:-gwa-rust-test-redis}
 KEYHEX=66353164363661373364386130393237
+captcha_ans() { docker exec "$REDIS_CONTAINER" redis-cli GET "gowind:captcha:$1" | tr -d '\r\n'; }
 pass=0; fail=0
 chk() { # name, expected_code, actual_code, extra
   if [ "$2" = "$3" ]; then pass=$((pass+1)); echo "PASS $1 [$3] ${4:0:120}"; else fail=$((fail+1)); echo "FAIL $1 expected=$2 got=$3 ${4:0:200}"; fi
@@ -10,7 +12,7 @@ chk() { # name, expected_code, actual_code, extra
 CAP=$(curl -s $R/captcha)
 CID=$(echo "$CAP" | python3 -c "import sys,json;print(json.load(sys.stdin)['captchaId'])")
 chk captcha 200 200 "$(echo $CAP | head -c 100)"
-ANS=$(docker exec gwa-rust-test-redis redis-cli GET "gowind:captcha:$CID" | tr -d '\r\n')
+ANS=$(captcha_ans "$CID")
 ENC=$(printf 'Abcd@1234' | openssl enc -aes-128-cbc -K $KEYHEX -iv $KEYHEX -base64 -A)
 
 V=$(curl -s -o /dev/null -w "%{http_code}" -X POST $R/captcha/verify -H 'Content-Type: application/json' -d "{\"captchaId\":\"$CID\",\"userInput\":\"$ANS\"}")
@@ -18,7 +20,7 @@ chk verify-captcha-consumed 200 "$V"
 
 # 重新拿一个验证码登录
 CAP=$(curl -s $R/captcha); CID=$(echo "$CAP" | python3 -c "import sys,json;print(json.load(sys.stdin)['captchaId'])")
-ANS=$(docker exec gwa-rust-test-redis redis-cli GET "gowind:captcha:$CID" | tr -d '\r\n')
+ANS=$(captcha_ans "$CID")
 CODE=$(curl -s -D /tmp/rh.txt -o /tmp/login.json -w "%{http_code}" -X POST $R/login -H 'Content-Type: application/json' -H "X-Captcha-Id: $CID" -H "X-Captcha-Value: $ANS" -d "{\"username\":\"admin\",\"password\":\"$ENC\",\"grant_type\":\"password\",\"client_type\":\"admin\"}")
 TOKEN=$(cat /tmp/login.json | python3 -c "import sys,json;print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
 chk login 200 "$CODE" "$(cat /tmp/login.json | head -c 200)"
@@ -76,7 +78,7 @@ OS=$(rt -X POST $R/online-session/force-logout -H 'Content-Type: application/jso
 OS=$(rt $R/online-session/sessions); chk after-logout-token-401 401 "$(echo "$OS"|tail -1)" "$(echo "$OS"|head -c 150)"
 
 # 重新登录继续测
-CAP=$(curl -s $R/captcha); CID=$(echo "$CAP"|python3 -c "import sys,json;print(json.load(sys.stdin)['captchaId'])"); ANS=$(docker exec gwa-rust-test-redis redis-cli GET "gowind:captcha:$CID"|tr -d '\r\n')
+CAP=$(curl -s $R/captcha); CID=$(echo "$CAP"|python3 -c "import sys,json;print(json.load(sys.stdin)['captchaId'])"); ANS=$(captcha_ans "$CID")
 LOGIN=$(curl -s -X POST $R/login -H 'Content-Type: application/json' -H "X-Captcha-Id: $CID" -H "X-Captcha-Value: $ANS" -d "{\"username\":\"admin\",\"password\":\"$ENC\",\"grant_type\":\"password\"}")
 TOKEN=$(echo "$LOGIN"|python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])"); A="Authorization: Bearer $TOKEN"
 
@@ -141,7 +143,7 @@ PUBURL=$(echo "$UP"|sed '$d'|python3 -c "import sys,json;print(json.load(sys.std
 OBJ=$(echo "$UP"|sed '$d'|python3 -c "import sys,json;print(json.load(sys.stdin).get('objectName',''))" 2>/dev/null)
 BUCKET=${OBJ%%/*}
 if [ -n "$PUBURL" ] && [[ "$PUBURL" == /admin* ]]; then
-  SC=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:7666$PUBURL")
+  SC=$(curl -s -o /dev/null -w "%{http_code}" "${R%/admin/v1}$PUBURL")
   chk signed-image-serve 200 "$SC" "sig url ok"
 else
   chk signed-image-serve 200 0 "no publicUrl (GOWIND_CRYPTO_KEY 未配置)"
