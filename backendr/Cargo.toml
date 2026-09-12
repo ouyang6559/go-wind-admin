@@ -79,6 +79,9 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 backon = "0.4"
 totp-rs = { version = "5.7.2", features = ["otpauth", "qr", "gen_secret"] }
 
+# server-monitor 进程运行时指标（跨平台 RSS/虚拟内存、线程数；替代 /proc 单平台占位）
+sysinfo = "0.33"
+
 # 脚本执行引擎（test_run）：Lua 用 mlua（vendored），JavaScript 用 boa_engine（纯 Rust）
 mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
 boa_engine = "0.20"

@@ -1,6 +1,10 @@
 // server_monitor 模块 handlers。
 // 字段对齐 Go ServerMonitorInfo：go/database/host/collectedAt。
-// Go 运行时专有指标（goroutine/GC 次数）在 Rust 侧以进程可观测的等价/占位值填充。
+// Go 运行时专有指标在 Rust 侧以进程可观测的真实值映射：
+//   version → 编译工具链 rustc 版本（build.rs 注入）；
+//   num_goroutine → 当前进程存活 OS 线程数；
+//   mem_alloc/mem_sys → 进程 RSS / 虚拟内存（sysinfo 跨平台，Linux + macOS + Windows）；
+//   gc_cycles → Rust 运行时无 GC 概念，保留 0（见 MISSING.md）。
 
 use axum::extract::State;
 use axum::response::IntoResponse;
@@ -68,7 +72,9 @@ pub async fn server_monitor_get(
         .unwrap_or("rust (backendr)")
         .to_string();
 
-    // 进程内存（Linux /proc 可用；其它平台为 0 占位）
+    // 进程存活线程数（numGoroutine 的 Rust 侧真实等价）
+    let threads = process_threads();
+    // 进程内存（RSS / 虚拟内存，sysinfo 跨平台）
     let (mem_alloc, mem_sys) = read_proc_mem();
 
     // 数据库探活 + 连接池统计
@@ -108,10 +114,11 @@ pub async fn server_monitor_get(
     Ok(json_ok(ServerMonitorInfo {
         go: GoRuntimeInfo {
             version,
-            // Rust 运行时无 goroutine 概念，tokio worker 数以 0 占位（见 MISSING.md）
-            num_goroutine: 0,
+            // num_goroutine 无 Go 概念，以进程存活 OS 线程数为真实等价
+            num_goroutine: threads,
             mem_alloc_bytes: mem_alloc.to_string(),
             mem_sys_bytes: mem_sys.to_string(),
+            // Rust 运行时无 GC，保留 0（见 MISSING.md）
             gc_cycles: 0,
             uptime_seconds: uptime.to_string(),
             started_at: STARTED_AT.to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
@@ -129,21 +136,40 @@ pub async fn server_monitor_get(
     }))
 }
 
+/// 进程内存（RSS, 虚拟内存），字节数；sysinfo 跨平台（Linux/macOS/Windows）。
 fn read_proc_mem() -> (u64, u64) {
+    let Some(pid) = sysinfo::get_current_pid().ok() else {
+        return (0, 0);
+    };
+    let kind = sysinfo::RefreshKind::nothing()
+        .with_processes(sysinfo::ProcessRefreshKind::nothing());
+    let mut s = sysinfo::System::new_with_specifics(kind);
+    s.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    match s.process(pid) {
+        Some(p) => (p.memory(), p.virtual_memory()),
+        None => (0, 0),
+    }
+}
+
+/// 当前进程存活 OS 线程数（numGoroutine 的 Rust 侧真实等价）。
+/// Linux 读 /proc/self/status；其它平台以可用并行数为下限。
+fn process_threads() -> u32 {
     #[cfg(target_os = "linux")]
     {
-        if let Ok(data) = std::fs::read_to_string("/proc/self/statm") {
-            let mut it = data.split_whitespace();
-            let _total = it.next();
-            let resident_pages = it.next().and_then(|v| v.parse::<u64>().ok()).unwrap_or(0);
-            let page = 4096u64;
-            return (resident_pages * page, resident_pages * page);
+        if let Ok(data) = std::fs::read_to_string("/proc/self/status") {
+            for line in data.lines() {
+                if let Some(rest) = line.strip_prefix("Threads:") {
+                    return rest.trim().parse().unwrap_or(0);
+                }
+            }
         }
-        (0, 0)
+        0
     }
     #[cfg(not(target_os = "linux"))]
     {
-        (0, 0)
+        std::thread::available_parallelism()
+            .map(|n| n.get() as u32)
+            .unwrap_or(1)
     }
 }
 
