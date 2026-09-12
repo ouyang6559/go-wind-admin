@@ -78,10 +78,10 @@ fn run_lua(source: &str, input: &HashMap<String, Value>) -> Result<HashMap<Strin
     methods
         .set(
             "stop",
-            lua.create_function(|_, reason: mlua::String| {
+            lua.create_function(|_, reason: mlua::String| -> Result<(), mlua::Error> {
                 Err(mlua::Error::RuntimeError(format!(
                     "script stopped: {}",
-                    reason.to_str().unwrap_or("")
+                    reason.to_string_lossy()
                 )))
             })
             .map_err(mlua_err)?,
@@ -90,7 +90,7 @@ fn run_lua(source: &str, input: &HashMap<String, Value>) -> Result<HashMap<Strin
 
     let mt = lua.create_table().map_err(mlua_err)?;
     mt.set("__index", methods).map_err(mlua_err)?;
-    ctx.set_metatable(Some(mt)).map_err(mlua_err)?;
+    ctx.set_metatable(Some(mt));
     lua.globals().set("ctx", ctx.clone()).map_err(mlua_err)?;
 
     lua.load(source).exec().map_err(mlua_err)?;
@@ -142,14 +142,14 @@ fn json_to_js(v: &Value, context: &mut boa_engine::Context) -> Result<boa_engine
 fn current_ctx(context: &mut boa_engine::Context) -> Result<boa_engine::JsObject, boa_engine::JsError> {
     context
         .global_object()
-        .get("ctx", context)?
+        .get(boa_engine::JsString::from("ctx"), context)?
         .as_object()
         .cloned()
         .ok_or_else(|| boa_engine::JsNativeError::typ().with_message("ctx object missing").into())
 }
 
 fn get_ctx_fn(
-    _this: boa_engine::JsValue,
+    _this: &boa_engine::JsValue,
     args: &[boa_engine::JsValue],
     context: &mut boa_engine::Context,
 ) -> Result<boa_engine::JsValue, boa_engine::JsError> {
@@ -164,7 +164,7 @@ fn get_ctx_fn(
 }
 
 fn set_ctx_fn(
-    _this: boa_engine::JsValue,
+    _this: &boa_engine::JsValue,
     args: &[boa_engine::JsValue],
     context: &mut boa_engine::Context,
 ) -> Result<boa_engine::JsValue, boa_engine::JsError> {
@@ -186,7 +186,7 @@ fn run_js(source: &str, input: &HashMap<String, Value>) -> Result<HashMap<String
     use boa_engine::native_function::NativeFunction;
     use boa_engine::object::ObjectInitializer;
     use boa_engine::property::Attribute;
-    use boa_engine::{Context, JsValue, Source};
+    use boa_engine::{JsString, JsValue, Context, Source};
 
     let mut context = Context::default();
 
@@ -201,13 +201,13 @@ fn run_js(source: &str, input: &HashMap<String, Value>) -> Result<HashMap<String
         .map_err(|e| e.to_string())?;
     }
     context
-        .register_global_property("ctx", JsValue::from(ctx), Attribute::all())
+        .register_global_property(JsString::from("ctx"), JsValue::from(ctx), Attribute::all())
         .map_err(|e| e.to_string())?;
     context
-        .register_global_builtin_callable("__get_ctx", 1, NativeFunction::from_fn_ptr(get_ctx_fn))
+        .register_global_builtin_callable(JsString::from("__get_ctx"), 1, NativeFunction::from_fn_ptr(get_ctx_fn))
         .map_err(|e| e.to_string())?;
     context
-        .register_global_builtin_callable("__set_ctx", 2, NativeFunction::from_fn_ptr(set_ctx_fn))
+        .register_global_builtin_callable(JsString::from("__set_ctx"), 2, NativeFunction::from_fn_ptr(set_ctx_fn))
         .map_err(|e| e.to_string())?;
 
     context
