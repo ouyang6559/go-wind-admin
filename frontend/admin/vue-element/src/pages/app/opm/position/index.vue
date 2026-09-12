@@ -54,7 +54,9 @@ const pageRef = ref();
 const drawerRef = ref();
 
 const pageConfig = computed<ProPageConfig>(() => {
-  // Excel 导入字段清单：与抽屉表单一致，唯排除 orgUnitId（外键需名称解析，属后续演进）。
+  // Excel 导入字段清单：与抽屉表单一致；orgUnit 以"组织名称"列承载，
+  // 导入期解析为 orgUnitId（见下方 createRow 包装）。
+  const orgUnitList = ref<any[]>([]);
   const importFields = [
     { label: $t("pages.position.name"), prop: "name" },
     { label: $t("pages.position.code"), prop: "code" },
@@ -63,6 +65,7 @@ const pageConfig = computed<ProPageConfig>(() => {
     { label: $t("pages.position.headcount"), prop: "headcount" },
     { label: $t("common.table.sortOrder"), prop: "sortOrder" },
     { label: $t("pages.position.description"), prop: "description" },
+    { label: $t("pages.position.orgUnit"), prop: "__orgUnitName" },
     { label: $t("common.table.remark"), prop: "remark" },
   ];
   return {
@@ -140,7 +143,30 @@ const pageConfig = computed<ProPageConfig>(() => {
     deleteAction: async (ids: string) => {
       await deletePosition({ id: ids as any });
     },
-    importsAction: createImportsAction(importFields, (values) => createPosition(values)),
+    importsAction: createImportsAction(importFields, async (values) => {
+      // 解析组织名称 → orgUnitId：按名称过滤拉取后精确匹配，未命中视为行级错误
+      const orgName = values.__orgUnitName;
+      delete values.__orgUnitName;
+      if (orgName && String(orgName).trim() !== "") {
+        if (orgUnitList.value.length === 0) {
+          const result = await fetchListOrgUnits(
+            new PaginationQuery({
+              paging: { page: 1, pageSize: 500 },
+              formValues: { status: "ON" },
+            }),
+          );
+          orgUnitList.value = result.items || [];
+        }
+        const hit = orgUnitList.value.find(
+          (u: any) => u.name === String(orgName).trim(),
+        );
+        if (!hit) {
+          throw new Error(`${$t("pages.position.orgUnit")}: ${orgName}`);
+        }
+        values.orgUnitId = hit.id;
+      }
+      return createPosition(values);
+    }),
     importTemplate: () => generateImportTemplate(importFields),
     exportsAction: createPagedExportAction(fetchListPositions),
     toolbar: [],
