@@ -293,6 +293,7 @@ pub async fn authentication_logout(
 
 pub async fn authentication_refresh_token(
     State(state): State<AppState>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: axum::http::HeaderMap,
     Json(body): Json<LoginBody>,
 ) -> Result<Response, AppError> {
@@ -312,14 +313,46 @@ pub async fn authentication_refresh_token(
     if auth::is_jti_blacklisted(&state, &claims.jti).await {
         return Err(AppError::Unauthorized);
     }
+    // 刷新请求上下文：IP 优先取 X-Forwarded-For / X-Real-IP，回退对端地址；
+    // UA 取 User-Agent（对齐 Go `recordSessionMetaAt` 从请求头透传）。
+    let login_ip = client_ip(&headers, &peer);
+    let login_ua = headers
+        .get(axum::http::header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
     let issue = service
-        .refresh_token(&refresh_token, body.client_type.as_deref())
+        .refresh_token(
+            &refresh_token,
+            body.client_type.as_deref(),
+            &login_ip,
+            &login_ua,
+        )
         .await?;
 
     let (resp, new_refresh) = build_login_response(issue);
     let mut response = json_ok(resp).into_response();
     set_refresh_cookies(&mut response, &headers, &new_refresh, auth::REFRESH_TOKEN_TTL);
     Ok(response)
+}
+
+/// 从请求头解析客户端 IP：优先 X-Forwarded-For 首个条目，其次 X-Real-IP，回退对端地址。
+fn client_ip(headers: &axum::http::HeaderMap, peer: &SocketAddr) -> String {
+    if let Some(v) = headers
+        .get("X-Forwarded-For")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.split(',').next().map(str::trim).unwrap_or(""))
+    {
+        if !v.is_empty() {
+            return v.to_string();
+        }
+    }
+    headers
+        .get("X-Real-IP")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| peer.ip().to_string())
 }
 
 pub async fn authentication_register_user(

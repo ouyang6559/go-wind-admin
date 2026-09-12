@@ -130,8 +130,8 @@
 | 差异点 | Go | Rust 现状 |
 |---|---|---|
 | server-monitor 运行时指标 | goroutine 数、GC 次数、Go 版本 | 真实进程指标（rustc 版本、tokio 工作线程数、进程内存），GC 概念不适用恒为 0（commit 2ce9a3cb） |
-| 刷新令牌后的 loginAt | Lua 原子轮换，继承首次登录时间 | 刷新 = 新会话条目，loginAt 重新计时 |
-| 会话元数据写入时机 | 刷新轮换原子迁移 | 刷新后 IP/UA 显示 `-`（刷新请求未带上下文） |
+| 刷新令牌后的 loginAt | Lua 原子轮换，继承首次登录时间 | ✅ 已对齐：access/refresh 共享同一 jti，刷新时读旧会话 meta 继承 login_at，不再重新计时 |
+| 会话元数据写入时机 | 刷新轮换原子迁移 | ✅ 已对齐：刷新请求解析 IP/UA 写入新会话（X-Forwarded-For/X-Real-IP/对端 + User-Agent），不再记 `-` |
 | MFA 账户名 | Go `uid:{id}`（冒号） | totp-rs otpauth 禁止冒号，用 `uid{id}`；otpauth URL 客户端等价 |
 | JWT 算法 | RS256（密钥对） | HS256（`GW_ADMIN_JWT_SECRET`）。token 不跨后端通用，对前端透明 |
 | 查询过滤 DSL | go-crud 全量（regex/date/year…） | 已实现常用子集（contains/icontains/in/gt/gte/lt/lte/isnull/range/exact），未知操作符按 exact 兜底 |

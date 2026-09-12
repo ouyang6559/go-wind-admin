@@ -300,8 +300,7 @@ impl AuthenticationService {
             }
         }
 
-        let access_jti = auth::new_jti();
-        let refresh_jti = auth::new_jti();
+        let jti = auth::new_jti();
         let pair = auth::issue_token_pair(
             &self.state.jwt_secret,
             user.id,
@@ -312,8 +311,7 @@ impl AuthenticationService {
             role_codes,
             ipa,
             ita,
-            &access_jti,
-            &refresh_jti,
+            &jti,
         )?;
 
         // 记录会话 + 会话元数据（在线会话列表用）+ 更新最近登录
@@ -412,8 +410,7 @@ impl AuthenticationService {
         let ita = role_codes.iter().any(|c| c == TENANT_ADMIN_ROLE_CODE);
 
         let client_type = ctx.client_type.clone();
-        let access_jti = auth::new_jti();
-        let refresh_jti = auth::new_jti();
+        let jti = auth::new_jti();
         let pair = auth::issue_token_pair(
             &self.state.jwt_secret,
             user.id,
@@ -424,8 +421,7 @@ impl AuthenticationService {
             role_codes,
             ipa,
             ita,
-            &access_jti,
-            &refresh_jti,
+            &jti,
         )?;
 
         let _ = auth::record_session(
@@ -464,12 +460,36 @@ impl AuthenticationService {
     }
 
     /// 刷新令牌（自描述 refresh token 独立鉴权）。
+    ///
+    /// 对齐 Go 原子轮换语义：
+    /// - access/refresh 共享同一 jti（`issue_token_pair`），旧 refresh token 的 jti
+    ///   即为旧会话元数据键，先读取旧 login_at 继承到新会话（刷新=续期而非重新登录，
+    ///   login_at 不重置）；
+    /// - 从请求头解析 IP/UA 写入新会话（对齐 Go `recordSessionMetaAt` 携带请求上下文），
+    ///   不再记 '-'。
+    #[allow(clippy::too_many_arguments)]
     pub async fn refresh_token(
         &self,
         refresh_token: &str,
         req_client_type: Option<&str>,
+        login_ip: &str,
+        login_ua: &str,
     ) -> Result<TokenIssue, AppError> {
         let claims = auth::verify_refresh_token(&self.state.jwt_secret, refresh_token)?;
+        let client_type = self.client_type(req_client_type);
+
+        // 旧会话元数据：在撤销前读取，继承首次 login_at（读取失败不阻断，回退当前时间）
+        let inherited_login_at = auth::get_session_meta(
+            &self.state,
+            &client_type,
+            claims.uid,
+            &claims.jti,
+        )
+        .await
+        .ok()
+        .flatten()
+        .map(|m| m.login_at);
+
         let user = self
             .repo
             .get_user_by_id(claims.uid)
@@ -483,9 +503,7 @@ impl AuthenticationService {
         let ipa = role_codes.iter().any(|c| c == PLATFORM_ADMIN_ROLE_CODE);
         let ita = role_codes.iter().any(|c| c == TENANT_ADMIN_ROLE_CODE);
 
-        let client_type = self.client_type(req_client_type);
-        let access_jti = auth::new_jti();
-        let refresh_jti = auth::new_jti();
+        let jti = auth::new_jti();
         let pair = auth::issue_token_pair(
             &self.state.jwt_secret,
             user.id,
@@ -496,8 +514,7 @@ impl AuthenticationService {
             role_codes,
             ipa,
             ita,
-            &access_jti,
-            &refresh_jti,
+            &jti,
         )?;
 
         // 撤销旧会话（黑名单旧 jti，旧 refresh token 立即失效）并记录新会话
@@ -517,10 +534,12 @@ impl AuthenticationService {
                 uid: user.id,
                 username: user.username.clone(),
                 tenant_id: user.tenant_id,
-                ip: "-".to_string(),
-                ua: "-".to_string(),
+                ip: login_ip.to_string(),
+                ua: login_ua.to_string(),
                 dev: String::new(),
-                login_at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                login_at: inherited_login_at.unwrap_or_else(|| {
+                    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                }),
             },
         )
         .await;

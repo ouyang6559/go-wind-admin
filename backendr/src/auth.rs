@@ -53,6 +53,10 @@ pub struct TokenPair {
 }
 
 /// 签发 access + refresh 令牌对。
+///
+/// 对齐 Go：access/refresh 令牌**共享同一 `jti`**（Go 端 `UserTokenPayload.Jti`
+/// 同时注入两个令牌）。这样会话元数据以该 jti 为键，刷新轮换时可直接用旧
+/// refresh token 的 jti 查到旧会话元数据，继承首次 login_at。
 pub fn issue_token_pair(
     secret: &str,
     uid: i64,
@@ -63,8 +67,7 @@ pub fn issue_token_pair(
     role_codes: Vec<String>,
     ipa: bool,
     ita: bool,
-    access_jti: &str,
-    refresh_jti: &str,
+    jti: &str,
 ) -> Result<TokenPair, AppError> {
     let now = chrono::Utc::now().timestamp();
     let access = AccessClaims {
@@ -82,13 +85,13 @@ pub fn issue_token_pair(
         ita: if ita { Some(true) } else { None },
         iat: now,
         exp: now + ACCESS_TOKEN_TTL,
-        jti: access_jti.to_string(),
+        jti: jti.to_string(),
     };
     let refresh = RefreshClaims {
         uid,
         iat: now,
         exp: now + REFRESH_TOKEN_TTL,
-        jti: refresh_jti.to_string(),
+        jti: jti.to_string(),
     };
 
     let enc = EncodingKey::from_secret(secret.as_bytes());
@@ -106,8 +109,8 @@ pub fn issue_token_pair(
     Ok(TokenPair {
         access_token,
         refresh_token,
-        access_jti: access_jti.to_string(),
-        refresh_jti: refresh_jti.to_string(),
+        access_jti: jti.to_string(),
+        refresh_jti: jti.to_string(),
     })
 }
 
@@ -282,6 +285,35 @@ pub async fn record_session_meta(
             source: Some(Box::new(e)),
         })?;
     Ok(())
+}
+
+/// 读取单个会话元数据（按 客户端类型+uid+jti）。会话不存在返回 None。
+/// 刷新轮换时用于继承首次 login_at（对齐 Go `GetSessionMeta`）。
+pub async fn get_session_meta(
+    state: &AppState,
+    client_type: &str,
+    uid: i64,
+    jti: &str,
+) -> Result<Option<SessionMeta>, AppError> {
+    if state.redis.is_none() {
+        return Ok(None);
+    }
+    let mut con = redis_conn(state).await?;
+    use redis::AsyncCommands;
+    let key = session_meta_key(client_type, uid, jti);
+    let raw: Option<String> = con.get(&key).await.map_err(|e| AppError::Internal {
+        context: "redis get session meta failed".into(),
+        source: Some(Box::new(e)),
+    })?;
+    match raw {
+        Some(v) => serde_json::from_str(&v)
+            .map(Some)
+            .map_err(|e| AppError::Internal {
+                context: "deserialize session meta failed".into(),
+                source: Some(Box::new(e)),
+            }),
+        None => Ok(None),
+    }
 }
 
 /// 将 jti 加入黑名单（吊销令牌）。
