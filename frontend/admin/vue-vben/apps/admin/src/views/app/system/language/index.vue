@@ -18,6 +18,7 @@ import {
   useDeleteLanguage,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import LanguageDrawer from './language-drawer.vue';
 
@@ -135,6 +136,9 @@ const gridOptions: VxeGridProps<dictservicev1_Language> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListLanguages(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -195,6 +199,7 @@ async function handleDelete(row: any) {
         <a-button type="primary" class="mr-2" @click="handleCreate">
           {{ $t('page.language.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="languages" />
       </template>
       <template #isEnabled="{ row }">
         <a-tag :color="enableBoolToColor(row.isEnabled)">

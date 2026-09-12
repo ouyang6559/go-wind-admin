@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -166,6 +167,7 @@ const InternalMessageList = () => {
             }}
             pagination={false}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListInternalMessages} columns={columns} filename="im-messages" />,
               <Button
                 key="create"
                 type="primary"

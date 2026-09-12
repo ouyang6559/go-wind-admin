@@ -26,6 +26,7 @@ import { type identityservicev1_Position as Position } from '#/api';
 import ImportModal from '#/components/ImportModal.vue';
 import type { ImportField } from '#/utils/import';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import PositionDrawer from './position-drawer.vue';
 
@@ -180,6 +181,9 @@ const gridOptions: VxeGridProps<Position> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListPositions(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 // Excel 导入：字段与创建表单一致，唯排除 orgUnitId（外键需名称解析，属后续演进）
@@ -260,6 +264,7 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" @click="importOpen = true">
           {{ $t('ui.import.title') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="positions" />
       </template>
       <template #status="{ row }">
         <a-tag :color="statusToColor(row.status)">

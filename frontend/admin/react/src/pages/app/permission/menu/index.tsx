@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App, Space } from 'antd';
 import {
@@ -323,6 +324,7 @@ const MenuManagement = () => {
             }}
             pagination={false}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListMenus} columns={columns} filename="menus" />,
               <Button
                 key="create"
                 type="primary"

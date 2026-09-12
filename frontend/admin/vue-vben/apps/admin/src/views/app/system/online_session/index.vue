@@ -9,6 +9,7 @@ import { LucideLogOut } from '@vben/icons';
 import { notification, type TagProps } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import {
   fetchListOnlineSessions,
   useForceLogoutSession,
@@ -108,6 +109,9 @@ const gridOptions: VxeGridProps<OnlineSession> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListOnlineSessions({ page, pageSize });
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 function clientTagColor(clientType?: string): TagProps['color'] {
@@ -139,6 +143,10 @@ async function handleForceLogout(row: OnlineSession) {
 <template>
   <Page auto-content-height>
     <Grid :table-title="$t('page.onlineSession.moduleName')">
+      <template #toolbar-tools>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
+      </template>
+
       <template #tenant="{ row }">
         <a-tag v-if="(row.tenantId ?? 0) === 0">
           {{ $t('page.onlineSession.platform') }}

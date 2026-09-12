@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -167,6 +168,7 @@ const PlanQuotaList: React.FC<PlanQuotaListProps> = ({ planId }) => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListPlanQuotas} columns={columns} filename="plan-quotas" />,
               <Button
                 key="create"
                 type="primary"

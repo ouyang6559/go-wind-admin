@@ -18,6 +18,7 @@ import {
 } from '#/api';
 import { type configservicev1_Config as SysConfig } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import ConfigDrawer from './config-drawer.vue';
 
@@ -117,6 +118,9 @@ const gridOptions: VxeGridProps<SysConfig> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListConfigs(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -175,6 +179,7 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.config.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="configs" />
       </template>
       <template #valueType="{ row }">
         <a-tag :color="configValueTypeToColor(row.valueType)">

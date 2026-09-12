@@ -21,6 +21,7 @@ import {
 } from '#/api';
 import { type permissionservicev1_Role as Role } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import RoleDrawer from './role-drawer.vue';
 
@@ -132,6 +133,9 @@ const gridOptions: VxeGridProps<Role> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListRoles(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -191,6 +195,7 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.role.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="roles" />
       </template>
       <template #status="{ row }">
         <a-tag :color="statusToColor(row.status)">

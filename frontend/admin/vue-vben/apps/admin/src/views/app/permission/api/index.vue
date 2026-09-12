@@ -18,6 +18,7 @@ import {
 } from '#/api';
 import { type permissionservicev1_Api as Api } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import ApiDrawer from './api-drawer.vue';
 
@@ -122,6 +123,9 @@ const gridOptions: VxeGridProps<Api> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListApis(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -213,6 +217,7 @@ async function handleSync() {
             {{ $t('page.api.button.sync') }}
           </a-button>
         </a-popconfirm>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="apis" />
       </template>
       <template #action="{ row }">
         <a-button

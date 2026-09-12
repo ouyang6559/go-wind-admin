@@ -286,5 +286,13 @@
     "downloadTemplate": "下载导入模板",
     "importSuccess": "导入成功（{count} 行）",
     "importFailed": "导入失败"
+  },
+  "export": {
+    "title": "导出",
+    "csv": "CSV (逗号分隔)",
+    "xlsx": "Excel 工作簿",
+    "success": "已导出 {count} 行",
+    "failed": "导出失败",
+    "noColumns": "没有可导出的列"
   }
 }

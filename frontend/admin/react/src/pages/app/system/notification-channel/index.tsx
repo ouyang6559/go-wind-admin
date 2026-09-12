@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable, ModalForm, ProFormText, ProFormDigit, ProFormSelect, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, SendOutlined } from '@ant-design/icons';
@@ -250,6 +251,7 @@ const NotificationChannelManagement = () => {
           }}
           options={{ density: true, fullScreen: true, setting: true, reload: true }}
           toolBarRender={() => [
+            <TableExportButton key="export" fetcher={fetchListNotificationChannels} columns={columns} filename="notification-channels" />,
             <Button
               key="create"
               type="primary"

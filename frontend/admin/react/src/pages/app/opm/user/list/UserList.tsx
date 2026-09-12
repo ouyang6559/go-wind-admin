@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, InfoCircleOutlined , SafetyOutlined } from '@ant-design/icons';
@@ -304,6 +305,7 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
             showQuickJumper: true,
           }}
           toolBarRender={() => [
+            <TableExportButton key="export" fetcher={fetchListUsers} columns={columns} filename="users" />,
             <Button
               key="create"
               type="primary"

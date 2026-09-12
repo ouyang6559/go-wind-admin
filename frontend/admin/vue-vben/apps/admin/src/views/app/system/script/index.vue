@@ -21,6 +21,7 @@ import {
 } from '#/api';
 import { type scriptservicev1_Script as Script } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import ScriptDrawer from './script-drawer.vue';
 import ScriptLogDrawer from './script-log-drawer.vue';
@@ -136,6 +137,9 @@ const gridOptions: VxeGridProps<Script> = {
     },
   ],
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListScripts(new PaginationQuery({ paging: { page, pageSize } }));
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -255,6 +259,7 @@ async function handleTestRun() {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.script.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="scripts" />
       </template>
       <template #language="{ row }">
         <a-tag :color="scriptLanguageToColor(row.language)">

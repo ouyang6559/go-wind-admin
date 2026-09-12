@@ -22,6 +22,7 @@ import {
   useDeleteOrgUnit,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import OrgDrawer from './org-drawer.vue';
 
@@ -144,6 +145,9 @@ const gridOptions: VxeGridProps<OrgUnit> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListOrgUnits(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -219,6 +223,7 @@ const collapseAll = () => {
         <a-button class="mr-2" @click="collapseAll">
           {{ $t('ui.tree.collapse_all') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="org-units" />
       </template>
       <template #status="{ row }">
         <a-tag :color="orgUnitStatusToColor(row.status)">

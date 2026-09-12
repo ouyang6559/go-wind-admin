@@ -10,6 +10,7 @@ import { isEqual } from '@vben/utils';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import { useAccessStore, useUserStore } from '@vben/stores';
 import { type identityservicev1_User as User } from '#/api';
 import {
@@ -264,6 +265,9 @@ const gridEvents: VxeGridListeners<User> = {
   },
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  userViewStore.fetchUserList(page, pageSize, {});
+
 const [Grid, gridApi] = useVbenVxeGrid({
   gridOptions,
   formOptions,
@@ -355,6 +359,7 @@ watch(
       <a-button type="primary" @click="handleCreate">
         {{ $t('page.user.button.create') }}
       </a-button>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #status="{ row }">
       <a-tag :color="userStatusToColor(row.status)">

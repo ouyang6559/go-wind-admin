@@ -9,6 +9,7 @@ import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import { type identityservicev1_PlanQuota as PlanQuota } from '#/api';
 import { planQuotaTypeToName, useDeletePlanQuota } from '#/api';
 import { $t } from '#/locales';
@@ -78,6 +79,9 @@ const gridOptions: VxeGridProps<PlanQuota> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  planViewStore.fetchPlanQuotaList(planViewStore.currentPlanId, page, pageSize, {});
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -141,6 +145,7 @@ watch(
       <a-button type="primary" @click="handleCreate">
         {{ $t('page.plan.button.create') }}
       </a-button>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #quotaType="{ row }">
       {{ planQuotaTypeToName(row.quotaType) }}
