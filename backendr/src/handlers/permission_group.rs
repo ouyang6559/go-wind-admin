@@ -41,8 +41,7 @@ pub struct PermissionGroupDto {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<i64>,
-    /// 树子节点（叶子省略，对齐 protojson 空 repeated）
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    /// 树子节点（protojson repeated 恒输出 []，不 skip）
     pub children: Vec<PermissionGroupDto>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created_by: Option<i64>,
@@ -79,25 +78,47 @@ pub fn to_dto(row: &PermissionGroupRow) -> PermissionGroupDto {
 }
 
 /// 构建树：parent_id 为 NULL/0 的为根；子节点挂到父的 children。
-/// 孤儿节点（父不在结果集内）跳过（对齐 Go pagination.BuildTree）。
+/// 孤儿节点（父不在结果集内，连同其子树）跳过（对齐 Go pagination.BuildTree）。
 fn build_tree(dtos: Vec<PermissionGroupDto>) -> Vec<PermissionGroupDto> {
-    let mut map: HashMap<i64, PermissionGroupDto> = HashMap::with_capacity(dtos.len());
-    for dto in &dtos {
-        map.insert(dto.id, dto.clone());
-    }
-    let mut roots: Vec<PermissionGroupDto> = Vec::new();
-    for dto in dtos {
-        match dto.parent_id {
-            Some(pid) if pid > 0 => {
-                if let Some(parent) = map.get_mut(&pid) {
-                    parent.children.push(dto);
-                }
-                // 父不在结果集 → 孤儿节点跳过
-            }
-            _ => roots.push(dto),
+    fn assemble(
+        id: i64,
+        by_id: &HashMap<i64, PermissionGroupDto>,
+        child_ids: &HashMap<i64, Vec<i64>>,
+        visiting: &mut Vec<i64>,
+    ) -> Option<PermissionGroupDto> {
+        if visiting.contains(&id) {
+            return None; // 环保护
         }
+        let mut node = by_id.get(&id)?.clone();
+        visiting.push(id);
+        if let Some(kids) = child_ids.get(&id) {
+            for k in kids {
+                if let Some(c) = assemble(*k, by_id, child_ids, visiting) {
+                    node.children.push(c);
+                }
+            }
+        }
+        visiting.pop();
+        Some(node)
     }
-    roots
+
+    let by_id: HashMap<i64, PermissionGroupDto> = dtos.iter().map(|d| (d.id, d.clone())).collect();
+    let mut child_ids: HashMap<i64, Vec<i64>> = HashMap::new();
+    let mut root_ids: Vec<i64> = Vec::new();
+    for d in &dtos {
+        let pid = d.parent_id.unwrap_or(0);
+        if pid == 0 {
+            root_ids.push(d.id);
+        } else if by_id.contains_key(&pid) {
+            child_ids.entry(pid).or_default().push(d.id);
+        }
+        // 父不在结果集 → 孤儿跳过
+    }
+    root_ids
+        .into_iter()
+        .map(|id| assemble(id, &by_id, &child_ids, &mut Vec::new()))
+        .flatten()
+        .collect()
 }
 
 #[derive(Debug, Deserialize)]

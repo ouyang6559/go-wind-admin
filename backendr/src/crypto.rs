@@ -112,3 +112,43 @@ fn channel_key() -> Option<[u8; 32]> {
     key.copy_from_slice(&hash);
     Some(key)
 }
+
+// ===================== HMAC-SHA256 签名（对齐 Go pkg/crypto/hmac.go SignData） =====================
+// 用途：签名媒体访问 URL（/admin/v1/file/image?path=...&expires=...&sig=...）。
+// 签名即凭证：key = SHA-256(GOWIND_CRYPTO_KEY)，与渠道密码派生同一把密钥；未配置时返回 None（签名不可用）。
+
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+
+type HmacSha256 = Hmac<Sha256>;
+
+/// 计算 `data` 的 HMAC-SHA256 十六进制签名。`GOWIND_CRYPTO_KEY` 未配置时返回 None。
+pub fn sign_data(data: &str) -> Option<String> {
+    let key = channel_key()?;
+    let mut mac = HmacSha256::new_from_slice(&key).ok()?;
+    mac.update(data.as_bytes());
+    Some(hex::encode(mac.finalize().into_bytes()))
+}
+
+/// 校验 `signature` 是否与 `data` 的签名一致（恒定时间比较）。
+pub fn verify_signature(data: &str, signature: &str) -> bool {
+    let Some(expect) = sign_data(data) else {
+        return false;
+    };
+    let expect_bytes = hex::decode(expect).unwrap_or_default();
+    let sig_bytes = hex::decode(signature.trim()).unwrap_or_default();
+    constant_time_eq(&expect_bytes, &sig_bytes)
+}
+
+/// 恒定时间比较（长度不一致直接 false）
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    use std::sync::atomic::{AtomicU8, Ordering};
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = AtomicU8::new(0);
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff.fetch_or(x ^ y, Ordering::SeqCst);
+    }
+    diff.load(Ordering::SeqCst) == 0
+}

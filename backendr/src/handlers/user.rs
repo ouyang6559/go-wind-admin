@@ -27,6 +27,48 @@ const USER_COLUMNS: &[&str] = &[
     "created_by", "updated_by", "created_at", "updated_at",
 ];
 
+/// 邮箱脱敏（对齐 Go protoc-gen-redact `_redactEmail`，keep_local_first=2、域名不脱敏）：
+/// 按 '@' 拆分，本地部分保留前 2 字节、其余替换为 '*'；无 '@' 原样返回。
+fn redact_email(s: &str) -> String {
+    let Some(at) = s.rfind('@') else {
+        return s.to_string();
+    };
+    let (local, domain) = (&s[..at], &s[at + 1..]);
+    if local.len() > 2 {
+        format!("{}{}@{}", &local[..2], "*".repeat(local.len() - 2), domain)
+    } else {
+        s.to_string()
+    }
+}
+
+/// 通用保留首尾脱敏（对齐 Go `_redactMask`，按字节；len <= keep_first+keep_last 原样返回）。
+fn redact_mask(s: &str, keep_first: usize, keep_last: usize) -> String {
+    let b = s.as_bytes();
+    if b.len() <= keep_first + keep_last {
+        return s.to_string();
+    }
+    // 保留区均为 ASCII（手机号）时安全；非 ASCII 边界按字符回退，避免 panic。
+    let head = &s[..keep_first.min(s.len())];
+    let tail_start = b.len() - keep_last;
+    let tail = if s.is_char_boundary(tail_start) {
+        &s[tail_start..]
+    } else {
+        ""
+    };
+    format!("{}{}{}", head, "*".repeat(b.len() - keep_first - keep_last), tail)
+}
+
+/// 用户管理接口（/users*）响应脱敏：email/mobile（对齐 Go RedactedUserServiceServer；
+/// /me 走 UserProfileService，Go 未包装 → 不脱敏）。
+pub fn redact_dto(dto: &mut UserDto) {
+    if let Some(v) = dto.email.take() {
+        dto.email = Some(redact_email(&v));
+    }
+    if let Some(v) = dto.mobile.take() {
+        dto.mobile = Some(redact_mask(&v, 3, 4));
+    }
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserDto {
@@ -35,19 +77,13 @@ pub struct UserDto {
     pub tenant_id: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tenant_name: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    // protojson 对 repeated 字段始终输出（空时为 []），不做 skip，保持与 Go wire 一致。
     pub org_unit_ids: Vec<i64>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub org_unit_names: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub position_ids: Vec<i64>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub position_names: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub role_ids: Vec<i64>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub role_names: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
@@ -185,6 +221,36 @@ pub(crate) async fn enrich_and_to_dto(repo: &UserRepo, row: &UserRow) -> Result<
         org_unit_names,
         position_ids,
         position_names,
+    ))
+}
+
+/// GET /me 专用聚合（对齐 Go UserProfileService.GetUser：
+/// userRepo.Get 仅带 roleIds/orgUnitIds/positionIds 关联，服务层只补角色码，
+/// 各类 *Names 恒为空；不做脱敏）。
+pub(crate) async fn enrich_profile_and_to_dto(
+    repo: &UserRepo,
+    row: &UserRow,
+) -> Result<UserDto, AppError> {
+    let role_ids = repo.list_role_ids(row.id).await?;
+    let org_unit_ids = repo.list_org_unit_ids(row.id).await?;
+    let position_ids = repo.list_position_ids(row.id).await?;
+
+    let mut roles = Vec::new();
+    for (_, code, _) in repo.list_roles_by_ids(&role_ids).await? {
+        if !code.is_empty() {
+            roles.push(code);
+        }
+    }
+
+    Ok(to_dto(
+        row,
+        role_ids,
+        roles,
+        Vec::new(),
+        org_unit_ids,
+        Vec::new(),
+        position_ids,
+        Vec::new(),
     ))
 }
 
@@ -332,7 +398,9 @@ pub async fn user_list(
         .await?;
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
-        items.push(enrich_and_to_dto(&repo, row).await?);
+        let mut dto = enrich_and_to_dto(&repo, row).await?;
+        redact_dto(&mut dto);
+        items.push(dto);
     }
     Ok(json_ok(ListResponse::new(items, total)))
 }
@@ -356,7 +424,8 @@ pub async fn user_get(
         repo.get_by_username(operator.tenant_id, &seg).await?
     };
     let row = row.ok_or_else(|| AppError::NotFound("user not found".into()))?;
-    let dto = enrich_and_to_dto(&repo, &row).await?;
+    let mut dto = enrich_and_to_dto(&repo, &row).await?;
+    redact_dto(&mut dto);
     Ok(json_ok(dto))
 }
 

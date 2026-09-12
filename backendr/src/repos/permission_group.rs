@@ -315,4 +315,43 @@ impl PermissionGroupRepo {
             })?;
         Ok(res.rows_affected())
     }
+
+    /// 清理业务权限分组（module != 'sys'，对齐 Go TruncateBizGroup）。
+    pub async fn truncate_biz_groups(&self) -> Result<(), AppError> {
+        let ids: Vec<i64> = {
+            let sql = "select id from sys_permission_groups where module is null or module <> 'sys'";
+            let rows = sqlx::query::<sqlx::Any>(sql)
+                .fetch_all(&self.db)
+                .await
+                .map_err(|e| AppError::Internal {
+                    context: "query biz permission group ids failed".into(),
+                    source: Some(Box::new(e)),
+                })?;
+            rows.iter()
+                .filter_map(|r| r.try_get::<i64, _>("id").ok())
+                .collect()
+        };
+        if !ids.is_empty() {
+            let list = ids.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
+            sqlx::query::<sqlx::Any>(&format!(
+                "delete from sys_permissions where group_id in ({list})"
+            ))
+            .execute(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "truncate biz group permissions failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+            sqlx::query::<sqlx::Any>(&format!(
+                "delete from sys_permission_groups where id in ({list})"
+            ))
+            .execute(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "truncate biz permission groups failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+        }
+        Ok(())
+    }
 }

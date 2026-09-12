@@ -16,7 +16,6 @@ use std::net::SocketAddr;
 
 use crate::error::AppError;
 use crate::middleware::Operator;
-use crate::response::ListResponse;
 use crate::services::authentication::TokenIssue;
 use crate::services::mfa::{MfaEnrollChallengeContext, MfaService};
 use crate::state::AppState;
@@ -98,7 +97,7 @@ pub struct ConfirmEnrollResp {
 #[serde(rename_all = "camelCase")]
 pub struct MfaStatusResp {
     pub enabled: bool,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    // protojson 对 repeated 字段始终输出（空时为 []），不做 skip，保持与 Go wire 一致。
     pub enrolled: Vec<EnrolledMethodResp>,
     pub enforcement: String,
 }
@@ -234,11 +233,8 @@ pub async fn mfa_list_enrolled_methods(
     let service = MfaService::from_state(&state)?;
     let infos = service.repo.list_by_user(operator.tenant_id, operator.user_id).await?;
     let items = to_enrolled_vec(infos);
-    let total = items.len().to_string();
-    Ok(axum::Json(ListResponse {
-        items,
-        total,
-    }))
+    // 对齐 Go ListEnrolledMethodsResponse：仅 { items }，无 total。
+    Ok(axum::Json(serde_json::json!({ "items": items })))
 }
 
 /// POST /mfa/enroll/start 开始注册 TOTP（返回 secret/otpauth URL/QR data URI + operation_id）。

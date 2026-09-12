@@ -236,7 +236,7 @@ impl UserRepo {
         }
         let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("${i}")).collect();
         let sql = format!(
-            "select id, coalesce(code,''), coalesce(name,'') from sys_roles \
+            "select id, coalesce(code,'') as code, coalesce(name,'') as name from sys_roles \
              where id in ({}) and deleted_at is null",
             placeholders.join(", ")
         );
@@ -265,7 +265,7 @@ impl UserRepo {
         }
         let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("${i}")).collect();
         let sql = format!(
-            "select id, coalesce(name,'') from sys_org_units \
+            "select id, coalesce(name,'') as name from sys_org_units \
              where id in ({}) and deleted_at is null",
             placeholders.join(", ")
         );
@@ -293,7 +293,7 @@ impl UserRepo {
         }
         let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("${i}")).collect();
         let sql = format!(
-            "select id, coalesce(name,'') from sys_positions \
+            "select id, coalesce(name,'') as name from sys_positions \
              where id in ({}) and deleted_at is null",
             placeholders.join(", ")
         );

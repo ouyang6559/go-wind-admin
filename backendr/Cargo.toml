@@ -66,6 +66,8 @@ cron_clock = "0.8"
 byte-unit = "5"
 humansize = "2"
 mac_address = "1"
+hmac = "0.12"
+hex = "0.4"
 
 # HTTP 客户端（第三方/文件等）
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }

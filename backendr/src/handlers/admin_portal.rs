@@ -20,8 +20,8 @@ use crate::state::AppState;
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuRouteItemDto {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub children: Option<Vec<MenuRouteItemDto>>,
+    // protojson 对 repeated 子消息恒输出（叶子为 []），不做 skip，保持与 Go wire 一致。
+    pub children: Vec<MenuRouteItemDto>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -224,10 +224,12 @@ async fn load_menus(db: &sqlx::AnyPool, menu_ids: &[i64]) -> Result<Vec<MenuNode
             context: "menu row id decode failed".into(),
             source: Some(Box::new(e)),
         })?;
-        let parent_id: i64 = row.try_get("parent_id").map_err(|e| AppError::Internal {
-            context: "menu row parent_id decode failed".into(),
-            source: Some(Box::new(e)),
-        })?;
+        // 种子数据的根菜单 parent_id 为 NULL（Ent 可空列），NULL 视作 0（根节点）。
+        let parent_id: i64 = row
+            .try_get::<Option<i64>, _>("parent_id")
+            .ok()
+            .flatten()
+            .unwrap_or(0);
         nodes.push(MenuNode {
             id,
             parent_id,
@@ -321,7 +323,7 @@ fn build_tree(nodes: &[MenuNode], root_idx: &[usize]) -> Vec<MenuRouteItemDto> {
             let children = by_parent
                 .get(&n.id)
                 .map(|sub| fill(by_parent, nodes, sub))
-                .filter(|c| !c.is_empty());
+                .unwrap_or_default();
             out.push(MenuRouteItemDto {
                 children,
                 path: n.path.clone(),
@@ -329,7 +331,7 @@ fn build_tree(nodes: &[MenuNode], root_idx: &[usize]) -> Vec<MenuRouteItemDto> {
                 alias: n.alias.clone(),
                 name: n.name.clone(),
                 component: n.component.clone(),
-                meta: n.meta.clone(),
+                meta: crate::handlers::menu::normalize_meta(&n.meta),
             });
         }
         out

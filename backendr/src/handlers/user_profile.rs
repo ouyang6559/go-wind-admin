@@ -14,13 +14,14 @@ use axum::response::IntoResponse;
 use serde::Deserialize;
 
 use crate::error::AppError;
-use crate::handlers::user::{UserData, enrich_and_to_dto};
+use crate::handlers::user::{UserData, enrich_profile_and_to_dto};
 use crate::middleware::Operator;
 use crate::repos::authentication::AuthenticationRepo;
 use crate::repos::user::UserRepo;
 use crate::repos::user_profile::{UserProfileRepo, save_bind_vcode, verify_bind_vcode};
 use crate::response::{json_empty, json_ok};
 use crate::state::AppState;
+use crate::storage;
 
 /// GET /me 获取当前用户资料（裸 DTO，含 Roles 角色码）。
 pub async fn user_profile_get_user(
@@ -32,7 +33,7 @@ pub async fn user_profile_get_user(
         .get(operator.user_id)
         .await?
         .ok_or_else(|| AppError::NotFound("user not found".into()))?;
-    let dto = enrich_and_to_dto(&repo, &row).await?;
+    let dto = enrich_profile_and_to_dto(&repo, &row).await?;
     Ok(json_ok(dto).into_response())
 }
 
@@ -99,7 +100,9 @@ pub async fn user_profile_update_user(
 
 // ===================== 头像 =====================
 
-/// POST /me/avatar：imageUrl 直存；imageBase64 依赖 OSS 上传（Rust 未接），返回 501。
+/// POST /me/avatar：imageUrl 直存；imageBase64 解码→嗅探图片 MIME→本地磁盘落盘（对齐 Go：
+/// base64 解码→空/超限校验→DetectFileType+IsAllowedMime 必须 image/*→UploadFile 自动路由 images 桶）。
+/// 落库值：Go 为 MinIO 公开 downloadUrl；本端无 MinIO 公开 Host，存签名媒体 URL（前端 <img> 免鉴权可渲染）。
 pub async fn user_profile_upload_avatar(
     State(state): State<AppState>,
     operator: Operator,
@@ -109,8 +112,31 @@ pub async fn user_profile_upload_avatar(
 
     let avatar = match (body.image_base64.as_deref(), body.image_url.as_deref()) {
         (Some(b64), _) if !b64.trim().is_empty() => {
-            // base64 源需要上传到 OSS（MinIO/S3），Rust 侧未接入文件存储，暂不支持
-            return Err(AppError::NotImplemented);
+            use base64::Engine;
+            let decoded = base64::engine::general_purpose::STANDARD
+                .decode(b64.trim())
+                .map_err(|_| AppError::Validation("invalid avatar base64 data".into()))?;
+            if decoded.is_empty() {
+                return Err(AppError::Validation("empty avatar data".into()));
+            }
+            if decoded.len() > storage::MAX_UPLOAD_SIZE {
+                return Err(AppError::Validation("avatar exceeds max size".into()));
+            }
+            // 嗅探真实类型：必须为白名单内的 image/*（对齐 Go 校验）
+            let (real_mime, _ext) = storage::detect_file_type(&decoded);
+            if !storage::is_allowed_mime(&real_mime) || !real_mime.starts_with("image/") {
+                return Err(AppError::Validation("only image files are allowed for avatar".into()));
+            }
+            // 落盘：bucket 空 → 按 MIME 自动路由 images 桶；目录/文件名空 → UUID 自动命名
+            let lstore = crate::handlers::file::local_storage(&state);
+            let saved = lstore.save("", "", "", &real_mime, &decoded)?;
+            let signed = storage::signed_media_url(&saved.storage_path);
+            if signed.is_empty() {
+                // GOWIND_CRYPTO_KEY 未配置：降级存相对下载引用（bucket/object）
+                saved.download_url
+            } else {
+                signed
+            }
         }
         (_, Some(url)) if !url.trim().is_empty() => url.trim().to_string(),
         _ => {

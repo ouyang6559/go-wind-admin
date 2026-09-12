@@ -326,14 +326,100 @@ pub async fn script_delete(
     Ok(json_empty())
 }
 
-/// POST /scripts/test_run —— 需要脚本执行引擎（Lua/JS 沙箱），Rust 端暂未实现。
-/// 见 MISSING.md（gin 等价引擎选型：mlua / rquickjs）。
+/// POST /scripts/test_run：协议层完整对齐 Go ScriptService.TestRun。
+/// - target：`id`（已保存脚本）或 `draft`（{name, language, source} 草稿）二选一；
+/// - `input`：map<string,string>，值按 JSON 解析还原（非 JSON 原样字符串）；
+/// - 响应：`{success, error?, context, durationMs}`（durationMs 为 int64 → protojson 字符串）。
+///
+/// 执行引擎：本端暂未内置 Lua/JS 沙箱，`run_script_with_engine` 为占用实现（success=false +
+/// error=引擎未接入），后续接入 mlua/rquickjs 时仅需替换该函数，协议与校验不变。
 pub async fn script_test_run(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     _operator: Operator,
-    Json(_body): Json<Value>,
+    Json(body): Json<TestRunBody>,
 ) -> Result<axum::response::Response, AppError> {
-    Err(AppError::NotImplemented)
+    let start = std::time::Instant::now();
+
+    // ---- 解析 target（id 优先于 draft；Go oneof 语义）----
+    let mut language: Option<String> = None;
+    let mut name: Option<String> = None;
+    let mut source: Option<String> = None;
+
+    if let Some(id) = body.id {
+        let repo = ScriptRepo::new(db_of(&state)?);
+        let row = repo
+            .get(id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("script not found".into()))?;
+        language = Some(language_engine(&row.language).unwrap_or_default());
+        name = Some(row.name.clone());
+        source = Some(row.source.clone());
+    } else if let Some(draft) = body.draft {
+        // 对齐 Go validateDraft：null 校验 / name / source 必填 / 语言受支持
+        let eng = draft.language.as_deref().and_then(language_engine);
+        if draft.name.as_deref().map(|v| v.trim()).unwrap_or_default().is_empty() {
+            return Err(AppError::Validation("script name is required".into()));
+        }
+        if draft.source.as_deref().map(|v| v.trim()).unwrap_or_default().is_empty() {
+            return Err(AppError::Validation("script source is required".into()));
+        }
+        let Some(lang) = eng else {
+            return Err(AppError::Validation(format!(
+                "unsupported script language: {}",
+                draft.language.as_deref().unwrap_or("")
+            )));
+        };
+        language = Some(lang);
+        name = draft.name.clone();
+        source = draft.source.clone();
+    } else {
+        return Err(AppError::Validation("target is required (id or draft)".into()));
+    }
+
+    // ---- 还原输入上下文（JSON 字符串 → Value；非 JSON 原样字符串，对齐 Go）----
+    let mut input: HashMap<String, serde_json::Value> = HashMap::new();
+    for (k, raw) in &body.input {
+        let v = serde_json::from_str::<serde_json::Value>(raw).unwrap_or(serde_json::Value::String(raw.clone()));
+        input.insert(k.clone(), v);
+    }
+
+    // ---- 执行 ----
+    let (success, error) = match run_script_with_engine(language.as_deref().unwrap_or(""), name.as_deref().unwrap_or(""), source.as_deref().unwrap_or(""), &input) {
+        Ok(()) => (true, None),
+        Err(e) => (false, Some(e)),
+    };
+    let duration_ms = start.elapsed().as_millis() as i64;
+
+    Ok(axum::Json(TestRunResponse {
+        success,
+        error,
+        context: serde_json::Map::new(),
+        durationMs: duration_ms.to_string(),
+    })
+    .into_response())
+}
+
+/// 语言 → 引擎标识（小写）：接受枚举大写/小写/缩写（对齐前端提交与 Go 枚举归一）。
+fn language_engine(lang: &str) -> Option<String> {
+    match lang.trim().to_ascii_uppercase().as_str() {
+        "LUA" => Some("lua".into()),
+        "JAVASCRIPT" | "JS" => Some("javascript".into()),
+        _ => None,
+    }
+}
+
+/// 脚本执行接线点：目前未内置脚本引擎，返回"引擎未接入"错误；
+/// 接入 mlua（Lua）/ rquickjs（JS）后在此实例化引擎并执行 `source`，
+/// 把脚本写回 ctx 的键值以 JSON 字符串编码进 `context` 响应字段。
+fn run_script_with_engine(
+    language: &str,
+    _name: &str,
+    _source: &str,
+    _input: &HashMap<String, serde_json::Value>,
+) -> Result<(), String> {
+    Err(format!(
+        "script engine is not integrated for language \"{language}\" (see backendr MISSING.md)"
+    ))
 }
 
 /// GET /script/hooks —— Go 端为运行时注册表动态聚合；Rust 端无脚本引擎常驻
@@ -353,4 +439,34 @@ pub fn db_of(state: &AppState) -> Result<sqlx::AnyPool, AppError> {
         context: "database not configured".into(),
         source: None,
     })
+}
+
+// ===================== test_run 请求/响应 DTO（wire 对齐 proto json_name） =====================
+
+/// POST /scripts/test_run 请求体：`id` 或 `draft` 二选一 + `input` 上下文。
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestRunBody {
+    /// 已保存脚本 id（与 draft 二选一，id 优先）
+    #[serde(default)]
+    pub id: Option<i64>,
+    /// 未保存草稿（name/language/source 必填）
+    #[serde(default)]
+    pub draft: Option<ScriptData>,
+    /// 执行上下文初始数据（值以 JSON 字符串提供，非 JSON 原样字符串）
+    #[serde(default)]
+    pub input: HashMap<String, String>,
+}
+
+/// POST /scripts/test_run 响应体：`{success, error?, context, durationMs}`。
+/// durationMs 为 int64，按 protojson 输出字符串（对齐 Go）。
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestRunResponse {
+    pub success: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    /// 上下文数据快照（键值均以 JSON 字符串编码）
+    pub context: serde_json::Map<String, serde_json::Value>,
+    pub durationMs: String,
 }

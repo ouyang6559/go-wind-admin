@@ -52,8 +52,7 @@ pub struct MenuDto {
     pub module: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<i64>,
-    /// 子节点树（List/Get 不返回，空则省略，对齐 Go treeTravel=false）
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    /// 子节点树（protojson repeated 恒输出 []，不 skip）
     pub children: Vec<MenuDto>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created_by: Option<i64>,
@@ -69,6 +68,16 @@ pub struct MenuDto {
     pub deleted_at: Option<String>,
 }
 
+/// meta 为 jsonb 透传，但 Go 侧 meta 经 MenuMeta proto 序列化，
+/// repeated 字段（authority）恒输出 []；此处对齐补齐缺失键。
+pub fn normalize_meta(meta: &Option<Value>) -> Option<Value> {
+    let mut v = meta.clone()?;
+    if let Value::Object(map) = &mut v {
+        map.entry("authority").or_insert_with(|| Value::Array(vec![]));
+    }
+    Some(v)
+}
+
 /// 菜单行 → DTO（List/Get 返回扁平节点，children 恒为空）
 pub fn to_dto(row: &MenuRow) -> MenuDto {
     MenuDto {
@@ -80,7 +89,7 @@ pub fn to_dto(row: &MenuRow) -> MenuDto {
         alias: row.alias.clone(),
         name: row.name.clone(),
         component: row.component.clone(),
-        meta: row.meta.clone(),
+        meta: normalize_meta(&row.meta),
         module: row.module.as_deref().map(module_from_db),
         parent_id: row.parent_id,
         children: Vec::new(),

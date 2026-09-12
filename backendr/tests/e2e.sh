@@ -49,7 +49,9 @@ SID=$(echo "$SC"|sed '$d'|python3 -c "import sys,json;print(json.load(sys.stdin)
 SC=$(rt -X PUT $R/scripts/$SID -H 'Content-Type: application/json' -d '{"data":{"priority":9}}'); chk script-update 200 "$(echo "$SC"|tail -1)" "$SC"
 SC=$(rt $R/scripts/$SID); chk script-get 200 "$(echo "$SC"|tail -1)" "$(echo "$SC"|head -c 150)"
 SC=$(rt -X DELETE "$R/scripts?ids=$SID"); chk script-delete 200 "$(echo "$SC"|tail -1)" "$SC"
-SC=$(rt -X POST $R/scripts/test_run -H 'Content-Type: application/json' -d '{}'); chk script-test-run-501 501 "$(echo "$SC"|tail -1)" "$(echo "$SC"|head -c 120)"
+# test_run：空请求体 400（target 必填）；引擎未接入 → 200 + success:false
+SC=$(rt -X POST $R/scripts/test_run -H 'Content-Type: application/json' -d '{}'); chk script-test-run-target-400 400 "$(echo "$SC"|tail -1)" "$(echo "$SC"|head -c 120)"
+SC=$(rt -X POST $R/scripts/test_run -H 'Content-Type: application/json' -d '{"draft":{"name":"draft-1","language":"LUA","source":"function x() end"},"input":{"a":"1"}}'); chk script-test-run-no-engine-200 200 "$(echo "$SC"|tail -1)" "$(echo "$SC"|head -c 200)"
 SC=$(rt $R/script/hooks); chk script-hooks 200 "$(echo "$SC"|tail -1)" "$SC"
 SC=$(rt $R/script/logs); chk script-logs 200 "$(echo "$SC"|tail -1)" "$(echo "$SC"|head -c 100)"
 SC=$(rt $R/script/logs/count); chk script-logs-count 200 "$(echo "$SC"|tail -1)" "$SC"
@@ -111,6 +113,68 @@ chk task-slash-alias 500 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 100)"
 # 错误格式
 IM=$(curl -s $R/online-session/my-sessions)
 chk error-format-kratos 200 200 "$(echo "$IM"|head -c 120)"
+
+# ---- file / file_transfer / avatar / redis_cache_monitor / permission ----
+
+# redis_cache_monitor（fail-soft 空视图或指标）
+IM=$(rt $R/redis-cache-monitor); chk redis-cache-monitor 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 200)"
+
+# file CRUD
+IM=$(rt -X POST $R/files -H 'Content-Type: application/json' -d '{"data":{"provider":"MINIO","bucketName":"images","fileName":"demo.png","extension":"png","size":1024,"linkUrl":"images/demo.png"}}')
+chk file-create 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 150)"
+IM=$(rt "$R/files?pageSize=5"); chk file-list 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 200)"
+FID=$(echo "$IM"|sed '$d'|python3 -c "import sys,json;d=json.load(sys.stdin);print(d['items'][0]['id'] if d['items'] else 0)" 2>/dev/null)
+IM=$(rt $R/files/$FID); chk file-get 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 150)"
+IM=$(rt -X DELETE $R/files/$FID); chk file-delete 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 100)"
+
+# multipart 上传 → 签名图片代理 → 下载回读
+printf '\x89PNG\r\n\x1a\n' > /tmp/px.png  # 1x1 PNG 魔数前缀即可，只测上传链路
+# 造一个合法的极小 PNG（64B 静态图），否则嗅探需真实魔数
+python3 - <<'PYEOF'
+import base64
+png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+open("/tmp/px.png","wb").write(png)
+PYEOF
+UP=$(rt -X POST $R/file/upload -F "file=@/tmp/px.png;type=image/png" -F 'storageObject={"bucketName":"","fileDirectory":"avatar"}' -F 'sourceFileName=px.png' -F 'mime=image/png')
+chk upload-png 200 "$(echo "$UP"|tail -1)" "$(echo "$UP"|head -c 300)"
+PUBURL=$(echo "$UP"|sed '$d'|python3 -c "import sys,json;print(json.load(sys.stdin).get('publicUrl','') or '')" 2>/dev/null)
+OBJ=$(echo "$UP"|sed '$d'|python3 -c "import sys,json;print(json.load(sys.stdin).get('objectName',''))" 2>/dev/null)
+BUCKET=${OBJ%%/*}
+if [ -n "$PUBURL" ] && [[ "$PUBURL" == /admin* ]]; then
+  SC=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:7666$PUBURL")
+  chk signed-image-serve 200 "$SC" "sig url ok"
+else
+  chk signed-image-serve 200 0 "no publicUrl (GOWIND_CRYPTO_KEY 未配置)"
+fi
+if [ -n "$OBJ" ]; then
+  SC=$(rt "$R/file/download?storageObject.bucketName=$BUCKET&storageObject.objectName=${OBJ#*/}" | tail -1)
+  chk download-storage-object 200 "$SC" "$OBJ"
+fi
+# fileId 选择器：查 files 表元数据转 storageObject 下载（对齐 Go DownloadFile）
+FID2=$(rt "$R/files?pageSize=1&orderBy=%5B%22-id%22%5D" | sed '$d' | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['items'][0]['id'] if d.get('items') else 0)" 2>/dev/null)
+if [ -n "$FID2" ] && [ "$FID2" != "0" ]; then
+  IM=$(rt "$R/file/download?fileId=$FID2"); chk download-file-id 200 "$(echo "$IM"|tail -1)" "fileId=$FID2"
+  IM=$(rt "$R/file/download?fileId=99999999"); chk download-file-id-404 404 "$(echo "$IM"|tail -1)" "missing"
+else
+  chk download-file-id 200 0 "no file row to test"
+fi
+# SSRF 防护：内网地址必须被拒
+SC=$(rt "$R/file/download?downloadUrl=http://127.0.0.1:56379/" | tail -1)
+chk download-ssrf-blocked 403 "$SC" "loopback"
+
+# 头像：imageBase64 上传（1x1 PNG）→ 200 + url
+AVB64=$(base64 -i /tmp/px.png | tr -d '\n')
+IM=$(rt -X POST $R/me/avatar -H 'Content-Type: application/json' -d "{\"imageBase64\":\"$AVB64\"}")
+chk avatar-base64-upload 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 150)"
+# 头像：非图片 base64 必须拒绝 400
+IM=$(rt -X POST $R/me/avatar -H 'Content-Type: application/json' -d '{"imageBase64":"d29yZC1jb250ZW50"}')
+chk avatar-non-image-400 400 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 120)"
+IM=$(rt -X DELETE $R/me/avatar); chk avatar-delete 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 100)"
+
+# permission sync:perms + list
+IM=$(rt -X POST $R/permissions/sync:perms -H 'Content-Type: application/json' -d '{}')
+chk permission-sync 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 200)"
+IM=$(rt "$R/permissions?pageSize=5"); chk permission-list 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 150)"
 
 # 登出
 LO=$(rt -X POST $R/logout); chk logout 200 "$(echo "$LO"|tail -1)" "$(echo "$LO"|head -c 100)"

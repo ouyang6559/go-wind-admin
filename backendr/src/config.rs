@@ -40,6 +40,8 @@ pub struct AppConfig {
     pub default_tenant_id: i64,
     /// 每个请求的上传限制（字节）
     pub max_body_bytes: usize,
+    /// 本地磁盘上传目录（file/file_transfer 模块；无 MinIO 时的存储落点）
+    pub upload_dir: std::path::PathBuf,
 }
 
 impl AppConfig {
@@ -57,6 +59,7 @@ impl AppConfig {
             max_body_bytes: env_or("GW_ADMIN_MAX_BODY_BYTES", "10485760")
                 .parse()
                 .unwrap_or(10 * 1024 * 1024),
+            upload_dir: std::path::PathBuf::from(env_or("GW_ADMIN_UPLOAD_DIR", "uploads")),
         }
     }
 }

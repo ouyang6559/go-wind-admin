@@ -17,8 +17,10 @@ use crate::state::AppState;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OnlineSessionDto {
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    pub current: bool,
+    // Go 对齐：/sessions（管理员）不输出 current；/my-sessions 恒输出（含 false）。
+    // 用 Option 区分——管理员视图传 None（省略），个人视图传 Some。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current: Option<bool>,
     pub jti: String,
     pub user_id: i64,
     pub username: String,
@@ -31,9 +33,9 @@ pub struct OnlineSessionDto {
     pub login_at: String,
 }
 
-fn to_dto(m: &SessionMeta, current_jti: &str) -> OnlineSessionDto {
+fn to_dto(m: &SessionMeta, current_jti: Option<&str>) -> OnlineSessionDto {
     OnlineSessionDto {
-        current: !m.jti.is_empty() && m.jti == current_jti,
+        current: current_jti.map(|jti| !m.jti.is_empty() && m.jti == jti),
         jti: m.jti.clone(),
         user_id: m.uid,
         username: m.username.clone(),
@@ -71,7 +73,7 @@ pub async fn sessions_list(
                     || m.ip.to_lowercase().contains(&keyword.to_lowercase())
             }
         })
-        .map(|m| to_dto(m, ""))
+        .map(|m| to_dto(m, None))
         .collect();
     items.sort_by(|a, b| b.login_at.cmp(&a.login_at));
 
@@ -94,7 +96,7 @@ pub async fn my_sessions_list(
     let mut items: Vec<OnlineSessionDto> = metas
         .iter()
         .filter(|m| m.uid == operator.user_id)
-        .map(|m| to_dto(m, &operator.jti))
+        .map(|m| to_dto(m, Some(&operator.jti)))
         .collect();
     items.sort_by(|a, b| b.login_at.cmp(&a.login_at));
     let total = items.len() as u64;
