@@ -104,13 +104,21 @@ for M in api-audit-logs login-audit-logs operation-audit-logs permission-audit-l
   IM=$(rt "$R/$M?pageSize=2"); chk "audit-$M" 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 130)"
 done
 
-# task 控制降级
-for EP in tasks:start tasks:stop tasks:restart tasks:control; do
-  IM=$(rt -X POST "$R/$EP" -H 'Content-Type: application/json' -d '{}')
-  chk "task-$EP(500 调度器未配置)" 500 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 120)"
-done
+# task 控制端点（B3 后为真实调度器；对齐 Go 语义校验）
+# start/restart：无任务/全部未启用 → 200 {"count":0}；有任务 → {"count":N}
+IM=$(rt -X POST "$R/tasks:start" -H 'Content-Type: application/json' -d '{}')
+chk task-start-real-scheduler 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 120)"
+IM=$(rt -X POST "$R/tasks:stop" -H 'Content-Type: application/json' -d '{}')
+chk task-stop 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 120)"
+IM=$(rt -X POST "$R/tasks:restart" -H 'Content-Type: application/json' -d '{}')
+chk task-restart 200 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 120)"
+# control：{} 缺 typeName → 400；平台上下文（tid=0）控制任务 → 400 tenant scope required
+IM=$(rt -X POST "$R/tasks:control" -H 'Content-Type: application/json' -d '{}')
+chk task-control-empty-400 400 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 120)"
+IM=$(rt -X POST "$R/tasks:control" -H 'Content-Type: application/json' -d '{"controlType":"Start","typeName":"broadcast_message"}')
+chk task-control-platform-scope 400 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 140)"
 IM=$(rt -X POST "$R/tasks/control" -H 'Content-Type: application/json' -d '{}')
-chk task-slash-alias 500 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 100)"
+chk task-slash-alias 400 "$(echo "$IM"|tail -1)" "$(echo "$IM"|head -c 100)"
 
 # 错误格式
 IM=$(curl -s $R/online-session/my-sessions)

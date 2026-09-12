@@ -1,9 +1,26 @@
 # backendr（Rust/axum）接口完整性对照报告
 
-> 对照基准：`backend/`（Go + Kratos + Ent）proto 定义的全部 HTTP 端点（192 个唯一 `方法+路径`）。
-> 生成日期：2026-09-11（2026-09-12 二次全量复核：路由 diff + 全端点实测扫描 + e2e 70 项全绿；
-> `GET /file/download?fileId=` 已补实现——Go 端该分支本是实现的（查 files 表元数据转 storageObject），此前误记为"对齐 Go 501"）。
+> 对照基准：`backend/`（Go + Kratos + Ent）proto 定义的全部 HTTP 端点（192 个唯一 `方法+路径`）
+> **外加 Go 侧手工路由（`i_file_transfer_http.pb.go`，Rust 已覆盖）与 SSE 网关（`sse_server.go`，:7789 `/events`）**。
+> 生成日期：2026-09-11；2026-09-13 五次复核（本会话）：**补齐 SSE 网关与广播 fan-out**，全链路实测通过。
 > 本文档由「Go ↔ Rust 全量路由 diff + handler 实现 Audit」产出。
+
+### 2026-09-13 五次复核（本会话）：SSE 网关 + 广播 fan-out 补齐
+
+此前四轮只对齐了 proto 注解端点；本轮以 `server/` 层非 proto 注册物为准再次复核，发现并补齐两处真缺口：
+
+1. **SSE 网关 ✅ 已实现（新增 `src/sse.rs`）**——对齐 Go `kratos-transport/transport/sse`（v1.3.8）+ `InternalMessageService` 接入：
+   - 独立监听 `:7789`（`GW_ADMIN_SSE_ADDR` 配置，`off` 关闭，对齐 Go「SSE 未配置 → NewSseServer 返回 nil」），路径 `GET /events`；
+   - 鉴权对齐 Go `HandleAuthorize`：token 按 Go `DefaultTokenExtractor` 顺序取 `Authorization: Bearer` → `X-Token` → `?token=`，验签 + `gw:bl` 黑名单 + **stream 必须等于 token userId**（越权 401）；无 token/坏 token 401，缺 stream 500（对齐 Go 顺序与状态码）；
+   - OPTIONS 预检 204 + 固定 CORS 头（对齐 Go ServeHTTP OPTIONS 分支）；
+   - 事件帧 Go 写序 `id:` → `data:` → `event:`（uuid v4 simple id），事件名 `notification`，data = `InternalMessageRecipient` protojson 形状（camelCase，直发带 `id`、广播不带，对齐 Go 两路径）；
+   - publish 为 try 语义（对齐 Go `TryPublish`）：流不存在/无订阅者/缓冲满（64）立即跳过，离线用户重连后从收件箱补取；hub 死流惰性回收。
+2. **站内信实时推送 ✅ 接线**——`POST /internal-message/send`（直发路径）落库后逐收件人推 SSE（对齐 Go `sendNotification`）；`repos/internal_message.rs::send_message` 返回 `SentMessage{message_id, recipients(行id,uid), received_at}` 避免二次回查。
+3. **`broadcast_message` 调度执行器 ✅ 从「统计落日志」重写为真实 fan-out**——对齐 Go `executeBroadcast`：载入消息本体 → 游标分页（100/页）拉全量未删除用户 → `ON CONFLICT (message_id, recipient_user_id) DO NOTHING` 幂等落收件记录 → 逐条 SSE 推送；实测消息收件记录 1→2 增长、日志 `broadcast_message fan-out done`。与 Go 差异仅：投递由进程内执行而非 asynq 队列（重启丢未完成 fan-out，幂等约束兜底）。
+4. **e2e 更新**：`tests/e2e.sh` 修正 task 控制断言（B3 后为真实调度器，旧脚本仍断言 500 降级）→ **71 项全绿**；新增 `tests/sse_smoke.sh` **15 项断言全绿**（OPTIONS/无token/坏token/越权/缺stream/实时收帧/帧结构/离线发送/X-Token）。
+
+**验证**（测试实例 :7667 + SSE :7787，复用 gwa-rust-test-pg/redis 容器）：
+`E2E_BASE=http://127.0.0.1:7667 bash backendr/tests/e2e.sh` → 71/71；`E2E_BASE=http://127.0.0.1:7667 SSE_BASE=http://127.0.0.1:7787 bash backendr/tests/sse_smoke.sh` → 15/15。
 
 ### 2026-09-12 四次复核（B 系列全部收口）
 
@@ -47,8 +64,8 @@
 3. **handler 实现审计**：`grep NotImplemented|todo!` 仅剩 0 处业务骨架。
 
 **已知降级（非 501，返回协议内结果）**：
-- `POST /scripts/test_run`：协议层完整（target 解析/id|draft 校验/input JSON 还原/`{success,error,context,durationMs}` 响应），但**执行引擎未内置** → 返回 200 + `success:false` + `error:"script engine is not integrated ..."`（见 B1 接线点 `run_script_with_engine`）。
-- task 控制端点：对齐 Go「调度器未配置」降级 500（`task scheduler is not configured`）。
+- ~~`POST /scripts/test_run`~~：脚本引擎（mlua + boa）已于 B1 收口实现，报错仍按 Go 语义返回 200 + `success:false`。
+- task 控制端点：B3 内嵌调度器已实现（不再 500 降级）；`broadcast_message` 执行器 2026-09-13 起为真实 fan-out（进程内投递，见五次复核）。
 
 端到端测试：`backendr/tests/e2e.sh`，**70 项断言全绿**，覆盖登录/改密/强制下线/刷新令牌重放防护/脚本 CRUD/通知渠道/审计日志/file 上传下载签名代理/fileId 下载（含 404 分支）/SSRF 防护/头像 base64/redis_cache_monitor/permission sync 等全链路；配置 `GOWIND_CRYPTO_KEY` 后签名媒体 URL 代理（`GET /file/image` 免鉴权回源）与 avatar 签名 URL 落库亦验证通过；MFA 额外全链路冒烟（注册→挑战登录→验证→错误码限次→禁用→回落单因子）通过。
 
@@ -155,18 +172,21 @@ docker run -d --name gwa-rust-test-redis -p 56379:6379 redis:7-alpine
 # 2. 起 Go 后端一次（迁移建表 + 播种 admin/Abcd@1234，注意 data.yaml 指向 55432/56379）
 cd backend/app/admin/service && go run ./cmd/server --conf=./configs
 
-# 3. 起 Rust 后端
-cd backendr && GW_ADMIN_HTTP_ADDR=0.0.0.0:7666 \
+# 3. 起 Rust 后端（HTTP :7666 + SSE 网关 :7789；GW_ADMIN_SSE_ADDR=off 可关闭 SSE）
+cd backendr && GW_ADMIN_HTTP_ADDR=0.0.0.0:7666 GW_ADMIN_SSE_ADDR=0.0.0.0:7789 \
   GW_ADMIN_DATABASE_URL='postgres://postgres:%2AAbcd123456@127.0.0.1:55432/gwa' \
   GW_ADMIN_REDIS_URL='redis://127.0.0.1:56379' \
   GW_ADMIN_JWT_SECRET='dev-secret-gowind' cargo run
 
-# 4. 端到端测试（70 断言；需本机装有 docker CLI 以读取验证码答案；需先按上一步起好 Rust 服务）
+# 4. 端到端测试（71 断言；需本机装有 docker CLI 以读取验证码答案；需先按上一步起好 Rust 服务）
 GOWIND_CRYPTO_KEY='test-crypto-key-4e2a' backendr/tests/e2e.sh
 # 可用环境变量：E2E_BASE（默认 http://127.0.0.1:7666）、E2E_REDIS_CONTAINER（默认 gwa-rust-test-redis）
 # 例如 Rust 起在 7667：E2E_BASE=http://127.0.0.1:7667 GOWIND_CRYPTO_KEY=... backendr/tests/e2e.sh
 # ↑ 配置 GOWIND_CRYPTO_KEY 后签名媒体 URL（/file/image 代理、avatar 落库值）链路才会完整验证；
 #   未配置时上传接口降级返回相对对象引用（bucket/object），e2e 中 signed-image-serve 一项走降级分支。
+
+# 5. SSE 网关冒烟（15 断言：鉴权负例 + 订阅后发站内信收 notification 帧）
+E2E_BASE=http://127.0.0.1:7666 SSE_BASE=http://127.0.0.1:7789 backendr/tests/sse_smoke.sh
 ```
 
 > 注意：`AGENTS.md` 中「登录账号 admin/admin」已过时，种子密码实为 `admin / Abcd@1234`（`pkg/constants/default_data.go: DefaultUserPassword`）。前端传输密码需 AES-128-CBC（key=iv=`f51d66a73d8a0927`）+ base64。
