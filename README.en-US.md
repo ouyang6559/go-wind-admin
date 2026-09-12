@@ -67,8 +67,8 @@ Security capabilities are designed with reference to the technical requirements 
 | Requirement | Implementation |
 |------------|----------------|
 | **Security Audit** | Full coverage of six audit log types: login / operation / API / data access / permission change / policy evaluation, recording IP geolocation and trace_id. Daily scheduled archiving via asynq: 180-day in-database retention (`AUDIT_RETENTION_DAYS`, adjustable); expired rows are exported to JSONL archive files for long-term traceability |
-| **Identity Authentication** | Password complexity (≥8 chars, at least 3 of 4 character classes), password history reuse check (last 3 by default), password validity period (90 days by default) — all thresholds adjustable via environment variables; TOTP multi-factor authentication (MFA); image captcha; Redis login failure rate limiting (IP + username dual dimensions); configurable login restriction policies |
-| **Access Control** | Dynamic RBAC engine (Casbin / OPA / Zanzibar switchable); role–permission–API mappings stored in the database with instant hot-reload on changes; menu / button / data-level permission control; every authorization decision is logged to policy evaluation logs for traceability |
+| **Identity Authentication** | Password complexity (≥8 chars, at least 3 of 4 character classes), password history reuse check (last 3 by default), password validity period (90 days by default) — thresholds are adjusted via the "Parameter Management" platform parameters (built-in keys seeded at startup; environment-variable configuration is deprecated); TOTP multi-factor authentication (MFA); image captcha; Redis login failure rate limiting (IP + username dual dimensions); configurable login restriction policies |
+| **Access Control** | Dynamic RBAC engine (Casbin / OPA / Zanzibar switchable); role–permission–API mappings stored in the database with instant hot-reload on changes; menu / button level permission control, plus role-scoped row-level data scope (V1 pilot: position table) and field-level permissions (V1 pilot: user table, blacklisted fields pruned from responses); every authorization decision is logged to policy evaluation logs for traceability |
 | **Multi-Tenant Isolation** | Compile-time ent Privacy data isolation: read queries get automatic tenant filtering; Create guards against forged tenants, Update / Delete inject tenant predicates (cross-tenant mutations match 0 rows); tenant requests are fail-closed validated against the Api table by `(path, method)`; plan module whitelists and expiry read-only policy |
 | **Data Confidentiality** | Login passwords encrypted at the application layer (AES) in transit and bcrypt-hashed at rest; sensitive task configs encrypted at rest with AES-256-GCM (transparent via Ent hooks); JWT RS256 asymmetric signing; refresh token in HttpOnly Cookie; transport-layer TLS enabled at deployment (backend `server.rest.tls` config, or nginx / load balancer termination) |
 | **Data Backup & Recovery** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) scheduled full backups (pg_dump, 30 copies auto-rotation by default), Docker container / local direct-connect dual modes, with recovery documentation |
@@ -168,6 +168,8 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 
 ## Features
 
+> All list pages (business data and audit logs) support "Export" with paginated aggregation under the current filters, in CSV or XLSX format (up to 10,000 rows).
+
 ### Organization & Permissions
 
 | Feature | Description |
@@ -175,11 +177,11 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | User Management | Manage and query users with advanced search and department-linked users; enable/disable users, set/unset manager, reset password, configure multiple roles / departments / managers, one-click login as a specified user. |
 | Tenant Management | Manage tenants. Adding a tenant auto-initializes its departments, default roles, and admin. Supports plan configuration, enable/disable, and one-click login as the tenant admin. |
 | Plan & Quota Management | Manage tenant subscription plans and resource quotas (module whitelists, usage limits, etc.); CRUD for plans and quota items. |
-| Role Management | Manage roles and role groups; user selection by role, menu and data permissions, batch add/remove employees. |
+| Role Management | Manage roles and role groups; user selection by role; menu grants, data-scope configuration (five levels / custom organization-unit sets), and field-level permissions (blacklisted field sets); batch add/remove employees. |
 | Permission Management | Manage permission groups, menus, and permission points with tree-view listing. |
 | Organization Management | Manage organizations with tree-view listing. |
-| Position Management | Manage user positions; positions can serve as user labels. |
-| Menu Management | Configure system menus, operation permissions, and button permission identifiers — directories, menus, and buttons. |
+| Position Management | Manage user positions; positions can serve as user labels. Excel import is supported: client-side template download, row-by-row processing through the existing create API with row-level error reporting, and the organization column is resolved by exact organization-name match. |
+| Menu Management | Configure system menus, operation permissions, and button permission identifiers — directories, menus, and buttons. Menu synchronization (available on all three frontends) supports two modes: transactional truncate-rebuild, or incremental merge, which matches existing entries by full path and updates them in place while preserving existing menu IDs and role grants. |
 
 ### System Features
 
@@ -196,6 +198,8 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | Notification Channels | Manage notification channels (EMAIL / SMTP); encrypted password storage, masked in lists; enable/disable and test sending. |
 | Server Monitoring | Read-only view of runtime metrics (CPU cores, memory, goroutines, uptime, etc.) with auto refresh. |
 | Script System | Script-based plugin system (Lua / JavaScript, database as the source of truth, admin-UI changes take effect immediately): entity lifecycle hooks (before can veto / after is async), scheduled tasks (asynq), HTTP egress (domain allowlist, fail-closed), test runs and execution logs. See [docs/script_system.md](./docs/script_system.md). |
+| Parameter Management | Manage platform-wide system parameters as key/value pairs (distinct from business dictionaries); built-in parameters are seeded at startup and cannot be deleted; reads go through a server-side caching accessor, and in multi-instance deployments changes are broadcast over Redis pub/sub to invalidate every instance's cache. |
+| Machine Credentials (AK/SK) | Tenant-scoped AccessKey / SecretKey management: the Secret is shown exactly once at creation; enable/disable, delete, and secret rotation are supported (rotation immediately invalidates the previous Secret). An AK / Secret pair can be exchanged at the token-exchange endpoint for a tenant-scoped machine JWT (machine role, access token only); the exchange endpoint applies per-IP + per-AK failure rate limiting. |
 | Language Management | Manage supported languages: name, code, native name, enabled and default status. |
 
 ### Messaging & Logs
@@ -212,8 +216,6 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | Permission Logs | Query permission change audit logs recording operator, target object, and reason, with request snapshots retained. |
 | Policy Evaluation Logs | Query policy evaluation logs recording each authorization decision with its evaluation context; supports trace_id correlation for troubleshooting. |
 | Redis Cache Monitor | Read-only Redis monitoring displaying INFO, DBSIZE, and slowlog data; performs no write operations. |
-
-> All six audit log pages (login / operation / API / data / permission / policy evaluation) support "Export All" under the current filters, aggregating pages into a CSV export (up to 10,000 rows).
 
 ### Personal Center
 
