@@ -46,3 +46,7 @@ chk-*.png
 
 # GUI e2e 扫测截图证据（会话产物不入库）
 gui-test-screenshots/
+
+# backendr 运行时上传目录（file_transfer/头像落盘，会话产物不入库）
+/uploads/
+backendr/uploads/
