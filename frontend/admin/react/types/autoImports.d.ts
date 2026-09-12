@@ -76,6 +76,7 @@ declare global {
   const StrengthBar: typeof import('../src/components/PasswordStrength/components/StrengthBar').default
   const SubmitBottom: typeof import('../src/components/Bottom/SubmitBottom').default
   const Suspense: typeof import('react').Suspense
+  const TableExportButton: typeof import('../src/components/common/TableExportButton/index').default
   const TableFilter: typeof import('../src/components/Table/components/TableFilter').default
   const Theme: typeof import('../src/components/common/Theme/index').default
   const ThemeLoading: typeof import('../src/components/common/Loading/index').ThemeLoading
@@ -187,6 +188,6 @@ declare global {
 // for type re-export
 declare global {
   // @ts-ignore
-  export type { ImportModalProps, FC, ECOption, AuthLayoutProps, EditorProps, CodeEditorProps, JsonEditorProps, MarkdownEditorProps, PlainTextEditorProps, TiptapEditorProps, CodeBlockModalProps, VideoModalProps, IframeModalProps, ThemeLoadingProps, TokenPayload, AuthState, UserState, TabItem } from './autoImports.d'
+  export type { TableExportButtonProps, ImportModalProps, FC, ECOption, AuthLayoutProps, EditorProps, CodeEditorProps, JsonEditorProps, MarkdownEditorProps, PlainTextEditorProps, TiptapEditorProps, CodeBlockModalProps, VideoModalProps, IframeModalProps, ThemeLoadingProps, TokenPayload, AuthState, UserState, TabItem } from './autoImports.d'
   import('./autoImports.d')
 }
