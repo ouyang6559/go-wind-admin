@@ -11,6 +11,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	"github.com/redis/go-redis/v9"
 	entCrud "github.com/tx7do/go-crud/entgo"
 
 	"github.com/tx7do/go-utils/copierutil"
@@ -29,6 +30,10 @@ import (
 // 超限说明有调用在拿随机键打缓存，此时放弃缓存该键（每次查库兜底），防内存被刷爆。
 const sysConfigCacheMaxEntries = 4096
 
+// configInvalidateChannel 参数失效广播频道：写路径发布被失效的键，
+// 所有实例订阅后清除各自进程内缓存——多实例部署下参数变更即时全局生效。
+const configInvalidateChannel = "gowind:config:invalidate"
+
 // sysConfigCacheEntry 参数缓存条目；found=false 表示“库里没有该键”的负缓存。
 type sysConfigCacheEntry struct {
 	found     bool
@@ -38,6 +43,7 @@ type sysConfigCacheEntry struct {
 
 type ConfigRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
+	rdb       *redis.Client
 	log       *bLogger.Helper
 
 	mapper             *mapper.CopierMapper[configV1.Config, ent.SysConfig]
@@ -58,10 +64,11 @@ type ConfigRepo struct {
 	cache   map[string]sysConfigCacheEntry
 }
 
-func NewConfigRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client]) *ConfigRepo {
+func NewConfigRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client], rdb *redis.Client) *ConfigRepo {
 	repo := &ConfigRepo{
 		log:       ctx.NewLoggerHelper("config/repo/admin-service"),
 		entClient: entClient,
+		rdb:       rdb,
 		mapper:    mapper.NewCopierMapper[configV1.Config, ent.SysConfig](),
 		valueTypeConverter: mapper.NewEnumTypeConverter[configV1.Config_ConfigValueType, sysconfig.ValueType](
 			configV1.Config_ConfigValueType_name,
@@ -71,6 +78,9 @@ func NewConfigRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Cli
 	}
 
 	repo.init()
+
+	// 多实例失效广播订阅：收到其他实例的写失效通知后清除本进程缓存条目
+	go repo.subscribeInvalidations(context.Background())
 
 	return repo
 }
@@ -179,7 +189,7 @@ func (r *ConfigRepo) Create(ctx context.Context, req *configV1.CreateConfigReque
 		return adminV1.ErrorInternalServerError("insert config failed")
 	}
 
-	r.invalidateCacheKey(req.Data.GetKey())
+	r.invalidateCacheKey(ctx, req.Data.GetKey())
 
 	return nil
 }
@@ -267,8 +277,8 @@ func (r *ConfigRepo) Update(ctx context.Context, req *configV1.UpdateConfigReque
 		return adminV1.ErrorInternalServerError("update config failed")
 	}
 
-	r.invalidateCacheKey(oldKey)
-	r.invalidateCacheKey(newKey)
+	r.invalidateCacheKey(ctx, oldKey)
+	r.invalidateCacheKey(ctx, newKey)
 
 	return nil
 }
@@ -304,7 +314,7 @@ func (r *ConfigRepo) Delete(ctx context.Context, req *configV1.DeleteConfigReque
 		return adminV1.ErrorInternalServerError("delete config failed")
 	}
 
-	r.invalidateCacheKey(derefStrP(entity.Key))
+	r.invalidateCacheKey(ctx, derefStrP(entity.Key))
 
 	return nil
 }
@@ -332,7 +342,7 @@ func (r *ConfigRepo) SeedDefaults(ctx context.Context, defaults []*configV1.Conf
 			r.log.Errorf(ctx, "seed config %q: insert failed: %s", item.GetKey(), err.Error())
 			return err
 		}
-		r.invalidateCacheKey(item.GetKey())
+		r.invalidateCacheKey(ctx, item.GetKey())
 	}
 	return nil
 }
@@ -347,14 +357,37 @@ func (r *ConfigRepo) SeedDefaults(ctx context.Context, defaults []*configV1.Conf
 // Create/Update/Delete 同步失效受影响键。依赖“全部写路径都经本 repo、单进程持有写权”的
 // 假设，多实例部署需改造为共享缓存（Redis 等）后再放开消费方。
 
-// invalidateCacheKey 失效单个键的缓存；空键是 no-op。
-func (r *ConfigRepo) invalidateCacheKey(key string) {
+// invalidateCacheKey 失效单个键的本地缓存并向 Redis 广播（空键 no-op）。
+// 广播为尽力而为：Redis 不可用时仅告警，本地失效不受影响。
+func (r *ConfigRepo) invalidateCacheKey(ctx context.Context, key string) {
 	if key == "" {
 		return
 	}
 	r.cacheMu.Lock()
 	delete(r.cache, key)
 	r.cacheMu.Unlock()
+
+	if r.rdb != nil {
+		if err := r.rdb.Publish(ctx, configInvalidateChannel, key).Err(); err != nil {
+			r.log.Warnf(ctx, "publish config invalidate %q failed: %s", key, err.Error())
+		}
+	}
+}
+
+// subscribeInvalidations 订阅失效广播，清除本进程内对应缓存条目。
+// 连接断开由 go-redis 自动重连；进程退出时随连接一起消亡。
+func (r *ConfigRepo) subscribeInvalidations(ctx context.Context) {
+	if r.rdb == nil {
+		return
+	}
+	sub := r.rdb.Subscribe(ctx, configInvalidateChannel)
+	defer sub.Close()
+
+	for msg := range sub.Channel() {
+		r.cacheMu.Lock()
+		delete(r.cache, msg.Payload)
+		r.cacheMu.Unlock()
+	}
 }
 
 // getCachedEntry 取参数条目。第二个返回值表示库里确实存在该键；
