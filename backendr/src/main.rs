@@ -32,6 +32,10 @@ async fn main() -> anyhow::Result<()> {
     let app = build_router()
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
+            backendr::middleware::tenant_access::tenant_gate,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
             backendr::middleware::audit::audit,
         ))
         .with_state(state);
