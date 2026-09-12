@@ -26,7 +26,11 @@ import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import DictEntryDrawer from "./dict-entry-drawer.vue";
 
-import { enableBoolToName, useDeleteDictEntry } from "@/api/composables";
+import {
+  enableBoolToName,
+  useDeleteDictEntry,
+  createPagedExportAction,
+} from "@/api/composables";
 import { $t } from "@/core/i18n";
 import { getEntryLabel, useDictViewStore } from "@/pages/app/system/dict/dict-view.state";
 
@@ -84,7 +88,14 @@ const pageConfig = computed<ProPageConfig>(() => ({
     },
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "filter"],
+    exportsAction: createPagedExportAction(async (query: any) =>
+      dictViewStore.fetchEntryList(
+        dictViewStore.currentTypeId,
+        Number(query.paging?.page) || 1,
+        Number(query.paging?.pageSize) || 1000,
+        query.formValues ?? {},
+      )),
+    defaultToolbar: ["refresh", "filter", "exports"],
     tableAttrs: { border: true, stripe: true, height: "auto" },
     columns: [
       {

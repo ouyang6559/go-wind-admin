@@ -23,7 +23,12 @@ import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import { useProModal } from "@/components/Pro";
 import PlanQuotaDrawer from "./plan-quota-drawer.vue";
 
-import { planQuotaTypeToColor, planQuotaTypeToName, useDeletePlanQuota } from "@/api/composables";
+import {
+  planQuotaTypeToColor,
+  planQuotaTypeToName,
+  useDeletePlanQuota,
+  createPagedExportAction,
+} from "@/api/composables";
 import { $t } from "@/core/i18n";
 import { usePlanViewStore } from "@/pages/app/tenant/plan/plan-view.state";
 
@@ -81,7 +86,14 @@ const pageConfig = computed<ProPageConfig>(() => ({
     },
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "filter"],
+    exportsAction: createPagedExportAction(async (query: any) =>
+      planViewStore.fetchPlanQuotaList(
+        planViewStore.currentPlanId,
+        Number(query.paging?.page) || 1,
+        Number(query.paging?.pageSize) || 1000,
+        query.formValues ?? {},
+      )),
+    defaultToolbar: ["refresh", "filter", "exports"],
     tableAttrs: { border: true, stripe: true, height: "auto" },
     columns: [
       {
