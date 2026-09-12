@@ -9,16 +9,21 @@ import (
 	"github.com/tx7do/go-crud/viewer"
 )
 
-// TenantMutationGuardPolicy 补齐 go-crud TenantPrivacy 的缺口：
-// TenantPrivacy.EvalMutation 仅覆盖 Create（强制覆盖 tenant_id），
-// 对 Update/UpdateOne/Delete/DeleteOne 直接放行——知道 ID 即可跨租户篡改/删除。
+// TenantMutationGuardPolicy 仓内租户写隔离防线（独立于库层的第二道，纵深防御）。
+//
+// 历史：go-crud v0.0.53 及更早的 TenantPrivacy.EvalMutation 仅覆盖 Create
+// （强制覆盖 tenant_id），对 Update/UpdateOne/Delete/DeleteOne 直接放行——
+// 知道 ID 即可跨租户篡改/删除，本守卫即为此缺口而建。v0.0.55 起库层已补齐
+// 全部变更形态的租户谓词注入与 tenant_id 改值防护，本守卫转为冗余防线：
+// 库层回归或被移除时仍兜底。带租户列的表应一律挂载（约定见
+// docs/tenant_isolation.md 第 7.1 节接入清单）。
 //
 // 本 rule 对非 Create 的变更注入 tenant_id 过滤（mutation.WhereP）：
 //   - 租户上下文：只能作用于本租户行，跨租户变更命中 0 行；
 //   - 平台 / 系统上下文：放行（平台管理员全权）。
 //
 // 评估顺序：追加在各 schema Policy() 链尾部，位于 go-crud TenantPrivacy
-// （Query 过滤 + Create 覆盖）之后，不改变既有行为。
+// （Query 过滤 + Create 覆盖 + 变更谓词注入）之后，不改变既有行为。
 type TenantMutationGuardPolicy struct{}
 
 func (TenantMutationGuardPolicy) EvalQuery(ctx context.Context, q ent.Query) error {

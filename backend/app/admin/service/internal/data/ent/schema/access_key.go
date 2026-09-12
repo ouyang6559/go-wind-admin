@@ -49,6 +49,13 @@ func (AccessKey) Mixin() []ent.Mixin {
 	}
 }
 
+// Policy 租户写隔离冗余防线：与本仓其余带租户列表一致（库层 TenantPrivacy 为主，
+// 本守卫为独立第二道，见 schema/tenant_mutation_guard.go 与 docs/tenant_isolation.md）。
+// 此前本表独缺此层（2026-09-12 补挂）。
+func (AccessKey) Policy() ent.Policy {
+	return &TenantMutationGuardPolicy{}
+}
+
 func (AccessKey) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("access_key").Unique().StorageKey("idx_sys_access_keys_access_key"),
