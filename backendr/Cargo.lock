@@ -276,6 +276,7 @@ dependencies = [
  "hmac",
  "humansize",
  "hyper",
+ "ipnet",
  "jsonwebtoken",
  "lazy_static",
  "lettre",

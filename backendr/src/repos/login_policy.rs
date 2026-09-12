@@ -7,6 +7,149 @@ use sqlx::AnyPool;
 use sqlx::Row;
 
 use crate::error::AppError;
+use chrono::Timelike;
+
+/// 登录闸门用的策略条目（对齐 Go `data.EffectivePolicy`）。
+/// target_id 为 0 表示全局策略（不限定用户），否则仅约束该用户。
+#[derive(Debug, Clone)]
+pub struct EffectivePolicy {
+    pub target_id: i64,
+    /// BLACKLIST / WHITELIST
+    pub r#type: String,
+    /// IP / MAC / REGION / TIME / DEVICE
+    pub method: String,
+    pub value: String,
+    pub reason: String,
+}
+
+/// 登录策略匹配器：纯函数，语义按维度独立判定（对齐 Go `data.MatchLoginPolicy`）。
+///   - 黑名单：任一条目命中 → 拒绝
+///   - 白名单：该维度存在白名单约束（全局或定向当前用户）且当前值未命中任何白名单 → 拒绝
+///
+/// 生效范围：条目 TargetID 为 0 表示全局（约束所有用户），否则仅约束该用户；
+/// userId 传 0 表示只检查全局条目。维度支持 IP（精确 IP 或 CIDR）、TIME
+/// （HH:MM-HH:MM 时间窗，支持跨午夜）、DEVICE（device_id 精确匹配）。
+/// MAC / REGION 第一版不判定（与 Go 一致：HTTP 上下文拿不到 MAC，REGION 依赖地理库）。
+/// 返回 (blocked, reason)。
+#[allow(clippy::too_many_arguments)]
+pub fn match_login_policy(
+    policies: &[EffectivePolicy],
+    user_id: i64,
+    client_ip: &str,
+    device_id: &str,
+    now: chrono::NaiveTime,
+) -> (bool, String) {
+    for method in ["IP", "TIME", "DEVICE"] {
+        let mut blacks: Vec<&EffectivePolicy> = Vec::new();
+        let mut whites: Vec<&EffectivePolicy> = Vec::new();
+        for p in policies {
+            if p.method != method {
+                continue;
+            }
+            if p.target_id != 0 && p.target_id != user_id {
+                continue;
+            }
+            if p.r#type == "WHITELIST" {
+                whites.push(p);
+            } else {
+                blacks.push(p);
+            }
+        }
+
+        for p in &blacks {
+            if policy_value_match(method, p.value.as_str(), client_ip, device_id, now) {
+                let reason = if !p.reason.is_empty() {
+                    p.reason.clone()
+                } else {
+                    format!("hit {} blacklist: {}", method.to_lowercase(), p.value)
+                };
+                return (true, reason);
+            }
+        }
+        if !whites.is_empty() {
+            let hit = whites.iter().any(|p| {
+                policy_value_match(method, p.value.as_str(), client_ip, device_id, now)
+            });
+            if !hit {
+                return (true, format!("not in {} whitelist", method.to_lowercase()));
+            }
+        }
+    }
+    (false, String::new())
+}
+
+/// 判定 clientIP / 当前时间 / device_id 是否命中某条策略值（按 method 分发）。
+fn policy_value_match(
+    method: &str,
+    value: &str,
+    client_ip: &str,
+    device_id: &str,
+    now: chrono::NaiveTime,
+) -> bool {
+    match method {
+        "IP" => match_ip_value(client_ip, value),
+        "TIME" => match_time_window(now, value),
+        "DEVICE" => !device_id.is_empty() && device_id == value,
+        _ => false,
+    }
+}
+
+/// 判定 clientIP 是否命中策略值：支持精确 IP 或 CIDR 网段。
+/// 解析失败的策略值视为不命中（配置错误不应阻断全部登录，由管理面保证值合法）。
+fn match_ip_value(client_ip: &str, value: &str) -> bool {
+    let value = value.trim();
+    if client_ip.is_empty() || value.is_empty() {
+        return false;
+    }
+    if value.contains('/') {
+        let net: ipnet::IpNet = match value.parse() {
+            Ok(v) => v,
+            Err(_) => return false,
+        };
+        return match client_ip.parse::<std::net::IpAddr>() {
+            Ok(ip) => net.contains(&ip),
+            Err(_) => false,
+        };
+    }
+    client_ip == value
+}
+
+/// 判定当前时间是否落在 "HH:MM-HH:MM" 时间窗内（支持跨午夜，如 "22:00-06:00"）。
+/// 格式非法或 start==end 视为不命中。
+fn match_time_window(now: chrono::NaiveTime, value: &str) -> bool {
+    let parts: Vec<&str> = value.trim().split('-').collect();
+    if parts.len() != 2 {
+        return false;
+    }
+    let (Some(start), Some(end)) = (parse_hhmm(parts[0]), parse_hhmm(parts[1])) else {
+        return false;
+    };
+    if start == end {
+        return false;
+    }
+    let cur = now.hour() as i64 * 60 + now.minute() as i64;
+    if start < end {
+        cur >= start && cur < end
+    } else {
+        // 跨午夜：如 22:00-06:00 → [start,24:00) ∪ [00:00,end)
+        cur >= start || cur < end
+    }
+}
+
+/// 解析 "HH:MM" → 当日分钟数（0..=1439）。非法返回 None。
+fn parse_hhmm(s: &str) -> Option<i64> {
+    let s = s.trim();
+    let (hh, mm) = s.split_once(':')?;
+    if hh.is_empty() || mm.len() != 2 || !mm.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let h: i64 = hh.parse().ok()?;
+    let m: i64 = mm.parse().ok()?;
+    if h > 23 || m > 59 {
+        return None;
+    }
+    Some(h * 60 + m)
+}
 
 #[derive(Debug, Clone)]
 pub struct LoginPolicyRow {
@@ -124,6 +267,38 @@ impl LoginPolicyRepo {
                 source: Some(Box::new(e)),
             })?;
         row.as_ref().map(map_row).transpose()
+    }
+
+    /// 拉取租户内全部登录策略，供登录闸门在内存中按全局（target_id 为空）/ 用户定向
+    /// （target_id = userId）两批匹配（对齐 Go `ListForLogin`）。策略量级小，全量拉取即可。
+    pub async fn list_for_login(&self, tenant_id: i64) -> Result<Vec<EffectivePolicy>, AppError> {
+        let sql = "select p.target_id, p.type, p.method, p.value, p.reason \
+                   from sys_login_policies p \
+                   where p.tenant_id = $1 and p.deleted_at is null";
+        let rows = sqlx::query::<sqlx::Any>(sql)
+            .bind(tenant_id)
+            .fetch_all(&self.db)
+            .await
+            .map_err(|e| AppError::Internal {
+                context: "list login policies for login failed".into(),
+                source: Some(Box::new(e)),
+            })?;
+        let mut policies = Vec::with_capacity(rows.len());
+        for row in &rows {
+            let target_id: Option<i64> = row.try_get("target_id").ok().flatten();
+            let r#type: Option<String> = row.try_get("type").ok().flatten();
+            let method: Option<String> = row.try_get("method").ok().flatten();
+            let value: Option<String> = row.try_get("value").ok().flatten();
+            let reason: Option<String> = row.try_get("reason").ok().flatten();
+            policies.push(EffectivePolicy {
+                target_id: target_id.unwrap_or(0),
+                r#type: r#type.unwrap_or_default(),
+                method: method.unwrap_or_default(),
+                value: value.unwrap_or_default(),
+                reason: reason.unwrap_or_default(),
+            });
+        }
+        Ok(policies)
     }
 
     /// (tenant_id, target_id, type, method) 唯一性检查（exclude_id 排除自身）。

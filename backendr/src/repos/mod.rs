@@ -17,6 +17,7 @@ pub mod internal_message_recipient;
 pub mod language;
 pub mod login_audit_log;
 pub mod login_policy;
+pub mod login_rate_limiter;
 pub mod menu;
 pub mod mfa;
 pub mod operation_audit_log;

@@ -7,6 +7,8 @@ use rand::Rng;
 use crate::auth::{self, TokenPair};
 use crate::error::AppError;
 use crate::repos::authentication::AuthenticationRepo;
+use crate::repos::login_policy::LoginPolicyRepo;
+use crate::repos::login_rate_limiter::LoginRateLimiter;
 use crate::state::AppState;
 
 /// 平台管理员角色码（用于 token 标志位，值对齐 Kratos constants）
@@ -126,6 +128,31 @@ impl AuthenticationService {
         login_ip: &str,
         login_ua: &str,
     ) -> Result<LoginOutcome, AppError> {
+        // 剥离 CR/LF，防止含换行的用户名注入文本日志（伪造条目/行内注入；对齐 Go）。
+        let username = username.trim().replace(['\r', '\n'], "");
+        let ip = login_ip;
+
+        // 登录限流器：Redis 配置了才启用，否则各操作 fail-open（不阻断登录）。
+        let rate_limiter = self
+            .state
+            .redis
+            .as_ref()
+            .map(|c| LoginRateLimiter::new(c.clone()));
+
+        // ===== 闸门 1：登录限流预检（按 IP + 用户名双维度），失败仅告警继续 =====
+        if let Some(rl) = &rate_limiter {
+            match rl.is_locked(ip, &username).await {
+                Ok(true) => {
+                    tracing::warn!(ip, username, "login blocked by rate limiter");
+                    return Err(AppError::Validation(
+                        "too many login failures, please try again later".into(),
+                    ));
+                }
+                Ok(false) => {}
+                Err(e) => tracing::error!(error = %e, "login rate limiter pre-check failed"),
+            }
+        }
+
         // 验证码闸门：Redis 已配置时强制校验（verify-and-delete 单次有效）
         if CAPTCHA_ENABLED && self.state.redis.is_some() {
             let cid = captcha_id.map(str::trim).unwrap_or("");
@@ -154,29 +181,46 @@ impl AuthenticationService {
             }
         }
 
+        // ===== 登录策略闸门（全局部分）：target_id 为空的策略不依赖用户身份， =====
+        // ===== 在 identifier 反查与密码校验前拦截，被封锁的 IP/时间段连 user 表查询都省掉。 =====
+        // ===== 用户定向策略（target_id = userId）在取到 user 后二次检查。 =====
+        if self
+            .check_login_policies(tenant_id, 0, ip, device_id.unwrap_or(""), now_time())
+            .await
+            .0
+        {
+            tracing::warn!(ip, username, tenant = tenant_id, "login blocked by global policy");
+            return Err(AppError::Forbidden("login blocked by security policy".into()));
+        }
+
         // identifier 智能解析（含 @ 按 email、纯数字按 mobile 反查 username）
-        let mut cred_username = username.to_string();
+        let mut cred_username = username.clone();
         if let Some(resolved) = self
             .repo
-            .find_username_by_identifier(tenant_id, username)
+            .find_username_by_identifier(tenant_id, &username)
             .await?
         {
             cred_username = resolved;
         }
 
         // 凭证校验
-        let cred = self
+        let cred = match self
             .repo
             .get_credential(tenant_id, &cred_username)
             .await?
-            .ok_or_else(|| {
+        {
+            Some(c) => c,
+            None => {
                 // 恒定时间防护：用户不存在时也跑一次 bcrypt 校验
                 let _ = bcrypt::verify(&plain_password, DUMMY_BCRYPT_HASH);
-                AppError::Validation("invalid username or password".into())
-            })?;
+                self.incr_login_fail(&rate_limiter, ip, &cred_username).await;
+                return Err(AppError::Validation("invalid username or password".into()));
+            }
+        };
 
         if cred.status != "ENABLED" {
             let _ = bcrypt::verify(&plain_password, DUMMY_BCRYPT_HASH);
+            self.incr_login_fail(&rate_limiter, ip, &cred_username).await;
             return Err(AppError::Validation("invalid username or password".into()));
         }
 
@@ -186,6 +230,7 @@ impl AuthenticationService {
             plain_password == cred.credential
         };
         if !password_ok {
+            self.incr_login_fail(&rate_limiter, ip, &cred_username).await;
             return Err(AppError::Validation("invalid username or password".into()));
         }
 
@@ -201,6 +246,17 @@ impl AuthenticationService {
         // 纵深防御：凭证租户必须与用户租户一致
         if user.tenant_id != tenant_id {
             return Err(AppError::Validation("invalid tenant".into()));
+        }
+
+        // ===== 登录策略闸门（用户定向部分）：密码已通过、userId 已知， =====
+        // ===== 检查 target_id 约束到该用户的策略条目。
+        if self
+            .check_login_policies(tenant_id, user.id, ip, device_id.unwrap_or(""), now_time())
+            .await
+            .0
+        {
+            tracing::warn!(ip, username, uid = user.id, tenant = tenant_id, "login blocked by user-targeted policy");
+            return Err(AppError::Forbidden("login blocked by security policy".into()));
         }
 
         // 角色码 + 管理员标志
@@ -285,10 +341,53 @@ impl AuthenticationService {
         .await;
         let _ = self.repo.update_last_login(user.id, login_ip).await;
 
+        // ===== 登录成功后清零失败计数（best-effort） =====
+        if let Some(rl) = &rate_limiter {
+            if let Err(e) = rl.reset(ip, &cred_username).await {
+                tracing::error!(error = %e, "login rate limiter reset failed");
+            }
+        }
+
         Ok(LoginOutcome::Token(TokenIssue {
             pair,
             client_type,
         }))
+    }
+
+    /// 拉取租户登录策略并按当前上下文匹配。userId 传 0 时只匹配全局条目
+    /// （target_id 为空）；密码校验前与取到 user 后各调用一次。
+    /// 策略查询失败时 fail-open（仅告警）——登录可用性优先于策略拦截，与 Go 一致。
+    async fn check_login_policies(
+        &self,
+        tenant_id: i64,
+        user_id: i64,
+        client_ip: &str,
+        device_id: &str,
+        now: chrono::NaiveTime,
+    ) -> (bool, String) {
+        let policy_repo = LoginPolicyRepo::new(self.repo.db.clone());
+        let policies = match policy_repo.list_for_login(tenant_id).await {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::error!(error = %e, tenant = tenant_id, "list login policies failed");
+                return (false, String::new());
+            }
+        };
+        crate::repos::login_policy::match_login_policy(&policies, user_id, client_ip, device_id, now)
+    }
+
+    /// 登录失败时自增失败计数（按 IP + 用户名双维度）；Redis 错误仅告警，不阻断返回错误。
+    async fn incr_login_fail(
+        &self,
+        rate_limiter: &Option<LoginRateLimiter>,
+        ip: &str,
+        username: &str,
+    ) {
+        if let Some(rl) = rate_limiter {
+            if let Err(e) = rl.check_and_incr(ip, username).await {
+                tracing::error!(error = %e, ip, username, "login rate limiter incr failed");
+            }
+        }
     }
 
     /// 基于 MFA 挑战上下文签发 token 并记录会话（VerifyMFAChallenge 通过后复用登录链路）。
@@ -634,6 +733,11 @@ pub enum LoginOutcome {
 /// 恒定时间防护用假哈希（用户不存在时报错前也跑一次 bcrypt 校验）
 const DUMMY_BCRYPT_HASH: &str =
     "$2a$10$1sbpKmhQDpXLHnDnEQ1nLe3oOnYyP2bUJyqHcX2T0Fq1qfyoXOrPm";
+
+/// 登录策略 TIME 维度使用服务器本地墙钟（对齐 Go `time.Now()` 的本地时区语义）。
+fn now_time() -> chrono::NaiveTime {
+    chrono::Local::now().naive_local().time()
+}
 
 fn gen_captcha_code() -> String {
     const CHARS: &[u8] = b"23456789ABCDEFGHJKLMNPQRSTUVWXYZ";

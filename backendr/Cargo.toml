@@ -18,7 +18,10 @@ hyper = { version = "1", features = ["http1", "http2", "server"] }
 
 # 数据层
 sqlx = { version = "0.8", default-features = false, features = ["any", "runtime-tokio", "tls-rustls", "postgres", "mysql", "sqlite", "chrono", "json", "uuid", "rust_decimal", "macros"] }
-redis = { version = "0.30", features = ["tokio-comp", "json"] }
+# script 特性用于登录限流的原子 Lua 脚本（判定-自增-设 TTL）
+redis = { version = "0.30", features = ["tokio-comp", "json", "script"] }
+# 登录策略 IP 维度（精确 IP / CIDR）匹配
+ipnet = "2"
 futures = "0.3"
 async-trait = "0.1"
 
