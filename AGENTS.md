@@ -7,7 +7,7 @@
 ```
 backend/                    Go + Kratos + Ent（DI 手写装配 wiring_*.go，已弃用 Wire；HTTP :7788，SSE 网关 :7789）
 frontend/admin/
-├── react/                  React 18 + antd 6 + ProComponents + TanStack Query + zustand
+├── react/                  React 19 + antd 6 + ProComponents + TanStack Query + zustand
 ├── vue-element/            Vue 3 + Element Plus + vxe-table + TanStack vue-query + Pinia
 └── vue-vben/               Vben Admin 5.x monorepo（apps/admin + packages/*）+ Ant Design Vue
 docs/                       后端部署/开发环境/前端权限等专题文档
@@ -19,7 +19,7 @@ docs/                       后端部署/开发环境/前端权限等专题文�
 |---|---|---|
 | react | `npm run typecheck` | 5888 |
 | vue-element | `npx vue-tsc --noEmit`（或 `npm run type-check`） | 5777 |
-| vue-vben | `pnpm run check:type` | 5667 |
+| vue-vben | `pnpm run check:type` | 5666 |
 
 2026-09-07 起三端 typecheck 全部 0 错误。**门禁出现任何新报错，一律当作自己引入的 bug 修复**，不存在"可忽略的既有错误"。改完代码先跑门禁再声称完成。
 
@@ -57,7 +57,7 @@ gow 未覆盖的任务（三端 TS 生成 `make ts`、OpenAPI `make openapi`、`
 ## 本地验证要点
 
 - 后端起在 `:7788`（`gow run admin`；启动方式见 `docs/windows-startup-guide.md` / `docs/backend_deploy.md`）；前端 dev 端口见上表，代理已配置好 API 转发。
-- 登录账号 `admin / admin`（dev 默认）。图形验证码的答案可在 Redis 中按 `gowind:captcha:<captchaId>` 直接读取，便于自动化验证。
+- 登录账号：全新环境播种为 `admin / Abcd@1234`（`pkg/constants/default_data.go` 的 `DefaultUserPassword`）；本机库现状为 `admin / admin`（历史 e2e 改密残留，以本机实际为准）。图形验证码的答案可在 Redis 中按 `gowind:captcha:<captchaId>` 直接读取，便于自动化验证。
 - vue-element 在 dev 下若见 router-view 塌空/白屏：先重启 dev server 再下结论（vite 依赖优化竞态已做遏制与自愈，见其 AGENTS.md「dev 白屏处置」）。
 
 ## 文档索引

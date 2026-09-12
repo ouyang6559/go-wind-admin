@@ -7,7 +7,7 @@
 **すぐに使える企業級フロントエンド・バックエンド一体型管理システムスキャフォールド**
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
@@ -84,8 +84,8 @@
 
 | ツール | バージョン |
 |--------|-----------|
-| Go | 1.22+ |
-| Node.js | >= 20.10.0 |
+| Go | 1.26+（`backend/go.mod` に従う） |
+| Node.js | 各フロントエンドの `package.json` の `engines` に従うこと（現在の制約の交差は >= 20.19.0） |
 | pnpm | >= 10.0.0 |
 | Docker | 20.0+ |
 
