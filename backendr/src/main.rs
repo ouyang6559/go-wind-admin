@@ -27,8 +27,14 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState::new(config).await;
     tracing::info!(meta = "GoWind Admin backendr (axum) start", addr = %addr);
 
-    // 4. Router（带 ConnectInfo，登录链路记录客户端 IP）
-    let app = build_router().with_state(state);
+    // 4. Router（带 ConnectInfo，登录链路记录客户端 IP）+ 操作审计中间件
+    // 先用 with_state 注入的中介器需要 AppState；Layer 须在 with_state 之前应用于路由。
+    let app = build_router()
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            backendr::middleware::audit::audit,
+        ))
+        .with_state(state);
 
     // 5. 监听
     let listener = tokio::net::TcpListener::bind(&addr).await?;

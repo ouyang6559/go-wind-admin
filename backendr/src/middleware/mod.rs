@@ -12,6 +12,9 @@ use crate::auth::bearer_token;
 use crate::error::AppError;
 use crate::state::AppState;
 
+/// 操作审计中间件（backendr 自身流量写 `sys_operation_audit_logs`）。
+pub mod audit;
+
 /// 全局中间件：CORS + 请求跟踪 + 访问日志。
 pub fn layer(
 ) -> tower::layer::util::Identity {
