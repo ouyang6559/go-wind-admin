@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -10,7 +11,7 @@ import { PaginationQuery } from '@/core';
 import { fetchListRoles, useDeleteRole } from '@/api/hooks/role';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
-import { getStatusMap, getStatusOptions } from './constants';
+import { getStatusMap, getStatusOptions, getDataScopeMap } from './constants';
 import RoleDrawer from './components/RoleDrawer';
 import { TABLE } from '@/config/constants.ts';
 
@@ -32,6 +33,7 @@ const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState<Role | undefined>();
 
   const statusMap = getStatusMap(t);
+  const dataScopeMap = getDataScopeMap(t);
 
   // 删除操作
   const deleteMutation = useDeleteRole({
@@ -86,6 +88,17 @@ const RoleManagement = () => {
       render: (_, record) => {
         const status = record.status as keyof typeof statusMap;
         const config = statusMap[status] || { text: status, color: 'default' };
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
+    {
+      title: t('dataScope'),
+      dataIndex: 'dataScope',
+      width: 120,
+      hideInSearch: true,
+      render: (_, record) => {
+        const ds = record.dataScope as keyof typeof dataScopeMap;
+        const config = dataScopeMap[ds] || { text: ds, color: 'default' };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
@@ -175,6 +188,7 @@ const RoleManagement = () => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListRoles} columns={columns} filename="roles" />,
               <Button
                 key="create"
                 type="primary"

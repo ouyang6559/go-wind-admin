@@ -23,7 +23,7 @@ import './styles/pro-layout-overrides.css';
 import './styles/pro-components-dark.css';
 
 import './index.css';
-import App from './App.tsx';
+import App from './app.tsx';
 
 // 执行全局初始化
 bootstrap().then(() => {

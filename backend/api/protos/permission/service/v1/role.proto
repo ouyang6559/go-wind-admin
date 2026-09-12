@@ -7,6 +7,8 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/field_mask.proto";
 
+import "identity/service/v1/types.proto";
+
 import "pagination/v1/pagination.proto";
 
 // 角色服务
@@ -98,12 +100,27 @@ message Role {
   optional Type type = 8 [
     json_name = "type",
     (gnostic.openapi.v3.property) = {description: "角色类型"}
-  ];  // 角色类型
+  ]; // 角色类型
+
+  optional identity.service.v1.DataScope data_scope = 9 [
+    json_name = "dataScope",
+    (gnostic.openapi.v3.property) = {description: "数据权限范围"}
+  ]; // 数据权限范围
 
   repeated uint32 permissions = 10 [
     json_name = "permissions",
     (gnostic.openapi.v3.property) = {description: "绑定的权限点ID列表"}
   ]; // 绑定的权限点ID列表
+
+  repeated uint32 org_units = 11 [
+    json_name = "orgUnits",
+    (gnostic.openapi.v3.property) = {description: "SELECTED_UNITS 档位下自定义授权的组织单元ID列表"}
+  ]; // SELECTED_UNITS 档位下自定义授权的组织单元ID列表
+
+  repeated RoleFieldPermission field_permissions = 12 [
+    json_name = "fieldPermissions",
+    (gnostic.openapi.v3.property) = {description: "字段权限配置（角色在各资源上隐藏的字段集，黑名单语义）"}
+  ]; // 字段权限配置（角色在各资源上隐藏的字段集，黑名单语义）
 
   optional uint32 tenant_id = 40 [
     json_name = "tenantId",
@@ -121,6 +138,19 @@ message Role {
   optional google.protobuf.Timestamp created_at = 200 [json_name = "createdAt", (gnostic.openapi.v3.property) = {description: "创建时间"}];// 创建时间
   optional google.protobuf.Timestamp updated_at = 201 [json_name = "updatedAt", (gnostic.openapi.v3.property) = {description: "更新时间"}];// 更新时间
   optional google.protobuf.Timestamp deleted_at = 202 [json_name = "deletedAt", (gnostic.openapi.v3.property) = {description: "删除时间"}];// 删除时间
+}
+
+// 角色字段权限条目：角色在某资源上隐藏的字段集（黑名单语义）
+message RoleFieldPermission {
+  string resource = 1 [
+    json_name = "resource",
+    (gnostic.openapi.v3.property) = {description: "资源名（proto 消息名，如 User）"}
+  ]; // 资源名（proto 消息名，如 User）
+
+  repeated string hidden_fields = 2 [
+    json_name = "hiddenFields",
+    (gnostic.openapi.v3.property) = {description: "隐藏字段列表（proto 字段 json_name，如 email）"}
+  ]; // 隐藏字段列表（proto 字段 json_name，如 email）
 }
 
 

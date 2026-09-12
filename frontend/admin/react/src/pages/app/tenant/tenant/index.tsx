@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Tag, Button, Popconfirm, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -254,6 +255,7 @@ const TenantList = () => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListTenants} columns={columns} filename="tenants" />,
               <Button
                 key="create"
                 type="primary"

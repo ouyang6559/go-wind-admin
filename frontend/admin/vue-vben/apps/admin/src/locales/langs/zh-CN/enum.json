@@ -3,6 +3,13 @@
     "ON": "正常",
     "OFF": "停用"
   },
+  "config": {
+    "valueType": {
+      "STRING": "字符串",
+      "BOOL": "布尔",
+      "INT": "整数"
+    }
+  },
   "enable": {
     "true": "启用",
     "false": "禁用"

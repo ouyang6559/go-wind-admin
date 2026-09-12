@@ -45,7 +45,8 @@
       "csv": "CSV (逗号分隔)(*.csv)",
       "html": "网页(*.html)",
       "xml": "XML 数据(*.xml)",
-      "txt": "文本文件(制表符分隔)(*.txt)"
+      "txt": "文本文件(制表符分隔)(*.txt)",
+      "xlsx": "Excel 工作簿(*.xlsx)"
     }
   },
   "import": {
@@ -71,6 +72,7 @@
     "noImportsAction": "未配置 importsAction",
     "noDataParsed": "未解析到数据",
     "readFileFailed": "读取文件失败",
+    "importFailed": "导入失败",
     "noModifyAction": "未配置 modifyAction",
     "noExportAction": "未配置 exportAction",
     "operationSuccess": "操作成功"

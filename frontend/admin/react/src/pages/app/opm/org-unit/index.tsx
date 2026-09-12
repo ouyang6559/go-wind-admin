@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import {
@@ -231,6 +232,7 @@ const OrgUnitManagement = () => {
             }}
             pagination={false}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListOrgUnits} columns={columns} filename="org-units" />,
               <Button
                 key="create"
                 type="primary"

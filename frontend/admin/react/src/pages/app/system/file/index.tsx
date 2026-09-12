@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App, Upload } from 'antd';
 import {
@@ -212,6 +213,7 @@ const FileManagement = () => {
             }}
             pagination={false}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListFiles} columns={columns} filename="files" />,
               <Upload
                 key="upload"
                 showUploadList={false}

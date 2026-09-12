@@ -9,6 +9,42 @@ import (
 )
 
 var (
+	// SysAccessKeysColumns holds the columns for the "sys_access_keys" table.
+	SysAccessKeysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "status", Type: field.TypeEnum, Comment: "状态", Enums: []string{"OFF", "ON"}, Default: "ON"},
+		{Name: "tenant_id", Type: field.TypeUint32, Nullable: true, Comment: "租户ID", Default: 0},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "凭证名称（用途说明）"},
+		{Name: "access_key", Type: field.TypeString, Nullable: true, Comment: "访问键（AK，公开标识）"},
+		{Name: "secret_hash", Type: field.TypeString, Nullable: true, Comment: "密钥摘要（SHA-256 hex，明文不落库）"},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true, Comment: "过期时间（空表示长期有效）"},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true, Comment: "最近一次令牌交换时间"},
+	}
+	// SysAccessKeysTable holds the schema information for the "sys_access_keys" table.
+	SysAccessKeysTable = &schema.Table{
+		Name:       "sys_access_keys",
+		Comment:    "OpenAPI访问凭证表",
+		Columns:    SysAccessKeysColumns,
+		PrimaryKey: []*schema.Column{SysAccessKeysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_sys_access_keys_access_key",
+				Unique:  true,
+				Columns: []*schema.Column{SysAccessKeysColumns[10]},
+			},
+			{
+				Name:    "idx_sys_access_keys_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{SysAccessKeysColumns[8]},
+			},
+		},
+	}
 	// SysApisColumns holds the columns for the "sys_apis" table.
 	SysApisColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -2210,6 +2246,7 @@ var (
 		{Name: "code", Type: field.TypeString, Nullable: true, Comment: "角色标识"},
 		{Name: "is_protected", Type: field.TypeBool, Comment: "是否受保护的角色", Default: false},
 		{Name: "type", Type: field.TypeEnum, Comment: "角色类型", Enums: []string{"SYSTEM", "TEMPLATE", "TENANT"}, Default: "TENANT"},
+		{Name: "data_scope", Type: field.TypeEnum, Comment: "数据权限范围", Enums: []string{"ALL", "SELF", "UNIT_ONLY", "UNIT_AND_CHILD", "SELECTED_UNITS"}, Default: "ALL"},
 	}
 	// SysRolesTable holds the schema information for the "sys_roles" table.
 	SysRolesTable = &schema.Table{
@@ -2270,6 +2307,39 @@ var (
 			},
 		},
 	}
+	// SysRoleFieldPermissionsColumns holds the columns for the "sys_role_field_permissions" table.
+	SysRoleFieldPermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "tenant_id", Type: field.TypeUint32, Nullable: true, Comment: "租户ID", Default: 0},
+		{Name: "role_id", Type: field.TypeUint32, Comment: "角色ID（关联sys_roles.id）"},
+		{Name: "resource", Type: field.TypeString, Size: 128, Comment: "资源名（proto 消息名，如 User）"},
+		{Name: "field_name", Type: field.TypeString, Size: 128, Comment: "字段名（proto 字段 json_name，如 email）"},
+	}
+	// SysRoleFieldPermissionsTable holds the schema information for the "sys_role_field_permissions" table.
+	SysRoleFieldPermissionsTable = &schema.Table{
+		Name:       "sys_role_field_permissions",
+		Comment:    "角色字段权限配置表",
+		Columns:    SysRoleFieldPermissionsColumns,
+		PrimaryKey: []*schema.Column{SysRoleFieldPermissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uix_rfp_tenant_role_resource_field",
+				Unique:  true,
+				Columns: []*schema.Column{SysRoleFieldPermissionsColumns[7], SysRoleFieldPermissionsColumns[8], SysRoleFieldPermissionsColumns[9], SysRoleFieldPermissionsColumns[10]},
+			},
+			{
+				Name:    "idx_rfp_tenant_role",
+				Unique:  false,
+				Columns: []*schema.Column{SysRoleFieldPermissionsColumns[7], SysRoleFieldPermissionsColumns[8]},
+			},
+		},
+	}
 	// SysRoleMetadataColumns holds the columns for the "sys_role_metadata" table.
 	SysRoleMetadataColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -2321,6 +2391,38 @@ var (
 				Name:    "idx_role_metadata_last_synced_at",
 				Unique:  false,
 				Columns: []*schema.Column{SysRoleMetadataColumns[7], SysRoleMetadataColumns[13]},
+			},
+		},
+	}
+	// SysRoleOrgUnitsColumns holds the columns for the "sys_role_org_units" table.
+	SysRoleOrgUnitsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "tenant_id", Type: field.TypeUint32, Nullable: true, Comment: "租户ID", Default: 0},
+		{Name: "role_id", Type: field.TypeUint32, Comment: "角色ID（关联sys_roles.id）"},
+		{Name: "org_unit_id", Type: field.TypeUint32, Comment: "组织单元ID（关联org_units.id）"},
+	}
+	// SysRoleOrgUnitsTable holds the schema information for the "sys_role_org_units" table.
+	SysRoleOrgUnitsTable = &schema.Table{
+		Name:       "sys_role_org_units",
+		Comment:    "角色与组织单元关联表",
+		Columns:    SysRoleOrgUnitsColumns,
+		PrimaryKey: []*schema.Column{SysRoleOrgUnitsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uix_rou_tenant_role_org_unit",
+				Unique:  true,
+				Columns: []*schema.Column{SysRoleOrgUnitsColumns[7], SysRoleOrgUnitsColumns[8], SysRoleOrgUnitsColumns[9]},
+			},
+			{
+				Name:    "idx_rou_tenant_role",
+				Unique:  false,
+				Columns: []*schema.Column{SysRoleOrgUnitsColumns[7], SysRoleOrgUnitsColumns[8]},
 			},
 		},
 	}
@@ -2474,6 +2576,40 @@ var (
 				Name:    "idx_sys_script_logs_created_at",
 				Unique:  false,
 				Columns: []*schema.Column{SysScriptLogsColumns[1]},
+			},
+		},
+	}
+	// SysConfigsColumns holds the columns for the "sys_configs" table.
+	SysConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "参数名称（展示用）"},
+		{Name: "key", Type: field.TypeString, Nullable: true, Comment: "参数键名，全局唯一，服务侧读取器按键定位"},
+		{Name: "value", Type: field.TypeString, Nullable: true, Comment: "参数键值"},
+		{Name: "value_type", Type: field.TypeEnum, Nullable: true, Comment: "参数值类型（读取器按类型解析，类型不符回退默认值）", Enums: []string{"STRING", "BOOL", "INT"}, Default: "STRING"},
+		{Name: "is_built_in", Type: field.TypeBool, Nullable: true, Comment: "是否系统内置参数（内置参数禁止删除）", Default: false},
+	}
+	// SysConfigsTable holds the schema information for the "sys_configs" table.
+	SysConfigsTable = &schema.Table{
+		Name:       "sys_configs",
+		Comment:    "系统参数表（平台全局动态 KV 运行时配置；区别于字典管理的业务枚举，两者语义不同）",
+		Columns:    SysConfigsColumns,
+		PrimaryKey: []*schema.Column{SysConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uidx_sys_configs_key",
+				Unique:  true,
+				Columns: []*schema.Column{SysConfigsColumns[8]},
+			},
+			{
+				Name:    "idx_sys_configs_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigsColumns[1]},
 			},
 		},
 	}
@@ -3077,6 +3213,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		SysAccessKeysTable,
 		SysApisTable,
 		SysAPIAuditLogsTable,
 		SysDataAccessAuditLogsTable,
@@ -3110,10 +3247,13 @@ var (
 		SysPolicyEvaluationLogsTable,
 		SysPositionsTable,
 		SysRolesTable,
+		SysRoleFieldPermissionsTable,
 		SysRoleMetadataTable,
+		SysRoleOrgUnitsTable,
 		SysRolePermissionsTable,
 		SysScriptsTable,
 		SysScriptLogsTable,
+		SysConfigsTable,
 		SysTasksTable,
 		SysTenantsTable,
 		SysUsersTable,
@@ -3126,6 +3266,11 @@ var (
 )
 
 func init() {
+	SysAccessKeysTable.Annotation = &entsql.Annotation{
+		Table:     "sys_access_keys",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
 	SysApisTable.Annotation = &entsql.Annotation{
 		Table:     "sys_apis",
 		Charset:   "utf8mb4",
@@ -3298,8 +3443,18 @@ func init() {
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}
+	SysRoleFieldPermissionsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_role_field_permissions",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
 	SysRoleMetadataTable.Annotation = &entsql.Annotation{
 		Table:     "sys_role_metadata",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysRoleOrgUnitsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_role_org_units",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}
@@ -3315,6 +3470,11 @@ func init() {
 	}
 	SysScriptLogsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_script_logs",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysConfigsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_configs",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

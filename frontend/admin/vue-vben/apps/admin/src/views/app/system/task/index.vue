@@ -35,6 +35,7 @@ import {
   useUpdateTask,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import TaskDrawer from './task-drawer.vue';
 
@@ -165,6 +166,9 @@ const gridOptions: VxeGridProps<Task> = {
     },
   ],
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListTasks(new PaginationQuery({ paging: { page, pageSize } }));
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -382,6 +386,7 @@ async function handleEnableChanged(row: any, checked: boolean) {
             {{ $t('page.task.button.restartAll') }}
           </a-button>
         </a-popconfirm>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="tasks" />
       </template>
 
       <template #enable="{ row }">

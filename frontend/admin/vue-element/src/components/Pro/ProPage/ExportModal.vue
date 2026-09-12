@@ -128,6 +128,7 @@ import {
 } from "element-plus";
 import type { FormInstance, FormRules } from "element-plus";
 import { useThrottleFn } from "@vueuse/core";
+import ExcelJS from "exceljs";
 import { useI18n } from "@/core/i18n";
 import type { ProTableColumn } from "../ProTable/types";
 
@@ -158,13 +159,14 @@ const fileTypes = computed(() => [
   { label: t("pages.curd.export.fileTypeOptions.html"), value: "html" },
   { label: t("pages.curd.export.fileTypeOptions.xml"), value: "xml" },
   { label: t("pages.curd.export.fileTypeOptions.txt"), value: "txt" },
+  { label: t("pages.curd.export.fileTypeOptions.xlsx"), value: "xlsx" },
 ]);
 
 const state = reactive<{
   visible: boolean;
   form: {
     filename: string;
-    fileType: "csv" | "html" | "xml" | "txt";
+    fileType: "csv" | "html" | "xml" | "txt" | "xlsx";
     fields: string[];
     origin: "current" | "selected" | "all";
     showHeader: boolean;
@@ -253,6 +255,9 @@ async function doExport() {
       case "xml":
         exportXML(filename, selectedFields, allRows);
         break;
+      case "xlsx":
+        exportXlsx(filename, selectedFields, allRows);
+        break;
       default:
         exportTXT(filename, selectedFields, allRows);
     }
@@ -279,6 +284,9 @@ async function doExport() {
       break;
     case "txt":
       exportTXT(filename, selectedFields, rows);
+      break;
+    case "xlsx":
+      exportXlsx(filename, selectedFields, rows);
       break;
   }
 }
@@ -345,6 +353,40 @@ function exportTXT(filename: string, fields: any[], rows: any[]) {
   });
 
   saveFile(txtContent, `${filename}.txt`, "text/plain;charset=utf-8");
+}
+
+// 导出 XLSX（exceljs 写出；与其他格式共用字段选择与数据范围）
+function exportXlsx(filename: string, fields: any[], rows: any[]) {
+  const headers = fields.map((col) => col.label);
+  const keys = fields.map((col) => col.prop);
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Sheet1");
+  sheet.addRow(headers);
+  rows.forEach((row) => {
+    sheet.addRow(keys.map((key) => row?.[key] ?? ""));
+  });
+
+  workbook.xlsx.writeBuffer().then((buffer) => {
+    saveBinaryFile(
+      buffer as ArrayBuffer,
+      `${filename}.xlsx`,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+  });
+}
+
+// 二进制文件保存（xlsx 导出专用：saveFile 只接受字符串）
+function saveBinaryFile(content: ArrayBuffer, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
 }
 
 // XML 转义

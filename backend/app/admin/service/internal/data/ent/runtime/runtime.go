@@ -5,6 +5,7 @@ package runtime
 import (
 	"context"
 	permissionpb "go-wind-admin/api/gen/go/permission/service/v1"
+	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/apiauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/dataaccessauditlog"
@@ -38,11 +39,14 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/policyevaluationlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/position"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
+	"go-wind-admin/app/admin/service/internal/data/ent/rolefieldpermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
+	"go-wind-admin/app/admin/service/internal/data/ent/roleorgunit"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/schema"
 	"go-wind-admin/app/admin/service/internal/data/ent/script"
 	"go-wind-admin/app/admin/service/internal/data/ent/scriptlog"
+	"go-wind-admin/app/admin/service/internal/data/ent/sysconfig"
 	"go-wind-admin/app/admin/service/internal/data/ent/task"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
@@ -60,6 +64,32 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	accesskeyMixin := schema.AccessKey{}.Mixin()
+	accesskey.Policy = privacy.NewPolicies(accesskeyMixin[4], schema.AccessKey{})
+	accesskey.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := accesskey.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	accesskeyMixinFields0 := accesskeyMixin[0].Fields()
+	_ = accesskeyMixinFields0
+	accesskeyMixinFields3 := accesskeyMixin[3].Fields()
+	_ = accesskeyMixinFields3
+	accesskeyMixinFields4 := accesskeyMixin[4].Fields()
+	_ = accesskeyMixinFields4
+	accesskeyFields := schema.AccessKey{}.Fields()
+	_ = accesskeyFields
+	// accesskeyDescTenantID is the schema descriptor for tenant_id field.
+	accesskeyDescTenantID := accesskeyMixinFields4[0].Descriptor()
+	// accesskey.DefaultTenantID holds the default value on creation for the tenant_id field.
+	accesskey.DefaultTenantID = accesskeyDescTenantID.Default.(uint32)
+	// accesskeyDescID is the schema descriptor for id field.
+	accesskeyDescID := accesskeyMixinFields0[0].Descriptor()
+	// accesskey.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	accesskey.IDValidator = accesskeyDescID.Validators[0].(func(uint32) error)
 	apiMixin := schema.Api{}.Mixin()
 	apiMixinFields0 := apiMixin[0].Fields()
 	_ = apiMixinFields0
@@ -916,6 +946,38 @@ func init() {
 	roleDescID := roleMixinFields0[0].Descriptor()
 	// role.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	role.IDValidator = roleDescID.Validators[0].(func(uint32) error)
+	rolefieldpermissionMixin := schema.RoleFieldPermission{}.Mixin()
+	rolefieldpermission.Policy = privacy.NewPolicies(rolefieldpermissionMixin[3], schema.RoleFieldPermission{})
+	rolefieldpermission.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := rolefieldpermission.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	rolefieldpermissionMixinFields0 := rolefieldpermissionMixin[0].Fields()
+	_ = rolefieldpermissionMixinFields0
+	rolefieldpermissionMixinFields3 := rolefieldpermissionMixin[3].Fields()
+	_ = rolefieldpermissionMixinFields3
+	rolefieldpermissionFields := schema.RoleFieldPermission{}.Fields()
+	_ = rolefieldpermissionFields
+	// rolefieldpermissionDescTenantID is the schema descriptor for tenant_id field.
+	rolefieldpermissionDescTenantID := rolefieldpermissionMixinFields3[0].Descriptor()
+	// rolefieldpermission.DefaultTenantID holds the default value on creation for the tenant_id field.
+	rolefieldpermission.DefaultTenantID = rolefieldpermissionDescTenantID.Default.(uint32)
+	// rolefieldpermissionDescResource is the schema descriptor for resource field.
+	rolefieldpermissionDescResource := rolefieldpermissionFields[1].Descriptor()
+	// rolefieldpermission.ResourceValidator is a validator for the "resource" field. It is called by the builders before save.
+	rolefieldpermission.ResourceValidator = rolefieldpermissionDescResource.Validators[0].(func(string) error)
+	// rolefieldpermissionDescFieldName is the schema descriptor for field_name field.
+	rolefieldpermissionDescFieldName := rolefieldpermissionFields[2].Descriptor()
+	// rolefieldpermission.FieldNameValidator is a validator for the "field_name" field. It is called by the builders before save.
+	rolefieldpermission.FieldNameValidator = rolefieldpermissionDescFieldName.Validators[0].(func(string) error)
+	// rolefieldpermissionDescID is the schema descriptor for id field.
+	rolefieldpermissionDescID := rolefieldpermissionMixinFields0[0].Descriptor()
+	// rolefieldpermission.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	rolefieldpermission.IDValidator = rolefieldpermissionDescID.Validators[0].(func(uint32) error)
 	rolemetadataMixin := schema.RoleMetadata{}.Mixin()
 	rolemetadata.Policy = privacy.NewPolicies(rolemetadataMixin[3], schema.RoleMetadata{})
 	rolemetadata.Hooks[0] = func(next ent.Mutator) ent.Mutator {
@@ -952,6 +1014,30 @@ func init() {
 	rolemetadataDescID := rolemetadataMixinFields0[0].Descriptor()
 	// rolemetadata.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	rolemetadata.IDValidator = rolemetadataDescID.Validators[0].(func(uint32) error)
+	roleorgunitMixin := schema.RoleOrgUnit{}.Mixin()
+	roleorgunit.Policy = privacy.NewPolicies(roleorgunitMixin[3], schema.RoleOrgUnit{})
+	roleorgunit.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := roleorgunit.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	roleorgunitMixinFields0 := roleorgunitMixin[0].Fields()
+	_ = roleorgunitMixinFields0
+	roleorgunitMixinFields3 := roleorgunitMixin[3].Fields()
+	_ = roleorgunitMixinFields3
+	roleorgunitFields := schema.RoleOrgUnit{}.Fields()
+	_ = roleorgunitFields
+	// roleorgunitDescTenantID is the schema descriptor for tenant_id field.
+	roleorgunitDescTenantID := roleorgunitMixinFields3[0].Descriptor()
+	// roleorgunit.DefaultTenantID holds the default value on creation for the tenant_id field.
+	roleorgunit.DefaultTenantID = roleorgunitDescTenantID.Default.(uint32)
+	// roleorgunitDescID is the schema descriptor for id field.
+	roleorgunitDescID := roleorgunitMixinFields0[0].Descriptor()
+	// roleorgunit.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	roleorgunit.IDValidator = roleorgunitDescID.Validators[0].(func(uint32) error)
 	rolepermissionMixin := schema.RolePermission{}.Mixin()
 	rolepermission.Policy = privacy.NewPolicies(rolepermissionMixin[3], schema.RolePermission{})
 	rolepermission.Hooks[0] = func(next ent.Mutator) ent.Mutator {
@@ -1034,6 +1120,19 @@ func init() {
 	scriptlogDescID := scriptlogMixinFields0[0].Descriptor()
 	// scriptlog.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	scriptlog.IDValidator = scriptlogDescID.Validators[0].(func(uint32) error)
+	sysconfigMixin := schema.SysConfig{}.Mixin()
+	sysconfigMixinFields0 := sysconfigMixin[0].Fields()
+	_ = sysconfigMixinFields0
+	sysconfigFields := schema.SysConfig{}.Fields()
+	_ = sysconfigFields
+	// sysconfigDescIsBuiltIn is the schema descriptor for is_built_in field.
+	sysconfigDescIsBuiltIn := sysconfigFields[4].Descriptor()
+	// sysconfig.DefaultIsBuiltIn holds the default value on creation for the is_built_in field.
+	sysconfig.DefaultIsBuiltIn = sysconfigDescIsBuiltIn.Default.(bool)
+	// sysconfigDescID is the schema descriptor for id field.
+	sysconfigDescID := sysconfigMixinFields0[0].Descriptor()
+	// sysconfig.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	sysconfig.IDValidator = sysconfigDescID.Validators[0].(func(uint32) error)
 	taskMixin := schema.Task{}.Mixin()
 	task.Policy = privacy.NewPolicies(taskMixin[4], schema.Task{})
 	task.Hooks[0] = func(next ent.Mutator) ent.Mutator {

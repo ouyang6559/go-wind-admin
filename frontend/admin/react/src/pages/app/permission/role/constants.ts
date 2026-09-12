@@ -108,3 +108,75 @@ export function extractLeafIds(checkedKeys: any[], treeData: any[]): number[] {
     .filter((v) => leafIds.has(v) && typeof v === 'number')
     .map((v) => Number(v));
 }
+
+// ========== 数据权限范围（角色级，五档） ==========
+
+// Tag 颜色语义与 vue-vben/vue-element 既有映射一致：
+// ALL=red（全量，最高风险）/ UNIT_AND_CHILD=blue / UNIT_ONLY=orange /
+// SELECTED_UNITS=purple / SELF=default。
+export const DATA_SCOPE_COLORS: Record<string, string> = {
+  ALL: 'red',
+  UNIT_AND_CHILD: 'blue',
+  UNIT_ONLY: 'orange',
+  SELECTED_UNITS: 'purple',
+  SELF: 'default',
+};
+
+export function getDataScopeMap(t: TFn) {
+  const map: Record<string, { text: string; color: string }> = {};
+  for (const k of Object.keys(DATA_SCOPE_COLORS)) {
+    map[k] = { text: t(`dataScopeMap.${k}`), color: DATA_SCOPE_COLORS[k] };
+  }
+  return map;
+}
+
+export function getDataScopeOptions(t: TFn) {
+  return Object.keys(DATA_SCOPE_COLORS).map((k) => ({
+    label: t(`dataScopeMap.${k}`),
+    value: k,
+  }));
+}
+
+// ========== 字段权限（User 资源试点） ==========
+
+// 可勾选字段：value 与后端 identity User proto 字段 json_name 逐字一致，
+// 提交后经登录聚合写入令牌，命中字段在响应侧被裁剪。
+export function getUserFieldPermissionOptions(t: TFn) {
+  return [
+    { value: 'email', label: t('fieldPerm.field.email') },
+    { value: 'mobile', label: t('fieldPerm.field.mobile') },
+    { value: 'telephone', label: t('fieldPerm.field.telephone') },
+    { value: 'address', label: t('fieldPerm.field.address') },
+    { value: 'region', label: t('fieldPerm.field.region') },
+    { value: 'lastLoginAt', label: t('fieldPerm.field.lastLoginAt') },
+    { value: 'lastLoginIp', label: t('fieldPerm.field.lastLoginIp') },
+  ];
+}
+
+// ========== 组织单元树（SELECTED_UNITS 自定义授权集） ==========
+
+interface OrgTreeNode {
+  key: number | string;
+  title: string;
+  children?: OrgTreeNode[];
+}
+
+/**
+ * 把组织单元 API 的嵌套树映射为 antd Tree 数据（key/title）。
+ * 空 children 一律省略（children:[] 会渲染无效展开箭头）。
+ */
+export function buildOrgUnitTree(items: any[]): OrgTreeNode[] {
+  const result: OrgTreeNode[] = [];
+  for (const item of items || []) {
+    const node: OrgTreeNode = {
+      key: Number(item.id),
+      title: item.name || String(item.id),
+    };
+    const children = buildOrgUnitTree(item.children || []);
+    if (children.length > 0) {
+      node.children = children;
+    }
+    result.push(node);
+  }
+  return result;
+}

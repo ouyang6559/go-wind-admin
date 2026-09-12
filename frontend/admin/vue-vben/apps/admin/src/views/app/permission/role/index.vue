@@ -10,8 +10,10 @@ import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
+  dataScopeToColor,
   fetchListRoles,
   PaginationQuery,
+  roleDataScopeToName,
   statusList,
   statusToColor,
   statusToName,
@@ -19,6 +21,7 @@ import {
 } from '#/api';
 import { type permissionservicev1_Role as Role } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import RoleDrawer from './role-drawer.vue';
 
@@ -107,6 +110,12 @@ const gridOptions: VxeGridProps<Role> = {
       slots: { default: 'status' },
       width: 95,
     },
+    {
+      title: $t('page.role.dataScope'),
+      field: 'dataScope',
+      slots: { default: 'dataScope' },
+      width: 95,
+    },
     { title: $t('ui.table.description'), field: 'description' },
     {
       title: $t('ui.table.createdAt'),
@@ -123,6 +132,9 @@ const gridOptions: VxeGridProps<Role> = {
     },
   ],
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListRoles(new PaginationQuery({ paging: { page, pageSize } }));
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -183,10 +195,16 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.role.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="roles" />
       </template>
       <template #status="{ row }">
         <a-tag :color="statusToColor(row.status)">
           {{ statusToName(row.status) }}
+        </a-tag>
+      </template>
+      <template #dataScope="{ row }">
+        <a-tag :color="dataScopeToColor(row.dataScope)">
+          {{ roleDataScopeToName(row.dataScope) }}
         </a-tag>
       </template>
       <template #action="{ row }">

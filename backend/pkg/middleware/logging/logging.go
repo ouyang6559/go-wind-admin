@@ -23,11 +23,10 @@ type reqBodyKey struct{}
 // refresh-token 会被前端定时刷新器周期触发、login 已有专门的登录审计，
 // 记入操作/权限审计只是持续噪音。
 var sessionOnlyOperations = map[string]bool{
-	adminV1.OperationAuthenticationServiceLogin:             true,
-	adminV1.OperationAuthenticationServiceRegisterUser:      true,
-	adminV1.OperationAuthenticationServiceRefreshToken:      true,
-	adminV1.OperationAuthenticationServiceLogout:            true,
-	adminV1.OperationMfaServiceVerifyMFAChallenge:           true,
+	adminV1.OperationAuthenticationServiceLogin:        true,
+	adminV1.OperationAuthenticationServiceRefreshToken: true,
+	adminV1.OperationAuthenticationServiceLogout:       true,
+	adminV1.OperationMfaServiceVerifyMFAChallenge:      true,
 }
 
 // maxBodySnapshot 快照上限：CRUD JSON 体远小于此；超长时剩余部分透传原流。
@@ -128,14 +127,14 @@ func Server(opts ...Option) middleware.Middleware {
 			if tr, ok := transport.FromServerContext(ctx); ok {
 				var htr *http.Transport
 				if htr, ok = tr.(*http.Transport); ok {
-				// 审计落库阶段标记：本阶段各审计表自身的 INSERT 不再被 driver
-				// wrapper 采集，防递归、防审计表写入噪音进入 data_access 审计。
-				ctx = context.WithValue(ctx, audit.SinkKey(), true)
-				loginAuditLogMiddleware.Handle(ctx, htr, err)
-				apiAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
-				operationAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
-				permissionAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
-				dataAccessAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
+					// 审计落库阶段标记：本阶段各审计表自身的 INSERT 不再被 driver
+					// wrapper 采集，防递归、防审计表写入噪音进入 data_access 审计。
+					ctx = context.WithValue(ctx, audit.SinkKey(), true)
+					loginAuditLogMiddleware.Handle(ctx, htr, err)
+					apiAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
+					operationAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
+					permissionAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
+					dataAccessAuditLogMiddleware.Handle(ctx, htr, err, latencyMs)
 				}
 			}
 

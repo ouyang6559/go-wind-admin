@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -158,6 +159,7 @@ const PermissionList: React.FC<PermissionListProps> = ({ groupId }) => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListPermissions} columns={columns} filename="permissions" />,
               <Button
                 key="create"
                 type="primary"

@@ -28,7 +28,13 @@ import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import PermissionDrawer from "./permission-drawer.vue";
 
-import { statusList, statusToType, statusToName, useDeletePermission } from "@/api/composables";
+import {
+  statusList,
+  statusToType,
+  statusToName,
+  useDeletePermission,
+  createPagedExportAction,
+} from "@/api/composables";
 import { $t } from "@/core/i18n";
 import { usePermissionViewStore } from "@/pages/app/permission/permission/permission-view.state";
 
@@ -98,7 +104,14 @@ const pageConfig = computed<ProPageConfig>(() => ({
     },
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "filter"],
+    exportsAction: createPagedExportAction(async (query: any) =>
+      permissionViewStore.fetchPermissionList(
+        permissionViewStore.currentGroupId,
+        Number(query.paging?.page) || 1,
+        Number(query.paging?.pageSize) || 1000,
+        query.formValues ?? {},
+      )),
+    defaultToolbar: ["refresh", "filter", "exports"],
     tableAttrs: { border: true, stripe: true, height: "auto" },
     columns: [
       {

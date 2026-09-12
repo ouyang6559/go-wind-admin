@@ -7,3 +7,6 @@ export { useAccess, getAccessStatic, checkAccessByRoles, checkAccessByCodes, che
 // 组件
 export { AccessControl } from './access-control';
 export type { AccessControlProps } from './access-control';
+
+// 字段级权限
+export { parseResourceHiddenFields, isFieldHidden } from './field-permission';

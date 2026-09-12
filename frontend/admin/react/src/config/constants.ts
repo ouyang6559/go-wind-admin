@@ -8,7 +8,6 @@ export const ROUTES = {
   /** 登录页 */
   LOGIN: '/auth/login',
   /** 注册页 */
-  REGISTER: '/auth/register',
 
   /** 默认首页（登录后跳转） */
   DEFAULT_HOME: '/dashboard',

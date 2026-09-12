@@ -61,6 +61,7 @@ export function useAuth() {
       const codes = accessCodeResult.codes ?? [];
       userStore.setUserRoles(roles);
       userStore.setAccessCodes(codes);
+      userStore.setHiddenFields(accessCodeResult.hiddenFields ?? []);
       return { roles, codes };
     }
 
@@ -91,8 +92,6 @@ export function useAuth() {
     /** 强制登出（被动，不调后端接口，用于 token 失效场景） */
     forceLogout: () => authStore.getState().forceLogout(),
     /** 注册 */
-    register: (params: { username: string; password: string }) =>
-      authStore.getState().register(params),
     /** 获取验证码 */
     getCaptcha,
     /** 获取用户信息 */

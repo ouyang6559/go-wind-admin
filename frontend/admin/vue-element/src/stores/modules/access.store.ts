@@ -17,6 +17,10 @@ interface AccessState {
    */
   accessCodes: string[];
   /**
+   * 字段权限隐藏字段集（"资源.字段" 串，如 "User.email"，来自 GetMyPermissionCode）
+   */
+  hiddenFields: string[];
+  /**
    * 可访问的菜单列表
    */
   accessMenus: MenuRecordRaw[];
@@ -56,6 +60,7 @@ export const useAccessStore = defineStore("core-access", {
     $reset() {
       this.accessToken = null;
       this.accessCodes = [];
+      this.hiddenFields = [];
       this.accessMenus = [];
       this.accessRoutes = [];
       this.isAccessChecked = false;
@@ -75,6 +80,9 @@ export const useAccessStore = defineStore("core-access", {
     },
     setAccessCodes(codes: string[]) {
       this.accessCodes = codes;
+    },
+    setHiddenFields(fields: string[]) {
+      this.hiddenFields = fields;
     },
     setAccessMenus(menus: MenuRecordRaw[]) {
       this.accessMenus = menus;
@@ -100,10 +108,11 @@ export const useAccessStore = defineStore("core-access", {
     // Token（access/refresh 及其过期时间）全部仅存内存，不落 localStorage。
     // 刷新页面后 token 丢失 → 守卫看到 accessToken 为 null → 跳登录页。
     // accessCodes 是权限码（非 secret），仍持久化以避免刷新后重新拉取。
-    pick: ["accessCodes"],
+    pick: ["accessCodes", "hiddenFields"],
   },
   state: (): AccessState => ({
     accessCodes: [],
+    hiddenFields: [],
     accessMenus: [],
     accessRoutes: [],
     accessToken: null,

@@ -23,7 +23,6 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	AuthenticationService_Login_FullMethodName               = "/admin.service.v1.AuthenticationService/Login"
 	AuthenticationService_Logout_FullMethodName              = "/admin.service.v1.AuthenticationService/Logout"
-	AuthenticationService_RegisterUser_FullMethodName        = "/admin.service.v1.AuthenticationService/RegisterUser"
 	AuthenticationService_ForgotPassword_FullMethodName      = "/admin.service.v1.AuthenticationService/ForgotPassword"
 	AuthenticationService_ResetPasswordByCode_FullMethodName = "/admin.service.v1.AuthenticationService/ResetPasswordByCode"
 	AuthenticationService_RefreshToken_FullMethodName        = "/admin.service.v1.AuthenticationService/RefreshToken"
@@ -41,7 +40,6 @@ type AuthenticationServiceClient interface {
 	Login(ctx context.Context, in *v1.LoginRequest, opts ...grpc.CallOption) (*v1.LoginResponse, error)
 	// 登出
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RegisterUser(ctx context.Context, in *v1.RegisterUserRequest, opts ...grpc.CallOption) (*v1.RegisterUserResponse, error)
 	// 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
 	ForgotPassword(ctx context.Context, in *v1.ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
@@ -76,16 +74,6 @@ func (c *authenticationServiceClient) Logout(ctx context.Context, in *emptypb.Em
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AuthenticationService_Logout_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authenticationServiceClient) RegisterUser(ctx context.Context, in *v1.RegisterUserRequest, opts ...grpc.CallOption) (*v1.RegisterUserResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(v1.RegisterUserResponse)
-	err := c.cc.Invoke(ctx, AuthenticationService_RegisterUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +140,6 @@ type AuthenticationServiceServer interface {
 	Login(context.Context, *v1.LoginRequest) (*v1.LoginResponse, error)
 	// 登出
 	Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
-	RegisterUser(context.Context, *v1.RegisterUserRequest) (*v1.RegisterUserResponse, error)
 	// 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
 	ForgotPassword(context.Context, *v1.ForgotPasswordRequest) (*emptypb.Empty, error)
 	// 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
@@ -178,9 +165,6 @@ func (UnimplementedAuthenticationServiceServer) Login(context.Context, *v1.Login
 }
 func (UnimplementedAuthenticationServiceServer) Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
-}
-func (UnimplementedAuthenticationServiceServer) RegisterUser(context.Context, *v1.RegisterUserRequest) (*v1.RegisterUserResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RegisterUser not implemented")
 }
 func (UnimplementedAuthenticationServiceServer) ForgotPassword(context.Context, *v1.ForgotPasswordRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ForgotPassword not implemented")
@@ -250,24 +234,6 @@ func _AuthenticationService_Logout_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthenticationServiceServer).Logout(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthenticationService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.RegisterUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthenticationServiceServer).RegisterUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthenticationService_RegisterUser_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthenticationServiceServer).RegisterUser(ctx, req.(*v1.RegisterUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -376,10 +342,6 @@ var AuthenticationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _AuthenticationService_Logout_Handler,
-		},
-		{
-			MethodName: "RegisterUser",
-			Handler:    _AuthenticationService_RegisterUser_Handler,
 		},
 		{
 			MethodName: "ForgotPassword",

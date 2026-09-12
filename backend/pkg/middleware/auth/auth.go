@@ -83,25 +83,31 @@ func Server(opts ...Option) middleware.Middleware {
 					traceID = spanContext.TraceID().String()
 				}
 
-				userViewer := appViewer.NewUserViewer(
-					uint64(tokenPayload.GetUserId()),
-					uint64(tokenPayload.GetTenantId()),
-					uint64(tokenPayload.GetOrgUnitId()),
-					traceID,
+			userViewer := appViewer.NewUserViewer(
+				uint64(tokenPayload.GetUserId()),
+				uint64(tokenPayload.GetTenantId()),
+				uint64(tokenPayload.GetOrgUnitId()),
+				traceID,
+				appViewer.BuildDataScopes(
+					tokenPayload.GetDataScopes(),
+					tokenPayload.GetDataScopeUnitIds(),
 					tokenPayload.GetDataScope(),
-				)
-				ctx = viewer.WithContext(ctx, userViewer)
-			}
+				),
+			)
+			ctx = viewer.WithContext(ctx, userViewer)
+		}
 
-	if op.injectMetadata {
-		ctx, err = metadata.NewContext(ctx,
-			&authenticationV1.OperatorMetadata{
-				UserId:    uint64(tokenPayload.GetUserId()),
-				TenantId:  uint64(tokenPayload.GetTenantId()),
-				OrgUnitId: uint64(tokenPayload.GetOrgUnitId()),
-				DataScope: tokenPayload.GetDataScope(),
-			},
-		)
+		if op.injectMetadata {
+			ctx, err = metadata.NewContext(ctx,
+				&authenticationV1.OperatorMetadata{
+					UserId:           uint64(tokenPayload.GetUserId()),
+					TenantId:         uint64(tokenPayload.GetTenantId()),
+					OrgUnitId:        uint64(tokenPayload.GetOrgUnitId()),
+					DataScope:        tokenPayload.GetDataScope(),
+					DataScopes:       tokenPayload.GetDataScopes(),
+					DataScopeUnitIds: tokenPayload.GetDataScopeUnitIds(),
+				},
+			)
 		if err != nil {
 			op.log.Errorf(ctx, "auth middleware: invalid token payload in context [%s]", err.Error())
 			return nil, err

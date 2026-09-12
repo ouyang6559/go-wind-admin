@@ -84,12 +84,13 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	membershipOrgUnitRepo := data.NewMembershipOrgUnitRepo(ctx, entClient)
 	membershipRepo := data.NewMembershipRepo(ctx, entClient, membershipRoleRepo, membershipPositionRepo, membershipOrgUnitRepo)
 	userRepo := data.NewUserRepo(ctx, entClient, userRoleRepo, userOrgUnitRepo, userPositionRepo, membershipRepo)
-	userCredentialRepo := data.NewUserCredentialRepo(ctx, entClient, passwordCrypto)
+	configRepo := data.NewConfigRepo(ctx, entClient, redisClient)
+	userCredentialRepo := data.NewUserCredentialRepo(ctx, entClient, passwordCrypto, configRepo)
 	userMfaFactorRepo := data.NewUserMfaFactorRepo(ctx, entClient)
 	loginPolicyRepo := data.NewLoginPolicyRepo(ctx, entClient)
 
 	// 组织架构与租户
-	orgUnitRepo := data.NewOrgUnitRepo(ctx, entClient)
+	orgUnitRepo := data.NewOrgUnitRepo(ctx, entClient, userOrgUnitRepo)
 	positionRepo := data.NewPositionRepo(ctx, entClient)
 	tenantRepo := data.NewTenantRepo(ctx, entClient)
 	tenantUsageRepo := data.NewTenantUsageRepo(ctx, entClient, authenticator)
@@ -98,9 +99,11 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	permissionApiRepo := data.NewPermissionApiRepo(ctx, entClient)
 	permissionMenuRepo := data.NewPermissionMenuRepo(ctx, entClient)
 	rolePermissionRepo := data.NewRolePermissionRepo(ctx, entClient)
+	roleOrgUnitRepo := data.NewRoleOrgUnitRepo(ctx, entClient)
+	roleFieldPermissionRepo := data.NewRoleFieldPermissionRepo(ctx, entClient)
 	roleMetadataRepo := data.NewRoleMetadataRepo(ctx, entClient)
 	permissionRepo := data.NewPermissionRepo(ctx, entClient, permissionApiRepo, permissionMenuRepo)
-	roleRepo := data.NewRoleRepo(ctx, entClient, rolePermissionRepo, permissionRepo, roleMetadataRepo)
+	roleRepo := data.NewRoleRepo(ctx, entClient, rolePermissionRepo, roleOrgUnitRepo, permissionRepo, roleMetadataRepo, roleFieldPermissionRepo)
 	permissionGroupRepo := data.NewPermissionGroupRepo(ctx, entClient)
 	apiRepo := data.NewApiRepo(ctx, entClient)
 	menuRepo := data.NewMenuRepo(ctx, entClient)
@@ -143,6 +146,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	scriptRepo := data.NewScriptRepo(ctx, entClient)
 
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
+	accessKeyRepo := data.NewAccessKeyRepo(ctx, entClient)
 
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
 
@@ -153,7 +157,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// ═══════════════════════ 四、服务层(internal/service) ═══════════════════════
 
 	// 认证与登录策略
-	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, vcodeCache, notificationChannelRepo)
+	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, vcodeCache, notificationChannelRepo)
 	mfaService := service.NewMfaService(ctx, userMfaFactorRepo, mfaChallengeCache, authenticator, loginRateLimiter, userRepo)
 	loginPolicyService := service.NewLoginPolicyService(ctx, loginPolicyRepo)
 
@@ -236,6 +240,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	)
 
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
+	accessKeyService := service.NewAccessKeyService(ctx, accessKeyRepo, authenticator, loginRateLimiter)
+	configService := service.NewConfigService(ctx, configRepo)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 
@@ -257,6 +263,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		internalMessageService, internalMessageCategoryService, internalMessageRecipientService,
 		scriptService, scriptLogService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
+		accessKeyService,
+		configService,
 	)
 	if err != nil {
 		rollback()

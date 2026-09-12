@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AccessKey is the predicate function for accesskey builders.
+type AccessKey func(*sql.Selector)
+
 // Api is the predicate function for api builders.
 type Api func(*sql.Selector)
 
@@ -105,8 +108,14 @@ type Position func(*sql.Selector)
 // Role is the predicate function for role builders.
 type Role func(*sql.Selector)
 
+// RoleFieldPermission is the predicate function for rolefieldpermission builders.
+type RoleFieldPermission func(*sql.Selector)
+
 // RoleMetadata is the predicate function for rolemetadata builders.
 type RoleMetadata func(*sql.Selector)
+
+// RoleOrgUnit is the predicate function for roleorgunit builders.
+type RoleOrgUnit func(*sql.Selector)
 
 // RolePermission is the predicate function for rolepermission builders.
 type RolePermission func(*sql.Selector)
@@ -116,6 +125,9 @@ type Script func(*sql.Selector)
 
 // ScriptLog is the predicate function for scriptlog builders.
 type ScriptLog func(*sql.Selector)
+
+// SysConfig is the predicate function for sysconfig builders.
+type SysConfig func(*sql.Selector)
 
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)

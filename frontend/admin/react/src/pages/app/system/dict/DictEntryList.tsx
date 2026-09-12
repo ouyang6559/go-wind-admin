@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -173,6 +174,7 @@ const DictEntryList: React.FC<DictEntryListProps> = ({ typeId }) => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListDictEntries} columns={columns} filename="dict-entries" />,
               <Button
                 key="create"
                 type="primary"

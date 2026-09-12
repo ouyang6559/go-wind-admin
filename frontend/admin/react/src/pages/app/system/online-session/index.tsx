@@ -11,6 +11,7 @@ import {
   fetchListOnlineSessions,
   useForceLogoutSession,
 } from '@/api/hooks/online-session';
+import TableExportButton from '@/components/common/TableExportButton';
 import { TABLE } from '@/config/constants';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
@@ -172,6 +173,20 @@ const OnlineSessionPage = () => {
               };
             }
           }}
+          toolBarRender={() => [
+            <TableExportButton
+              key="export"
+              fetcher={(q) =>
+                fetchListOnlineSessions({
+                  page: Number(q.paging?.page) || 1,
+                  pageSize: Number(q.paging?.pageSize) || 1000,
+                  keyword: (q.formValues?.keyword as string) || undefined,
+                })
+              }
+              columns={columns}
+              filename="online-sessions"
+            />,
+          ]}
           rowKey={(record) => `${record.clientType}-${record.userId}-${record.jti}`}
           search={{
             labelWidth: 'auto',

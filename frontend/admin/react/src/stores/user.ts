@@ -7,6 +7,7 @@ export interface UserState {
     userInfo: BasicUserInfo | null;
     userRoles: string[];         // 角色码（来自 userInfo.roles）
     accessCodes: string[];       // 权限码（来自 GetMyPermissionCode）
+    hiddenFields: string[];      // 字段权限隐藏字段集（"资源.字段" 串，来自 GetMyPermissionCode）
 
     // 计算属性（函数形式，React 中不需要 computed）
     tenantId: number | null;
@@ -16,6 +17,7 @@ export interface UserState {
     setUserInfo: (info: BasicUserInfo | null) => void;
     setUserRoles: (roles: string[]) => void;
     setAccessCodes: (codes: string[]) => void;
+    setHiddenFields: (fields: string[]) => void;
     isTenantUser: () => boolean;
     $reset: () => void;
 }
@@ -28,6 +30,7 @@ export const useUserStore = create<UserState>()(
             userInfo: null,
             userRoles: [],
             accessCodes: [],
+            hiddenFields: [],
 
             // 计算属性（函数形式，每次调用时计算）
             get tenantId() {
@@ -56,6 +59,11 @@ export const useUserStore = create<UserState>()(
                 set({accessCodes: codes});
             },
 
+            // 单独设置字段权限隐藏字段集
+            setHiddenFields: (fields) => {
+                set({hiddenFields: fields});
+            },
+
             // 判断是否为租户用户
             isTenantUser: () => {
                 const {tenantId} = get();
@@ -68,6 +76,7 @@ export const useUserStore = create<UserState>()(
                     userInfo: null,
                     userRoles: [],
                     accessCodes: [],
+                    hiddenFields: [],
                 });
             },
         }),

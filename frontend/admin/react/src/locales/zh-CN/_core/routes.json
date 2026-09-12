@@ -36,7 +36,6 @@
   "auth": "认证",
   "login": "登录",
   "mfaChallenge": "MFA 验证",
-  "register": "注册",
   "error-pages": "错误",
   "unauthorized": "未授权",
   "forbidden": "无权限",
@@ -48,5 +47,7 @@
   "server-monitor": "服务监控",
   "notification-channels": "通知渠道",
   "scripts": "脚本管理",
-  "forgot-password": "找回密码"
+  "configs": "参数管理",
+  "forgot-password": "找回密码",
+  "accessKeys": "OpenAPI 凭证"
 }

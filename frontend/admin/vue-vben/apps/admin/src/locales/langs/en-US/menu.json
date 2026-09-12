@@ -43,7 +43,8 @@
     "onlineSessions": "Online Users",
     "serverMonitor": "Server Monitor",
     "notificationChannels": "Notification Channels",
-    "scripts": "Scripts"
+    "scripts": "Scripts",
+    "config": "Config Management"
   },
   "log": {
     "moduleName": "Audit Logs",

@@ -7,6 +7,13 @@
           {{ statusToName(scope.row.status) }}
         </ElTag>
       </template>
+
+      <!-- 数据权限范围 -->
+      <template #dataScope="scope: any">
+        <ElTag size="small" effect="dark" round :color="dataScopeToColor(scope.row.dataScope)">
+          {{ roleDataScopeToName(scope.row.dataScope) }}
+        </ElTag>
+      </template>
     </ProPage>
 
     <!-- 新增/编辑抽屉 -->
@@ -26,6 +33,8 @@ import {
   statusList,
   statusToType,
   statusToName,
+  dataScopeToColor,
+  roleDataScopeToName,
   fetchListRoles,
   useDeleteRole,
 } from "@/api/composables";
@@ -92,6 +101,12 @@ const pageConfig = computed<ProPageConfig>(() => ({
         label: $t("common.table.status"),
         minWidth: 100,
         slotName: "status",
+      },
+      {
+        prop: "dataScope",
+        label: $t("pages.role.dataScope"),
+        minWidth: 100,
+        slotName: "dataScope",
       },
       { prop: "description", label: $t("common.table.description"), minWidth: 150 },
       {

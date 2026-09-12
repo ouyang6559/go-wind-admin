@@ -27,9 +27,6 @@ service AuthenticationService {
   // 用户登出
   rpc Logout (LogoutRequest) returns (google.protobuf.Empty) {}
 
-  // 注册用户
-  rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse) {}
-
   // 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
   rpc ForgotPassword (ForgotPasswordRequest) returns (google.protobuf.Empty) {}
 
@@ -357,54 +354,6 @@ message ValidateTokenResponse {
   ]; // 令牌是否被阻塞/列入黑名单
 }
 
-message RegisterUserRequest {
-  string username = 1 [
-    json_name = "username",
-    (gnostic.openapi.v3.property) = {
-      description: "用户名"
-    },
-    (validate.rules).string = {min_len: 3, max_len: 64}
-  ]; // 用户名
-
-  string password = 2 [
-    json_name = "password",
-    (gnostic.openapi.v3.property) = {
-      description: "登入密码"
-    },
-    (validate.rules).string = {min_len: 8, max_len: 128}
-  ]; // 登入密码
-
-  string tenant_code = 3 [
-    json_name = "tenantCode",
-    (gnostic.openapi.v3.property) = {
-      description: "租户代码"
-    },
-    (validate.rules).string.max_len = 32
-  ]; // 租户代码
-
-  optional string email = 4 [
-    json_name = "email",
-    (gnostic.openapi.v3.property) = {
-      description: "电子邮件地址"
-    },
-    (validate.rules).string = {max_len: 254, email: true}
-  ]; // 电子邮件地址
-
-  optional ClientType client_type = 5 [
-    json_name = "client_type",
-    (gnostic.openapi.v3.property) = {
-      description: "客户端类型"
-    }
-  ]; // 客户端类型
-}
-message RegisterUserResponse {
-  uint32 user_id = 1 [
-    json_name = "userId",
-    (gnostic.openapi.v3.property) = {
-      description: "用户ID"
-    }
-  ];
-}
 
 
 // 忘记密码 - 请求（identifier 为已绑定的邮箱）

@@ -127,6 +127,7 @@ catalog:
   eslint-plugin-unused-imports: ^4.1.4
   eslint-plugin-vitest: ^0.5.4
   eslint-plugin-vue: ^9.32.0
+  'exceljs': 4.4.0
   execa: ^9.5.2
   find-up: ^7.0.0
   get-port: ^7.1.0

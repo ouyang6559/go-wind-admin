@@ -41,9 +41,11 @@ docker exec -i -e PGPASSWORD='*Abcd12345' citus-server-standalone \
 
 ## 口令策略（等保"身份鉴别"）
 
-| 项 | 默认 | 环境变量 |
+阈值自 2026-09-12 起存于 `sys_configs` 平台参数表（启动时内置键缺一补一，可改不可删），经管理台「参数管理」页调整、即时生效；环境变量 `PASSWORD_MIN_LEN` / `PASSWORD_MAX_AGE_DAYS` / `PASSWORD_HISTORY_COUNT` 已废弃。参数行在库内，随本脚本备份一起导出/恢复——原环境变量方案的调优值不在备份范围内，此为其改善。注意：各口令写路径的 proto 校验层（buf-validate）另有 8 字符硬下限，属 wire 层纵深防御；参数仅在调高（>8）时收紧生效，调低于 8 不产生效果。
+
+| 项 | 默认 | 平台参数键 |
 |---|---|---|
-| 最小长度 | 8 | `PASSWORD_MIN_LEN` |
-| 复杂度 | 四类字符（大小写/数字/符号）至少三类 | 固定规则 |
-| 有效期 | 90 天（超期拒绝登录，走重置流程） | `PASSWORD_MAX_AGE_DAYS`（≤0 关闭） |
-| 历史口令 | 最近 3 条不可复用（存 credential.extra_info） | `PASSWORD_HISTORY_COUNT`（≤0 关闭） |
+| 最小长度 | 8 | `sys.password.minLen` |
+| 复杂度 | 四类字符（大小写/数字/符号）至少三类 | 固定规则（不可配） |
+| 有效期 | 90 天（超期拒绝登录，走重置流程） | `sys.password.maxAgeDays`（≤0 关闭） |
+| 历史口令 | 最近 3 条不可复用（存 credential.extra_info） | `sys.password.historyCount`（≤0 关闭） |

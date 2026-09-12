@@ -194,7 +194,9 @@ func (r *PlanModuleRepo) Create(ctx context.Context, req *identityV1.CreatePlanM
 		builder.SetNillableModule(r.moduleConv.ToEntity(req.Data.Module))
 	}
 
-	if req.Data.PlanId == nil {
+	// 此前守卫倒置（PlanId == nil 才设置），导致 plan_id 永远写空、
+	// 套餐模块关联自始无法通过 API 建立。有值即设置。
+	if req.Data.PlanId != nil {
 		builder.SetPlanID(req.Data.GetPlanId())
 	}
 

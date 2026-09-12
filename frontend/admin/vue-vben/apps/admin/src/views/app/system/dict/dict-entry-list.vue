@@ -9,6 +9,7 @@ import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableExportButton from '#/components/TableExportButton.vue';
 import { type dictservicev1_DictEntry as DictEntry } from '#/api';
 import { enableBoolToColor, enableBoolToName, useDeleteDictEntry } from '#/api';
 import { $t } from '#/locales';
@@ -110,6 +111,9 @@ const gridOptions: VxeGridProps<DictEntry> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  dictViewStore.fetchEntryList(dictViewStore.currentTypeId, page, pageSize, {});
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -174,6 +178,7 @@ watch(
       <a-button type="primary" @click="handleCreate">
         {{ $t('page.dict.button.create') }}
       </a-button>
+          <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
     </template>
     <template #isEnabled="{ row }">
       <a-tag :color="enableBoolToColor(row.isEnabled)">

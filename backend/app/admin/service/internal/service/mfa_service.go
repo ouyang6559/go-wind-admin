@@ -10,7 +10,6 @@ import (
 	"time"
 
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
-	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -308,12 +307,16 @@ func (s *MfaService) VerifyMFAChallenge(ctx context.Context, req *authentication
 	// MFA 通过即登录成功，记录最后登录时间与 IP；失败不阻断登录
 	recordUserLastLogin(ctx, s.log, s.userRepo, payload.GetUserId(), netutil.ClientIPFromContext(ctx))
 
+	// refresh token 经 HttpOnly Cookie 下发，与 doGrantTypePassword 一致。
+	// 此前本路径把 refresh token 放在响应体里返回（前端只认 Cookie，
+	// MFA 用户会话的静默续期从未生效，且 token 暴露在 JS 可读面）。
+	refreshExpiresIn := int64(s.authenticator.GetRefreshTokenExpires(challengeCtx.ClientType).Seconds())
+	setRefreshCookies(ctx, refreshToken, refreshExpiresIn)
+
 	return &authenticationV1.LoginResponse{
-		TokenType:        authenticationV1.TokenType_bearer,
-		AccessToken:      accessToken,
-		RefreshToken:     trans.Ptr(refreshToken),
-		ExpiresIn:        int64(s.authenticator.GetAccessTokenExpires(challengeCtx.ClientType).Seconds()),
-		RefreshExpiresIn: trans.Ptr(int64(s.authenticator.GetRefreshTokenExpires(challengeCtx.ClientType).Seconds())),
+		TokenType:   authenticationV1.TokenType_bearer,
+		AccessToken: accessToken,
+		ExpiresIn:   int64(s.authenticator.GetAccessTokenExpires(challengeCtx.ClientType).Seconds()),
 	}, nil
 }
 

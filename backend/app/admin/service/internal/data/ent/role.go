@@ -47,7 +47,9 @@ type Role struct {
 	// 是否受保护的角色
 	IsProtected *bool `json:"is_protected,omitempty"`
 	// 角色类型
-	Type         *role.Type `json:"type,omitempty"`
+	Type *role.Type `json:"type,omitempty"`
+	// 数据权限范围
+	DataScope    *role.DataScope `json:"data_scope,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -60,7 +62,7 @@ func (*Role) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case role.FieldID, role.FieldCreatedBy, role.FieldUpdatedBy, role.FieldDeletedBy, role.FieldSortOrder, role.FieldTenantID:
 			values[i] = new(sql.NullInt64)
-		case role.FieldRemark, role.FieldDescription, role.FieldStatus, role.FieldName, role.FieldCode, role.FieldType:
+		case role.FieldRemark, role.FieldDescription, role.FieldStatus, role.FieldName, role.FieldCode, role.FieldType, role.FieldDataScope:
 			values[i] = new(sql.NullString)
 		case role.FieldCreatedAt, role.FieldUpdatedAt, role.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -190,6 +192,13 @@ func (_m *Role) assignValues(columns []string, values []any) error {
 				_m.Type = new(role.Type)
 				*_m.Type = role.Type(value.String)
 			}
+		case role.FieldDataScope:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field data_scope", values[i])
+			} else if value.Valid {
+				_m.DataScope = new(role.DataScope)
+				*_m.DataScope = role.DataScope(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -298,6 +307,11 @@ func (_m *Role) String() string {
 	builder.WriteString(", ")
 	if v := _m.Type; v != nil {
 		builder.WriteString("type=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.DataScope; v != nil {
+		builder.WriteString("data_scope=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')

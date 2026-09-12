@@ -10,10 +10,10 @@
 
 | 软件 | 版本要求 | 用途 |
 |------|---------|------|
-| Go | 1.25+ | 后端编译运行 |
+| Go | 1.26+（`backend/go.mod` 当前钉 `go 1.26.4`，低于该版本无法构建） | 后端编译运行 |
 | Docker Desktop | 最新版 | 运行 PostgreSQL、Redis、MinIO |
-| Node.js | >= 20.10.0 | 前端编译运行 |
-| pnpm | >= 10.19.0 | Vue 前端包管理（`packageManager` 锁定版本） |
+| Node.js | 以各前端 `package.json` 的 `engines` 为准（当前约束交集为 ≥ 20.19.0） | 前端编译运行 |
+| pnpm | 仅 vue-vben 钉定（其 `packageManager` 字段为 `pnpm@11.18.0`，corepack 自动路由）；react / vue-element 未钉定版本 | Vue 前端包管理 |
 | Git | 最新版 | 版本控制 |
 
 ### 一键安装开发环境
@@ -29,23 +29,19 @@ powershell -ExecutionPolicy Bypass -File backend\scripts\env\install_windows_dev
 
 > **注意**：非管理员运行也可以，但 Docker 服务自动启动配置会被跳过。
 
-### 手动安装 pnpm
+### 手动启用 corepack
 
-脚本不会安装 pnpm，需要手动安装。推荐使用 corepack（Node.js 自带）：
+一键安装脚本不覆盖 pnpm。启用 corepack（Node.js 自带）即可：
 
 ```bash
 corepack enable
-corepack prepare pnpm@10.19.0 --activate
 ```
 
-验证版本：
+vue-vben 的 `package.json` 中 `packageManager` 字段钉死了 `pnpm@11.18.0`——corepack
+在该 monorepo 目录下会自动使用该版本，**无需也不应手动 `corepack prepare`**。
+react / vue-element 未钉定版本，使用 corepack 默认提供的 pnpm。
 
-```bash
-pnpm -v
-# 应输出 10.19.0
-```
-
-> **不要用** `npm install -g pnpm`，版本可能不匹配。项目 `package.json` 中 `packageManager` 字段锁定了 `pnpm@10.19.0`，版本不对会导致安装失败。
+> **不要用** `npm install -g pnpm`：绕过 corepack 的版本路由，可能与钉定版本不一致导致安装失败。
 
 ---
 
@@ -363,10 +359,10 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
 ### Q: 前端 `pnpm install` 报版本不匹配
 
-项目锁定了 `pnpm@10.19.0`，通过 corepack 安装精确版本：
+vue-vben 钉定了 `pnpm@11.18.0`（`packageManager` 字段）。确保 corepack 已启用，
+由 corepack 在该目录自动路由到钉定版本，不要手动 prepare、也不要 `npm i -g pnpm`：
 
 ```bash
 corepack enable
-corepack prepare pnpm@10.19.0 --activate
 ```
 

@@ -14,7 +14,7 @@ import (
 // 必然拒绝，导致空库全新部署时凭证行创建失败且错误被吞，admin 永久无法登录
 // （GitHub issue #58）。
 func TestDefaultPasswordMeetsPolicy(t *testing.T) {
-	assert.NoError(t, password.ValidateComplexity(DefaultUserPassword),
+	assert.NoError(t, password.ValidateComplexity(DefaultUserPassword, password.DefaultMinLen),
 		"DefaultUserPassword 必须满足口令复杂度策略，否则默认数据初始化会半途失败")
 }
 
@@ -28,6 +28,6 @@ func TestDefaultUserCredentialsUsePolicyCompliantPassword(t *testing.T) {
 		}
 		assert.Equal(t, DefaultUserPassword, credential.GetCredential(),
 			"PASSWORD_HASH 种子凭证的 Credential 必须引用 DefaultUserPassword")
-		assert.NoError(t, password.ValidateComplexity(credential.GetCredential()))
+		assert.NoError(t, password.ValidateComplexity(credential.GetCredential(), password.DefaultMinLen))
 	}
 }

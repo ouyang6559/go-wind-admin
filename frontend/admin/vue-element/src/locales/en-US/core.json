@@ -38,7 +38,6 @@
     "welcomeSubtitle": "Please enter your account information to start managing your system",
     "copyright": "Copyright © 2026 GoWind",
     "login": "Login",
-    "register": "Register",
     "username": "Username / Email / Mobile",
     "password": "Password",
     "tenantCode": "Tenant code (leave empty for platform)",
@@ -83,11 +82,6 @@
     "clearAll": "Clear All",
     "viewAll": "View All Messages",
     "detail": "Notification Details"
-  },
-  "register": {
-    "register": "Register",
-    "haveAccount": "Already have an account?",
-    "login": "Login"
   },
   "resetPwd": {
     "resetPassword": "Reset Password",

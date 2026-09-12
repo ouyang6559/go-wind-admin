@@ -25,6 +25,7 @@ import {
   useDeleteTenant,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import TenantDrawer from './tenant-drawer.vue';
 
@@ -176,6 +177,9 @@ const gridOptions: VxeGridProps<Tenant> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListTenants(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -237,6 +241,7 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.tenant.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="tenants" />
       </template>
 
       <template #status="{ row }">

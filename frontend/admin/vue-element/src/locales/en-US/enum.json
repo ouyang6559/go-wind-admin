@@ -11,6 +11,13 @@
     "ON": "On",
     "OFF": "Off"
   },
+  "config": {
+    "valueType": {
+      "STRING": "String",
+      "BOOL": "Bool",
+      "INT": "Int"
+    }
+  },
   "dataAccessAuditLog": {
     "accessType": {
       "SELECT": "Select",
@@ -261,5 +268,14 @@
     "INTERNAL_MESSAGE": "Internal Message",
     "FILE": "File Management",
     "TASK": "Task Scheduler"
+  },
+  "role": {
+    "dataScope": {
+      "ALL": "All",
+      "SELECTED_UNITS": "Custom",
+      "UNIT_AND_CHILD": "Department and Subordinates",
+      "UNIT_ONLY": "Department Only",
+      "SELF": "Self Only"
+    }
   }
 }

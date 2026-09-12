@@ -124,7 +124,8 @@ func (s *AdminPortalService) GetMyPermissionCode(ctx context.Context, _ *emptypb
 	}
 
 	return &adminV1.ListPermissionCodeResponse{
-		Codes: permissionCodes,
+		Codes:        permissionCodes,
+		HiddenFields: operator.GetHiddenFields(),
 	}, nil
 }
 

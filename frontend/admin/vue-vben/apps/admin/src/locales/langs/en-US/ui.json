@@ -30,6 +30,8 @@
     "disable": "Disable"
   },
   "button": {
+    "exportFormatCsv": "CSV (Comma Separated)",
+    "exportFormatXlsx": "Excel Workbook",
     "ok": "OK",
     "confirm": "Confirm",
     "cancel": "Cancel",
@@ -273,5 +275,21 @@
       "NETWORK_READ_TIMEOUT_ERROR": "Network read timeout",
       "NETWORK_CONNECT_TIMEOUT_ERROR": "Network connect timeout"
     }
+  },
+  "import": {
+    "title": "Import Data",
+    "uploadText": "Drag file here, or click to upload",
+    "uploadHint": "Only .xlsx files are supported",
+    "downloadTemplate": "Download Template",
+    "importSuccess": "Imported successfully ({count} rows)",
+    "importFailed": "Import failed"
+  },
+  "export": {
+    "title": "Export",
+    "csv": "CSV (Comma Separated)",
+    "xlsx": "Excel Workbook",
+    "success": "Exported {count} rows",
+    "failed": "Export failed",
+    "noColumns": "No exportable columns"
   }
 }

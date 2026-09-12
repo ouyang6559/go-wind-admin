@@ -83,6 +83,7 @@ Before declaring done, verify cross-cutting concerns:
 - [ ] `apiClient.<entity>Service` getter exists in the frontend generated index (proves proto round-trip worked)
 - [ ] i18n: no hardcoded Chinese/English in pages — everything goes through `$t`/`t` with keys in the locale JSONs
 - [ ] Update operations carry `updateMask` (frontend `useUpdateXxx` does this automatically via `makeUpdateMask`; do not hand-build the mask)
+- [ ] If the entity carries association ID lists (M2M/O2M edges): repo Update follows the snapshot + blacklist + Replace pattern from `references/backend.md` Step 6, and association edits round-trip in the UI (add / clear-all / re-add)
 - [ ] Api registry: on a **fresh** DB the Api table auto-syncs at first boot; on an **existing** deployment trigger 管理页「接口管理 → 接口同步」 after deploying — otherwise the tenant gate `(path, method)` check 403s the new routes (fail-closed)
 - [ ] Menu entries for the new module: on an existing deployment add them via the 菜单管理 admin page — editing `pkg/constants/default_data.go` (`DefaultMenus`) only affects empty-DB fresh installs (all seeds are `count == 0` guarded, see `references/backend.md` Step 11)
 
@@ -92,7 +93,7 @@ These recur on every module regardless of framework. Read them once here, then t
 
 1. **`PaginationQuery` must be instantiated with `new`.** All three frontends have a `PaginationQuery` class whose `.toRawParams()` depends on instance getters. Passing a plain object literal and calling `.toRawParams()` crashes. Always `new PaginationQuery({ paging, formValues })`.
 
-2. **Every Update call must carry `updateMask`.** The backend's `UpdateX` honors `google.protobuf.FieldMask` — without the mask, no fields are written. All three frontends provide a `useUpdateXxx` mutation that calls `makeUpdateMask(Object.keys(values))` internally. Use it; do not call `apiClient.<entity>Service.Update` directly with a hand-built mask.
+2. **Every Update call must carry `updateMask`.** The backend's `UpdateX` runs the DTO through `FilterByFieldMask` first, which **clears every field not listed in the mask** — only surviving fields reach the `SetNillable*` mapping and the SQL SET clause. An omitted/nil mask therefore means **no filtering at all: every populated field in the submitted DTO gets written**, so a stale or partial form round-trip silently corrupts untouched columns. All three frontends provide a `useUpdateXxx` mutation that calls `makeUpdateMask(Object.keys(values))` internally. Use it; do not call `apiClient.<entity>Service.Update` directly with a hand-built mask. If the entity carries association ID lists (M2M/O2M edges), the repo additionally needs the snapshot + blacklist + Replace pattern — see `references/backend.md` Step 6 before writing the repo.
 
 3. **Never hand-edit `generated/`.** Backend `api/gen/go/` and each frontend's `api/generated/` are produced by codegen. If a type or service is missing, the fix is to regenerate (fix the proto, rerun `make api` / `pnpm generate:api`), not to edit the generated file.
 

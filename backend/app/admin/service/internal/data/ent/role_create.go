@@ -232,6 +232,20 @@ func (_c *RoleCreate) SetNillableType(v *role.Type) *RoleCreate {
 	return _c
 }
 
+// SetDataScope sets the "data_scope" field.
+func (_c *RoleCreate) SetDataScope(v role.DataScope) *RoleCreate {
+	_c.mutation.SetDataScope(v)
+	return _c
+}
+
+// SetNillableDataScope sets the "data_scope" field if the given value is not nil.
+func (_c *RoleCreate) SetNillableDataScope(v *role.DataScope) *RoleCreate {
+	if v != nil {
+		_c.SetDataScope(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *RoleCreate) SetID(v uint32) *RoleCreate {
 	_c.mutation.SetID(v)
@@ -295,6 +309,10 @@ func (_c *RoleCreate) defaults() error {
 		v := role.DefaultType
 		_c.mutation.SetType(v)
 	}
+	if _, ok := _c.mutation.DataScope(); !ok {
+		v := role.DefaultDataScope
+		_c.mutation.SetDataScope(v)
+	}
 	return nil
 }
 
@@ -327,6 +345,14 @@ func (_c *RoleCreate) check() error {
 	if v, ok := _c.mutation.GetType(); ok {
 		if err := role.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Role.type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.DataScope(); !ok {
+		return &ValidationError{Name: "data_scope", err: errors.New(`ent: missing required field "Role.data_scope"`)}
+	}
+	if v, ok := _c.mutation.DataScope(); ok {
+		if err := role.DataScopeValidator(v); err != nil {
+			return &ValidationError{Name: "data_scope", err: fmt.Errorf(`ent: validator failed for field "Role.data_scope": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ID(); ok {
@@ -426,6 +452,10 @@ func (_c *RoleCreate) createSpec() (*Role, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(role.FieldType, field.TypeEnum, value)
 		_node.Type = &value
+	}
+	if value, ok := _c.mutation.DataScope(); ok {
+		_spec.SetField(role.FieldDataScope, field.TypeEnum, value)
+		_node.DataScope = &value
 	}
 	return _node, _spec
 }
@@ -716,6 +746,18 @@ func (u *RoleUpsert) SetType(v role.Type) *RoleUpsert {
 // UpdateType sets the "type" field to the value that was provided on create.
 func (u *RoleUpsert) UpdateType() *RoleUpsert {
 	u.SetExcluded(role.FieldType)
+	return u
+}
+
+// SetDataScope sets the "data_scope" field.
+func (u *RoleUpsert) SetDataScope(v role.DataScope) *RoleUpsert {
+	u.Set(role.FieldDataScope, v)
+	return u
+}
+
+// UpdateDataScope sets the "data_scope" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateDataScope() *RoleUpsert {
+	u.SetExcluded(role.FieldDataScope)
 	return u
 }
 
@@ -1050,6 +1092,20 @@ func (u *RoleUpsertOne) SetType(v role.Type) *RoleUpsertOne {
 func (u *RoleUpsertOne) UpdateType() *RoleUpsertOne {
 	return u.Update(func(s *RoleUpsert) {
 		s.UpdateType()
+	})
+}
+
+// SetDataScope sets the "data_scope" field.
+func (u *RoleUpsertOne) SetDataScope(v role.DataScope) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetDataScope(v)
+	})
+}
+
+// UpdateDataScope sets the "data_scope" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateDataScope() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateDataScope()
 	})
 }
 
@@ -1550,6 +1606,20 @@ func (u *RoleUpsertBulk) SetType(v role.Type) *RoleUpsertBulk {
 func (u *RoleUpsertBulk) UpdateType() *RoleUpsertBulk {
 	return u.Update(func(s *RoleUpsert) {
 		s.UpdateType()
+	})
+}
+
+// SetDataScope sets the "data_scope" field.
+func (u *RoleUpsertBulk) SetDataScope(v role.DataScope) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetDataScope(v)
+	})
+}
+
+// UpdateDataScope sets the "data_scope" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateDataScope() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateDataScope()
 	})
 }
 

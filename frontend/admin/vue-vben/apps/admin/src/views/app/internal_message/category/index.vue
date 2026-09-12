@@ -18,6 +18,7 @@ import {
   useDeleteMessageCategory,
 } from '#/api';
 import { $t } from '#/locales';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 import InternalMessageCategoryDrawer from './internal-message-category-drawer.vue';
 
@@ -118,6 +119,9 @@ const gridOptions: VxeGridProps<InternalMessageCategory> = {
   ],
 };
 
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListMessageCategories(new PaginationQuery({ paging: { page, pageSize } }));
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -179,6 +183,7 @@ async function handleDelete(row: any) {
         <a-button class="mr-2" type="primary" @click="handleCreate">
           {{ $t('page.internalMessageCategory.button.create') }}
         </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="im-categories" />
       </template>
       <template #isEnabled="{ row }">
         <a-tag :color="enableBoolToColor(row.isEnabled)">

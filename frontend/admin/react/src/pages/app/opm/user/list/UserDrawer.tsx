@@ -10,6 +10,8 @@ import { useCreateUser, useUpdateUser } from '@/api/hooks/user';
 import { fetchListRoles } from '@/api/hooks/role';
 import { fetchListOrgUnits } from '@/api/hooks/org-unit';
 import { fetchListPositions } from '@/api/hooks/position';
+import { useUserStore } from '@/stores/user';
+import { parseResourceHiddenFields } from '@/core/access';
 import { getUserStatusOptions, getGenderOptions } from '../constants';
 import { buildOrgTreeSelectData } from './tree-utils';
 
@@ -39,6 +41,12 @@ const UserDrawer: React.FC<UserDrawerProps> = ({
   const { message } = App.useApp();
 
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // 字段权限：被隐藏的 User 字段不渲染、不提交（后端响应/写入两侧还会再兜底裁剪）
+  const userHiddenFields = parseResourceHiddenFields(
+    useUserStore((s) => s.hiddenFields),
+    'User',
+  );
 
   // 下拉数据
   const [roleTreeData, setRoleTreeData] = useState<any[]>([]);
@@ -140,6 +148,11 @@ const UserDrawer: React.FC<UserDrawerProps> = ({
   const handleSubmit = async (values: Record<string, any>) => {
     try {
       setConfirmLoading(true);
+
+      // 被字段权限隐藏的字段整项剔除，避免把空值当成显式清空提交
+      for (const key of [...userHiddenFields]) {
+        delete values[key];
+      }
 
       if (mode === 'edit' && data?.id) {
         // 更新：不发送 password（除非有值）
@@ -275,20 +288,24 @@ const UserDrawer: React.FC<UserDrawerProps> = ({
         fieldProps={{ allowClear: true }}
       />
 
-      <ProFormText
-        name="email"
-        label={t('email')}
-        placeholder={t('emailPlaceholder')}
-        rules={[{ required: true, message: t('requiredEmail') }]}
-        fieldProps={{ allowClear: true }}
-      />
+      {!userHiddenFields.has('email') && (
+        <ProFormText
+          name="email"
+          label={t('email')}
+          placeholder={t('emailPlaceholder')}
+          rules={[{ required: true, message: t('requiredEmail') }]}
+          fieldProps={{ allowClear: true }}
+        />
+      )}
 
-      <ProFormText
-        name="mobile"
-        label={t('mobile')}
-        placeholder={t('mobilePlaceholder')}
-        fieldProps={{ allowClear: true }}
-      />
+      {!userHiddenFields.has('mobile') && (
+        <ProFormText
+          name="mobile"
+          label={t('mobile')}
+          placeholder={t('mobilePlaceholder')}
+          fieldProps={{ allowClear: true }}
+        />
+      )}
 
       {/* 状态 */}
       <ProFormRadio.Group

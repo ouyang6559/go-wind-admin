@@ -47,6 +47,7 @@ import {
   planVersionToColor,
   planVersionToName,
   useDeletePlan,
+  createPagedExportAction,
 } from "@/api/composables";
 import { $t } from "@/core/i18n";
 import { usePlanViewStore } from "@/pages/app/tenant/plan/plan-view.state";
@@ -89,7 +90,13 @@ const pageConfig = computed<ProPageConfig>(() => ({
     },
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "filter"],
+    exportsAction: createPagedExportAction(async (query: any) =>
+      planViewStore.fetchPlanList(
+        Number(query.paging?.page) || 1,
+        Number(query.paging?.pageSize) || 1000,
+        query.formValues ?? {},
+      )),
+    defaultToolbar: ["refresh", "filter", "exports"],
     tableAttrs: {
       border: true,
       stripe: true,

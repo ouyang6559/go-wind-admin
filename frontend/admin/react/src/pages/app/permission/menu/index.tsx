@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App, Space } from 'antd';
 import {
@@ -8,12 +9,14 @@ import {
   PlusOutlined,
   NodeExpandOutlined,
   NodeCollapseOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { permissionservicev1_Menu as Menu } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
-import { fetchListMenus, useDeleteMenu } from '@/api/hooks/menu';
+import { fetchListMenus, useDeleteMenu, useSyncMenus, buildSyncMenusRequest } from '@/api/hooks/menu';
+import { businessRoutes } from '@/router/business-routes';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 import { getRandomColor } from '@/utils/color';
@@ -62,6 +65,29 @@ const MenuManagement = () => {
       message.error(error.message || t('deleteFailed'));
     },
   });
+
+  // 同步菜单：将本地业务路由全量推送到后端（后端会清空重建，角色授权需重做）
+  const [syncing, setSyncing] = useState(false);
+  const syncMutation = useSyncMenus({
+    onSuccess: () => {
+      message.success(t('syncSuccess'));
+      actionRef.current?.reload();
+      queryClient.invalidateQueries({ queryKey: ['listMenus'] });
+    },
+    onError: (error: Error) => {
+      message.error(error.message || t('syncFailed'));
+    },
+  });
+
+  const handleSyncMenus = async () => {
+    setSyncing(true);
+    try {
+      const request = await buildSyncMenusRequest(businessRoutes, t);
+      await syncMutation.mutateAsync(request);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // 构建菜单树
   const buildMenuTree = (items: Menu[]): Menu[] => {
@@ -298,6 +324,7 @@ const MenuManagement = () => {
             }}
             pagination={false}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListMenus} columns={columns} filename="menus" />,
               <Button
                 key="create"
                 type="primary"
@@ -324,6 +351,18 @@ const MenuManagement = () => {
               >
                 {t('collapseAll')}
               </Button>,
+              <Popconfirm
+                key="syncMenus"
+                title={t('syncConfirmTitle')}
+                description={t('syncConfirmDesc')}
+                onConfirm={handleSyncMenus}
+                okText={t('common:button.ok')}
+                cancelText={t('common:button.cancel')}
+              >
+                <Button icon={<SyncOutlined />} loading={syncing || syncMutation.isPending}>
+                  {t('sync')}
+                </Button>
+              </Popconfirm>,
             ]}
             options={{
               density: true,

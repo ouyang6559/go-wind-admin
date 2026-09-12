@@ -67,6 +67,9 @@ message UserRole {
     (gnostic.openapi.v3.property) = {description: "失效时间（UTC）"}
   ];// 失效时间
 
+  // 【遗留·未接线】assignment 级数据范围是早期"用户-角色"维度授权的设计残留，
+  // 无存储落表、无读写链路（V1 数据范围见 role.proto 的 Role.data_scope）。
+  // 字段号保留防止复用；接入前先补 assignment 级覆盖语义的完整设计。
   optional identity.service.v1.DataScope data_scope = 80 [
     json_name = "dataScope",
     (gnostic.openapi.v3.property) = {description: "数据权限范围"}

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, SyncOutlined } from '@ant-design/icons';
@@ -198,6 +199,7 @@ const ApiManagement = () => {
               showQuickJumper: true,
             }}
             toolBarRender={() => [
+              <TableExportButton key="export" fetcher={fetchListApis} columns={columns} filename="apis" />,
               <Button
                 key="create"
                 type="primary"

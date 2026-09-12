@@ -14,7 +14,6 @@ import { ElNotification } from "element-plus";
 import {
   login as authLogin,
   logout as authLogout,
-  registerUser as authRegisterUser,
   generateCaptcha as authGenerateCaptcha,
   getMyPermissionCode,
   getMe,
@@ -186,6 +185,7 @@ async function applySuccessfulLogin(
   const userStore = useAppUserStore();
   userStore.setUserInfo(userInfo);
   accessStore.setAccessCodes(fetchAccessCodeResult.codes ?? []);
+  accessStore.setHiddenFields(fetchAccessCodeResult.hiddenFields ?? []);
 
   if (accessStore.loginExpired) {
     accessStore.setLoginExpired(false);
@@ -268,14 +268,6 @@ async function logout(redirect: boolean = true) {
   await _doLogout(redirect);
 }
 
-async function register(username: string, password: string) {
-  return await authRegisterUser({
-    username,
-    password: encryptPassword(password),
-    tenantCode: "master",
-  });
-}
-
 async function getCaptcha() {
   return await authGenerateCaptcha();
 }
@@ -313,6 +305,7 @@ async function getUserPermissionCodes() {
       // 只存权限码，角色码由 userStore.userRoles 管理
       const codes = fetchAccessCodeResult ? (fetchAccessCodeResult.codes ?? []) : [];
       accessStore.setAccessCodes(codes);
+      accessStore.setHiddenFields(fetchAccessCodeResult?.hiddenFields ?? []);
     } catch (error: unknown) {
       // 网络异常：抛出特定标记，让路由守卫跳转错误页而非白屏
       if (isNetworkError(error)) {
@@ -345,7 +338,6 @@ export function useAuth() {
     // 强制登出：纯前端清理+跳转，不调后端 logout API。
     // 用于改密成功等 token 已被后端吊销的场景，避免登出请求再吃 401。
     forceLogout: () => _doLogout(true),
-    register,
     getCaptcha,
     fetchUserInfo,
     fetchAccessCodes,

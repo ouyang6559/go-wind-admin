@@ -229,10 +229,31 @@ Five methods (mirror `api_repo.go` lines noted):
 - **List** — `r.repository.ListWithPaging(ctx, builder, builder.Clone(), req)`. Note you pass `builder` AND `builder.Clone()` — the clone is used for count.
 - **Get** — `switch req.QueryBy.(type)` to build `[]func(s *sql.Selector)` where-conds, then `r.repository.Get(ctx, builder, req.GetViewMask(), whereCond...)`. The view_mask controls which fields are returned.
 - **Create** — build via `r.entClient.Client().<Entity>.Create().SetNillable*(...).SetNillableCreatedBy(...).SetCreatedAt(time.Now()).Exec(ctx)`. `CreatedBy` is injected by the Service from `auth.FromContext`.
-- **Update** — `r.repository.UpdateX(ctx, builder, req.Data, req.GetUpdateMask(), setCallback, whereCallback)`. The setCallback applies FieldMask-passed fields via `SetNillable*`; whereCallback sets `sql.EQ(<entity>.FieldID, req.GetId())`. `allow_missing` triggers a Create-if-absent (upsert) inside UpdateX.
+- **Update** — `r.repository.UpdateX(ctx, builder, req.Data, req.GetUpdateMask(), setCallback, whereCallback)`. The setCallback applies FieldMask-passed fields via `SetNillable*`; whereCallback sets `sql.EQ(<entity>.FieldID, req.GetId())`. `allow_missing` triggers a Create-if-absent (upsert) inside UpdateX. If the entity carries association ID lists (edges), the subsection below is mandatory before writing this method.
 - **Delete** — `r.repository.Delete(ctx, builder, whereCallback)`. Batch variant: `r.entClient.Client().<Entity>.Delete().Where(<entity>.IDIn(ids...)).Exec(ctx)`.
 
 **Error returns in repo:** prefer domain errors (`<domain>V1.ErrorInternalServerError(...)`) — though many repos mix in `adminV1`. The Service layer standardizes on `adminV1`. Be consistent within the file.
+
+### Update with association/edge fields (mandatory pattern)
+
+Entities whose proto carries association ID lists — role `permissions` / `org_units`, user `role_ids` / `position_ids` / `org_unit_ids` — persist them in join tables, not columns of the entity table. The generic `UpdateX` pipeline cannot know that, so the repo must handle these fields around the call. Skipping the pattern fails in one of two ways:
+
+- The path stays in `req.UpdateMask` → the pipeline reads an empty payload as "explicitly clear this field" and emits `SET <edge> = NULL` against a column that does not exist → SQL error.
+- The path is absent from the mask (including after you blacklist it) → `FilterByFieldMask` clears the payload out of `req.Data` before the field mapping runs → the association-sync step afterwards sees an empty set and silently wipes every existing row.
+
+Required sequence (mirror `role_repo.go` / `user_repo.go` `Update` — read them before writing your version):
+
+1. Detect from `req.UpdateMask` whether the association is being touched in this request. Probe both the snake_case proto name and the legacy camelCase spelling — the pipeline's own path normalization runs only inside `UpdateX`, after your detection code.
+2. Snapshot the payload before calling `UpdateX` — after the call the DTO no longer carries it. If the proto carries both a singular and a plural payload field, merge them into the snapshot (see `user_repo.go`).
+3. Blacklist those paths out of `req.UpdateMask.Paths` (`utils.FilterBlacklist`).
+4. Call `UpdateX` for the column-backed fields only.
+5. Apply the snapshot through the entity's dedicated Replace method (`ReplacePermissions`, `ReplaceOrgUnits`, …) inside the same transaction scope the repo Update already runs in — including an empty snapshot, which means "the user cleared the multiselect" and must remove all rows.
+
+Also blacklist mask paths that are not fields of the inner DTO at all — e.g. `password`, a top-level field of `UpdateUserRequest` that does not exist on `User`. The current pipeline rejects invalid mask paths with an error; older versions silently cleared the entire DTO, producing an update that returned 200 and wrote nothing.
+
+Keep one semantic trap straight: blacklisting a path makes that field *unwritten* (the filter zeroes it out of the DTO). But if blacklisting empties the mask completely, the filter is a no-op and **every populated field in the DTO is written**. Blacklist only edge/association paths and paths that do not exist on the inner DTO — never use it as a "skip writing this field" switch.
+
+The SET-NULL mechanism also bites fields you intentionally skip writing: `user_repo.go` nils a round-tripped `email`/`mobile` containing `*` (a display mask, not a real value) **and** blacklists its path — niling alone would emit `SET email = NULL` and destroy the stored value.
 
 ## Step 7 — Service
 

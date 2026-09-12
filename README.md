@@ -1,13 +1,11 @@
 <div align="center">
 
+<img src="docs/brand/vortex-tile.svg" width="120" alt="GoWind Admin｜风行" />
+
 # GoWind Admin｜风行
 
-**开箱即用的企业级前后端一体中后台脚手架**
-
-> **让中后台开发如风般自由 — GoWind Admin**
-
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
@@ -67,8 +65,8 @@
 | 等保技术要求 | 落地实现 |
 |------------|---------|
 | **安全审计** | 六类审计日志全覆盖：登录 / 操作 / API / 数据访问 / 权限变更 / 策略评估，记录 IP 归属地与 trace_id。asynq 每日定时归档：库内留存 180 天（`AUDIT_RETENTION_DAYS` 可调），超期数据导出 JSONL 归档文件留痕，库瘦身与日志留存两不误 |
-| **身份鉴别** | 口令复杂度（≥8 位、小写/大写/数字/符号四类取三）、历史口令复用检查（默认近 3 条）、口令有效期（默认 90 天），阈值均支持环境变量调整；TOTP 多因素认证（MFA）；图形验证码；Redis 登录失败限流（IP + 用户名双维度）；可配置登录限制策略 |
-| **访问控制** | 动态 RBAC 权限引擎（Casbin / OPA / Zanzibar 可切换），角色—权限—接口映射存于数据库，权限变更即时热更新生效；菜单/按钮/数据级权限控制；每次鉴权判定落策略评估日志可追溯 |
+| **身份鉴别** | 口令复杂度（≥8 位、小写/大写/数字/符号四类取三）、历史口令复用检查（默认近 3 条）、口令有效期（默认 90 天），阈值经「参数管理」平台参数调整（内置参数启动时播种，环境变量配置已废弃）；TOTP 多因素认证（MFA）；图形验证码；Redis 登录失败限流（IP + 用户名双维度）；可配置登录限制策略 |
+| **访问控制** | 动态 RBAC 权限引擎（Casbin / OPA / Zanzibar 可切换），角色—权限—接口映射存于数据库，权限变更即时热更新生效；菜单/按钮级权限控制，角色级行数据权限范围（V1 试点：岗位表）与字段级权限（V1 试点：用户表，黑名单字段自响应裁剪）；每次鉴权判定落策略评估日志可追溯 |
 | **多租户隔离** | ent Privacy 策略编译级数据隔离：读查询自动注入租户过滤，Create 防伪造租户、Update / Delete 注入租户谓词（跨租户变更命中 0 行）；租户请求按 `(path, method)` 经 Api 表 fail-closed 校验（缺权限点即拒绝）；套餐模块白名单与到期只读策略 |
 | **数据保密性** | 登录口令应用层 AES 加密传输、bcrypt 哈希存储；敏感任务配置 AES-256-GCM 静态加密（Ent Hook 透明加解密）；JWT RS256 非对称签名；refresh token 走 HttpOnly Cookie；传输层 TLS 由部署层启用（后端 `server.rest.tls` 配置或 nginx / 负载均衡终止） |
 | **数据备份恢复** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) 定时全量备份（pg_dump，默认保留 30 份自动轮换），支持 Docker 容器 / 本地直连双模式，附恢复操作文档 |
@@ -84,8 +82,8 @@
 
 | 工具 | 版本 |
 |------|------|
-| Go | 1.22+ |
-| Node.js | >= 20.10.0 |
+| Go | 1.26+（以 `backend/go.mod` 为准） |
+| Node.js | 以各前端 `package.json` 的 `engines` 为准（当前约束交集 ≥ 20.19.0） |
 | pnpm | >= 10.0.0 |
 | Docker | 20.0+ |
 
@@ -168,6 +166,8 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 
 ## 功能列表
 
+> 各列表页（业务数据与审计日志）均支持按当前筛选条件分页聚合导出，格式可选 CSV / XLSX（上限 1 万行）。
+
 ### 组织与权限
 
 | 功能 | 说明 |
@@ -175,11 +175,11 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | 用户管理 | 管理和查询用户，支持高级查询和按部门联动用户，用户可禁用/启用、设置/取消主管、重置密码、配置多角色、多部门和上级主管、一键登录指定用户等功能 |
 | 租户管理 | 管理租户，新增租户后自动初始化租户部门、默认角色和管理员。支持配置套餐、禁用/启用、一键登录租户管理员功能 |
 | 套餐与配额管理 | 管理租户订阅套餐及其资源配额（如模块白名单、用量上限），支持套餐与配额项的增删改查 |
-| 角色管理 | 管理角色和角色分组，支持按角色联动用户，设置菜单和数据权限，批量添加和移除员工 |
+| 角色管理 | 管理角色和角色分组，支持按角色联动用户，设置菜单授权、数据权限范围（五档 / 自定义组织单元集）与字段级权限（黑名单字段集），批量添加和移除员工 |
 | 权限管理 | 管理权限分组、菜单、权限点，支持树形列表展示 |
 | 组织管理 | 管理组织，支持树形列表展示 |
-| 职位管理 | 用户职务管理，职务可作为用户的一个标签 |
-| 菜单管理 | 配置系统菜单，操作权限，按钮权限标识等，包括目录、菜单、按钮 |
+| 职位管理 | 用户职务管理，职务可作为用户的一个标签；支持 Excel 导入（客户端模板下载、逐行走既有创建接口、行级错误回报，所属组织列按组织名称精确匹配回填组织单元） |
+| 菜单管理 | 配置系统菜单，操作权限，按钮权限标识等，包括目录、菜单、按钮；支持菜单同步（三端齐备，事务化清空重建或增量合并两种模式，合并模式按全路径匹配原位更新并保留既有菜单 ID 与角色授权） |
 
 ### 系统功能
 
@@ -196,6 +196,8 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | 通知渠道 | 管理通知渠道（EMAIL / SMTP），密码加密存储、列表脱敏展示，支持启用 / 停用与测试发送 |
 | 服务监控 | 只读展示服务运行时指标（CPU 核数、内存、goroutine 数、运行时长等），自动刷新 |
 | 脚本系统 | 脚本级插件系统（Lua / JavaScript，数据库为事实源，管理页增改即时生效）：实体生命周期钩子（before 可否决 / after 异步）、定时任务（asynq 调度）、HTTP 出站（域名白名单 fail-closed）、试运行与执行日志；详见 [docs/script_system.md](./docs/script_system.md) |
+| 参数管理 | 平台全局系统参数的键值管理（区别于业务字典），内置参数启动时播种、禁删可改；服务侧经缓存 accessor 读取，多实例部署下参数变更经 Redis 发布订阅广播失效各实例缓存 |
+| 机器凭证（AK/SK） | 租户级 AccessKey / SecretKey 管理：创建时 Secret 一次性展示，支持启停、删除与密钥轮换重置（轮换后旧 Secret 立即失效）；AK / Secret 可经令牌交换端点换取租户作用域机器 JWT（machine 角色、仅签发 access 令牌），交换端点按 IP + AK 接入尝试限流 |
 | 语言管理 | 管理系统支持的多语言，配置语言名称、语言代码、本地名称、启用与默认状态 |
 
 ### 消息与日志
@@ -212,8 +214,6 @@ cd frontend/admin/vue-vben && pnpm dev:antd
 | 权限日志 | 权限变更日志列表查询，记录权限变更的操作者、目标对象与原因，留存请求快照 |
 | 策略评估日志 | 策略评估日志列表查询，记录每次鉴权判定的结果与评估上下文，支持 trace_id 关联排障 |
 | Redis 缓存监控 | Redis 缓存监控，只读展示 Redis INFO、DBSIZE 与慢日志数据，不执行写操作 |
-
-> 六类审计日志页（登录 / 操作 / API / 数据 / 权限 / 策略评估）均支持按当前筛选条件「导出全部」，分页聚合导出 CSV（上限 1 万行）。
 
 ### 个人中心
 

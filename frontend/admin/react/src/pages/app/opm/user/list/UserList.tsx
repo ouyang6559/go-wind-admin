@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import TableExportButton from '@/components/common/TableExportButton';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, InfoCircleOutlined , SafetyOutlined } from '@ant-design/icons';
@@ -13,6 +14,8 @@ import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import { fetchListUsers, useDeleteUser } from '@/api/hooks/user';
 import { useAdminResetMfa } from '@/api/hooks/mfa';
 import { useAuthStore } from '@/stores';
+import { useUserStore } from '@/stores/user';
+import { parseResourceHiddenFields } from '@/core/access';
 import { getUserStatusMap, getUserStatusOptions } from '../constants';
 import UserDrawer from './UserDrawer';
 
@@ -38,6 +41,10 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
   const [editingUser, setEditingUser] = useState<any>(null);
 
   const statusMap = getUserStatusMap(t);
+
+  // 字段权限：当前用户在 User 资源上被隐藏的字段，命中的列整列不渲染
+  const hiddenFieldEntries = useUserStore((s) => s.hiddenFields);
+  const userHiddenFields = parseResourceHiddenFields(hiddenFieldEntries, 'User');
 
   // 当 tenantId 或 orgUnitId 变化时自动刷新列表
   useEffect(() => {
@@ -68,7 +75,7 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
     onError: (err: Error) => message.error(err.message || t('resetMfaFailed')),
   });
 
-  const columns: ProColumns<any>[] = [
+  const columns: ProColumns<any>[] = ([
     {
       title: t('username'),
       dataIndex: 'username',
@@ -233,7 +240,10 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
         </Popconfirm>,
       ],
     },
-  ];
+  ] satisfies ProColumns<any>[]).filter((col) => {
+    const key = typeof col.dataIndex === 'string' ? col.dataIndex : undefined;
+    return !key || !userHiddenFields.has(key);
+  });
 
   return (
     <>
@@ -295,6 +305,7 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
             showQuickJumper: true,
           }}
           toolBarRender={() => [
+            <TableExportButton key="export" fetcher={fetchListUsers} columns={columns} filename="users" />,
             <Button
               key="create"
               type="primary"

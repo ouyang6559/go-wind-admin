@@ -8,6 +8,18 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 )
 
+// The AccessKeyFunc type is an adapter to allow the use of ordinary
+// function as AccessKey mutator.
+type AccessKeyFunc func(context.Context, *ent.AccessKeyMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AccessKeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AccessKeyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccessKeyMutation", m)
+}
+
 // The ApiFunc type is an adapter to allow the use of ordinary
 // function as Api mutator.
 type ApiFunc func(context.Context, *ent.APIMutation) (ent.Value, error)
@@ -404,6 +416,18 @@ func (f RoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoleMutation", m)
 }
 
+// The RoleFieldPermissionFunc type is an adapter to allow the use of ordinary
+// function as RoleFieldPermission mutator.
+type RoleFieldPermissionFunc func(context.Context, *ent.RoleFieldPermissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RoleFieldPermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RoleFieldPermissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoleFieldPermissionMutation", m)
+}
+
 // The RoleMetadataFunc type is an adapter to allow the use of ordinary
 // function as RoleMetadata mutator.
 type RoleMetadataFunc func(context.Context, *ent.RoleMetadataMutation) (ent.Value, error)
@@ -414,6 +438,18 @@ func (f RoleMetadataFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoleMetadataMutation", m)
+}
+
+// The RoleOrgUnitFunc type is an adapter to allow the use of ordinary
+// function as RoleOrgUnit mutator.
+type RoleOrgUnitFunc func(context.Context, *ent.RoleOrgUnitMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RoleOrgUnitFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RoleOrgUnitMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoleOrgUnitMutation", m)
 }
 
 // The RolePermissionFunc type is an adapter to allow the use of ordinary
@@ -450,6 +486,18 @@ func (f ScriptLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScriptLogMutation", m)
+}
+
+// The SysConfigFunc type is an adapter to allow the use of ordinary
+// function as SysConfig mutator.
+type SysConfigFunc func(context.Context, *ent.SysConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SysConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SysConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SysConfigMutation", m)
 }
 
 // The TaskFunc type is an adapter to allow the use of ordinary

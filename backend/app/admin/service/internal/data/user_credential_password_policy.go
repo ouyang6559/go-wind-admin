@@ -20,8 +20,9 @@ const passwordHistoryKey = "password_history"
 
 // checkPasswordHistory 等保口令策略：新明文口令不得与历史哈希列表中任一条
 // 相同（bcrypt 比对）。历史列表为空/解析失败时跳过（不阻塞主流程）。
-func (r *UserCredentialRepo) checkPasswordHistory(_ context.Context, entity *ent.UserCredential, newPlain string) error {
-	limit := passwordPolicy.HistoryCount()
+// 保留条数自 sys_config 平台参数读取（参数管理页可调，<=0 关闭）。
+func (r *UserCredentialRepo) checkPasswordHistory(ctx context.Context, entity *ent.UserCredential, newPlain string) error {
+	limit := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount)
 	if limit <= 0 || entity == nil || entity.CredentialType == nil {
 		return nil
 	}

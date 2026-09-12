@@ -180,9 +180,10 @@ func (Position) Indexes() []ent.Index {
 	}
 }
 
-// Policy 追加租户变更防护：go-crud TenantPrivacy 只覆盖 Query/Create，
-// 本规则为 Update/UpdateOne/Delete/DeleteOne 注入 tenant_id 过滤，
-// 防止知道 ID 的跨租户篡改与删除（平台/系统上下文放行）。
+// Policy 组合策略：租户变更防护（TenantMutationGuard）+ 数据范围查询过滤
+// （DataScopeQuery，V1 试点表——本表为唯一同时具备 created_by 与
+// org_unit_id 两列的表，满足数据范围谓词的列前置条件）。
+// 变更侧仅租户防护；数据范围 V1 仅查询侧。
 func (Position) Policy() ent.Policy {
-	return &TenantMutationGuardPolicy{}
+	return &TenantAndDataScopePolicy{}
 }
