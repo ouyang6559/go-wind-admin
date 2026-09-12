@@ -240,7 +240,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	)
 
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
-	accessKeyService := service.NewAccessKeyService(ctx, accessKeyRepo, authenticator)
+	accessKeyService := service.NewAccessKeyService(ctx, accessKeyRepo, authenticator, loginRateLimiter)
 	configService := service.NewConfigService(ctx, configRepo)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════

@@ -20,6 +20,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
 	"go-wind-admin/app/admin/service/internal/data"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	"go-wind-admin/pkg/netutil"
 	"go-wind-admin/pkg/middleware/auth"
 	"github.com/tx7do/go-utils/trans"
 )
@@ -37,17 +38,20 @@ type AccessKeyService struct {
 	log           *bLogger.Helper
 	repo          *data.AccessKeyRepo
 	authenticator *data.Authenticator
+	rateLimiter   *data.LoginRateLimiter
 }
 
 func NewAccessKeyService(
 	ctx *bootstrap.Context,
 	repo *data.AccessKeyRepo,
 	authenticator *data.Authenticator,
+	rateLimiter *data.LoginRateLimiter,
 ) *AccessKeyService {
 	return &AccessKeyService{
 		log:           ctx.NewLoggerHelper("access-key/service/admin-service"),
 		repo:          repo,
 		authenticator: authenticator,
+		rateLimiter:   rateLimiter,
 	}
 }
 
@@ -145,9 +149,18 @@ func (s *AccessKeyService) IssueToken(ctx context.Context, req *accesskeyV1.Issu
 		return nil, adminV1.ErrorBadRequest("access key and secret are required")
 	}
 
+	// 交换端点免鉴权，做按 IP+AK 的尝试限流（防爆破；复用登录限流器语义）
+	clientIP := netutil.ClientIPFromContext(ctx)
+	if locked, lerr := s.rateLimiter.IsLocked(ctx, clientIP, req.GetAccessKey()); lerr == nil && locked {
+		return nil, adminV1.ErrorBadRequest("too many attempts, try again later")
+	}
+
 	entity, err := s.repo.GetByAccessKeyBySystem(ctx, req.GetAccessKey())
 	if err != nil {
 		// 不区分"不存在"与"密钥错误"，避免泄露 AK 是否有效
+		if _, _, _, cerr := s.rateLimiter.CheckAndIncr(ctx, clientIP, req.GetAccessKey()); cerr != nil {
+			s.log.Errorf(ctx, "access key rate limiter incr failed: %s", cerr.Error())
+		}
 		return nil, adminV1.ErrorBadRequest("invalid access key or secret")
 	}
 
@@ -162,8 +175,14 @@ func (s *AccessKeyService) IssueToken(ctx context.Context, req *accesskeyV1.Issu
 	given := hex.EncodeToString(sum[:])
 	if entity.SecretHash == nil ||
 		subtle.ConstantTimeCompare([]byte(given), []byte(*entity.SecretHash)) != 1 {
+		if _, _, _, ierr := s.rateLimiter.CheckAndIncr(ctx, clientIP, req.GetAccessKey()); ierr != nil {
+			s.log.Errorf(ctx, "access key rate limiter incr failed: %s", ierr.Error())
+		}
 		return nil, adminV1.ErrorBadRequest("invalid access key or secret")
 	}
+
+	// 交换成功：清除该 IP+AK 的失败计数
+	s.rateLimiter.Reset(ctx, clientIP, req.GetAccessKey())
 
 	payload := &authenticationV1.UserTokenPayload{
 		UserId:   0, // 机器身份：无对应用户行
