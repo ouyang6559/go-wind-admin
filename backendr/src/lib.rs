@@ -18,6 +18,7 @@ pub mod query;
 pub mod repos;
 pub mod response;
 pub mod routes;
+pub mod scripting;
 pub mod services;
 pub mod state;
 pub mod storage;

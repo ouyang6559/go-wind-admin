@@ -384,16 +384,29 @@ pub async fn script_test_run(
     }
 
     // ---- 执行 ----
-    let (success, error) = match run_script_with_engine(language.as_deref().unwrap_or(""), name.as_deref().unwrap_or(""), source.as_deref().unwrap_or(""), &input) {
-        Ok(()) => (true, None),
-        Err(e) => (false, Some(e)),
+    let (success, error, ctx_data) = match crate::scripting::run(
+        language.as_deref().unwrap_or(""),
+        name.as_deref().unwrap_or(""),
+        source.as_deref().unwrap_or(""),
+        &input,
+    ) {
+        Ok(data) => (true, None, data),
+        Err(e) => (false, Some(e), HashMap::new()),
     };
     let duration_ms = start.elapsed().as_millis() as i64;
+
+    // context：键→值的 JSON 编码字符串（对齐 Go TestRun 的 json.Marshal），
+    // 使前端解出的 context 每个 value 都是字符串（proto map<string,string>）。
+    let mut context: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+    for (k, v) in ctx_data {
+        let encoded = serde_json::to_string(&v).unwrap_or_else(|_| format!("{v}"));
+        context.insert(k, serde_json::Value::String(encoded));
+    }
 
     Ok(axum::Json(TestRunResponse {
         success,
         error,
-        context: serde_json::Map::new(),
+        context,
         durationMs: duration_ms.to_string(),
     })
     .into_response())
@@ -406,20 +419,6 @@ fn language_engine(lang: &str) -> Option<String> {
         "JAVASCRIPT" | "JS" => Some("javascript".into()),
         _ => None,
     }
-}
-
-/// 脚本执行接线点：目前未内置脚本引擎，返回"引擎未接入"错误；
-/// 接入 mlua（Lua）/ rquickjs（JS）后在此实例化引擎并执行 `source`，
-/// 把脚本写回 ctx 的键值以 JSON 字符串编码进 `context` 响应字段。
-fn run_script_with_engine(
-    language: &str,
-    _name: &str,
-    _source: &str,
-    _input: &HashMap<String, serde_json::Value>,
-) -> Result<(), String> {
-    Err(format!(
-        "script engine is not integrated for language \"{language}\" (see backendr MISSING.md)"
-    ))
 }
 
 /// GET /script/hooks —— Go 端为运行时注册表动态聚合；Rust 端无脚本引擎常驻
