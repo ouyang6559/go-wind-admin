@@ -23,6 +23,7 @@ import {
 import { apiClient } from '#/api/client';
 import { queryClient } from '#/plugins/vue-query';
 import { makeUpdateMask, type PaginationQuery } from '#/transport/rest';
+import { encryptPassword } from '#/utils';
 
 const t = i18n.global.t;
 
@@ -121,12 +122,17 @@ export function useUpdateUser(
   >,
 ) {
   return useMutation({
-    mutationFn: ({ id, values }: { id: number; values: Record<string, any> }) =>
-      apiClient.userService.Update({
+    // proto UpdateUserRequest.password 是顶层字段且要求 AES 密文：
+    // 留在 data/updateMask 里后端读不到，会静默跳过重置密码（200 但密码未变）
+    mutationFn: ({ id, values }: { id: number; values: Record<string, any> }) => {
+      const { password, ...data } = values ?? {};
+      return apiClient.userService.Update({
         id,
-        data: { ...values } as any,
-        updateMask: makeUpdateMask(Object.keys(values ?? {})),
-      }),
+        data: data as any,
+        password: password ? encryptPassword(String(password)) : undefined,
+        updateMask: makeUpdateMask(Object.keys(data)),
+      });
+    },
     ...options,
   });
 }
@@ -158,7 +164,12 @@ export function useEditUserPassword(
   >,
 ) {
   return useMutation({
-    mutationFn: (data) => apiClient.userService.EditUserPassword(data),
+    // 后端 NeedDecrypt 要求 AES 密文传输（与登录同规），明文会被当密文解密导致校验必败
+    mutationFn: (data) =>
+      apiClient.userService.EditUserPassword({
+        ...data,
+        newPassword: data.newPassword ? encryptPassword(data.newPassword) : data.newPassword,
+      }),
     ...options,
   });
 }

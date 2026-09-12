@@ -14,6 +14,7 @@ import {
 } from '@/api/generated/admin/service/v1';
 import { apiClient } from '@/api/client';
 import { makeUpdateMask, queryClient } from '@/core';
+import { encryptPassword } from '@/utils';
 
 /**
  * 获取当前用户
@@ -59,7 +60,12 @@ export function useChangePassword(
   options?: UseMutationOptions<{}, Error, identityservicev1_ChangePasswordRequest>,
 ) {
   return useMutation({
-    mutationFn: (data) => apiClient.userProfileService.ChangePassword(data),
+    // 后端 NeedDecrypt 要求 AES 密文传输（与登录同规），明文会被当密文解密导致校验必败
+    mutationFn: (data) =>
+      apiClient.userProfileService.ChangePassword({
+        oldPassword: encryptPassword(data.oldPassword ?? ''),
+        newPassword: encryptPassword(data.newPassword ?? ''),
+      }),
     ...options,
   });
 }
