@@ -39,6 +39,7 @@ async fn main() -> anyhow::Result<()> {
 
     // 4. Router（带 ConnectInfo，登录链路记录客户端 IP）+ 操作审计中间件
     // 先用 with_state 注入的中介器需要 AppState；Layer 须在 with_state 之前应用于路由。
+    let sse_state = state.clone();
     let app = build_router()
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -53,11 +54,33 @@ async fn main() -> anyhow::Result<()> {
     // 5. 监听
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!(addr = %addr, "listening");
+
+    // 6. SSE 网关独立监听（默认 :7789，配置 off 关闭）；失败不阻断主服务
+    tokio::spawn(async move {
+        if let Err(e) = serve_sse(&sse_state).await {
+            tracing::warn!(error = %e, "sse gateway stopped (main service continues)");
+        }
+    });
+
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
     .await?;
 
+    Ok(())
+}
+
+/// SSE 网关（对齐 Go :7789 `/events`）：未配置（GW_ADMIN_SSE_ADDR=off）时静默跳过，
+/// 与 Go「SSE 未配置时 NewSseServer 返回 nil」一致。
+async fn serve_sse(state: &backendr::state::AppState) -> anyhow::Result<()> {
+    let Some(addr) = state.config.sse_addr.clone() else {
+        tracing::info!("sse gateway disabled (GW_ADMIN_SSE_ADDR=off)");
+        return Ok(());
+    };
+    let app = backendr::sse::build_router().with_state(state.clone());
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    tracing::info!(addr = %addr, "sse gateway listening (/events)");
+    axum::serve(listener, app).await?;
     Ok(())
 }

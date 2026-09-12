@@ -19,6 +19,7 @@ pub mod repos;
 pub mod response;
 pub mod routes;
 pub mod scheduler;
+pub mod sse;
 pub mod scripting;
 pub mod services;
 pub mod state;

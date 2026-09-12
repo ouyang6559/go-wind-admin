@@ -12,8 +12,10 @@
 //! 与 Go 的差异（有意为之，均为环境边界简化）：
 //!   - 无需 asynq 的 Redis 队列，调度项仅在进程内存在（重启丢失，靠启动时 start_all 恢复）；
 //!   - `audit_log_archive` 导出 JSONL 用 PostgreSQL `to_jsonb`（未做 MySQL/SQLite 分支）；
-//!   - `backup` 导出到本地 JSON 文件而非 OSS，`broadcast_message` 仅统计受众并落日志
-//!     （消息队列/逐用户投递表未迁移，见 MISSING.md）。
+//!   - `backup` 导出到本地 JSON 文件而非 OSS；
+//!   - `broadcast_message` 全员 fan-out 与 Go 同语义（分页拉用户 + 幂等落收件记录 +
+//!     逐条 SSE 推送），差异仅在投递由进程内执行而非 asynq 队列（重启丢失未完成的
+//!     fan-out，幂等唯一约束保证重试不重复落库）。
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -43,6 +45,8 @@ pub struct TaskScheduler {
     redis: Option<redis::Client>,
     /// 保留 JWT 密钥以便未来黑名单化；现在吊销仅删会话集合键。
     _jwt_secret: String,
+    /// SSE 推送（broadcast_message 逐条投递用；与 AppState 共享同一 hub）
+    sse: Arc<crate::sse::SseHub>,
     entries: RwLock<HashMap<String, JoinHandle<()>>>,
 }
 
@@ -51,11 +55,13 @@ impl TaskScheduler {
         db: Option<sqlx::AnyPool>,
         redis: Option<redis::Client>,
         jwt_secret: String,
+        sse: Arc<crate::sse::SseHub>,
     ) -> Arc<Self> {
         Arc::new(Self {
             db,
             redis,
             _jwt_secret: jwt_secret,
+            sse,
             entries: RwLock::new(HashMap::new()),
         })
     }
@@ -445,22 +451,107 @@ async fn exec_script_task(self_: &Arc<TaskScheduler>, payload: &Value) -> Result
     }
 }
 
-/// 广播任务（best-effort）：载入消息、统计受众并落日志。
-/// 逐用户投递队列/映射表尚未迁移，见 MISSING.md。
+/// 广播 fan-out 分页大小（对齐 Go broadcastUserPageSize = 100）
+const BROADCAST_USER_PAGE_SIZE: i64 = 100;
+
+/// 广播任务（对齐 Go `executeBroadcast`）：载入消息本体 → 分页拉全量未删除用户 →
+/// 幂等落收件记录（唯一约束 `uq_internal_msg_recipient_message_recipient` + ON CONFLICT
+/// DO NOTHING，重试不重复落库）→ 逐条 SSE 推送（离线/缓冲满即跳过，不阻塞投递）。
 async fn exec_broadcast_message(self_: &Arc<TaskScheduler>, payload: &Value) -> Result<(), String> {
     let db = db(self_)?;
-    let message_id = payload
+    let Some(message_id) = payload
         .get("messageId")
         .and_then(|v| v.as_i64())
-        .or_else(|| payload.get("message_id").and_then(|v| v.as_i64()));
-    let cnt: (i64,) = sqlx::query_as("select count(*) from sys_users where deleted_at is null")
-        .fetch_one(&db)
+        .or_else(|| payload.get("message_id").and_then(|v| v.as_i64()))
+    else {
+        return Err("broadcast: payload messageId is required".into());
+    };
+
+    // 载入消息本体（标题/正文/发送者），消息不存在视为任务数据失效
+    let msg: Option<(Option<String>, Option<String>, Option<i64>)> = sqlx::query_as(
+        "select title, content, created_by from internal_messages where id = $1::int8",
+    )
+    .bind(message_id)
+    .fetch_optional(&db)
+    .await
+    .map_err(|e| format!("broadcast: load message {message_id} failed: {e}"))?;
+    let Some((title, content, created_by)) = msg else {
+        return Err(format!("broadcast: message {message_id} not found"));
+    };
+
+    let mut total: i64 = 0;
+    let mut pushed: i64 = 0;
+    let mut last_id: i64 = 0;
+    loop {
+        let users: Vec<(i64,)> = sqlx::query_as(
+            "select id from sys_users where deleted_at is null and id > $1::int8 order by id asc limit $2::int8",
+        )
+        .bind(last_id)
+        .bind(BROADCAST_USER_PAGE_SIZE)
+        .fetch_all(&db)
         .await
-        .map_err(|e| format!("broadcast: count users failed: {e}"))?;
+        .map_err(|e| format!("broadcast: list users (after id {last_id}) failed: {e}"))?;
+        if users.is_empty() {
+            break;
+        }
+
+        let now = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Nanos, true);
+        // 幂等批量落库：已存在的 (message_id, recipient_user_id) 行静默忽略
+        let mut sql = String::from(
+            "insert into internal_message_recipients \
+             (message_id, recipient_user_id, status, received_at, tenant_id, created_at, updated_at) values ",
+        );
+        let mut binds: Vec<i64> = Vec::with_capacity(users.len());
+        for (i, (uid,)) in users.iter().enumerate() {
+            if i > 0 {
+                sql.push(',');
+            }
+            // $1=message_id、$2=now 固定复用；用户参数自 $3 起逐行递增
+            sql.push_str(&format!(
+                "($1::int8, ${}::int8, 'RECEIVED', $2::timestamptz, 0, $2::timestamptz, $2::timestamptz)",
+                3 + i
+            ));
+            binds.push(*uid);
+        }
+        sql.push_str(" on conflict (message_id, recipient_user_id) do nothing");
+        // query_as 绑定顺序须与字符串中 $N 一致：$1=message_id，$2=now，$3..=用户
+        let mut q = sqlx::query::<sqlx::Any>(&sql).bind(message_id).bind(now.clone());
+        for uid in &binds {
+            q = q.bind(*uid);
+        }
+        q.execute(&db)
+            .await
+            .map_err(|e| format!("broadcast: bulk insert recipients (after id {last_id}) partial fail: {e}"))?;
+
+        // 逐条 SSE 推送（对齐 Go：对构造的 recipients 逐条 publish，无 id 字段）
+        for (uid,) in &users {
+            let ev = crate::sse::NotificationEvent {
+                id: None,
+                message_id,
+                recipient_user_id: *uid,
+                status: "RECEIVED".into(),
+                received_at: Some(now.clone()),
+                title: title.clone(),
+                content: content.clone(),
+                created_by,
+                created_at: Some(now.clone()),
+            };
+            if crate::sse::publish_notification(&self_.sse, &ev) {
+                pushed += 1;
+            }
+        }
+        total += users.len() as i64;
+        last_id = users.last().map(|(uid,)| *uid).unwrap_or(last_id);
+        if (users.len() as i64) < BROADCAST_USER_PAGE_SIZE {
+            break;
+        }
+    }
+
     tracing::info!(
         message_id,
-        audience = cnt.0,
-        "broadcast_message executed (best-effort; per-user delivery queue pending)"
+        audience = total,
+        pushed,
+        "broadcast_message fan-out done"
     );
     Ok(())
 }

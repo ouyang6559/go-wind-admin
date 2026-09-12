@@ -42,6 +42,9 @@ pub struct AppConfig {
     pub max_body_bytes: usize,
     /// 本地磁盘上传目录（file/file_transfer 模块；无 MinIO 时的存储落点）
     pub upload_dir: std::path::PathBuf,
+    /// SSE 网关监听地址（对齐 Go server.yaml `server.sse.addr`，默认 :7789）。
+    /// `off`/空 → 关闭独立网关（对齐 Go「SSE 未配置时 NewSseServer 返回 nil」）。
+    pub sse_addr: Option<String>,
 }
 
 impl AppConfig {
@@ -60,6 +63,10 @@ impl AppConfig {
                 .parse()
                 .unwrap_or(10 * 1024 * 1024),
             upload_dir: std::path::PathBuf::from(env_or("GW_ADMIN_UPLOAD_DIR", "uploads")),
+            sse_addr: match env_or("GW_ADMIN_SSE_ADDR", "0.0.0.0:7789").to_lowercase().as_str() {
+                "off" | "disabled" | "" => None,
+                addr => Some(addr.to_string()),
+            },
         }
     }
 }

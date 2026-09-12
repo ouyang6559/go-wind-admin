@@ -80,6 +80,14 @@ pub struct InternalMessageRepo {
     pub db: AnyPool,
 }
 
+/// send_message 返回：消息 ID + 落库的收件记录（行 ID, 收件人 ID）+ 落库时间戳
+/// （SSE 推送载荷用，避免二次回查）。
+pub struct SentMessage {
+    pub message_id: i64,
+    pub recipients: Vec<(i64, i64)>,
+    pub received_at: String,
+}
+
 impl InternalMessageRepo {
     pub fn new(db: AnyPool) -> Self {
         Self { db }
@@ -266,9 +274,11 @@ impl InternalMessageRepo {
         Ok(res.rows_affected())
     }
 
+    /// send_message 返回：消息 ID + 落库的收件记录（行 ID, 收件人 ID）+ 落库时间戳
+    /// （SSE 推送载荷用，避免二次回查）。
     /// 发送消息（事务）：写消息本体（status=PUBLISHED）+ 按 targets 批量写收件记录
     /// （status=RECEIVED、received_at=now，对齐 Go newMessageRecipient）。
-    /// 返回消息 ID。
+    /// 返回消息 ID 与收件记录行（SSE 推送用）。
     #[allow(clippy::too_many_arguments)]
     pub async fn send_message(
         &self,
@@ -279,7 +289,7 @@ impl InternalMessageRepo {
         sender_id: i64,
         created_by: i64,
         targets: &[i64],
-    ) -> Result<i64, AppError> {
+    ) -> Result<SentMessage, AppError> {
         let mut txn = self.db.begin().await.map_err(|e| AppError::Internal {
             context: "begin send message txn failed".into(),
             source: Some(Box::new(e)),
@@ -308,25 +318,32 @@ impl InternalMessageRepo {
 
         let recipient_sql = "insert into internal_message_recipients \
                              (message_id, recipient_user_id, status, received_at, tenant_id, created_at, updated_at) \
-                             values ($1::int8, $2::int8, 'RECEIVED', $3::timestamptz, 0, $3::timestamptz, $3::timestamptz)";
+                             values ($1::int8, $2::int8, 'RECEIVED', $3::timestamptz, 0, $3::timestamptz, $3::timestamptz) \
+                             returning id";
+        let mut recipients = Vec::with_capacity(targets.len());
         for uid in targets {
-            sqlx::query::<sqlx::Any>(recipient_sql)
+            let rrow: (i64,) = sqlx::query_as::<sqlx::Any, (i64,)>(recipient_sql)
                 .bind(message_id)
                 .bind(uid)
                 .bind(now.clone())
-                .execute(&mut *txn)
+                .fetch_one(&mut *txn)
                 .await
                 .map_err(|e| AppError::Internal {
                     context: "insert message recipient failed".into(),
                     source: Some(Box::new(e)),
                 })?;
+            recipients.push((rrow.0, *uid));
         }
 
         txn.commit().await.map_err(|e| AppError::Internal {
             context: "commit send message txn failed".into(),
             source: Some(Box::new(e)),
         })?;
-        Ok(message_id)
+        Ok(SentMessage {
+            message_id,
+            recipients,
+            received_at: now,
+        })
     }
 
     /// 撤销消息（对齐 Go RevokeMessageWithMessage）：

@@ -331,7 +331,7 @@ pub async fn internal_message_send_message(
         seen
     };
 
-    let message_id = repo
+    let sent = repo
         .send_message(
             body.title.as_deref(),
             &content,
@@ -342,5 +342,25 @@ pub async fn internal_message_send_message(
             &targets,
         )
         .await?;
-    Ok(json_ok(SendMessageResponse { message_id }))
+
+    // SSE 实时推送（尽力而为，对齐 Go sendNotification → publishNotification）：
+    // 离线用户 try_publish 直接跳过，重连后从收件箱补取
+    for (row_id, uid) in &sent.recipients {
+        let ev = crate::sse::NotificationEvent {
+            id: Some(*row_id),
+            message_id: sent.message_id,
+            recipient_user_id: *uid,
+            status: "RECEIVED".into(),
+            received_at: Some(sent.received_at.clone()),
+            title: body.title.clone(),
+            content: Some(content.clone()),
+            created_by: Some(operator.user_id),
+            created_at: Some(sent.received_at.clone()),
+        };
+        crate::sse::publish_notification(&state.sse, &ev);
+    }
+
+    Ok(json_ok(SendMessageResponse {
+        message_id: sent.message_id,
+    }))
 }
