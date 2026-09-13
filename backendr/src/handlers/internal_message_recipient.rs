@@ -14,7 +14,17 @@ use crate::repos::internal_message_recipient::{InternalMessageRecipientRepo, Rec
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
 
-const INBOX_COLUMNS: &[&str] = &["id", "message_id", "status", "received_at", "read_at"];
+const INBOX_COLUMNS: &[&str] = &[
+    "id",
+    "message_id",
+    "recipient_user_id",
+    "status",
+    "received_at",
+    "read_at",
+    // 前端顶栏/收件箱按 created_at 排序（orderBy=["-created_at"]）
+    "created_at",
+    "updated_at",
+];
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -61,7 +71,12 @@ pub async fn internal_message_recipient_list_user_inbox(
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();
     if !lq.filters.is_empty() {
-        where_clause = format!(" and {}", crate::query::compile_where(&lq.filters, &mut bind));
+        // join 了 internal_messages(m)，两表都有 status 列——过滤列统一加 r. 前缀消歧
+        let mut filters = lq.filters.clone();
+        for f in &mut filters {
+            f.column = format!("r.{}", f.column);
+        }
+        where_clause = format!(" and {}", crate::query::compile_where(&filters, &mut bind));
     }
     let mut order_parts = Vec::new();
     for (col, desc) in &lq.paging.order_by {

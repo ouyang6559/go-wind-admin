@@ -348,14 +348,23 @@ impl ListQuery {
 /// 把 Filter 列表编译成 WHERE 片段（不含 WHERE 关键字），并把绑定值追加到 params。
 /// 片段之间为 AND。
 pub fn compile_where(filters: &[Filter], params: &mut Vec<String>) -> String {
+    // 列可能带表别名前缀（handler 侧拼 "t.status" 等）。整段加引号会变成
+    // 字面量列名 "t.status"（postgres 视作一个标识符）→ column does not exist。
+    // 须按 "." 分段引用：t.status -> "t"."status"。
+    let col = |c: &str| {
+        c.split('.')
+            .map(|seg| format!("\"{}\"", seg))
+            .collect::<Vec<_>>()
+            .join(".")
+    };
     let mut parts: Vec<String> = Vec::new();
     for f in filters {
         let clause = match f.op {
             FilterOp::IsNull => {
                 if f.negated {
-                    format!("\"{}\" is not null", f.column)
+                    format!("{} is not null", col(&f.column))
                 } else {
-                    format!("\"{}\" is null", f.column)
+                    format!("{} is null", col(&f.column))
                 }
             }
             FilterOp::In => {
@@ -369,9 +378,9 @@ pub fn compile_where(filters: &[Filter], params: &mut Vec<String>) -> String {
                     .collect::<Vec<_>>()
                     .join(", ");
                 if f.negated {
-                    format!("\"{}\" not in ({placeholders})", f.column)
+                    format!("{} not in ({placeholders})", col(&f.column))
                 } else {
-                    format!("\"{}\" in ({placeholders})", f.column)
+                    format!("{} in ({placeholders})", col(&f.column))
                 }
             }
             FilterOp::Between => {
@@ -379,7 +388,7 @@ pub fn compile_where(filters: &[Filter], params: &mut Vec<String>) -> String {
                 let p1 = format!("${}", params.len());
                 params.push(f.values[1].clone());
                 let p2 = format!("${}", params.len());
-                format!("\"{}\" between {p1} and {p2}", f.column)
+                format!("{} between {p1} and {p2}", col(&f.column))
             }
             FilterOp::Eq | FilterOp::Like | FilterOp::ILike | FilterOp::Gt | FilterOp::Gte
             | FilterOp::Lt | FilterOp::Lte => {
@@ -397,9 +406,9 @@ pub fn compile_where(filters: &[Filter], params: &mut Vec<String>) -> String {
                 let expr = if f.op == FilterOp::ILike {
                     // iexact 的值已 lowercase，列也需 lower 才能命中（postgres ilike 天然不区分大小写，
                     // 这里统一用 ilike 语义；mysql 下 like 不区分大小写亦兼容）
-                    format!("\"{}\" ilike {p}", f.column)
+                    format!("{} ilike {p}", col(&f.column))
                 } else {
-                    format!("\"{}\" {op_sql} {p}", f.column)
+                    format!("{} {op_sql} {p}", col(&f.column))
                 };
                 if f.negated {
                     format!("not ({expr})")

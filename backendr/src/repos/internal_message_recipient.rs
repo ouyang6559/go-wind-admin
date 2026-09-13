@@ -58,8 +58,13 @@ impl InternalMessageRecipientRepo {
                     join internal_messages m on m.id = r.message_id and m.deleted_at is null \
                     where r.recipient_user_id = $1 and r.deleted_at is null and m.type = 'NOTIFICATION'";
         let total_sql = format!("select count(*) {base}{where_clause}");
-        let total = sqlx::query_as::<sqlx::Any, (i64,)>(&total_sql)
-            .bind(user_id)
+        let mut total_q = sqlx::query_as::<sqlx::Any, (i64,)>(&total_sql);
+        total_q = total_q.bind(user_id);
+        // 过滤参数必须同样绑定到 count 语句，否则含 where 绑定时 500
+        for p in params {
+            total_q = total_q.bind(p);
+        }
+        let total = total_q
             .fetch_one(&self.db)
             .await
             .map_err(|e| AppError::Internal {

@@ -2,7 +2,7 @@
 R=${E2E_BASE:-http://127.0.0.1:7666}/admin/v1
 REDIS_CONTAINER=${E2E_REDIS_CONTAINER:-gwa-rust-test-redis}
 KEYHEX=66353164363661373364386130393237
-captcha_ans() { docker exec "$REDIS_CONTAINER" redis-cli GET "gowind:captcha:$1" | tr -d '\r\n'; }
+captcha_ans() { docker exec "$REDIS_CONTAINER" redis-cli ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} --no-auth-warning GET "gowind:captcha:$1" | tr -d '\r\n'; }
 pass=0; fail=0
 chk() { # name, expected_code, actual_code, extra
   if [ "$2" = "$3" ]; then pass=$((pass+1)); echo "PASS $1 [$3] ${4:0:120}"; else fail=$((fail+1)); echo "FAIL $1 expected=$2 got=$3 ${4:0:200}"; fi

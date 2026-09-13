@@ -6,7 +6,7 @@ REDIS_CONTAINER=${E2E_REDIS_CONTAINER:-gwa-rust-test-redis}
 KEYHEX=66353164363661373364386130393237
 pass=0; fail=0
 chk() { if [ "$2" = "$3" ]; then pass=$((pass+1)); echo "PASS $1 [$3] ${4:0:140}"; else fail=$((fail+1)); echo "FAIL $1 expected=$2 got=$3 ${4:0:220}"; fi }
-captcha_ans() { docker exec "$REDIS_CONTAINER" redis-cli GET "gowind:captcha:$1" | tr -d '\r\n'; }
+captcha_ans() { docker exec "$REDIS_CONTAINER" redis-cli ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} --no-auth-warning GET "gowind:captcha:$1" | tr -d '\r\n'; }
 
 # 登录
 CAP=$(curl -s $R/captcha); CID=$(echo "$CAP" | python3 -c "import sys,json;print(json.load(sys.stdin)['captchaId'])")
