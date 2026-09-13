@@ -343,6 +343,24 @@ pub async fn is_jti_blacklisted(state: &AppState, jti: &str) -> bool {
     exists.unwrap_or(false)
 }
 
+/// 机器令牌入 Redis 缓存（AK/SK 令牌交换专用）。
+/// 对齐 Go UserTokenCache.AddAccessToken 的键格式 `at:{ct}:{uid}:{jti}`（ct=0 admin、uid=0 机器身份）；
+/// 失败仅告警不阻断签发（Go 侧为 fail-fast，这里令牌本身可验签，缓存缺失仅影响对齐性）。
+pub async fn cache_machine_token(state: &AppState, jti: &str, token: &str, ttl_secs: i64) {
+    let Some(client) = state.redis.clone() else {
+        return;
+    };
+    let Ok(mut con) = client.get_multiplexed_tokio_connection().await else {
+        tracing::warn!("cache machine token: redis unavailable, skipped");
+        return;
+    };
+    use redis::AsyncCommands;
+    let key = format!("at:0:0:{jti}");
+    if let Err(e) = con.set_ex::<_, _, ()>(key, token.to_string(), ttl_secs.max(1) as u64).await {
+        tracing::warn!(error = %e, "cache machine token failed (best-effort)");
+    }
+}
+
 /// 强制下线单个会话：删 SET 成员 + 删元数据 + 黑名单两个 jti。
 pub async fn revoke_session_by_jti(
     state: &AppState,

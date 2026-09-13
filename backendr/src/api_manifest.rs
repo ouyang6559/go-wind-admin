@@ -135,6 +135,20 @@ pub const ENDPOINTS: &[EndpointMeta] = &[
     EndpointMeta { path: "/dict/entries/{id}", method: "PUT", business_module: Some("DICT") },
 
     // ---------- SYSTEM ----------
+    // access_key（OpenAPI 凭证；token 交换免鉴权）
+    EndpointMeta { path: "/access-keys", method: "GET", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/access-keys", method: "POST", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/access-keys/{id}", method: "GET", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/access-keys/{id}", method: "PUT", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/access-keys/{id}", method: "DELETE", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/access-keys/{id}/secret", method: "PUT", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/access-keys/token", method: "POST", business_module: Some("SYSTEM") },
+    // config（系统参数）
+    EndpointMeta { path: "/configs", method: "GET", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/configs", method: "POST", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/configs/{id}", method: "GET", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/configs/{id}", method: "PUT", business_module: Some("SYSTEM") },
+    EndpointMeta { path: "/configs/{id}", method: "DELETE", business_module: Some("SYSTEM") },
     // language
     EndpointMeta { path: "/dict/langs", method: "GET", business_module: Some("SYSTEM") },
     EndpointMeta { path: "/dict/langs", method: "POST", business_module: Some("SYSTEM") },

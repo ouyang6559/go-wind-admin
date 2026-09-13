@@ -1,7 +1,9 @@
 // @generated handlers modules
+pub mod access_key;
 pub mod admin_portal;
 pub mod api;
 pub mod authentication;
+pub mod config;
 pub mod dashboard;
 pub mod dict_entry;
 pub mod dict_type;

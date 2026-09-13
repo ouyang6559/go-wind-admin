@@ -1,9 +1,11 @@
 // @generated
 //! 路由聚合：每个业务模块一个子文件，统一挂载到 /admin/v1 下。
+pub mod access_key;
 pub mod admin_portal;
 pub mod api;
 pub mod api_audit_log;
 pub mod authentication;
+pub mod config;
 pub mod dashboard;
 pub mod data_access_audit_log;
 pub mod dict_entry;
@@ -52,9 +54,11 @@ pub fn build_router() -> Router<AppState> {
 // 每个模块的 Router 携带完整路径（含 /admin/v1），这里仅作聚合。
 fn self_router() -> Router<AppState> {
     let mut r = Router::new();
+    r = r.merge(crate::routes::access_key::build());
     r = r.merge(crate::routes::admin_portal::build());
     r = r.merge(crate::routes::api::build());
     r = r.merge(crate::routes::api_audit_log::build());
+    r = r.merge(crate::routes::config::build());
     r = r.merge(crate::routes::authentication::build());
     r = r.merge(crate::routes::dashboard::build());
     r = r.merge(crate::routes::data_access_audit_log::build());

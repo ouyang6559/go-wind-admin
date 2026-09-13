@@ -1,10 +1,12 @@
 // @generated
 //! repository 层：数据访问（sqlx AnyPool），handler/service 调用这里。
 
+pub mod access_key;
 pub mod admin_portal;
 pub mod api;
 pub mod api_audit_log;
 pub mod authentication;
+pub mod config;
 pub mod dashboard;
 pub mod data_access_audit_log;
 pub mod dict_entry;
