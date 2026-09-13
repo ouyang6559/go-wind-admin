@@ -8,7 +8,9 @@ ARG APP_VERSION=0.1.0
 WORKDIR /src
 
 # 先只拷贝依赖清单，最大化利用构建缓存
-COPY Cargo.toml Cargo.lock ./
+# build.rs 必须随依赖层一起拷贝：它注入 GOWIND_RUSTC_VERSION（server-monitor 上报），
+# 漏拷会让预构建层与真实构建层产生不同的 rustc-env，导致依赖层缓存失效并回退默认值。
+COPY Cargo.toml Cargo.lock build.rs ./
 
 # 预构建全部依赖（dummy main 仅用于缓存依赖层，随后会被真实源码覆盖）
 RUN mkdir -p src \
@@ -29,11 +31,19 @@ RUN cargo build --release --locked \
 FROM docker.io/debian:bookworm-slim
 
 ARG SERVICE_NAME=backendr
+ARG APP_VERSION=0.1.0
+
+LABEL org.opencontainers.image.title="go-wind-admin backendr" \
+      org.opencontainers.image.description="GoWind Admin API — Rust/axum rewrite" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.source="https://github.com/tx7do/go-wind-admin"
 
 # 证书与时区（TZ 与后端容器约定保持一致）
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
+# 运行时镜像自带 bash；compose healthcheck 以 bash 执行（dash 无 /dev/tcp）
+SHELL ["/bin/bash", "-c"]
 
 ENV TZ=Asia/Shanghai
 

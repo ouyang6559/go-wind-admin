@@ -14,6 +14,15 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=*Abcd123456
       - POSTGRES_DB=gwa
+    volumes:
+      # 具名持久卷：down 重建容器不丢库（backendr 无迁移，schema/种子数据由 Go 后端一次性播种）
+      - postgres_data:/bitnami/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gwa -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     ulimits:
       nofile:
         soft: 65535
@@ -32,6 +41,14 @@ services:
       - REDIS_AOF_ENABLED=no
       - REDIS_IO_THREADS_DO_READS=yes
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
+    volumes:
+      - redis_data:/bitnami/redis/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   backendr:
     image: go-wind-admin/backendr
@@ -43,8 +60,12 @@ services:
       - "7666:7666"
       - "7789:7789"
     depends_on:
-      - postgres
-      - redis
+      # backendr 的 DB 连接是启动时一次性 best-effort（失败仅告警、不重连），
+      # 必须等 postgres/redis 通过健康检查后再启动，否则会带着空连接池运行
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - TZ=Asia/Shanghai
       - GW_ADMIN_ENV=prod
@@ -65,6 +86,14 @@ services:
     volumes:
       - uploads:/app/uploads
       - data:/app/data
+    healthcheck:
+      # 无独立 /healthz；用免鉴权 GET /admin/v1/captcha 做全链路探活（HTTP + Redis）。
+      # /dev/tcp 是 bash 特性，dash 不支持 —— test 命令显式走 bash
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/7666 && printf 'GET /admin/v1/captcha HTTP/1.0\\r\\nhost: localhost\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     build:
       context: ./  # 指定 Dockerfile 所在的上下文路径
       dockerfile: Dockerfile
@@ -74,3 +103,5 @@ services:
 volumes:
   uploads:
   data:
+  postgres_data:
+  redis_data:
