@@ -94,7 +94,9 @@ pub async fn server_monitor_get(
                 ping_error,
                 max_open_connections: pool.size().max(1) as u32,
                 open_connections: pool.size() as u32,
-                in_use_connections: pool.num_idle() as u32,
+                // 池内无活跃租借计数 API：in_use ≈ size - idle（sqlx 获取中的
+                // 连接不出现在 idle 集合中）。此前误绑 num_idle 与空闲数恒等。
+                in_use_connections: pool.size().saturating_sub(pool.num_idle() as u32),
                 idle_connections: pool.num_idle() as u32,
             }
         }
