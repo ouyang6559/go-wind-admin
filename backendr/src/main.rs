@@ -24,6 +24,14 @@ async fn main() -> anyhow::Result<()> {
     // 3. 配置 + 状态
     let config = AppConfig::from_env();
     let addr = config.http_addr.clone();
+    // HS256 共享密钥仍是代码内置默认值 = 任何人可伪造 token。开发可容忍，
+    // 生产必须通过 GW_ADMIN_JWT_SECRET 注入强随机值（部署清单同注意事项）。
+    if config.jwt_secret == "dev-secret-change-me" {
+        tracing::warn!(
+            "GW_ADMIN_JWT_SECRET is the built-in default 'dev-secret-change-me' — \
+             anyone can forge tokens. Set a strong random secret before production."
+        );
+    }
     let state = AppState::new(config).await;
     tracing::info!(meta = "GoWind Admin backendr (axum) start", addr = %addr);
 

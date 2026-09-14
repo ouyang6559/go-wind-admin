@@ -74,6 +74,9 @@ services:
       - GW_ADMIN_SSE_ADDR=0.0.0.0:7789
       - GW_ADMIN_DATABASE_URL=postgres://postgres:*Abcd123456@postgres:5432/gwa
       - GW_ADMIN_REDIS_URL=redis://:*Abcd123456@redis:6379/0
+      # ⚠️ 默认密钥仅限本地测试：HS256 共享密钥泄露 = 任意伪造 token。
+      # 生产部署必须替换为强随机值（openssl rand -hex 32），服务启动时对
+      # 默认值会打 WARNING 日志。
       - GW_ADMIN_JWT_SECRET=dev-secret-change-me
       - GW_ADMIN_DEFAULT_TENANT_ID=1
       - GW_ADMIN_MAX_BODY_BYTES=10485760
