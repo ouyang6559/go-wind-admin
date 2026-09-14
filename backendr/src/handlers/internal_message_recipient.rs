@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::internal_message_recipient::{InternalMessageRecipientRepo, RecipientRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -66,7 +67,7 @@ pub async fn internal_message_recipient_list_user_inbox(
     operator: Operator,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, INBOX_COLUMNS)?;
+    let lq = ListQuery::parse(&params, INBOX_COLUMNS, &query::ts_columns_of(INBOX_COLUMNS))?;
     let repo = InternalMessageRecipientRepo::new(crate::handlers::task::db_of(&state)?);
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();

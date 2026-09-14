@@ -12,6 +12,7 @@ use std::net::IpAddr;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::login_policy::{LoginPolicyRepo, LoginPolicyRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -254,7 +255,7 @@ pub async fn login_policy_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, LOGIN_POLICY_COLUMNS)?;
+    let lq = ListQuery::parse(&params, LOGIN_POLICY_COLUMNS, &query::ts_columns_of(LOGIN_POLICY_COLUMNS))?;
     let db = crate::handlers::script::db_of(&state)?;
     let repo = LoginPolicyRepo::new(db);
     let mut where_clause = String::new();

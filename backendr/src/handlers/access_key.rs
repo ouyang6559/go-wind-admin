@@ -15,6 +15,7 @@ use crate::auth::{self, AccessClaims, ACCESS_TOKEN_TTL};
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::access_key::{AccessKeyRepo, AccessKeyRow};
 use crate::repos::login_rate_limiter::LoginRateLimiter;
 use crate::response::{json_empty, json_ok, ListResponse};
@@ -145,7 +146,7 @@ pub async fn access_key_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, ACCESS_KEY_COLUMNS)?;
+    let lq = ListQuery::parse(&params, ACCESS_KEY_COLUMNS, &query::ts_columns_of(ACCESS_KEY_COLUMNS))?;
     let repo = AccessKeyRepo::new(crate::handlers::task::db_of(&state)?);
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();

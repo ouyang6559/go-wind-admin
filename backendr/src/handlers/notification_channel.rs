@@ -73,7 +73,7 @@ pub async fn notification_channel_list(
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
     let service = NotificationChannelService::from_state(&state)?;
-    let lq = ListQuery::parse(&params, &["name"])?;
+    let lq = ListQuery::parse(&params, &["name"], &[])?;
     // 渠道列表过滤仅支持 name contains（对齐 Go 通用分页路径的主要用法）
     let _ = lq.filters;
     let (rows, total) = service.repo.list(lq.paging.offset(), lq.paging.limit()).await?;

@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::script_log::{ScriptLogRepo, ScriptLogRow};
 use crate::response::{json_ok, ListResponse};
 use crate::state::AppState;
@@ -58,7 +59,7 @@ pub async fn script_log_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, LOG_COLUMNS)?;
+    let lq = ListQuery::parse(&params, LOG_COLUMNS, &query::ts_columns_of(LOG_COLUMNS))?;
     let repo = ScriptLogRepo::new(crate::handlers::script::db_of(&state)?);
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();

@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::api::{ApiRepo, ApiRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -177,7 +178,7 @@ pub async fn api_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, API_COLUMNS)?;
+    let lq = ListQuery::parse(&params, API_COLUMNS, &query::ts_columns_of(API_COLUMNS))?;
     let db = crate::handlers::script::db_of(&state)?;
     let repo = ApiRepo::new(db);
     let mut where_clause = String::new();

@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::file::{FileRepo, FileRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -170,7 +171,7 @@ pub async fn file_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, FILE_COLUMNS)?;
+    let lq = ListQuery::parse(&params, FILE_COLUMNS, &query::ts_columns_of(FILE_COLUMNS))?;
     let repo = FileRepo::new(db(&state)?);
 
     let mut where_clause = String::new();

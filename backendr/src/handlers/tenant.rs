@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::tenant::{create_tenant_with_admin, TenantNew, TenantRepo, TenantRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -248,7 +249,7 @@ pub async fn tenant_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, TENANT_COLUMNS)?;
+    let lq = ListQuery::parse(&params, TENANT_COLUMNS, &query::ts_columns_of(TENANT_COLUMNS))?;
     let repo = TenantRepo::new(db(&state)?);
 
     let mut where_clause = String::new();

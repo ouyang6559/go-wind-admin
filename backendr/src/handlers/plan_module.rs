@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::plan_module::{PlanModuleRepo, PlanModuleRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -117,7 +118,7 @@ pub async fn plan_module_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, PLAN_MODULE_COLUMNS)?;
+    let lq = ListQuery::parse(&params, PLAN_MODULE_COLUMNS, &query::ts_columns_of(PLAN_MODULE_COLUMNS))?;
     let repo = PlanModuleRepo::new(crate::handlers::script::db_of(&state)?);
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();

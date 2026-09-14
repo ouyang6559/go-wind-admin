@@ -16,6 +16,7 @@ use std::sync::Arc;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::task::{TaskRepo, TaskRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::scheduler::TaskScheduler;
@@ -159,7 +160,7 @@ pub async fn task_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, TASK_COLUMNS)?;
+    let lq = ListQuery::parse(&params, TASK_COLUMNS, &query::ts_columns_of(TASK_COLUMNS))?;
     let db = db_of(&state)?;
     let repo = TaskRepo::new(db);
     let mut where_clause = String::new();

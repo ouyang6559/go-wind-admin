@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::org_unit::{OrgUnitRepo, OrgUnitRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -287,7 +288,7 @@ pub async fn org_unit_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, ORG_UNIT_COLUMNS)?;
+    let lq = ListQuery::parse(&params, ORG_UNIT_COLUMNS, &query::ts_columns_of(ORG_UNIT_COLUMNS))?;
     let repo = OrgUnitRepo::new(crate::handlers::script::db_of(&state)?);
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();

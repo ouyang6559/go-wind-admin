@@ -290,7 +290,9 @@ fn row_to_json(defs: &[ColDef], row: &sqlx::any::AnyRow) -> Result<Value, AppErr
     Ok(Value::Object(map))
 }
 
-/// 通用 List：白名单过滤列 = 本模块的全部 Str/Num/Bool 列（camel 输入转 snake 校验）
+/// 通用 List：白名单过滤列 = 本模块全部列（含 Ts 时间列——vue 审计页用
+/// created_at__gte/__lte 时间范围过滤，Go 侧 entgo 白名单允许表内全部列，
+/// 此前排除 VT::Ts 属 Rust 独有回归，返回 400 unknown query field）。
 pub async fn audit_list(
     state: &AppState,
     table: &str,
@@ -299,12 +301,9 @@ pub async fn audit_list(
 ) -> Result<(Vec<Value>, u64), AppError> {
     // 审计日志表为追加型（无 deleted_at / 软删列）
     let _ = table;
-    let filterable: Vec<&str> = defs
-        .iter()
-        .filter(|d| matches!(d.ty, VT::Num | VT::Str | VT::Bool))
-        .map(|d| d.name)
-        .collect();
-    let lq = ListQuery::parse(params, &filterable)?;
+    let filterable: Vec<&str> = defs.iter().map(|d| d.name).collect();
+    let ts_columns = crate::query::ts_columns_of(&filterable);
+    let lq = ListQuery::parse(params, &filterable, &ts_columns)?;
 
     let db = state.db.clone().ok_or_else(|| AppError::Internal {
         context: "database not configured".into(),

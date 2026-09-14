@@ -14,6 +14,7 @@ use std::collections::{HashMap, HashSet};
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::permission::{PermissionNew, PermissionRepo, PermissionRow};
 use crate::repos::permission_group::PermissionGroupRepo;
 use crate::response::{json_empty, json_ok, ListResponse};
@@ -166,7 +167,7 @@ pub async fn permission_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, PERMISSION_COLUMNS)?;
+    let lq = ListQuery::parse(&params, PERMISSION_COLUMNS, &query::ts_columns_of(PERMISSION_COLUMNS))?;
     let repo = PermissionRepo::new(db(&state)?);
 
     let mut where_clause = String::new();

@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use crate::error::AppError;
 use crate::middleware::Operator;
 use crate::query::ListQuery;
+use crate::query;
 use crate::repos::permission_group::{PermissionGroupRepo, PermissionGroupRow};
 use crate::response::{json_empty, json_ok, ListResponse};
 use crate::state::AppState;
@@ -183,7 +184,7 @@ pub async fn permission_group_list(
     Query(params): Query<HashMap<String, String>>,
     _operator: Operator,
 ) -> Result<impl IntoResponse, AppError> {
-    let lq = ListQuery::parse(&params, PERMISSION_GROUP_COLUMNS)?;
+    let lq = ListQuery::parse(&params, PERMISSION_GROUP_COLUMNS, &query::ts_columns_of(PERMISSION_GROUP_COLUMNS))?;
     let repo = PermissionGroupRepo::new(crate::handlers::script::db_of(&state)?);
     let mut where_clause = String::new();
     let mut bind: Vec<String> = Vec::new();
