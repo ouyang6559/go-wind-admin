@@ -2,8 +2,38 @@
 
 > 对照基准：`backend/`（Go + Kratos + Ent）proto 定义的全部 HTTP 端点（192 个唯一 `方法+路径`）
 > **外加 Go 侧手工路由（`i_file_transfer_http.pb.go`，Rust 已覆盖）与 SSE 网关（`sse_server.go`，:7789 `/events`）**。
-> 生成日期：2026-09-11；2026-09-13 五次复核（本会话）：**补齐 SSE 网关与广播 fan-out**，全链路实测通过。
+> 生成日期：2026-09-11；2026-09-13 五次复核（补齐 SSE 网关与广播 fan-out）；
+> **2026-09-14 六次复核：修复查询 DSL 语义反转与审计时间过滤 400**（本会话）。
 > 本文档由「Go ↔ Rust 全量路由 diff + handler 实现 Audit」产出。
+
+### 2026-09-14 六次复核（本会话）：查询 DSL fail-closed + 审计时间过滤
+
+TEST_REPORT_20260914「遗留」三条经代码级核对，第二条藏有两个真实缺陷（vue 两端页面在用、
+react/e2e 未覆盖故报告误判无碍），本轮修复：
+
+1. **`type__not` 语义反转**：go-crud 把 `not` 映射为 NEQ（`type <> 'TEMPLATE'`），Rust 旧实现
+   对未知操作符按 exact 兜底 → `type = 'TEMPLATE'`（排除变命中）。vue-element/vue-vben 用户
+   列表/抽屉的角色下拉当前真实发送该键。修复：`src/query.rs` 操作符表与 go-crud
+   `operator_converter.go` operatorMap **逐字对齐**（eq/equal/not/ne/neq/nin/like/ilike/
+   is_not_null/between/regexp/contains/startswith/endswith/exact 全部别名族 + 小写归一），
+   **未知操作符 fail-closed 400**（对齐 Go `unknown query operator`，不实现 date/year，
+   前端三端均未使用）；`exact` 对齐 go-crud 语义为 LIKE 全值；regex/iregex 用 postgres
+   `~`/`~*` 新实现。同时移除自创的 `not_` 前缀语法（go-crud 无此概念，且会误剥 `not_x` 字段名）。
+2. **审计/站内信时间过滤 400**：`audit_logs.rs` 的 filterable 白名单此前排除 `VT::Ts` 列 →
+   `created_at__gte` 报 `unknown query field`（Go 侧 entgo 白名单允许表内全部列，属 Rust 独有
+   回归）；且即使加白名单，`compile_where` 占位符以 TEXT 绑参、缺 `::timestamptz` cast 亦会
+   类型错误。修复：白名单放行 Ts 列 + `compile_where` 对时间戳列（`query::ts_columns_of` 按命名族
+   判定）的比较/IN/BETWEEN 占位符统一 `::timestamptz` cast（26 个 handler 调用点全量接入；
+   `orderBy=["-created_at"]` 同白名单路径一并修通）。
+3. **server-monitor in_use 绑定错**：`in_use_connections` 误绑 `num_idle()`（与空闲数恒等），
+   改为 `size - num_idle`（in_use + idle = open 恒等式已验证）。
+4. **JWT 默认密钥告警**：`GW_ADMIN_JWT_SECRET` 为内置默认 `dev-secret-change-me` 时启动打
+   WARNING（HS256 共享密钥泄露 = 任意伪造 token；compose 内注释同步警示，生产必须替换）。
+
+**验证**：`cargo test`（query.rs 单测 18 项：not 族/别名族/未知操作符 400/时间 cast/regex/别名前缀引号）
++ 新增 `tests/query_dsl_regression.sh` **25/25**（type__not 排除语义、六类审计 created_at 范围过滤
+200 且未来上界 total=0、未知操作符 400×3、regex、in_use+idle=open）；既有回归
+`tests/e2e.sh` 71/71、`tests/access_key_config_smoke.sh` 33/33、`tests/sse_smoke.sh` 15/15 全绿。
 
 ### 2026-09-13 五次复核（本会话）：SSE 网关 + 广播 fan-out 补齐
 
@@ -150,8 +180,8 @@
 | 刷新令牌后的 loginAt | Lua 原子轮换，继承首次登录时间 | ✅ 已对齐：access/refresh 共享同一 jti，刷新时读旧会话 meta 继承 login_at，不再重新计时 |
 | 会话元数据写入时机 | 刷新轮换原子迁移 | ✅ 已对齐：刷新请求解析 IP/UA 写入新会话（X-Forwarded-For/X-Real-IP/对端 + User-Agent），不再记 `-` |
 | MFA 账户名 | Go `uid:{id}`（冒号） | totp-rs otpauth 禁止冒号，用 `uid{id}`；otpauth URL 客户端等价 |
-| JWT 算法 | RS256（密钥对） | HS256（`GW_ADMIN_JWT_SECRET`）。token 不跨后端通用，对前端透明 |
-| 查询过滤 DSL | go-crud 全量（regex/date/year…） | 已实现常用子集（contains/icontains/in/gt/gte/lt/lte/isnull/range/exact），未知操作符按 exact 兜底 |
+| JWT 算法 | RS256（密钥对） | HS256（`GW_ADMIN_JWT_SECRET`）。token 不跨后端通用，对前端透明。2026-09-14 起使用内置默认密钥 `dev-secret-change-me` 启动打 WARNING（生产必须注入强随机值） |
+| 查询过滤 DSL | go-crud 全量（regex/date/year…） | 2026-09-14 起与 operatorMap 别名集逐字对齐（eq/not/ne/nin/like/ilike/is_not_null/between/regexp/contains/startswith/endswith/exact 全族）；**未知操作符 fail-closed 400**（对齐 `unknown query operator`，此前按 exact 兜底曾把 `type__not` 反转成 `type = value`）；regex/iregex 已实现（postgres `~`/`~*`）；date/year 日期部件仍未实现（400，前端未使用）；时间戳列过滤占位符 `::timestamptz` cast |
 | SQL 方言 | Ent 多方言 | 手写 SQL 为 postgres 方言（mysql 需替换 to_char/::cast/ilike） |
 
 ### D. 登录链路闸门状态
