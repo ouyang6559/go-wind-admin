@@ -14,6 +14,9 @@ import { getDefaultErrorMsg } from './utils';
  * @param formatToken 格式化 token 的函数，接受原始 token 字符串，返回格式化后的 token 字符串（如添加 "Bearer " 前缀），如果返回 null 则不设置 Authorization 头
  * @returns 响应拦截器配置对象
  */
+/** 排队等待刷新的超时兜底：刷新请求自身有 10s 客户端超时，此值仅防异常挂起 */
+const REFRESH_QUEUE_TIMEOUT_MS = 30_000;
+
 export const authenticateResponseInterceptor = ({
   client,
   doReAuthenticate,
@@ -74,10 +77,16 @@ export const authenticateResponseInterceptor = ({
         });
       }
 
-      // 如果正在刷新 token，则将请求加入队列，等待刷新完成
+      // 如果正在刷新 token，则将请求加入队列，等待刷新完成。
+      // 防挂死兜底（历史故障：队列无超时无 reject，刷新链路一旦挂起，
+      // 全部数据页渐进进入永久 loading，只能重登恢复）：
+      // 排队重试带 __isRetryRequest——重试再 401 不再入刷，防循环；
+      // 排队条目 30s 超时摘除并拒绝——刷新链路异常挂起时请求快速失败。
       if (client.isRefreshing) {
+        config.__isRetryRequest = true;
         return new Promise((resolve, reject) => {
-          client.refreshTokenQueue.push((newToken: string) => {
+          const callback = (newToken: string) => {
+            clearTimeout(timer);
             // 刷新失败时队列会以空串唤醒：此时重发注定再吃 401，
             // 直接以已处理的认证错误拒绝，交由调用方与 doReAuthenticate 收尾
             if (!newToken) {
@@ -90,7 +99,16 @@ export const authenticateResponseInterceptor = ({
             }
             config.headers.Authorization = formatToken(newToken);
             resolve(client.request(config.url, { ...config }));
-          });
+          };
+          const timer = setTimeout(() => {
+            client.refreshTokenQueue = client.refreshTokenQueue.filter((cb) => cb !== callback);
+            reject(
+              Object.assign(new Error('Authentication refresh wait timeout'), {
+                __handledByAuthInterceptor: true,
+              }),
+            );
+          }, REFRESH_QUEUE_TIMEOUT_MS);
+          client.refreshTokenQueue.push(callback);
         });
       }
 
