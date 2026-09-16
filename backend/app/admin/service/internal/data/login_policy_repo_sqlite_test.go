@@ -230,6 +230,11 @@ func TestLoginPolicyRepoSqlite_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应统计全部 2 条")
 	require.Len(t, all.Items, 2, "无过滤时应返回 2 行")
+	for _, item := range all.Items {
+		// 列表读视图：type/method 经回填如实呈现写入值。
+		require.Equal(t, authenticationV1.LoginPolicy_BLACKLIST, item.GetType(), "列表读视图应回填 type")
+		require.Equal(t, authenticationV1.LoginPolicy_IP, item.GetMethod(), "列表读视图应回填 method")
+	}
 
 	// contains 过滤：仅命中 value 含 10.0. 的那一行
 	filtered, err := repo.List(ctx, &paginationV1.PagingRequest{

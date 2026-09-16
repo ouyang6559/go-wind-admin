@@ -77,6 +77,8 @@ func TestOrgUnitRepoSqlite_Create(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("ORG_SQLITE_%d", 1001), *rows[0].Code, "code 应按 Create 载荷落库")
 	require.NotNil(t, rows[0].Status, "status 枚举应经转换器落库")
 	require.Equal(t, orgunit.StatusOn, *rows[0].Status, "proto OrgUnit_ON 应映射为 ent StatusOn")
+	require.NotNil(t, rows[0].Type, "type 枚举应经转换器落库")
+	require.Equal(t, orgunit.TypeCompany, *rows[0].Type, "proto OrgUnit_COMPANY 应映射为 ent TypeCompany")
 	// 根节点物化路径应为 "/<ID>/" 形式（各根前缀互不相同）
 	require.NotNil(t, rows[0].Path, "Create 后置的树路径计算应写入 path")
 	require.Equal(t, fmt.Sprintf("/%d/", rows[0].ID), *rows[0].Path, "根节点物化路径应为 /<ID>/")
@@ -106,6 +108,11 @@ func TestOrgUnitRepoSqlite_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应统计全部 2 条")
 	require.Len(t, all.Items, 2, "无过滤时应返回 2 条根节点")
+	for _, item := range all.Items {
+		// 列表读视图：status/type 未显式指定、按列默认（ON/DEPARTMENT）落库并经回填如实呈现。
+		require.Equal(t, identityV1.OrgUnit_ON, item.GetStatus(), "列表读视图应回填列默认 status")
+		require.Equal(t, identityV1.OrgUnit_DEPARTMENT, item.GetType(), "列表读视图应回填列默认 type")
+	}
 
 	// contains 过滤：仅命中名称含 MARKERALPHA 的那条
 	filtered, err := repo.List(ctx, &paginationV1.PagingRequest{
@@ -126,8 +133,10 @@ func TestOrgUnitRepoSqlite_Get(t *testing.T) {
 
 	require.NoError(t, repo.Create(ctx, &identityV1.CreateOrgUnitRequest{
 		Data: &identityV1.OrgUnit{
-			Name: trans.Ptr("sqlite查询单元"),
-			Code: trans.Ptr(fmt.Sprintf("ORG_SQLITE_%d", 3001)),
+			Name:   trans.Ptr("sqlite查询单元"),
+			Code:   trans.Ptr(fmt.Sprintf("ORG_SQLITE_%d", 3001)),
+			Status: identityV1.OrgUnit_ON.Enum(),
+			Type:   identityV1.OrgUnit_TEAM.Enum(),
 		},
 	}))
 
@@ -142,6 +151,9 @@ func TestOrgUnitRepoSqlite_Get(t *testing.T) {
 	})
 	require.NoError(t, err, "按主键查询已存在记录应命中")
 	require.Equal(t, "sqlite查询单元", gotByID.GetName(), "命中记录的 name 应与写入一致")
+	// 读视图：status/type 均应经回填如实呈现写入值（type 为非默认值，证明真实往返）。
+	require.Equal(t, identityV1.OrgUnit_ON, gotByID.GetStatus(), "读视图应回填 status")
+	require.Equal(t, identityV1.OrgUnit_TEAM, gotByID.GetType(), "读视图应回填 type")
 
 	// 未命中：不存在的主键
 	_, err = repo.Get(ctx, &identityV1.GetOrgUnitRequest{

@@ -137,6 +137,10 @@ func TestUserCredentialRepoSqlite_CreateAndGet(t *testing.T) {
 	require.Equal(t, createdID, byId.GetId(), "按标识符命中行的 id 应与主键一致")
 	require.Equal(t, authenticationV1.UserCredential_USERNAME, byId.GetIdentityType(),
 		"按标识符命中行的 identity_type 应经 converter 还原")
+	require.Equal(t, authenticationV1.UserCredential_API_KEY, byId.GetCredentialType(),
+		"按标识符命中行的 credential_type 应经 converter 还原")
+	require.Equal(t, authenticationV1.UserCredential_ENABLED, byId.GetStatus(),
+		"按标识符命中行的 status 应经 converter 还原")
 
 	// GetByIdentifier：未命中
 	_, err = repo.GetByIdentifier(ctx, &authenticationV1.GetUserCredentialByIdentifierRequest{

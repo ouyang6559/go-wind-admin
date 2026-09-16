@@ -127,6 +127,8 @@ func (r *UserCredentialRepo) List(ctx context.Context, req *paginationV1.PagingR
 		return &authenticationV1.ListUserCredentialResponse{Total: 0, Items: nil}, nil
 	}
 
+	r.queryEnumsAndBackfill(ctx, ret.Items)
+
 	return &authenticationV1.ListUserCredentialResponse{
 		Total: ret.Total,
 		Items: ret.Items,
@@ -343,6 +345,8 @@ func (r *UserCredentialRepo) Get(ctx context.Context, req *authenticationV1.GetU
 		return nil, err
 	}
 
+	r.queryEnumsAndBackfill(ctx, []*authenticationV1.UserCredential{dto})
+
 	return dto, err
 }
 
@@ -386,7 +390,70 @@ func (r *UserCredentialRepo) GetByIdentifier(ctx context.Context, req *authentic
 		return nil, authenticationV1.ErrorInternalServerError("query data failed")
 	}
 
-	return r.mapper.ToDTO(entity), nil
+	dto := r.mapper.ToDTO(entity)
+	r.backfillEnumsFrom([]*authenticationV1.UserCredential{dto}, []*ent.UserCredential{entity})
+	return dto, nil
+}
+
+// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 status/identity_type/
+// credential_type 字段。
+//
+// 实体侧三者均为带列默认值的可空指针枚举，DTO 侧均为可选指针字段——
+// mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，读视图因此
+// 恒呈零值。经仓内既有 converter（实体枚举名 → proto 枚举值）统一回填
+// （对齐 PositionRepo 的同型修复范式）；credential（哈希值）列不在此列。
+func (r *UserCredentialRepo) queryEnumsAndBackfill(ctx context.Context, items []*authenticationV1.UserCredential) {
+	if len(items) == 0 {
+		return
+	}
+	entities, err := r.entClient.Client().UserCredential.Query().
+		Select(usercredential.FieldID, usercredential.FieldStatus, usercredential.FieldIdentityType, usercredential.FieldCredentialType).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query user credential enum columns failed: %s", err.Error())
+		return
+	}
+	r.backfillEnumsFrom(items, entities)
+}
+
+func (r *UserCredentialRepo) backfillEnumsFrom(items []*authenticationV1.UserCredential, entities []*ent.UserCredential) {
+	if len(items) == 0 || len(entities) == 0 {
+		return
+	}
+	statuses := make(map[uint32]usercredential.Status, len(entities))
+	identityTypes := make(map[uint32]usercredential.IdentityType, len(entities))
+	credentialTypes := make(map[uint32]usercredential.CredentialType, len(entities))
+	for _, e := range entities {
+		if e.Status != nil {
+			statuses[e.ID] = *e.Status
+		}
+		if e.IdentityType != nil {
+			identityTypes[e.ID] = *e.IdentityType
+		}
+		if e.CredentialType != nil {
+			credentialTypes[e.ID] = *e.CredentialType
+		}
+	}
+	for _, it := range items {
+		if s, ok := statuses[it.GetId()]; ok {
+			sv := s
+			if p := r.statusConverter.ToDTO(&sv); p != nil {
+				it.Status = p
+			}
+		}
+		if i, ok := identityTypes[it.GetId()]; ok {
+			iv := i
+			if p := r.identityTypeConverter.ToDTO(&iv); p != nil {
+				it.IdentityType = p
+			}
+		}
+		if c, ok := credentialTypes[it.GetId()]; ok {
+			cv := c
+			if p := r.credentialTypeConverter.ToDTO(&cv); p != nil {
+				it.CredentialType = p
+			}
+		}
+	}
 }
 
 // dummyPasswordHash 是一个合法的 bcrypt 哈希，用于在用户不存在时执行一次假校验，

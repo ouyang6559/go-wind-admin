@@ -76,6 +76,8 @@ func TestTenantRepoSqlite_Create(t *testing.T) {
 	require.Equal(t, tenant.StatusOn, *rows[0].Status, "proto Tenant_ON 应映射为 ent StatusOn")
 	require.NotNil(t, rows[0].Type, "type 枚举应经转换器落库")
 	require.Equal(t, tenant.TypeTrial, *rows[0].Type, "proto Tenant_TRIAL 应映射为 ent TypeTrial")
+	require.NotNil(t, rows[0].AuditStatus, "audit_status 枚举应经转换器落库")
+	require.Equal(t, tenant.AuditStatusPending, *rows[0].AuditStatus, "proto Tenant_PENDING 应映射为 ent AuditStatusPending")
 }
 
 // TestTenantRepoSqlite_List 验证 TenantRepo.List 的分页列表与
@@ -101,6 +103,13 @@ func TestTenantRepoSqlite_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应统计全部 2 条")
 	require.Len(t, all.Items, 2, "无过滤时应返回 2 条")
+	for _, item := range all.Items {
+		// 列表读视图：status/type 未显式指定、按列默认（ON/PAID）落库并经回填如实呈现；
+		// audit_status 无列默认、保持 NULL → DTO 恒 nil、getter 呈 UNSPECIFIED（如实体况）。
+		require.Equal(t, identityV1.Tenant_ON, item.GetStatus(), "列表读视图应回填列默认 status")
+		require.Equal(t, identityV1.Tenant_PAID, item.GetType(), "列表读视图应回填列默认 type")
+		require.Equal(t, identityV1.Tenant_TENANT_AUDIT_STATUS_UNSPECIFIED, item.GetAuditStatus(), "未写入且无默认的 audit_status 保持 NULL，读视图呈 UNSPECIFIED")
+	}
 
 	// contains 过滤：仅命中名称含 MARKERALPHA 的那条（LIKE %MARKERALPHA%）
 	filtered, err := repo.List(ctx, &paginationV1.PagingRequest{
@@ -120,8 +129,11 @@ func TestTenantRepoSqlite_Get(t *testing.T) {
 	ctx := enttest.NewSystemViewerCtx(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
-		Name: trans.Ptr("sqlite查询租户"),
-		Code: trans.Ptr(fmt.Sprintf("TENANT_SQLITE_%d", 3001)),
+		Name:        trans.Ptr("sqlite查询租户"),
+		Code:        trans.Ptr(fmt.Sprintf("TENANT_SQLITE_%d", 3001)),
+		Status:      identityV1.Tenant_FREEZE.Enum(),
+		Type:        identityV1.Tenant_INTERNAL.Enum(),
+		AuditStatus: identityV1.Tenant_REJECTED.Enum(),
 	})
 	require.NoError(t, err)
 
@@ -137,6 +149,10 @@ func TestTenantRepoSqlite_Get(t *testing.T) {
 	require.NoError(t, err, "按主键查询已存在记录应命中")
 	require.Equal(t, "sqlite查询租户", gotByID.GetName(), "命中记录的 name 应与写入一致")
 	require.Equal(t, fmt.Sprintf("TENANT_SQLITE_%d", 3001), gotByID.GetCode(), "命中记录的 code 应与写入一致")
+	// 读视图：三个枚举字段（含无列默认的 audit_status）均应经回填如实呈现写入值。
+	require.Equal(t, identityV1.Tenant_FREEZE, gotByID.GetStatus(), "读视图应回填 status")
+	require.Equal(t, identityV1.Tenant_INTERNAL, gotByID.GetType(), "读视图应回填 type")
+	require.Equal(t, identityV1.Tenant_REJECTED, gotByID.GetAuditStatus(), "读视图应回填 audit_status")
 
 	// 命中：按编码
 	gotByCode, err := repo.Get(ctx, &identityV1.GetTenantRequest{
