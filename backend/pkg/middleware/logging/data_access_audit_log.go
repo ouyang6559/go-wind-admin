@@ -50,11 +50,17 @@ func accessTypeFromSQL(sqlText string) auditV1.DataAccessAuditLog_AccessType {
 
 // Handle 在请求处理后将 wrapper 累积进 ctx 的 SQL 事件逐条落库。
 func (d *DataAccessAuditLogMiddleware) Handle(ctx context.Context, htr *http.Transport, middleErr error, latencyMs int64) {
+	acc, _ := audit.FromContext(ctx)
+
 	if d.op.writeDataAccessAuditLogFunc == nil {
+		// 未配置落库函数：仍清空 accumulator，避免后续复用该 ctx 时
+		// 残留事件被重复处理（与配置了落库函数的路径清空语义一致）。
+		if acc != nil {
+			*acc = nil
+		}
 		return
 	}
-	acc, ok := audit.FromContext(ctx)
-	if !ok || acc == nil || len(*acc) == 0 {
+	if acc == nil || len(*acc) == 0 {
 		return
 	}
 

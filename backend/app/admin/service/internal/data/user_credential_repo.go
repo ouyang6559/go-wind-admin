@@ -171,8 +171,9 @@ func (r *UserCredentialRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data 
 		var newCredential string
 		newCredential, err = r.prepareCredential(ctx, r.credentialTypeConverter.ToEntity(data.CredentialType), data.GetCredential())
 		if err != nil {
-			r.log.Errorf(ctx, "prepare new credential failed: %s", err.Error())
-			return authenticationV1.ErrorBadRequest("prepare new credential failed")
+			// 口令策略（复杂度等）错误原样透传，便于前端给出可操作的提示
+			r.log.Warnf(ctx, "prepare new credential rejected: %s", err.Error())
+			return err
 		}
 		data.Credential = trans.Ptr(newCredential)
 	}
@@ -226,8 +227,9 @@ func (r *UserCredentialRepo) Update(ctx context.Context, req *authenticationV1.U
 		var newCredential string
 		newCredential, err = r.prepareCredential(ctx, r.credentialTypeConverter.ToEntity(req.Data.CredentialType), req.Data.GetCredential())
 		if err != nil {
-			r.log.Errorf(ctx, "prepare new credential failed: %s", err.Error())
-			return authenticationV1.ErrorBadRequest("prepare new credential failed")
+			// 口令策略（复杂度等）错误原样透传，便于前端给出可操作的提示
+			r.log.Warnf(ctx, "prepare new credential rejected: %s", err.Error())
+			return err
 		}
 		req.Data.Credential = trans.Ptr(newCredential)
 	}

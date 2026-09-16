@@ -434,6 +434,11 @@ func (e *Engine) Execute(ctx context.Context, script *Script, execCtx *Context) 
 
 // executeLocked 在已持有 execMu 的前提下执行单个脚本。
 func (e *Engine) executeLocked(ctx context.Context, script *Script, execCtx *Context) error {
+	// 超时 ctx 按常规 defer cancel() 释放即可：上游 go-scripts/javascript
+	// v0.0.9 起对带期限 ctx 改用本地计时器（父函数先行 timer.Stop 再
+	// close(done)，迟到中断被构造性排除），立即取消不再制造"双就绪"
+	// 窗口。旧版曾需把取消推迟到预算期限规避监视器迟到毒化（见
+	// TestJSEngine_HookRegister 历史），随 v0.0.9 升版已退役。
 	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.VMTimeout)
 	defer cancel()
 
@@ -645,6 +650,11 @@ func (e *Engine) LoadScriptString(ctx context.Context, scriptName, source string
 	e.execMu.Lock()
 	defer e.execMu.Unlock()
 
+	// 超时 ctx 按常规 defer cancel() 释放即可：上游 go-scripts/javascript
+	// v0.0.9 起对带期限 ctx 改用本地计时器（父函数先行 timer.Stop 再
+	// close(done)，迟到中断被构造性排除），立即取消不再制造"双就绪"
+	// 窗口。旧版曾需把取消推迟到预算期限规避监视器迟到毒化（见
+	// TestJSEngine_HookRegister 历史），随 v0.0.9 升版已退役。
 	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.VMTimeout)
 	defer cancel()
 

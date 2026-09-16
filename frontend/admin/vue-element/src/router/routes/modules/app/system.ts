@@ -6,7 +6,7 @@ const system: RouteRecordRaw[] = [
     path: "/system",
     name: "System",
     component: Layout,
-    redirect: "/system/menus",
+    redirect: "/system/dict",
     meta: {
       order: 2005,
       icon: "lucide:settings",
@@ -133,6 +133,18 @@ const system: RouteRecordRaw[] = [
           authority: ["sys:platform_admin"],
         },
         component: () => import("@/pages/app/system/config/index.vue"),
+      },
+
+      {
+        path: "access-keys",
+        name: "AccessKeyManagement",
+        meta: {
+          order: 13,
+          icon: "lucide:key-round",
+          title: "routes.system.accessKeys",
+          authority: ["sys:platform_admin"],
+        },
+        component: () => import("@/pages/app/system/access_key/index.vue"),
       },
     ],
   },

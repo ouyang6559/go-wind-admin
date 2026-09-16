@@ -28,6 +28,7 @@ type ApiRepo struct {
 	log       *bLogger.Helper
 
 	mapper                  *mapper.CopierMapper[permissionV1.Api, ent.Api]
+	statusConverter         *mapper.EnumTypeConverter[permissionV1.Api_Status, api.Status]
 	scopeConverter          *mapper.EnumTypeConverter[permissionV1.Api_Scope, api.Scope]
 	businessModuleConverter *mapper.EnumTypeConverter[identityV1.Module, api.BusinessModule]
 
@@ -46,6 +47,9 @@ func NewApiRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client
 		log:       ctx.NewLoggerHelper("api/repo/admin-service"),
 		entClient: entClient,
 		mapper:    mapper.NewCopierMapper[permissionV1.Api, ent.Api](),
+		statusConverter: mapper.NewEnumTypeConverter[permissionV1.Api_Status, api.Status](
+			permissionV1.Api_Status_name, permissionV1.Api_Status_value,
+		),
 		scopeConverter: mapper.NewEnumTypeConverter[permissionV1.Api_Scope, api.Scope](
 			permissionV1.Api_Scope_name, permissionV1.Api_Scope_value,
 		),
@@ -72,6 +76,13 @@ func (r *ApiRepo) init() {
 	r.mapper.AppendConverters(copierutil.NewTimeStringConverterPair())
 	r.mapper.AppendConverters(copierutil.NewTimeTimestamppbConverterPair())
 
+	// status 转换器补注册：本仓 status 实体列为可空指针枚举（SwitchStatus
+	// mixin、列默认 ON），但本仓此前从未注册 statusConverter——scope/
+	// business_module 均有注册而 status 独缺。mapper 经转换对（指针↔指针）
+	// 查表转换，缺注册即无转换对、copier 对该字段直接跳过，读视图恒零值
+	//（与 scope 域同表同列形态却长期不可见）。补注册后读路径经 mapper 如实
+	// 流通；写路径维持"未指定即走列默认"现状不变。
+	r.mapper.AppendConverters(r.statusConverter.NewConverterPair())
 	r.mapper.AppendConverters(r.scopeConverter.NewConverterPair())
 	r.mapper.AppendConverters(r.businessModuleConverter.NewConverterPair())
 }

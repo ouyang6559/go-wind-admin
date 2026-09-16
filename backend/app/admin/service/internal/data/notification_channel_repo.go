@@ -93,6 +93,8 @@ func (r *NotificationChannelRepo) List(ctx context.Context, req *paginationV1.Pa
 
 	// 填充 HasPassword 标识：按批量查询密码字段有无
 	r.queryHasPasswordByIDs(ctx, ret.Items)
+	// Type 回填（同 Get：mapper 无法赋入指针字段，见 Get 处注释）
+	r.queryTypeByIDs(ctx, ret.Items)
 
 	return &notificationChannelV1.ListNotificationChannelResponse{
 		Total: ret.Total,
@@ -121,6 +123,42 @@ func (r *NotificationChannelRepo) queryHasPasswordByIDs(ctx context.Context, ite
 	}
 }
 
+// queryTypeByIDs 为 DTO 列表回填渠道类型（WEBHOOK/EMAIL）。
+//
+// 枚举转换机制注记：mapper 经 EnumTypeConverter.NewConverterPair 注册的
+// 是**指针↔指针对**（*ent枚举 → *proto枚举）——实体侧可空指针枚举列（如
+// 本仓 SMTPTLS）在 copier 的转换查表里精确命中、读路径本就如实流通。
+// 被丢弃的是**混合形态**：实体侧为值型枚举列（带 Default 且无 Nillable，
+// 即本仓 Type）而 DTO 侧为可选指针字段——值型源与指针对键失配，copier
+// 转而给 DTO 指针分配零值（WEBHOOK 渠道读视图曾恒呈缺省 EMAIL，下游
+// SendTestEmail 的"仅 EMAIL"守卫因此失效）。故只对 Type 做批量回填。
+func (r *NotificationChannelRepo) queryTypeByIDs(ctx context.Context, items []*notificationChannelV1.NotificationChannel) {
+	if len(items) == 0 {
+		return
+	}
+	entities, err := r.entClient.Client().NotificationChannel.Query().
+		Select(notificationchannel.FieldID, notificationchannel.FieldType).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query channel types failed: %s", err.Error())
+		return
+	}
+	types := make(map[uint32]notificationchannel.Type, len(entities))
+	for _, e := range entities {
+		if e.Type != "" {
+			types[e.ID] = e.Type
+		}
+	}
+	for _, it := range items {
+		if t, ok := types[it.GetId()]; ok {
+			tv := t
+			if p := r.typeConverter.ToDTO(&tv); p != nil {
+				it.Type = p
+			}
+		}
+	}
+}
+
 func (r *NotificationChannelRepo) IsExist(ctx context.Context, id uint32) (bool, error) {
 	exist, err := r.entClient.Client().NotificationChannel.Query().
 		Where(notificationchannel.IDEQ(id)).
@@ -141,6 +179,16 @@ func (r *NotificationChannelRepo) Get(ctx context.Context, id uint32) (*notifica
 	}
 	dto := r.mapper.ToDTO(entity)
 	dto.HasPassword = trans.Ptr(entity.SMTPPassword != nil)
+	// Type 回填：本仓 Type 为值型枚举列（带 Default、无 Nillable），DTO 侧
+	// 为可选指针字段——mapper 注册的是指针↔指针转换对，值型源与其失配，
+	// copier 给 DTO 指针分配零值（此前 WEBHOOK 渠道读视图恒呈缺省 EMAIL，
+	// 下游 SendTestEmail 的"仅 EMAIL"守卫因此失效）。经仓内既有的
+	// typeConverter（实体枚举名 → proto 枚举值）回填；SMTPTLS 为可空指针
+	// 枚举列、指针对精确命中，读路径无需回填。
+	if entity.Type != "" {
+		t := entity.Type
+		dto.Type = r.typeConverter.ToDTO(&t)
+	}
 	return dto, nil
 }
 
@@ -284,8 +332,10 @@ func (r *NotificationChannelRepo) GetFirstEnabledEmailChannel(ctx context.Contex
 		Username: derefStr(e.SMTPUsername),
 		Password: password,
 		From:     derefStr(e.SMTPFrom),
-		TlsMode:  string(*e.SMTPTLS),
-		Enabled:  true,
+		// SMTPTLS 为可空列：此前 string(*e.SMTPTLS) 裸解引用，NULL 行会 panic，
+		// 对齐同函数族其余字段的 nil 安全取值（derefStrP）。
+		TlsMode: derefStrP(e.SMTPTLS),
+		Enabled: true,
 	}, nil
 }
 

@@ -824,7 +824,6 @@ $chrome-radius: 7px;
 
     &.is-active {
       color: var(--el-color-primary);
-      font-weight: 600;
     }
 
     // 亮/暗模式通用：hover 文字提亮
@@ -949,17 +948,7 @@ $chrome-radius: 7px;
       }
     }
 
-    // Chrome 激活标签底部指示线（亮暗通用，锚定内容区）
-    &--chrome.is-active::after {
-      position: absolute;
-      right: 16px;
-      bottom: 0;
-      left: 16px;
-      height: 2px;
-      content: "";
-      background-color: var(--el-color-primary);
-      border-radius: 2px 2px 0 0;
-    }
+    // Chrome 激活标签不再叠加底部主色指示线（vben 温和配方：形状即指示，design-language.md §4）
   }
 
   // ==================== Chrome 风格特殊元素 ====================
@@ -1210,9 +1199,9 @@ html.dark .tabs-bar {
     color: #8a94a6;
     transition: all 0.2s ease;
 
+    // 选中：正常亮文字 + 中性微底（vben 温和配方，design-language.md §4；chrome 由 chrome-bg 承担底色）
     &.is-active {
-      color: var(--el-color-primary);
-      font-weight: 600;
+      color: #e5eaf3;
       background-color: rgba(255, 255, 255, 0.04);
       border-radius: 4px 4px 0 0;
     }
@@ -1239,14 +1228,14 @@ html.dark .tabs-bar {
     border-radius: 0;
   }
 
-  // Chrome 激活态背景（主色暗阶，与激活文字同色系）
+  // Chrome 激活态背景：中性灰（vben 温和配方，design-language.md §4）
   .tabs-bar__item--chrome.is-active .tabs-bar__chrome-bg__content {
-    background-color: var(--el-color-primary-light-7);
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   .tabs-bar__item--chrome.is-active .tabs-bar__chrome-bg__before,
   .tabs-bar__item--chrome.is-active .tabs-bar__chrome-bg__after {
-    fill: var(--el-color-primary-light-7);
+    fill: rgba(255, 255, 255, 0.1);
   }
 
   .tabs-bar__item--chrome:not(.is-active):hover .tabs-bar__chrome-bg__content {
@@ -1296,6 +1285,15 @@ html.dark .tabs-bar {
   // 固定按钮
   .tabs-bar__pin {
     color: rgba(255, 255, 255, 0.45);
+  }
+
+  // 选中标签的关闭/固定按钮跟随中性文字色（不再用主色）
+  .tabs-bar__item.is-active .tabs-bar__close {
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .tabs-bar__item.is-active .tabs-bar__pin {
+    color: rgba(255, 255, 255, 0.75);
   }
 }
 </style>

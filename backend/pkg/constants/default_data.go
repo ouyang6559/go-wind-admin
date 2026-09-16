@@ -96,12 +96,12 @@ var DefaultPermissions = []*permissionV1.Permission{
 		Status:      trans.Ptr(permissionV1.Permission_ON),
 		MenuIds: []uint32{
 			1, 2, 3, 4, 5, 6,
-			10, 11,
+			10, 11, 12,
 			20, 21, 22, 23, 24,
 			30, 31, 32, 33, 34,
 			40, 41, 42,
-			50, 51, 52, 53, 54, 55,
-			60, 61, 62, 63, 64, 65,
+			50, 51, 52, 53, 54, 55, 56, 57,
+			60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
 		},
 		ApiIds: []uint32{
 			1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -296,9 +296,9 @@ func ComponentToModule(component string) identityV1.Module {
 		return identityV1.Module_TENANT
 	case len(component) >= 15 && component[:15] == "app/permission/":
 		return identityV1.Module_PERMISSION
-	case len(component) >= 9 && component[:9] == "app/log/":
+	case len(component) >= 8 && component[:8] == "app/log/":
 		return identityV1.Module_LOG
-	case len(component) >= 20 && component[:20] == "app/internal_message/":
+	case len(component) >= 21 && component[:21] == "app/internal_message/":
 		return identityV1.Module_INTERNAL_MESSAGE
 	case len(component) >= 9 && component[:9] == "app/file/":
 		return identityV1.Module_FILE
@@ -430,6 +430,21 @@ var DefaultMenus = []*permissionV1.Menu{
 			Icon:      trans.Ptr("lucide:users"),
 			Authority: []string{"sys:platform_admin"},
 			AffixTab:  trans.Ptr(true),
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(12)),
+		ParentId:  trans.Ptr(uint32(10)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("PlanManagement"),
+		Path:      trans.Ptr("plans"),
+		Component: trans.Ptr("app/tenant/plan/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Order:     trans.Ptr(int32(2)),
+			Title:     trans.Ptr("menu.tenant.plan"),
+			Icon:      trans.Ptr("lucide:package"),
+			Authority: []string{"sys:platform_admin"},
 		},
 	},
 
@@ -728,6 +743,36 @@ var DefaultMenus = []*permissionV1.Menu{
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
+	{
+		Id:        trans.Ptr(uint32(56)),
+		ParentId:  trans.Ptr(uint32(50)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("PolicyEvaluationLog"),
+		Path:      trans.Ptr("policy-evaluation-logs"),
+		Component: trans.Ptr("app/log/policy_evaluation_log/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.log.policyEvaluationLog"),
+			Icon:      trans.Ptr("lucide:gavel"),
+			Order:     trans.Ptr(int32(6)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(57)),
+		ParentId:  trans.Ptr(uint32(50)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("RedisCacheMonitor"),
+		Path:      trans.Ptr("redis-cache-monitor"),
+		Component: trans.Ptr("app/log/redis_cache_monitor/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.log.redisCacheMonitor"),
+			Icon:      trans.Ptr("lucide:database"),
+			Order:     trans.Ptr(int32(7)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
 
 	{
 		Id:        trans.Ptr(uint32(60)),
@@ -735,7 +780,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Type:      permissionV1.Menu_CATALOG.Enum(),
 		Name:      trans.Ptr("System"),
 		Path:      trans.Ptr("/system"),
-		Redirect:  trans.Ptr("/system/menus"),
+		Redirect:  trans.Ptr("/system/dict"),
 		Component: trans.Ptr("BasicLayout"),
 		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
 		Meta: &permissionV1.MenuMeta{
@@ -848,6 +893,66 @@ var DefaultMenus = []*permissionV1.Menu{
 			Title:     trans.Ptr("menu.system.config"),
 			Icon:      trans.Ptr("lucide:sliders-horizontal"),
 			Order:     trans.Ptr(int32(8)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(67)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("ScriptManagement"),
+		Path:      trans.Ptr("scripts"),
+		Component: trans.Ptr("app/system/script/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.scripts"),
+			Icon:      trans.Ptr("lucide:file-code-2"),
+			Order:     trans.Ptr(int32(11)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(68)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("NotificationChannelManagement"),
+		Path:      trans.Ptr("notification-channels"),
+		Component: trans.Ptr("app/system/notification_channel/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.notificationChannels"),
+			Icon:      trans.Ptr("lucide:mail"),
+			Order:     trans.Ptr(int32(10)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(69)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("OnlineSessionManagement"),
+		Path:      trans.Ptr("online-sessions"),
+		Component: trans.Ptr("app/system/online_session/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.onlineSessions"),
+			Icon:      trans.Ptr("lucide:monitor"),
+			Order:     trans.Ptr(int32(8)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(71)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("ServerMonitor"),
+		Path:      trans.Ptr("server-monitor"),
+		Component: trans.Ptr("app/system/server_monitor/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.serverMonitor"),
+			Icon:      trans.Ptr("lucide:activity"),
+			Order:     trans.Ptr(int32(9)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},

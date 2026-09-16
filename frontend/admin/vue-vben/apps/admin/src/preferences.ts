@@ -10,5 +10,7 @@ export const overridesPreferences = defineOverridesPreferences({
   app: {
     name: import.meta.env.VITE_APP_TITLE,
     accessMode: import.meta.env.VITE_ROUTER_ACCESS_MODE,
+    // 三端统一默认头像（橘猫，react/ele 同图；覆盖 vben 框架默认的 default-avatar.webp）
+    defaultAvatar: '/default-avatar.png',
   },
 });

@@ -33,7 +33,7 @@
   .el-menu-item,
   .el-sub-menu__title {
     color: var(--menu-text) !important;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .el-menu-item:hover,
@@ -42,13 +42,13 @@
     background-color: var(--menu-hover) !important;
   }
 
+  // 选中：主色实底药丸 + 白字（react antd Menu 基准，design-language.md §4）
   .el-menu-item.is-active {
-    background-color: var(--el-color-primary-light-9) !important;
-    color: var(--el-color-primary) !important;
-    font-weight: 500 !important;
+    background-color: var(--el-color-primary) !important;
+    color: #fff !important;
 
     .el-icon {
-      color: var(--el-color-primary) !important;
+      color: #fff !important;
     }
   }
 }
@@ -63,13 +63,13 @@
     color: var(--el-menu-hover-text-color) !important;
   }
 
+  // 选中：主色实底药丸 + 白字（react antd Menu 基准，design-language.md §4）
   .el-menu-item.is-active {
-    background-color: var(--el-color-primary-light-9) !important;
-    color: var(--el-color-primary) !important;
-    font-weight: 500 !important;
+    background-color: var(--el-color-primary) !important;
+    color: #fff !important;
 
     .el-icon {
-      color: var(--el-color-primary) !important;
+      color: #fff !important;
     }
   }
 }

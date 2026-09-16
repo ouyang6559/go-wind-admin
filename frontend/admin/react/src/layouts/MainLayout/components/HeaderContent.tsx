@@ -89,6 +89,9 @@ export const HeaderContent = ({
   const breadcrumbPreferences = usePreferencesStore((state) => state.preferences.breadcrumb);
   const breadcrumbStyleType = breadcrumbPreferences?.styleType ?? 'normal';
 
+  // 默认头像（与 ele/vben 三端统一，取 preferences.app.defaultAvatar）
+  const defaultAvatar = usePreferencesStore((state) => state.preferences.app.defaultAvatar);
+
   // 计算面包屑
   const breadcrumbItems = useMemo(() => {
     type MatchWithHandle = {
@@ -708,7 +711,7 @@ export const HeaderContent = ({
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <Avatar src={userInfo?.avatar || undefined} icon={<UserOutlined />} size="small" />
+            <Avatar src={userInfo?.avatar || defaultAvatar || undefined} icon={<UserOutlined />} size="small" />
             <span
               className="hidden md:inline"
               style={{

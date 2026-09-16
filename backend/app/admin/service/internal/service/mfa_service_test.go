@@ -7,6 +7,12 @@ import (
 
 	"github.com/pquerna/otp"
 	otpTotp "github.com/pquerna/otp/totp"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/data/ent/usermfafactor"
+	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 )
 
 // TestTotpGenerateAndValidate 验证 StartEnrollMethod/VerifyMFAChallenge 共用的
@@ -136,4 +142,50 @@ func TestTotpQrDataUri(t *testing.T) {
 	if _, err := totpQrDataUri(nil); err == nil {
 		t.Fatalf("totpQrDataUri(nil) should fail")
 	}
+}
+
+// TestMfaMethodToEntity 验证 methodToEntity 的映射：TOTP 映射成功，
+// 其余（含未指定）一律报错。
+func TestMfaMethodToEntity(t *testing.T) {
+	m, err := methodToEntity(authenticationV1.MFAMethod_TOTP)
+	require.NoError(t, err)
+	require.Equal(t, usermfafactor.MethodTotp, m, "TOTP 应映射为实体 TOTP 方法")
+
+	for _, bad := range []authenticationV1.MFAMethod{
+		authenticationV1.MFAMethod_MFA_METHOD_UNSPECIFIED,
+		authenticationV1.MFAMethod(99),
+	} {
+		_, err := methodToEntity(bad)
+		require.Error(t, err, "非 TOTP 方法 %v 应报错", bad)
+	}
+}
+
+// TestMfaIsASCII 验证 isASCII：全 ASCII 非空为真；空串、含非 ASCII 字节为假。
+func TestMfaIsASCII(t *testing.T) {
+	require.True(t, isASCII("plain-ascii-123"))
+	require.True(t, isASCII("a\tb"))
+	require.False(t, isASCII(""))
+	require.False(t, isASCII("caf\xc3\xa9"))
+	require.False(t, isASCII("\x80abc"))
+}
+
+// TestMfaBuildEnrolledProto 验证 buildEnrolledProto 的字段搬运：
+// 元信息逐字段映射为 EnrolledMethod 列表（含时间戳转换），不含 secret。
+func TestMfaBuildEnrolledProto(t *testing.T) {
+	created := time.Date(2026, 9, 1, 8, 0, 0, 0, time.UTC)
+	infos := []data.EnrolledFactorInfo{
+		{ID: 11, Method: authenticationV1.MFAMethod_TOTP, DisplayName: "Authenticator A", Enabled: true, CreatedAt: &created, LastUsedAt: nil},
+		{ID: 12, Method: authenticationV1.MFAMethod_MFA_METHOD_UNSPECIFIED, DisplayName: "", Enabled: false, CreatedAt: nil, LastUsedAt: nil},
+	}
+	out := buildEnrolledProto(infos)
+	require.Len(t, out, 2, "元信息应逐条搬运")
+	require.Equal(t, "11", out[0].GetId())
+	require.Equal(t, authenticationV1.MFAMethod_TOTP, out[0].GetMethod())
+	require.Equal(t, "Authenticator A", out[0].GetDisplay())
+	require.True(t, out[0].GetEnabled())
+	require.Equal(t, timestamppb.New(created), out[0].GetCreatedAt(), "创建时间应转换为时间戳")
+	require.Nil(t, out[0].GetLastUsedAt(), "未使用时间应保持 nil")
+	require.Equal(t, "12", out[1].GetId())
+	require.False(t, out[1].GetEnabled())
+	require.Nil(t, out[1].GetCreatedAt())
 }

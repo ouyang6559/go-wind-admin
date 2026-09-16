@@ -2,6 +2,7 @@ package ent_test
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -44,9 +45,20 @@ func scopeCtx(ctx context.Context, uid, tid uint64, scopes ...viewer.DataScope) 
 
 func openScopeTestClient(t *testing.T) *ent.Client {
 	t.Helper()
-	drv, err := sql.Open(dialect.Postgres, "host=127.0.0.1 port=5432 user=postgres password=*Abcd123456 dbname=gwa_guard_test sslmode=disable")
+	dsn := os.Getenv("GUARD_TEST_PG_DSN")
+	if dsn == "" {
+		dsn = guardTestDSN
+	}
+	drv, err := sql.Open(dialect.Postgres, dsn)
 	if err != nil {
 		t.Fatalf("open postgres: %v", err)
+	}
+	// 连不通（本地无 citus 容器/库未建/端口漂移）时跳过而非失败：
+	// 本文件验证的是编译进 ent 生成代码的数据范围隐私混入，属环境门控的集成测试，
+	// 缺库环境下套件应保持绿。
+	if err := drv.DB().Ping(); err != nil {
+		_ = drv.Close()
+		t.Skipf("guard-test postgres unavailable (set GUARD_TEST_PG_DSN to override): %v", err)
 	}
 	client := ent.NewClient(ent.Driver(drv))
 
