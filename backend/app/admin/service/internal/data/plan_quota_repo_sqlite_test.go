@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
@@ -169,6 +170,74 @@ func TestPlanQuotaRepoSqlite_Get(t *testing.T) {
 		QueryBy: &identityV1.GetPlanQuotaRequest_Id{Id: 9999999},
 	})
 	require.Error(t, err, "不存在的 ID 查询应返回错误")
+}
+
+// TestPlanQuotaRepoSqlite_QuotaTypeReadView 验证全部 3 个配额类型枚举值经
+// converter 落库后，在读路径（Get 按主键 / List）的 DTO 视图如实呈现。
+//
+// 枚举字段读视图机制注记：实体侧 quota_type 为可空指针枚举列
+// （*planquota.QuotaType），DTO 侧为可选指针字段。mapper 的枚举转换对
+//（经 &srcType/&dstType 取址注册）恰为指针↔指针形态的键，指针对字段能被
+// copier 直接转换赋值——与值型实体枚举列（如 position.type、
+// notification_channel.type）读侧被丢弃的情形不同。本测试将该读视图行为钉死。
+// 注：PLAN_QUOTA_TYPE_UNSPECIFIED 为 ent schema 未声明的值，直传会触发
+// ValueType 系校验失败（写路径无零值守卫），故只覆盖 3 个合法值。
+func TestPlanQuotaRepoSqlite_QuotaTypeReadView(t *testing.T) {
+	entClient := enttest.NewEntClientForTest(t)
+	repo := newPlanQuotaRepoSqlite(t, entClient)
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoQuotaType identityV1.PlanQuota_QuotaType
+		wantEnt        planquota.QuotaType
+	}{
+		{identityV1.PlanQuota_USER_LIMIT, planquota.QuotaTypeUserLimit},
+		{identityV1.PlanQuota_STORAGE, planquota.QuotaTypeStorage},
+		{identityV1.PlanQuota_API_CALL, planquota.QuotaTypeApiCall},
+	}
+
+	for _, c := range cases {
+		// 每个用例独立父套餐，List 匹配依赖 PlanId 回填
+		parent, err := entClient.Client().Plan.Create().
+			SetNillableName(trans.Ptr(fmt.Sprintf("sqlite_pq_readview_plan_%d", c.protoQuotaType))).
+			Save(ctx)
+		require.NoError(t, err, "直建父 plan 应成功")
+
+		require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanQuotaRequest{
+			Data: &identityV1.PlanQuota{
+				PlanId:     &parent.ID,
+				QuotaType:  c.protoQuotaType.Enum(),
+				QuotaValue: trans.Ptr(uint64(1)),
+			},
+		}), "配额类型 %v 创建应成功", c.protoQuotaType)
+
+		rows, err := entClient.Client().PlanQuota.Query().
+			Where(planquota.HasPlanWith(plan.IDEQ(parent.ID))).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按父套餐应反查到刚写入的行")
+		require.Equal(t, c.wantEnt, *rows[0].QuotaType, "配额类型 %v 应经转换器如实落库", c.protoQuotaType)
+
+		// 读路径一：Get 按主键命中后，DTO 视图应如实呈现配额类型枚举。
+		got, err := repo.Get(ctx, &identityV1.GetPlanQuotaRequest{
+			QueryBy: &identityV1.GetPlanQuotaRequest_Id{Id: rows[0].ID},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoQuotaType, got.GetQuotaType(), "读视图应如实呈现配额类型 %v", c.protoQuotaType)
+
+		// 读路径二：List 应含该行且 PlanId 回填，DTO 视图如实呈现配额类型枚举。
+		listed, err := repo.List(ctx, &paginationV1.PagingRequest{})
+		require.NoError(t, err)
+		var hit *identityV1.PlanQuota
+		for _, item := range listed.Items {
+			if item.GetPlanId() == parent.ID {
+				hit = item
+				break
+			}
+		}
+		require.NotNil(t, hit, "List 应包含父套餐 %d 下的配额行", parent.ID)
+		require.Equal(t, c.protoQuotaType, hit.GetQuotaType(), "List 读视图应如实呈现配额类型 %v", c.protoQuotaType)
+	}
 }
 
 // TestPlanQuotaRepoSqlite_Update 验证 Update 掩码内字段（quota_value）更新、

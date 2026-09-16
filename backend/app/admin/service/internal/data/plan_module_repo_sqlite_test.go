@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
@@ -200,6 +201,103 @@ func TestPlanModuleRepoSqlite_Get(t *testing.T) {
 		QueryBy: &identityV1.GetPlanModuleRequest_Id{Id: 9999999},
 	})
 	require.Error(t, err, "不存在的 ID 查询应返回错误")
+}
+
+// TestPlanModuleRepoSqlite_ModuleReadView 验证全部 10 个模块枚举值经 converter
+// 落库后，在读路径（Get 按主键 / List）的 DTO 视图如实呈现；
+// proto 零值（MODULE_UNSPECIFIED）经写路径守卫留空，读视图如实呈 nil。
+//
+// 枚举字段读视图机制注记：实体侧 module 为可空指针枚举列（*planmodule.Module），
+// DTO 侧为可选指针字段。mapper 的枚举转换对（经 &srcType/&dstType 取址注册）
+// 恰为指针↔指针形态的键，指针对字段能被 copier 直接转换赋值——与值型实体
+// 枚举列（如 position.type、notification_channel.type）读侧被丢弃的情形不同。
+// 本测试将该读视图行为钉死。
+func TestPlanModuleRepoSqlite_ModuleReadView(t *testing.T) {
+	entClient := enttest.NewEntClientForTest(t)
+	repo := newPlanModuleRepoSqlite(t, entClient)
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoModule identityV1.Module
+		wantEnt     planmodule.Module
+	}{
+		{identityV1.Module_DASHBOARD, planmodule.ModuleDashboard},
+		{identityV1.Module_OPM, planmodule.ModuleOpm},
+		{identityV1.Module_SYSTEM, planmodule.ModuleSystem},
+		{identityV1.Module_DICT, planmodule.ModuleDict},
+		{identityV1.Module_TENANT, planmodule.ModuleTenant},
+		{identityV1.Module_PERMISSION, planmodule.ModulePermission},
+		{identityV1.Module_LOG, planmodule.ModuleLog},
+		{identityV1.Module_INTERNAL_MESSAGE, planmodule.ModuleInternalMessage},
+		{identityV1.Module_FILE, planmodule.ModuleFile},
+		{identityV1.Module_TASK, planmodule.ModuleTask},
+	}
+
+	for _, c := range cases {
+		// 每个用例独立父套餐，List 匹配依赖 PlanId 回填
+		parent, err := entClient.Client().Plan.Create().
+			SetNillableName(trans.Ptr(fmt.Sprintf("sqlite_pm_readview_plan_%d", c.protoModule))).
+			Save(ctx)
+		require.NoError(t, err, "直建父 plan 应成功")
+
+		require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanModuleRequest{
+			Data: &identityV1.PlanModule{
+				PlanId: &parent.ID,
+				Module: c.protoModule.Enum(),
+			},
+		}), "模块 %v 创建应成功", c.protoModule)
+
+		rows, err := entClient.Client().PlanModule.Query().
+			Where(planmodule.HasPlanWith(plan.IDEQ(parent.ID))).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按父套餐应反查到刚写入的行")
+		require.Equal(t, c.wantEnt, *rows[0].Module, "模块 %v 应经转换器如实落库", c.protoModule)
+
+		// 读路径一：Get 按主键命中后，DTO 视图应如实呈现模块枚举。
+		got, err := repo.Get(ctx, &identityV1.GetPlanModuleRequest{
+			QueryBy: &identityV1.GetPlanModuleRequest_Id{Id: rows[0].ID},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoModule, got.GetModule(), "读视图应如实呈现模块 %v", c.protoModule)
+
+		// 读路径二：List 应含该行且 PlanId 回填，DTO 视图如实呈现模块枚举。
+		listed, err := repo.List(ctx, &paginationV1.PagingRequest{})
+		require.NoError(t, err)
+		var hit *identityV1.PlanModule
+		for _, item := range listed.Items {
+			if item.GetPlanId() == parent.ID {
+				hit = item
+				break
+			}
+		}
+		require.NotNil(t, hit, "List 应包含父套餐 %d 下的白名单行", parent.ID)
+		require.Equal(t, c.protoModule, hit.GetModule(), "List 读视图应如实呈现模块 %v", c.protoModule)
+	}
+
+	// proto 零值：写路径守卫（MODULE_UNSPECIFIED 跳过 SetNillableModule）→
+	// 落库为 NULL，读视图如实呈 nil（GetModule() 返回零值 MODULE_UNSPECIFIED）。
+	parent, err := entClient.Client().Plan.Create().
+		SetNillableName(trans.Ptr("sqlite_pm_readview_plan_unspecified")).
+		Save(ctx)
+	require.NoError(t, err)
+	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanModuleRequest{
+		Data: &identityV1.PlanModule{
+			PlanId: &parent.ID,
+			Module: identityV1.Module_MODULE_UNSPECIFIED.Enum(),
+		},
+	}), "MODULE_UNSPECIFIED 创建应经守卫成功落空值")
+	rows, err := entClient.Client().PlanModule.Query().
+		Where(planmodule.HasPlanWith(plan.IDEQ(parent.ID))).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	require.Nil(t, rows[0].Module, "MODULE_UNSPECIFIED 经守卫应落 NULL")
+	got, err := repo.Get(ctx, &identityV1.GetPlanModuleRequest{
+		QueryBy: &identityV1.GetPlanModuleRequest_Id{Id: rows[0].ID},
+	})
+	require.NoError(t, err)
+	require.Equal(t, identityV1.Module_MODULE_UNSPECIFIED, got.GetModule(), "NULL 列读视图应呈零值")
 }
 
 // TestPlanModuleRepoSqlite_Update 验证 Update 掩码内字段（module）更新、

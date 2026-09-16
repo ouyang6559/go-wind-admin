@@ -204,6 +204,13 @@ func TestRoleRepoSqlite_ListAndGet(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应统计全部 2 条")
 	require.Len(t, all.Items, 2, "无过滤时应返回 2 条")
+	// 列表读视图：status/type 为写入值，data_scope 未显式指定、按列默认（ALL）
+	// 落库——三者均经 queryEnumsAndBackfill 如实回显。
+	for _, item := range all.Items {
+		require.Equal(t, permissionV1.Role_ON, item.GetStatus(), "列表读视图应回填 status")
+		require.Equal(t, permissionV1.Role_TENANT, item.GetType(), "列表读视图应回填 type")
+		require.Equal(t, identityV1.DataScope_ALL, item.GetDataScope(), "列表读视图应回填列默认 data_scope")
+	}
 
 	// contains 过滤：仅命中名称含 MARKERALPHA 的那条
 	filtered, err := repo.List(ctx, &paginationV1.PagingRequest{
@@ -222,6 +229,11 @@ func TestRoleRepoSqlite_ListAndGet(t *testing.T) {
 	})
 	require.NoError(t, err, "按主键查询已存在记录应命中")
 	require.Equal(t, "MARKERALPHA 角色", gotByID.GetName(), "命中记录的 name 应与写入一致")
+	// 读视图（Get 按主键）：status/type 为写入值，data_scope 为列默认（ALL），
+	// 均经 queryEnumsAndBackfill 如实回显。
+	require.Equal(t, permissionV1.Role_ON, gotByID.GetStatus(), "读视图应回填 status")
+	require.Equal(t, permissionV1.Role_TENANT, gotByID.GetType(), "读视图应回填 type")
+	require.Equal(t, identityV1.DataScope_ALL, gotByID.GetDataScope(), "读视图应回填列默认 data_scope")
 
 	// 未命中：不存在的主键
 	_, err = repo.Get(ctx, &permissionV1.GetRoleRequest{
@@ -243,6 +255,13 @@ func TestRoleRepoSqlite_ListAndGet(t *testing.T) {
 	byIDs, err := repo.ListRolesByRoleIds(ctx, []uint32{roleAID, roleBID})
 	require.NoError(t, err)
 	require.Len(t, byIDs, 2, "按 ID 列表应返回两条角色")
+	// 读视图（ListXxxByIds 路径）：status/type 为写入值、data_scope 为列默认，
+	// 经 backfillEnumsFrom 如实回显。
+	for _, item := range byIDs {
+		require.Equal(t, permissionV1.Role_ON, item.GetStatus(), "按 ID 列表读视图应回填 status")
+		require.Equal(t, permissionV1.Role_TENANT, item.GetType(), "按 ID 列表读视图应回填 type")
+		require.Equal(t, identityV1.DataScope_ALL, item.GetDataScope(), "按 ID 列表读视图应回填列默认 data_scope")
+	}
 	codes, err := repo.ListRoleCodesByRoleIds(ctx, []uint32{roleAID, roleBID})
 	require.NoError(t, err)
 	require.ElementsMatch(t, []string{
@@ -450,6 +469,11 @@ func TestRoleRepoSqlite_TemplateInstantiation(t *testing.T) {
 	template, err := repo.GetTemplateRole(ctx, constants.TenantAdminRoleCode)
 	require.NoError(t, err, "按模板编码查询已播种模板应命中")
 	require.Equal(t, constants.TenantAdminTemplateRoleCode, template.GetCode(), "命中的应为模板角色本体")
+	// 读视图（GetTemplateRole 路径）：status/type 为写入值、data_scope 为列默认，
+	// 经 queryEnumsAndBackfill 如实回显。
+	require.Equal(t, permissionV1.Role_ON, template.GetStatus(), "读视图应回填 status")
+	require.Equal(t, permissionV1.Role_TEMPLATE, template.GetType(), "读视图应回填 type")
+	require.Equal(t, identityV1.DataScope_ALL, template.GetDataScope(), "读视图应回填列默认 data_scope")
 
 	// 未命中的模板编码应报错
 	_, err = repo.GetTemplateRole(ctx, "not_exists_template")

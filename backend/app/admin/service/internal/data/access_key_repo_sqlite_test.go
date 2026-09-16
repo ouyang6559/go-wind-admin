@@ -109,6 +109,65 @@ func TestAccessKeyRepoSqlite_StatusEnumPairs(t *testing.T) {
 	require.Equal(t, map[int32]int{0: 1, 1: 1}, actualProto, "DTO 侧 status 应与 proto 枚举值集合逐对一致")
 }
 
+// TestAccessKeyRepoSqlite_StatusReadView 验证 ON/OFF 两态凭证经 converter
+// 落库后，在读路径（Get 按主键 / List）的 DTO 视图如实呈现。
+//
+// 枚举字段读视图机制注记：实体侧 status 为可空指针枚举列
+//（*entAccessKey.Status，schema 默认 ON），DTO 侧为可选指针字段。mapper
+// 的枚举转换对（经 &srcType/&dstType 取址注册）恰为指针↔指针形态的键，
+// 指针对字段能被 copier 直接转换赋值——与值型实体枚举列（如
+// position.type、notification_channel.type）读侧被丢弃的情形不同。
+// 本测试将该读视图行为钉死（List 路径与 StatusEnumPairs 的断言互为冗余备份）。
+func TestAccessKeyRepoSqlite_StatusReadView(t *testing.T) {
+	repo := newAccessKeyRepoSqlite(t)
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoStatus accesskeyV1.AccessKey_Status
+		wantEnt     entAccessKey.Status
+		name        string
+	}{
+		{accesskeyV1.AccessKey_ON, entAccessKey.StatusOn, "读视图凭证-启用"},
+		{accesskeyV1.AccessKey_OFF, entAccessKey.StatusOff, "读视图凭证-停用"},
+	}
+
+	createdIDs := make(map[accesskeyV1.AccessKey_Status]uint32, len(cases))
+	for _, c := range cases {
+		created, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},
+			&accesskeyV1.AccessKey{
+				Name:   trans.Ptr(c.name),
+				Status: c.protoStatus.Enum(),
+			},
+			fmt.Sprintf("AKSQLITE-READVIEW-%d", c.protoStatus), "sh-readview")
+		require.NoError(t, err, "状态 %v 创建应成功", c.protoStatus)
+		require.NotNil(t, created.Status, "status 应落库")
+		require.Equal(t, c.wantEnt, *created.Status, "状态 %v 应经转换器如实落库", c.protoStatus)
+		createdIDs[c.protoStatus] = created.ID
+	}
+
+	// 读路径一：Get 按主键命中后，DTO 视图应如实呈现状态枚举。
+	for _, c := range cases {
+		got, err := repo.Get(ctx, &accesskeyV1.GetAccessKeyRequest{
+			QueryBy: &accesskeyV1.GetAccessKeyRequest_Id{Id: createdIDs[c.protoStatus]},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoStatus, got.GetStatus(), "读视图应如实呈现状态 %v", c.protoStatus)
+	}
+
+	// 读路径二：List 的 DTO 视图应如实呈现两态（按 name 标记匹配）。
+	listed, err := repo.List(ctx, &paginationV1.PagingRequest{})
+	require.NoError(t, err)
+	view := map[string]accesskeyV1.AccessKey_Status{}
+	for _, item := range listed.Items {
+		view[item.GetName()] = item.GetStatus()
+	}
+	for _, c := range cases {
+		got, ok := view[c.name]
+		require.True(t, ok, "List 应包含标记行 %s", c.name)
+		require.Equal(t, c.protoStatus, got, "List 读视图应如实呈现状态 %v", c.protoStatus)
+	}
+}
+
 // TestAccessKeyRepoSqlite_GetAndExistsByIdOrAccessKey 验证 Get 按主键/按访问键的
 // 命中与未命中、IsExist 的命中与未命中。
 func TestAccessKeyRepoSqlite_GetAndExistsByIdOrAccessKey(t *testing.T) {

@@ -12,6 +12,8 @@ import (
 	"github.com/tx7do/go-utils/mapper"
 	"github.com/tx7do/go-utils/trans"
 
+	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+
 	configV1 "go-wind-admin/api/gen/go/config/service/v1"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/sysconfig"
@@ -78,6 +80,89 @@ func TestConfigRepoSqlite_AccessorTypedReads(t *testing.T) {
 	require.NoError(t, err, "不声明 value_type 的创建不应触发枚举校验失败")
 	require.Equal(t, "hello", repo.GetConfigString(ctx, "sys.demo.plainString", ""), "默认 STRING 类型应按字符串读出")
 	require.Equal(t, 8, repo.GetConfigInt(ctx, "sys.demo.plainString", 8), "STRING 参数按 int 读应回退默认值")
+}
+
+// TestConfigRepoSqlite_ValueTypeReadView 验证三种参数值类型枚举经 converter
+// 落库后，在读路径（Get 按主键 / List）的 DTO 视图如实呈现；未显式指定
+// value_type 的行经写路径零值守卫走 schema 列默认 STRING 落库，读视图如实
+// 呈现 STRING。同时联动断言读取器（带缓存）不受影响。
+//
+// 枚举字段读视图机制注记：实体侧 value_type 为可空指针枚举列
+//（*sysconfig.ValueType，schema 默认 STRING），DTO 侧为可选指针字段。
+// mapper 的枚举转换对（经 &srcType/&dstType 取址注册）恰为指针↔指针形态
+// 的键，指针对字段能被 copier 直接转换赋值——与值型实体枚举列（如
+// position.type、notification_channel.type）读侧被丢弃的情形不同。
+// 本测试将该读视图行为钉死；缓存读取器（GetConfigXxx）走独立实体查询，
+// 不经 DTO，语义不受读视图行为影响，此处一并钉死。
+func TestConfigRepoSqlite_ValueTypeReadView(t *testing.T) {
+	repo := newConfigRepoSqlite(t)
+	ctx := newConfigRepoCtx()
+
+	cases := []struct {
+		// input 为创建请求显式指定的值类型（nil 表示不显式指定、走列默认）
+		input *configV1.Config_ConfigValueType
+		// expectedRead 为落库后读视图（Get/List）应呈现的值类型——
+		// 显式指定时即所指定值；未指定时为 schema 列默认 STRING 落库后的如实值
+		expectedRead configV1.Config_ConfigValueType
+		wantEnt      sysconfig.ValueType
+		key          string
+		value        string
+	}{
+		{configV1.Config_STRING.Enum(), configV1.Config_STRING, sysconfig.ValueTypeString, "sys.readview.string", "hello"},
+		{configV1.Config_BOOL.Enum(), configV1.Config_BOOL, sysconfig.ValueTypeBool, "sys.readview.bool", "true"},
+		{configV1.Config_INT.Enum(), configV1.Config_INT, sysconfig.ValueTypeInt, "sys.readview.int", "42"},
+		// 未显式指定：写路径零值守卫跳过 Set，ent 落 schema 列默认 STRING，
+		// 读视图如实呈现落库值 STRING（而非输入缺省的 INVALID）
+		{nil, configV1.Config_STRING, sysconfig.ValueTypeString, "sys.readview.default", "x"},
+	}
+
+	createdIDs := make(map[string]uint32, len(cases))
+	for _, c := range cases {
+		data := &configV1.Config{
+			Key:   trans.Ptr(c.key),
+			Value: trans.Ptr(c.value),
+		}
+		if c.input != nil {
+			data.ValueType = c.input
+		}
+		require.NoError(t, repo.Create(ctx, &configV1.CreateConfigRequest{Data: data}),
+			"键 %s 创建应成功", c.key)
+
+		rows, err := repo.entClient.Client().SysConfig.Query().
+			Where(sysconfig.KeyEQ(c.key)).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按键应反查到刚写入的行")
+		require.NotNil(t, rows[0].ValueType, "键 %s 的 value_type 应落库", c.key)
+		require.Equal(t, c.wantEnt, *rows[0].ValueType, "键 %s 的 value_type 应如实落库（含列默认）", c.key)
+		createdIDs[c.key] = rows[0].ID
+	}
+
+	// 读路径一：Get 按主键命中后，DTO 视图应如实呈现落库的值类型枚举。
+	for _, c := range cases {
+		got, err := repo.Get(ctx, &configV1.GetConfigRequest{
+			QueryBy: &configV1.GetConfigRequest_Id{Id: createdIDs[c.key]},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.expectedRead, got.GetValueType(), "键 %s 读视图应如实呈现落库的值类型", c.key)
+	}
+
+	// 读路径二：List 的 DTO 视图应如实呈现各行落库的值类型（按 key 匹配）。
+	listed, err := repo.List(ctx, &paginationV1.PagingRequest{})
+	require.NoError(t, err)
+	view := map[string]configV1.Config_ConfigValueType{}
+	for _, item := range listed.Items {
+		view[item.GetKey()] = item.GetValueType()
+	}
+	for _, c := range cases {
+		got, ok := view[c.key]
+		require.True(t, ok, "List 应包含键 %s", c.key)
+		require.Equal(t, c.expectedRead, got, "键 %s 的 List 读视图应如实呈现落库的值类型", c.key)
+	}
+
+	// 联动断言：读取器（缓存路径）仍按落库声明的类型解析——BOOL 行读回 true。
+	//（读取器走独立实体查询，不经 DTO；此处确认读视图行为与缓存语义互不影响。）
+	require.True(t, repo.GetConfigBool(ctx, "sys.readview.bool", false), "BOOL 参数经读取器应读到 true（缓存语义不受影响）")
 }
 
 // TestConfigRepoSqlite_AccessorCacheInvalidation 验证写路径同步失效：

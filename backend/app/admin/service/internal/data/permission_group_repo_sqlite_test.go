@@ -65,6 +65,10 @@ func TestPermissionGroupRepoSqlite_Create(t *testing.T) {
 	require.Equal(t, "根分组描述", *rows[0].Description, "description 应按请求落库")
 	require.NotNil(t, rows[0].Path, "根节点应有物化路径")
 	require.Equal(t, "/"+strconv.FormatUint(uint64(rows[0].ID), 10)+"/", *rows[0].Path, "根节点物化路径应为 /<自身ID>/ 格式")
+
+	// 创建产物读视图：status 为写入值（ON），经 backfillEnumsFrom 如实回显
+	//（mapper 的枚举转换对无法赋入指针字段，见仓内 queryEnumsAndBackfill 处注释）。
+	require.Equal(t, permissionV1.PermissionGroup_ON, dto.GetStatus(), "创建产物读视图应回填 status")
 }
 
 // TestPermissionGroupRepoSqlite_CreateTreePath 验证父子分组的物化路径：
@@ -145,6 +149,11 @@ func TestPermissionGroupRepoSqlite_ListContainsFilter(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应返回全部 2 行")
 	require.Len(t, all.Items, 2)
+	// 列表读视图：status 未显式指定、按列默认（ON）落库，经 backfillEnumsFrom
+	// 如实回显（树化前完成，全量节点覆盖）。
+	for _, item := range all.Items {
+		require.Equal(t, permissionV1.PermissionGroup_ON, item.GetStatus(), "列表读视图应回填列默认 status")
+	}
 }
 
 // TestPermissionGroupRepoSqlite_Get 验证 Get 命中/未命中。
@@ -167,6 +176,9 @@ func TestPermissionGroupRepoSqlite_Get(t *testing.T) {
 	})
 	require.NoError(t, err, "按存在的 ID 查询应命中")
 	require.Equal(t, createdID, hit.GetId())
+	// 读视图（Get 按主键）：status 未显式指定、按列默认（ON）落库，经
+	// queryEnumsAndBackfill 如实回显。
+	require.Equal(t, permissionV1.PermissionGroup_ON, hit.GetStatus(), "读视图应回填列默认 status")
 
 	_, err = repo.Get(ctx, &permissionV1.GetPermissionGroupRequest{
 		QueryBy: &permissionV1.GetPermissionGroupRequest_Id{Id: 9999999},
@@ -288,6 +300,9 @@ func TestPermissionGroupRepoSqlite_ListByIDs(t *testing.T) {
 	require.Len(t, items, 1, "按 ID 集合应只返回集合内的行")
 	require.Equal(t, groupA.GetId(), items[0].GetId())
 	require.Equal(t, "按ID查-甲", items[0].GetName())
+	// 读视图（ListByIDs 路径）：status 为列默认（ON），经 backfillEnumsFrom
+	// 如实回显。
+	require.Equal(t, permissionV1.PermissionGroup_ON, items[0].GetStatus(), "读视图应回填列默认 status")
 
 	// 空集合：返回空
 	empty, err := repo.ListByIDs(ctx, nil)
@@ -299,4 +314,6 @@ func TestPermissionGroupRepoSqlite_ListByIDs(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, partial, 1, "含不存在 ID 的集合应只返回存在的行")
 	require.Equal(t, groupB.GetId(), partial[0].GetId())
+	// 读视图（ListByIDs 路径）：同上，列默认 status 如实回显。
+	require.Equal(t, permissionV1.PermissionGroup_ON, partial[0].GetStatus(), "读视图应回填列默认 status")
 }

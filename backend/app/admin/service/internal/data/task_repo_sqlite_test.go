@@ -198,6 +198,98 @@ func TestTaskRepoSqlite_Update(t *testing.T) {
 	require.Equal(t, "0 0 0 * * *", *after[0].CronSpec, "掩码外字段 cron_spec 应保持原值")
 }
 
+// TestTaskRepoSqlite_TypeReadView 验证全部 3 个任务类型枚举值经 converter
+// 落库后，在一切返回 Task DTO 的读路径（Create/Update 的回显、Get 按主键、
+// List）的 DTO 视图如实呈现。
+//
+// 枚举字段读视图机制注记：实体侧 type 为可空指针枚举列（*task.Type），
+// DTO 侧为可选指针字段。mapper 的枚举转换对（经 &srcType/&dstType 取址
+// 注册）恰为指针↔指针形态的键，指针对字段能被 copier 直接转换赋值——与
+// 值型实体枚举列（如 position.type、notification_channel.type）读侧被
+// 丢弃的情形不同。type_name 为普通字符串列、无枚举转换参与，不在本测试
+// 范围。本测试将该读视图行为钉死。
+func TestTaskRepoSqlite_TypeReadView(t *testing.T) {
+	entClient := enttest.NewEntClientForTest(t)
+	repo := newTaskRepoSqlite(t, entClient)
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoType taskV1.Task_Type
+		wantEnt   task.Type
+		marker    string
+	}{
+		{taskV1.Task_PERIODIC, task.TypePeriodic, "sqlite_task_readview_periodic"},
+		{taskV1.Task_DELAY, task.TypeDelay, "sqlite_task_readview_delay"},
+		{taskV1.Task_WAIT_RESULT, task.TypeWaitResult, "sqlite_task_readview_wait_result"},
+	}
+
+	for _, c := range cases {
+		// 读路径一：Create 回显的 DTO 应如实呈现类型枚举。
+		created, err := repo.Create(ctx, &taskV1.CreateTaskRequest{
+			Data: &taskV1.Task{
+				Type:     c.protoType.Enum(),
+				TypeName: trans.Ptr(c.marker),
+			},
+		})
+		require.NoError(t, err, "类型 %v 创建应成功", c.protoType)
+		require.Equal(t, c.protoType, created.GetType(), "Create 回显 DTO 应如实呈现类型 %v", c.protoType)
+
+		rows, err := entClient.Client().Task.Query().
+			Where(task.TypeNameEQ(c.marker)).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按 type_name 应反查到刚写入的行")
+		require.Equal(t, c.wantEnt, *rows[0].Type, "类型 %v 应经转换器如实落库", c.protoType)
+
+		// 读路径二：Get 按主键命中后，DTO 视图应如实呈现类型枚举。
+		got, err := repo.Get(ctx, &taskV1.GetTaskRequest{
+			QueryBy: &taskV1.GetTaskRequest_Id{Id: rows[0].ID},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoType, got.GetType(), "读视图应如实呈现类型 %v", c.protoType)
+
+		// 读路径三：List 应含该行（按 type_name 标记匹配），DTO 视图如实呈现类型枚举。
+		listed, err := repo.List(ctx, &paginationV1.PagingRequest{})
+		require.NoError(t, err)
+		var hit *taskV1.Task
+		for _, item := range listed.Items {
+			if item.GetTypeName() == c.marker {
+				hit = item
+				break
+			}
+		}
+		require.NotNil(t, hit, "List 应包含标记行 %s", c.marker)
+		require.Equal(t, c.protoType, hit.GetType(), "List 读视图应如实呈现类型 %v", c.protoType)
+	}
+
+	// 掩码内更新 type 后：实体行、Update 回显 DTO、Get 读视图均应呈现新类型。
+	delayRows, err := entClient.Client().Task.Query().
+		Where(task.TypeNameEQ("sqlite_task_readview_delay")).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, delayRows, 1)
+	updated, err := repo.Update(ctx, &taskV1.UpdateTaskRequest{
+		Id:         delayRows[0].ID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"type"}},
+		Data: &taskV1.Task{
+			Type: taskV1.Task_PERIODIC.Enum(),
+		},
+	})
+	require.NoError(t, err, "掩码内更新 type 应成功")
+	require.Equal(t, taskV1.Task_PERIODIC, updated.GetType(), "Update 回显 DTO 应如实呈现更新后的类型 PERIODIC")
+	afterRows, err := entClient.Client().Task.Query().
+		Where(task.TypeNameEQ("sqlite_task_readview_delay")).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, afterRows, 1)
+	require.Equal(t, task.TypePeriodic, *afterRows[0].Type, "更新后实体行应为 PERIODIC")
+	gotAfter, err := repo.Get(ctx, &taskV1.GetTaskRequest{
+		QueryBy: &taskV1.GetTaskRequest_Id{Id: afterRows[0].ID},
+	})
+	require.NoError(t, err)
+	require.Equal(t, taskV1.Task_PERIODIC, gotAfter.GetType(), "更新后 Get 读视图应呈现 PERIODIC")
+}
+
 // TestTaskRepoSqlite_Delete 验证 Delete 后行数归零。
 func TestTaskRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)

@@ -230,6 +230,107 @@ func TestScriptRepoSqlite_IsNameExist(t *testing.T) {
 	require.False(t, unknown, "不存在的名字应报告不存在")
 }
 
+// TestScriptRepoSqlite_LanguageReadView 验证两种脚本语言枚举值经 converter
+// 落库后，在一切返回 Script DTO 的读路径（Get 按主键、GetByName、List、
+// ListEnabledScripts）的 DTO 视图如实呈现；未显式指定 language 的行按
+// schema 默认 LUA 落库并在读视图如实呈现。
+//
+// 枚举字段读视图机制注记：实体侧 language 为可空指针枚举列
+//（*script.Language，schema 带 Default("LUA")），DTO 侧为可选指针字段。
+// mapper 的枚举转换对（经 &srcType/&dstType 取址注册）恰为指针↔指针形态
+// 的键，指针对字段能被 copier 直接转换赋值——与值型实体枚举列（如
+// position.type、notification_channel.type，值型字段读侧被 copier 丢弃）
+// 的情形不同。本测试将该读视图行为钉死。
+func TestScriptRepoSqlite_LanguageReadView(t *testing.T) {
+	entClient := enttest.NewEntClientForTest(t)
+	repo := newScriptRepoSqlite(t, entClient)
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoLanguage scriptV1.Language
+		wantEnt       script.Language
+		marker        string
+	}{
+		{scriptV1.Language_LUA, script.LanguageLUA, "sqlite_script_readview_lua"},
+		{scriptV1.Language_JAVASCRIPT, script.LanguageJAVASCRIPT, "sqlite_script_readview_javascript"},
+	}
+
+	for _, c := range cases {
+		require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
+			Data: &scriptV1.Script{
+				Name:      trans.Ptr(c.marker),
+				Language:  c.protoLanguage.Enum(),
+				IsEnabled: trans.Ptr(true),
+			},
+		}), "语言 %v 创建应成功", c.protoLanguage)
+
+		rows, err := entClient.Client().Script.Query().
+			Where(script.NameEQ(c.marker)).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按名应反查到刚写入的行")
+		require.Equal(t, c.wantEnt, *rows[0].Language, "语言 %v 应经转换器如实落库", c.protoLanguage)
+
+		// 读路径一：Get 按主键命中后，DTO 视图应如实呈现语言枚举。
+		got, err := repo.Get(ctx, &scriptV1.GetScriptRequest{
+			QueryBy: &scriptV1.GetScriptRequest_Id{Id: rows[0].ID},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoLanguage, got.GetLanguage(), "读视图应如实呈现语言 %v", c.protoLanguage)
+
+		// 读路径二：GetByName 命中后，DTO 视图应如实呈现语言枚举。
+		byName, err := repo.GetByName(ctx, c.marker)
+		require.NoError(t, err, "按名读取应命中")
+		require.Equal(t, c.protoLanguage, byName.GetLanguage(), "GetByName 读视图应如实呈现语言 %v", c.protoLanguage)
+
+		// 读路径三/四：List 与 ListEnabledScripts 应含该行（按名标记匹配），
+		// DTO 视图如实呈现语言枚举。
+		listedAll, err := repo.List(ctx, &paginationV1.PagingRequest{})
+		require.NoError(t, err)
+		var hitAll *scriptV1.Script
+		for _, item := range listedAll.Items {
+			if item.GetName() == c.marker {
+				hitAll = item
+				break
+			}
+		}
+		require.NotNil(t, hitAll, "List 应包含标记行 %s", c.marker)
+		require.Equal(t, c.protoLanguage, hitAll.GetLanguage(), "List 读视图应如实呈现语言 %v", c.protoLanguage)
+
+		listedEnabled, err := repo.ListEnabledScripts(ctx)
+		require.NoError(t, err)
+		var hitEnabled *scriptV1.Script
+		for _, item := range listedEnabled {
+			if item.GetName() == c.marker {
+				hitEnabled = item
+				break
+			}
+		}
+		require.NotNil(t, hitEnabled, "ListEnabledScripts 应包含启用的标记行 %s", c.marker)
+		require.Equal(t, c.protoLanguage, hitEnabled.GetLanguage(), "ListEnabledScripts 读视图应如实呈现语言 %v", c.protoLanguage)
+	}
+
+	// 未显式指定 language：走 schema 列默认 LUA 落库，读视图如实呈现 LUA。
+	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
+		Data: &scriptV1.Script{
+			Name:      trans.Ptr("sqlite_script_readview_default"),
+			IsEnabled: trans.Ptr(true),
+		},
+	}))
+	defaultRows, err := entClient.Client().Script.Query().
+		Where(script.NameEQ("sqlite_script_readview_default")).
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, defaultRows, 1)
+	require.NotNil(t, defaultRows[0].Language, "未显式指定应落 schema 默认值")
+	require.Equal(t, script.LanguageLUA, *defaultRows[0].Language, "列默认应为 LUA")
+	gotDefault, err := repo.Get(ctx, &scriptV1.GetScriptRequest{
+		QueryBy: &scriptV1.GetScriptRequest_Id{Id: defaultRows[0].ID},
+	})
+	require.NoError(t, err)
+	require.Equal(t, scriptV1.Language_LUA, gotDefault.GetLanguage(), "读视图应如实呈现列默认 LUA")
+}
+
 // TestScriptRepoSqlite_Update 验证 Update 掩码内字段（description）更新、
 // 版本指纹自增、掩码外字段（name）保持原值。
 func TestScriptRepoSqlite_Update(t *testing.T) {

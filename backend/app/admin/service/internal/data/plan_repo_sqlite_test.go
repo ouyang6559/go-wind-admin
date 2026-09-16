@@ -197,6 +197,87 @@ func TestPlanRepoSqlite_Update(t *testing.T) {
 	require.Equal(t, "sqlite套餐-更新", *after[0].Name, "掩码外字段应保持原值")
 }
 
+// TestPlanRepoSqlite_EnumReadView 验证全部套餐版本/到期处置策略枚举值
+// 经 converter 落库后，在读路径（Get 按主键 / List）的 DTO 视图如实呈现。
+//
+// 枚举字段读视图机制注记：实体侧 version/expiry_policy 为可空指针枚举列
+// （*plan.Version / *plan.ExpiryPolicy），DTO 侧为可选指针字段。mapper 的
+// 枚举转换对（EnumTypeConverter.NewConverterPair → NewGenericTypeConverterPair，
+// 经 &srcType/&dstType 取址注册）恰为指针↔指针形态的键，指针对字段能被
+// copier 直接转换赋值——与值型实体枚举列（如 position.type、
+// notification_channel.type，带列默认、无指针）读侧被丢弃的情形不同。
+// 本测试将该读视图行为钉死：若日后注册形态或 copier 匹配语义变化导致
+// 读丢弃，此处会立即翻红。
+func TestPlanRepoSqlite_EnumReadView(t *testing.T) {
+	entClient := enttest.NewEntClientForTest(t)
+	repo := newPlanRepoSqlite(t, entClient)
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoVersion    identityV1.Plan_Version
+		wantEntVersion plan.Version
+		protoPolicy     identityV1.Plan_ExpiryPolicy
+		wantEntPolicy   plan.ExpiryPolicy
+		marker          string
+	}{
+		{
+			identityV1.Plan_FREE, plan.VersionFree,
+			identityV1.Plan_READONLY, plan.ExpiryPolicyReadonly,
+			"sqlite_plan_enum_free_readonly",
+		},
+		{
+			identityV1.Plan_STANDARD, plan.VersionStandard,
+			identityV1.Plan_BLOCK_LOGIN, plan.ExpiryPolicyBlockLogin,
+			"sqlite_plan_enum_standard_blocklogin",
+		},
+		{
+			identityV1.Plan_ENTERPRISE, plan.VersionEnterprise,
+			identityV1.Plan_FREEZE, plan.ExpiryPolicyFreeze,
+			"sqlite_plan_enum_enterprise_freeze",
+		},
+	}
+
+	for _, c := range cases {
+		require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanRequest{
+			Data: &identityV1.Plan{
+				Name:         trans.Ptr(c.marker),
+				Version:      c.protoVersion.Enum(),
+				ExpiryPolicy: c.protoPolicy.Enum(),
+			},
+		}), "版本 %v/策略 %v 创建应成功", c.protoVersion, c.protoPolicy)
+
+		rows, err := entClient.Client().Plan.Query().
+			Where(plan.NameEQ(c.marker)).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按名应反查到刚写入的行")
+		require.Equal(t, c.wantEntVersion, *rows[0].Version, "版本 %v 应经转换器如实落库", c.protoVersion)
+		require.Equal(t, c.wantEntPolicy, *rows[0].ExpiryPolicy, "策略 %v 应经转换器如实落库", c.protoPolicy)
+
+		// 读路径一：Get 按主键命中后，DTO 视图应如实呈现两枚举字段。
+		got, err := repo.Get(ctx, &identityV1.GetPlanRequest{
+			QueryBy: &identityV1.GetPlanRequest_Id{Id: rows[0].ID},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoVersion, got.GetVersion(), "读视图应如实呈现版本 %v", c.protoVersion)
+		require.Equal(t, c.protoPolicy, got.GetExpiryPolicy(), "读视图应如实呈现策略 %v", c.protoPolicy)
+
+		// 读路径二：List 无过滤返回该行，DTO 视图应如实呈现两枚举字段。
+		listed, err := repo.List(ctx, &paginationV1.PagingRequest{})
+		require.NoError(t, err)
+		var hit *identityV1.Plan
+		for _, item := range listed.Items {
+			if item.GetName() == c.marker {
+				hit = item
+				break
+			}
+		}
+		require.NotNil(t, hit, "List 应包含刚写入的行 %s", c.marker)
+		require.Equal(t, c.protoVersion, hit.GetVersion(), "List 读视图应如实呈现版本 %v", c.protoVersion)
+		require.Equal(t, c.protoPolicy, hit.GetExpiryPolicy(), "List 读视图应如实呈现策略 %v", c.protoPolicy)
+	}
+}
+
 // TestPlanRepoSqlite_Delete 验证 Delete 后行数归零。
 func TestPlanRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)

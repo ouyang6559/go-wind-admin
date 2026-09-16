@@ -131,6 +131,11 @@ func TestPermissionRepoSqlite_ListContainsFilter(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应返回全部 2 行")
 	require.Len(t, all.Items, 2)
+	// 列表读视图：status 未显式指定、按列默认（ON）落库，经 queryEnumsAndBackfill
+	// 如实回显。
+	for _, item := range all.Items {
+		require.Equal(t, permissionV1.Permission_ON, item.GetStatus(), "列表读视图应回填列默认 status")
+	}
 }
 
 // TestPermissionRepoSqlite_Get 验证按 ID 与按 code 的命中/未命中。
@@ -156,6 +161,9 @@ func TestPermissionRepoSqlite_Get(t *testing.T) {
 	})
 	require.NoError(t, err, "按存在的 ID 查询应命中")
 	require.Equal(t, createdID, hit.GetId())
+	// 读视图（Get 按主键）：status 未显式指定、按列默认（ON）落库，经
+	// queryEnumsAndBackfill 如实回显。
+	require.Equal(t, permissionV1.Permission_ON, hit.GetStatus(), "读视图应回填列默认 status")
 
 	// 命中：按 code
 	byCode, err := repo.Get(ctx, &permissionV1.GetPermissionRequest{
@@ -163,6 +171,8 @@ func TestPermissionRepoSqlite_Get(t *testing.T) {
 	})
 	require.NoError(t, err, "按存在的 code 查询应命中")
 	require.Equal(t, createdID, byCode.GetId(), "按 code 命中应带回同一行的 ID")
+	// 读视图（Get 按 code）：同上，列默认 status 如实回显。
+	require.Equal(t, permissionV1.Permission_ON, byCode.GetStatus(), "读视图应回填列默认 status")
 
 	// 未命中：不存在的 ID / 不存在的 code
 	_, err = repo.Get(ctx, &permissionV1.GetPermissionRequest{
