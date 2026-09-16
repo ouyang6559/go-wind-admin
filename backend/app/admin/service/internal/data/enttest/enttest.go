@@ -23,7 +23,9 @@ package enttest
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect"
 	"github.com/stretchr/testify/require"
@@ -41,9 +43,14 @@ import (
 // 供 repo 层集成测试使用。每个调用独占一个内存库，通过 t.Cleanup 自动关闭。
 func NewEntClientForTest(t *testing.T) *entCrud.EntClient[*ent.Client] {
 	t.Helper()
-	// modernc.org/sqlite 以 "sqlite" 名注册到 database/sql
-	// URI 形式打开内存库，_pragma=foreign_keys(1) 开启外键（ent 要求）
-	db, err := sql.Open("sqlite", "file::memory:?cache=shared&_pragma=foreign_keys(1)")
+	// modernc.org/sqlite 以 "sqlite" 名注册到 database/sql。
+	// 每次调用用唯一命名的 mode=memory 库：连接池内同 URI 连接共享同一库
+	//（schema 迁移与后续读写一致），而不同调用（乃至不同测试进程）各拿各的库。
+	// 此前用 file::memory:?cache=shared——同进程内全部 client 实际共享同一个库，
+	// 任何一处泄漏写锁（如未回滚事务）会把整个测试二进制毒化成
+	// "database is locked"。唯一命名把隔离做实，泄漏只影响单个测试。
+	// _pragma=foreign_keys(1) 开启外键（ent 要求）。
+	db, err := sql.Open("sqlite", fmt.Sprintf("file:enttest_%d?mode=memory&cache=shared&_pragma=foreign_keys(1)", time.Now().UnixNano()))
 	require.NoError(t, err)
 	t.Cleanup(func() { db.Close() })
 

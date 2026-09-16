@@ -272,8 +272,9 @@ const { hasAccessByRoles } = useAccess();
 | 组件式 | `AccessControl`（`type="code"\|"role"`） | `AccessControl`（`type="code"\|"role"\|"authority"`，另支持 `fallback`） | `AccessControl`（对齐 vben） |
 | Hook 式 | `hasAccessByRoles` / `hasAccessByCodes` | `hasAccessByRoles` / `hasAccessByCodes` / `hasAccessByAuthority`（roles ∪ codes 混合判定，对应路由 `meta.authority`） | `hasAccessByRoles` / `hasAccessByCodes` / `hasAccess`（roles ∪ codes 并集） |
 | 指令式 | `v-access:code` / `v-access:role` | 无（React 无指令机制） | `v-access`（混合判定，无权限 `el.remove()`） |
-| 权限码匹配语义 | **精确匹配** | **精确匹配** | **精确 + 前缀授权**：用户持 `sys:a` 即判过 `sys:a:b`（`requiredCode.startsWith(userCode + ":")`）——**比另两端宽** |
-| 路由双模式 | `@vben/router` + `VITE_ROUTER_ACCESS_MODE`（env） | `src/core/router/generators/generate-routes-{frontend,backend}.ts` + `preferences.app.accessMode`（运行时偏好，可 `toggleAccessMode` 切换） | 同 react（`core/router/generators/` + `preferences.app.accessMode`） |
+| 权限码匹配语义 | **精确匹配**；注意 vben 的 accessCodes 实为 roles∪codes 并集（authentication.store 的 getUserPermissionCodes 把角色码并入），按钮级判定同样吃角色码 | **精确匹配** | **精确 + 前缀授权**：用户持 `sys:a` 即判过 `sys:a:b`（`requiredCode.startsWith(userCode + ":")`）——**比另两端宽** |
+| 路由双模式 | `@vben/router` + `VITE_ROUTER_ACCESS_MODE`（env） | `src/core/router/generators/generate-routes-{frontend,backend}.ts` + `preferences.app.accessMode`（运行时偏好；react 无 UI 开关也无 toggleAccessMode，改偏好即生效） | 同 react 结构，另有 `useAccess().toggleAccessMode()` 运行时切换 |
+| 路由生成防线 | `effects/access/accessible.ts` 生成前 `cloneDeep(options.routes)`（2026-09 实证必要：filterTree 会就地改写 node.children，未登录空权限预构建会把带 authority 路由从共享单例永久剔除、登录后找不回） | `generate-routes-frontend.ts` 纯过滤：递归构造新节点、element 按引用共享、零回写共享单例（react 路由带活的 React 元素，不宜整树 cloneDeep） | `core/router/accessible.ts` 生成前 `cloneDeep(options.routes)`（同 vben） |
 | 权限码/菜单端点 | 权限码三端统一 `adminPortalService.GetMyPermissionCode`（codes+hiddenFields）；后端模式的菜单下发经同域 `GetNavigation`（返回 `ListRouteResponse` 菜单路由） | 同左 | 同左 |
 
 **移植警示**：三端按钮/路由权限码的匹配语义不一致（上表"权限码匹配语义"行）——

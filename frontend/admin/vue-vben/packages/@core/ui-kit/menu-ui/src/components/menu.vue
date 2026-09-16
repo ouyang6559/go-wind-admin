@@ -449,8 +449,9 @@ $namespace: vben;
     --menu-item-color: hsl(var(--foreground) / 80%);
     --menu-item-hover-color: hsl(var(--accent-foreground));
     --menu-item-hover-background-color: hsl(var(--accent));
-    --menu-item-active-color: hsl(var(--accent-foreground));
-    --menu-item-active-background-color: hsl(var(--accent));
+    // 选中：主色实底药丸 + 白字（react antd Menu 基准，design-language.md §4）
+    --menu-item-active-color: hsl(var(--primary-foreground));
+    --menu-item-active-background-color: hsl(var(--primary));
     --menu-submenu-hover-color: hsl(var(--foreground));
     --menu-submenu-hover-background-color: hsl(var(--accent));
     --menu-submenu-active-color: hsl(var(--foreground));
@@ -465,8 +466,9 @@ $namespace: vben;
     --menu-item-color: hsl(var(--foreground));
     --menu-item-hover-color: var(--menu-item-color);
     --menu-item-hover-background-color: hsl(var(--accent));
-    --menu-item-active-color: hsl(var(--primary));
-    --menu-item-active-background-color: hsl(var(--primary) / 15%);
+    // 选中：主色实底药丸 + 白字（react antd Menu 基准，design-language.md §4）
+    --menu-item-active-color: hsl(var(--primary-foreground));
+    --menu-item-active-background-color: hsl(var(--primary));
     --menu-submenu-hover-color: hsl(var(--primary));
     --menu-submenu-hover-background-color: hsl(var(--accent));
     --menu-submenu-active-color: hsl(var(--primary));

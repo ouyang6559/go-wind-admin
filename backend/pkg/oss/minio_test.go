@@ -3,36 +3,72 @@ package oss
 import (
 	"fmt"
 	"net"
+	"os"
 	"testing"
 	"time"
 
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/tx7do/go-utils/trans"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	storageV1 "go-wind-admin/api/gen/go/storage/service/v1"
 
 	conf "github.com/tx7do/kratos-bootstrap/api/gen/go/conf/v1"
 )
 
+// MinIO 测试端点与凭据默认值（与既有硬编码行为保持一致）。
+const (
+	defaultMinioTestEndpoint  = "127.0.0.1:9000"
+	defaultMinioTestAccessKey = "root"
+	defaultMinioTestSecretKey = "*Abcd123456"
+)
+
+// minioTestEndpoint 返回测试用 MinIO 端点：优先读环境变量 MINIO_TEST_ENDPOINT，
+// 未设置时回退默认值。本机容器把 9000 映射到 19000 时，只需
+// MINIO_TEST_ENDPOINT=127.0.0.1:19000 即可让全部实测指向该容器。
+func minioTestEndpoint() string {
+	if v := os.Getenv("MINIO_TEST_ENDPOINT"); v != "" {
+		return v
+	}
+	return defaultMinioTestEndpoint
+}
+
+// minioTestAccessKey 返回测试用访问密钥：环境变量 MINIO_TEST_ACCESS_KEY，缺省回退默认值。
+func minioTestAccessKey() string {
+	if v := os.Getenv("MINIO_TEST_ACCESS_KEY"); v != "" {
+		return v
+	}
+	return defaultMinioTestAccessKey
+}
+
+// minioTestSecretKey 返回测试用私钥：环境变量 MINIO_TEST_SECRET_KEY，缺省回退默认值。
+func minioTestSecretKey() string {
+	if v := os.Getenv("MINIO_TEST_SECRET_KEY"); v != "" {
+		return v
+	}
+	return defaultMinioTestSecretKey
+}
+
+// createTestClient 构造指向测试端点（环境变量可覆盖）的 MinIOClient。
 func createTestClient() *MinIOClient {
+	endpoint := minioTestEndpoint()
 	return NewMinIoClient(&conf.Bootstrap{
 		Oss: &conf.OSS{
 			Minio: &conf.OSS_MinIO{
-				Endpoint:     "127.0.0.1:9000",
-				UploadHost:   "127.0.0.1:9000",
-				DownloadHost: "127.0.0.1:9000",
-				AccessKey:    "root",
-				SecretKey:    "*Abcd123456",
+				Endpoint:     endpoint,
+				UploadHost:   endpoint,
+				DownloadHost: endpoint,
+				AccessKey:    minioTestAccessKey(),
+				SecretKey:    minioTestSecretKey(),
 			},
 		},
 	}, bLogger.NopLogger())
 }
 
-// minioAvailable 探测本地 MinIO 是否可达：这两个测试依赖真实 MinIO 服务
-// （127.0.0.1:9000），无环境时 skip 而非失败——环境依赖测试不应拖红常规回归。
+// minioAvailable 探测测试端点上的 MinIO 是否可达：环境依赖测试依赖真实 MinIO 服务，
+// 无环境时 skip 而非失败——环境依赖测试不应拖红常规回归。
 func minioAvailable() bool {
-	conn, err := net.DialTimeout("tcp", "127.0.0.1:9000", 500*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", minioTestEndpoint(), 500*time.Millisecond)
 	if err != nil {
 		return false
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -11,6 +12,23 @@ import (
 
 	"go-wind-admin/pkg/audit"
 )
+
+// isWriteStatement 按语句首关键字判定写型语句。
+// ent 在支持 RETURNING 的方言（postgres/sqlite 等）上把 INSERT 等写语句
+// 经驱动 Query 通道执行（RETURNING 取回自增 ID），该通道的语句不能一律
+// 按读型记录——否则数据访问审计里写操作被误标为读。
+func isWriteStatement(query string) bool {
+	q := strings.TrimLeft(query, " \t\r\n(")
+	w := q
+	if i := strings.IndexAny(q, " \t\r\n("); i >= 0 {
+		w = q[:i]
+	}
+	switch strings.ToUpper(w) {
+	case "INSERT", "UPDATE", "DELETE", "REPLACE", "MERGE":
+		return true
+	}
+	return false
+}
 
 // auditDriver 包装 dialect.Driver，在 Exec/Query 前后采集 SQL 事件。
 // 照 dialect.DebugDriver/DebugTx（entgo.io/ent/dialect/dialect.go:67-208）范式：
@@ -63,7 +81,7 @@ func (d *auditDriver) Exec(ctx context.Context, query string, args, v any) error
 func (d *auditDriver) Query(ctx context.Context, query string, args, v any) error {
 	start := time.Now()
 	err := d.Driver.Query(ctx, query, args, v)
-	collectMasked(ctx, query, time.Since(start).Milliseconds(), d.Driver.Dialect(), false, -1)
+	collectMasked(ctx, query, time.Since(start).Milliseconds(), d.Driver.Dialect(), isWriteStatement(query), -1)
 	return err
 }
 
@@ -81,7 +99,7 @@ func (d *auditDriver) QueryContext(ctx context.Context, query string, args ...an
 	rows, err := d.Driver.(interface {
 		QueryContext(context.Context, string, ...any) (*entsql.Rows, error)
 	}).QueryContext(ctx, query, args...)
-	collectMasked(ctx, query, time.Since(start).Milliseconds(), d.Driver.Dialect(), false, -1)
+	collectMasked(ctx, query, time.Since(start).Milliseconds(), d.Driver.Dialect(), isWriteStatement(query), -1)
 	return rows, err
 }
 
@@ -103,7 +121,7 @@ func (d *auditTx) Exec(ctx context.Context, query string, args, v any) error {
 func (d *auditTx) Query(ctx context.Context, query string, args, v any) error {
 	start := time.Now()
 	err := d.Tx.Query(ctx, query, args, v)
-	collectMasked(ctx, query, time.Since(start).Milliseconds(), "tx", false, -1)
+	collectMasked(ctx, query, time.Since(start).Milliseconds(), "tx", isWriteStatement(query), -1)
 	return err
 }
 

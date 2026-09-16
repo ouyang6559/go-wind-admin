@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -639,13 +640,22 @@ func (a *Authenticator) ListSessionEntries(ctx context.Context) ([]SessionEntry,
 // RevokeUserTokenAllClientTypes 吊销用户全部客户端类型的所有令牌与会话记录。
 // 用于改密 / 重置密码后的强制下线：被改密用户的所有已签发令牌立即失效。
 func (a *Authenticator) RevokeUserTokenAllClientTypes(ctx context.Context, userId uint32) error {
-	for _, ct := range authenticationV1.ClientType_value {
-		if err := a.RevokeUserToken(ctx, authenticationV1.ClientType(ct), userId); err != nil {
+	// 显式枚举合法客户端类型（与 RevokeTokenByJti 的 nil 分支同形）。
+	// 此前遍历 ClientType_value 名字表：后续枚举若新增无效/未实现类型会被
+	// 静默带进吊销循环；叠加 map 迭代序随机与遇错早退，会得到「实际吊销了
+	// 哪几类取决于运行时顺序」的部分吊销——对改密强制下线这一安全语义不可
+	// 接受。改为逐类全部尝试、汇总错误：任一类失败不阻断其余类别的吊销。
+	var errs []error
+	for _, ct := range []authenticationV1.ClientType{
+		authenticationV1.ClientType_admin,
+		authenticationV1.ClientType_app,
+	} {
+		if err := a.RevokeUserToken(ctx, ct, userId); err != nil {
 			a.log.Errorf(ctx, "revoke user [%d] tokens of client type [%d] failed: %v", userId, ct, err)
-			return err
+			errs = append(errs, err)
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // getAuthenticator 根据客户端类型获取认证器

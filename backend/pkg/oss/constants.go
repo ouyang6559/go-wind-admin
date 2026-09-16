@@ -1,6 +1,9 @@
 package oss
 
-import "strings"
+import (
+	"mime"
+	"strings"
+)
 
 // 上传文件的安全约束常量。
 // 这些值用于在文件上传与下载环节防御滥用（超大文件、可执行/HTML 等危险类型）。
@@ -45,15 +48,25 @@ var AllowedExactMimeTypes = map[string]struct{}{
 
 // IsAllowedMimeType 判断某 MIME 类型是否在上传白名单内。
 // 同时支持前缀（image/* 等）与精确匹配（pdf/zip 等）。
+// 输入先经标准库 mime.ParseMediaType 归一：剥离参数（charset 等）与空白后
+// 再比对——内容嗅探器对文本恒产 "text/plain; charset=utf-8" 带参形式，
+// 按原串匹配会把白名单内的文本类型整体误拒；解析失败的畸形类型串
+// （如 "image/*"）结构不合法，直接拒绝。
 func IsAllowedMimeType(mimeType string) bool {
 	if mimeType == "" {
 		return false
 	}
-	if _, ok := AllowedExactMimeTypes[mimeType]; ok {
+	mt, _, err := mime.ParseMediaType(mimeType)
+	if err != nil {
+		return false
+	}
+	mt = strings.ToLower(mt)
+
+	if _, ok := AllowedExactMimeTypes[mt]; ok {
 		return true
 	}
 	for _, prefix := range AllowedMimePrefixes {
-		if len(mimeType) >= len(prefix) && mimeType[:len(prefix)] == prefix {
+		if len(mt) >= len(prefix) && mt[:len(prefix)] == prefix {
 			return true
 		}
 	}

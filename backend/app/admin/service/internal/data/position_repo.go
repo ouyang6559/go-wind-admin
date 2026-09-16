@@ -107,6 +107,8 @@ func (r *PositionRepo) List(ctx context.Context, req *paginationV1.PagingRequest
 		return &identityV1.ListPositionResponse{Total: 0, Items: nil}, nil
 	}
 
+	r.queryEnumsAndBackfill(ctx, ret.Items)
+
 	return &identityV1.ListPositionResponse{
 		Total: ret.Total,
 		Items: ret.Items,
@@ -157,7 +159,52 @@ func (r *PositionRepo) Get(ctx context.Context, req *identityV1.GetPositionReque
 		return nil, err
 	}
 
+	r.queryEnumsAndBackfill(ctx, []*identityV1.Position{dto})
+
 	return dto, err
+}
+
+// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 type 字段。
+//
+// 枚举转换机制注记：mapper 经 EnumTypeConverter.NewConverterPair 注册的
+// 是**指针↔指针对**（*ent枚举 → *proto枚举）——实体侧可空指针枚举列
+//（Optional+Nillable，如本仓 status）在 copier 的转换查表里精确命中、
+// 读路径本就如实流通，无需回填。被丢弃的是**混合形态**：实体侧为值型
+// 枚举列（带 Default 且无 Nillable，如本仓 type）而 DTO 侧为可选指针
+// 字段——值型源与指针对键失配，copier 转而给 DTO 指针分配零值。故此处
+// 只对 type 做二次查询回填（对齐 notification_channel 的 Type 同型修复）。
+func (r *PositionRepo) queryEnumsAndBackfill(ctx context.Context, items []*identityV1.Position) {
+	if len(items) == 0 {
+		return
+	}
+	entities, err := r.entClient.Client().Position.Query().
+		Select(position.FieldID, position.FieldType).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query position enum columns failed: %s", err.Error())
+		return
+	}
+	r.backfillEnumsFrom(items, entities)
+}
+
+func (r *PositionRepo) backfillEnumsFrom(items []*identityV1.Position, entities []*ent.Position) {
+	if len(items) == 0 || len(entities) == 0 {
+		return
+	}
+	types := make(map[uint32]position.Type, len(entities))
+	for _, e := range entities {
+		if e.Type != "" {
+			types[e.ID] = e.Type
+		}
+	}
+	for _, it := range items {
+		if t, ok := types[it.GetId()]; ok {
+			tv := t
+			if p := r.typeConverter.ToDTO(&tv); p != nil {
+				it.Type = p
+			}
+		}
+	}
 }
 
 // ListPositionByIds 通过多个ID获取职位信息
@@ -179,6 +226,8 @@ func (r *PositionRepo) ListPositionByIds(ctx context.Context, ids []uint32) ([]*
 		dto := r.mapper.ToDTO(entity)
 		dtos = append(dtos, dto)
 	}
+
+	r.backfillEnumsFrom(dtos, entities)
 
 	return dtos, nil
 }

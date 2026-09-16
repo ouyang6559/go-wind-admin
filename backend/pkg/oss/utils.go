@@ -40,13 +40,14 @@ func ContentTypeToBucketName(contentType string) string {
 		return BucketFiles
 	}
 
-	// 解析 media type，忽略参数（如 charset）
+	// 解析 media type，忽略参数（如 charset）。解析失败（畸形类型串）直接落
+	// 默认桶，不再从原始串推断主类型——否则 "image/" 之类畸形串仍会按
+	// 主类型落进图片桶。
 	mt, _, err := mime.ParseMediaType(contentType)
 	if err != nil {
-		mt = strings.ToLower(strings.TrimSpace(contentType))
-	} else {
-		mt = strings.ToLower(mt)
+		return BucketFiles
 	}
+	mt = strings.ToLower(mt)
 
 	parts := strings.SplitN(mt, "/", 2)
 	if len(parts) != 2 {
@@ -142,105 +143,102 @@ func ContentTypeToFileExtension(contentType string) string {
 	switch mt {
 	// images
 	case "image/jpeg", "image/jpg":
-		return ".jpg"
+		return "jpg"
 	case "image/png":
-		return ".png"
+		return "png"
 	case "image/gif":
-		return ".gif"
+		return "gif"
 	case "image/webp":
-		return ".webp"
+		return "webp"
 	case "image/bmp":
-		return ".bmp"
+		return "bmp"
 	case "image/x-icon", "image/vnd.microsoft.icon":
-		return ".ico"
+		return "ico"
 	case "image/svg+xml":
-		return ".svg"
+		return "svg"
 
 	// video
 	case "video/mp4":
-		return ".mp4"
+		return "mp4"
 	case "video/webm":
-		return ".webm"
+		return "webm"
 	case "video/quicktime":
-		return ".mov"
+		return "mov"
 	case "video/x-matroska", "video/mkv":
-		return ".mkv"
+		return "mkv"
 
 	// audio
 	case "audio/mpeg":
-		return ".mp3"
+		return "mp3"
 	case "audio/wav", "audio/x-wav":
-		return ".wav"
+		return "wav"
 	case "audio/ogg", "audio/vorbis":
-		return ".ogg"
+		return "ogg"
 	case "audio/mp4":
-		return ".m4a"
+		return "m4a"
 
 	// text
 	case "text/plain":
-		return ".txt"
+		return "txt"
 	case "text/html":
-		return ".html"
+		return "html"
 	case "text/css":
-		return ".css"
+		return "css"
 	case "text/csv":
-		return ".csv"
+		return "csv"
 	case "text/xml":
-		return ".xml"
+		return "xml"
 
 	// JavaScript
 	case "text/javascript", "application/javascript", "application/x-javascript":
-		return ".js"
+		return "js"
 
 	// Lua
 	case "text/x-lua", "application/x-lua":
-		return ".lua"
+		return "lua"
 
 	// Python
 	case "text/x-python", "application/x-python", "text/python":
-		return ".py"
+		return "py"
 
 	// Shell scripts
 	case "text/x-shellscript", "application/x-sh", "application/x-shellscript", "text/x-sh", "text/x-bash", "application/x-bash":
-		return ".sh"
+		return "sh"
 
 	// application / documents / archives
 	case "application/pdf":
-		return ".pdf"
+		return "pdf"
 	case "application/json":
-		return ".json"
+		return "json"
 	case "application/zip":
-		return ".zip"
+		return "zip"
 	case "application/x-tar":
-		return ".tar"
+		return "tar"
 	case "application/gzip", "application/x-gzip":
-		return ".gz"
+		return "gz"
 	case "application/x-7z-compressed", "application/7z":
-		return ".7z"
+		return "7z"
 	case "application/msword":
-		return ".doc"
+		return "doc"
 	case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-		return ".docx"
+		return "docx"
 	case "application/vnd.ms-excel":
-		return ".xls"
+		return "xls"
 	case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-		return ".xlsx"
+		return "xlsx"
 	case "application/vnd.ms-powerpoint":
-		return ".ppt"
+		return "ppt"
 	case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-		return ".pptx"
+		return "pptx"
 	case "application/octet-stream":
-		return ".bin"
+		return "bin"
 	}
 
-	// 回退：使用标准库尝试获取扩展名
+	// 回退：使用标准库尝试获取扩展名（标准库返回的扩展名恒带前导点，
+	// 与本函数"不带点"的统一约定对齐后剥离）
 	exts, _ := mime.ExtensionsByType(mt)
 	if len(exts) > 0 {
-		ext := exts[0]
-		if !strings.HasPrefix(ext, ".") {
-			return "." + ext
-		}
-		return ext
+		return strings.TrimPrefix(exts[0], ".")
 	}
 
 	// 未知类型，返回空串（调用方可据此决定）
@@ -443,13 +441,17 @@ func EnsureObjectName(fileDirectory, sourceFileName, contentType string, fileCon
 	return GenerateObjectName(fileDirectory, fileContent, fileExt, typ)
 }
 
-// JoinObjectName 拼接对象名
+// JoinObjectName 拼接对象名。
+// ContentTypeToFileExtension 统一返回不带点的扩展名，此处的分隔点由本函数补上。
 func JoinObjectName(contentType string, filePath, fileName *string) (string, string) {
 	fileSuffix := ContentTypeToFileExtension(contentType)
 
 	var _fileName string
 	if fileName == nil {
-		_fileName = id.NewGUIDv4(false) + fileSuffix
+		_fileName = id.NewGUIDv4(false)
+		if fileSuffix != "" {
+			_fileName += "." + fileSuffix
+		}
 	} else {
 		_fileName = *fileName
 	}

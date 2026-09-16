@@ -125,7 +125,8 @@ $namespace: vben;
       border-color 0.15s ease;
 
     &.is-active {
-      @apply text-primary bg-primary dark:bg-accent;
+      // 选中：主色实底药丸 + 白字，暗色不再退化为 accent 灰（design-language.md §4）
+      @apply text-primary bg-primary dark:bg-primary;
 
       .#{$namespace}-normal-menu__name,
       .#{$namespace}-normal-menu__icon {

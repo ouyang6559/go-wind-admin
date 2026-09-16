@@ -90,8 +90,13 @@ function setupAccessGuard(router: Router) {
       return false;
     }
 
-    // 预先加载字典数据，部分页面可能会用到字典数据，如果没有预先加载，可能会导致页面闪烁
-    await fetchAllDictEntries();
+    // 预先加载字典数据，部分页面可能会用到字典数据，如果没有预先加载，可能会导致页面闪烁。
+    // 失败不阻断导航：页面退化为未翻译字典码（warn 带出原始错误便于排查）
+    try {
+      await fetchAllDictEntries();
+    } catch (error) {
+      console.warn("[Guard] 字典预加载失败，页面将以未翻译字典码降级渲染:", error);
+    }
 
     // 生成菜单和路由
     const { accessibleMenus, accessibleRoutes } = await generateAccess({
