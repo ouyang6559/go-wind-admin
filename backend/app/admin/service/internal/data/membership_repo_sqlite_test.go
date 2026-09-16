@@ -172,12 +172,16 @@ func TestMembershipRepoSqlite_GetMembershipByUserTenantAndActive(t *testing.T) {
 	require.NoError(t, err, "按用户+租户查询已存在成员关系应命中")
 	require.Equal(t, testUserID, got.GetUserId(), "命中记录的 user_id 应与写入一致")
 	require.Equal(t, membershipID, got.GetId(), "命中记录的主键应与写入时一致")
+	// 读视图：status 经 backfillEnumsFrom 回填如实呈现（写入为 ACTIVE）。
+	require.Equal(t, identityV1.Membership_ACTIVE, got.GetStatus(), "命中记录的读视图应回填 status")
 
 	// 活跃成员列表：该用户一条
 	actives, err := repo.GetUserActiveMemberships(ctx, testUserID)
 	require.NoError(t, err)
 	require.Len(t, actives, 1, "无失效时间的成员关系应计入活跃列表")
 	require.Equal(t, testUserID, actives[0].GetUserId(), "活跃列表中的记录应为该用户")
+	// 读视图：列表路径的 status 同样经回填如实呈现（写入为 ACTIVE）。
+	require.Equal(t, identityV1.Membership_ACTIVE, actives[0].GetStatus(), "活跃列表的读视图应回填 status")
 
 	// 未命中：不存在的用户
 	_, err = repo.GetMembershipByUserTenant(ctx, 99999, 0)
@@ -245,6 +249,12 @@ func TestMembershipRepoSqlite_SetUserFields(t *testing.T) {
 	require.Equal(t, uint32(44), *row.OrgUnitID, "org_unit_id 应更新为 44")
 	require.NotNil(t, row.Status, "status 应已被更新")
 	require.Equal(t, entMembership.StatusDisabled, *row.Status, "proto Membership_DISABLED 应映射为 ent StatusDisabled")
+
+	// 读视图：更新为 DISABLED 后，GetMembershipByUserTenant 的读视图应经回填
+	// 如实呈现 DISABLED（而非零值缺省）。
+	updated, err := repo.GetMembershipByUserTenant(ctx, testUserID, 0)
+	require.NoError(t, err, "更新后的成员关系应仍可按用户+租户命中")
+	require.Equal(t, identityV1.Membership_DISABLED, updated.GetStatus(), "更新后的读视图应回填 status 为 DISABLED")
 	require.NotNil(t, row.EndAt, "end_at 应已被更新")
 	require.True(t, row.EndAt.After(time.Now().Add(23*time.Hour)), "end_at 应更新为 24 小时后的时刻")
 
