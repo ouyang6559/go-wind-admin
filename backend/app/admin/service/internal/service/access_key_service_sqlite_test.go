@@ -4,8 +4,8 @@
 //   - Create / Get / List / Count / Delete 的落库与字段映射：AK/SK 的前缀与长度
 //     规格、SK 只存 SHA-256 摘要、凭证归属操作人租户、状态枚举经转换器落库。
 //   - Update 的不可变字段保护：回调只写 name/status/expires_at/updated_by，
-//     AK/secret 摘要/租户归属永不改写；以及掩码路径经服务层追加 "secret_hash"
-//     （DTO 上不存在的路径）后，带掩码的更新当前会整体校验失败的行为快照。
+//     AK/secret 摘要/租户归属永不改写；服务层会把掩码内的不可变路径
+//     （access_key/tenant_id）剔除后仅更新合法路径。
 //   - IssueToken 令牌交换（miniredis 假 redis）：正确 SK 换得 HS256 机器令牌
 //     并清空失败计数；错误 SK 计满阈值后按 IP+AK 锁定；停用/过期凭证拒绝；
 //     换发成功后 last_used_at 被尽力刷新。
@@ -197,28 +197,52 @@ func TestAccessKeyServiceSqlite_UpdateNilMaskKeepsImmutableFields(t *testing.T) 
 	require.Error(t, err, "缺操作人声明的更新应被拒绝")
 }
 
-// TestAccessKeyServiceSqlite_UpdateWithMaskFailsValidation 行为快照：服务层会向掩码
-// 追加 "access_key"/"secret_hash"/"tenant_id"（黑列出意图），其中 "secret_hash"
-// 不在 AccessKey DTO 的字段集内，带掩码的更新经 FieldMask 校验整体失败且不落库。
-func TestAccessKeyServiceSqlite_UpdateWithMaskFailsValidation(t *testing.T) {
+// TestAccessKeyServiceSqlite_UpdateWithMaskImmutableStripped 修复后语义：
+// 服务层把不可变字段（access_key/tenant_id）从掩码剔除而非追加进白名单
+//（追加 "secret_hash" 曾致一切带掩码更新整体失败），合法路径（name）正常
+// 更新、AK/摘要/租户归属保持原值；掩码只含不可变字段时为仅盖章的空操作。
+func TestAccessKeyServiceSqlite_UpdateWithMaskImmutableStripped(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
 	ctx := enttest.NewSystemViewerCtx(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 82})
 
-	maskedID, _, _ := createAccessKeyViaService(t, svc, opCtx, "掩码更新凭证名")
-
-	_, err := svc.Update(opCtx, &accesskeyV1.UpdateAccessKeyRequest{
-		Id:         maskedID,
-		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
-		Data:       &accesskeyV1.AccessKey{Name: trans.Ptr("不应生效的名")},
-	})
-	require.Error(t, err, "带掩码的更新当前应整体失败（追加的 secret_hash 路径非法）")
-	require.Contains(t, err.Error(), "update access key failed")
-
-	row, err := entClient.Client().AccessKey.Query().Only(ctx)
+	maskedID, origAK, _ := createAccessKeyViaService(t, svc, opCtx, "掩码更新凭证名")
+	before, err := entClient.Client().AccessKey.Query().Only(ctx)
 	require.NoError(t, err)
-	require.Equal(t, "掩码更新凭证名", *row.Name, "失败的更新不应落库任何字段")
+	origTenant := before.TenantID
+	origHash := before.SecretHash
+
+	// 合法路径 + 不可变路径混合：剔除后 name 更新生效、其余字段不可改写
+	_, err = svc.Update(opCtx, &accesskeyV1.UpdateAccessKeyRequest{
+		Id:         maskedID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name", "access_key", "tenant_id"}},
+		Data: &accesskeyV1.AccessKey{
+			Name:      trans.Ptr("合法更新名"),
+			AccessKey: trans.Ptr("ATTACKER_KEY"),
+			TenantId:  trans.Ptr(uint32(999)),
+		},
+	})
+	require.NoError(t, err, "不可变字段剔除后掩码更新应成功")
+	after, err := entClient.Client().AccessKey.Query().Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "合法更新名", *after.Name, "掩码内合法路径应更新")
+	require.Equal(t, origAK, *after.AccessKey, "access_key 不可变")
+	require.Equal(t, origHash, after.SecretHash, "secret 摘要不可变")
+	require.Equal(t, origTenant, after.TenantID, "tenant_id 不可变")
+
+	// 掩码只含不可变字段：剔除后仅剩强制盖章的 updated_by，空操作不报错
+	_, err = svc.Update(opCtx, &accesskeyV1.UpdateAccessKeyRequest{
+		Id:         maskedID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"access_key"}},
+		Data: &accesskeyV1.AccessKey{
+			AccessKey: trans.Ptr("ATTACKER_KEY_2"),
+		},
+	})
+	require.NoError(t, err, "只含不可变字段的掩码剔除后应为空操作")
+	final, err := entClient.Client().AccessKey.Query().Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, origAK, *final.AccessKey, "access_key 仍不可变")
 }
 
 // TestAccessKeyServiceSqlite_DisabledKeyIssueTokenRejected 验证停用凭证被换发拒绝。

@@ -189,11 +189,12 @@ func TestNotificationChannelRepoSqlite_Get(t *testing.T) {
 	require.Equal(t, notificationChannelV1.NotificationChannel_START_TLS, dto.GetSmtpTls(), "ent SMTPTLSStartTls 应回映射为 proto START_TLS")
 	require.True(t, dto.GetHasPassword(), "库里存在密码列时 HasPassword 应为 true")
 
-	// 命中（无密码）：HasPassword=false；未传 type 时按 ent 默认 EMAIL 落库
+	// 命中（无密码）：HasPassword=false；显式声明 WEBHOOK 的行如实回读
+	// WEBHOOK（Type 回填修复前该字段被丢弃、呈缺省 EMAIL 零值）。
 	dto, err = repo.Get(ctx, idWithoutPwd)
 	require.NoError(t, err)
 	require.Equal(t, idWithoutPwd, dto.GetId())
-	require.Equal(t, notificationChannelV1.NotificationChannel_EMAIL, dto.GetType(), "未传 type 时应按 ent 默认 EMAIL 落库")
+	require.Equal(t, notificationChannelV1.NotificationChannel_WEBHOOK, dto.GetType(), "显式 WEBHOOK 应回读 WEBHOOK")
 	require.False(t, dto.GetHasPassword(), "库里无密码列时 HasPassword 应为 false")
 
 	// 未命中

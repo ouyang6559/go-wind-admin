@@ -125,8 +125,21 @@ func (s *AccessKeyService) Update(ctx context.Context, req *accesskeyV1.UpdateAc
 	}
 	req.Data.UpdatedBy = trans.Ptr(operator.UserId)
 	if req.UpdateMask != nil {
+		// 强制盖章操作人（与其他服务一致的掩码追加语义）
 		req.UpdateMask.Paths = append(req.UpdateMask.Paths, "updated_by")
-		req.UpdateMask.Paths = append(req.UpdateMask.Paths, "access_key", "secret_hash", "tenant_id")
+		// 不可变字段从掩码剔除。此前误把三字段 append 进掩码白名单：
+		// secret_hash 在 DTO 上不存在 → 整条掩码校验失败（一切带掩码更新
+		// 均报 "update access key failed"）；access_key/tenant_id 反被放行
+		// 为可更新。修正为从掩码移除（剔除后掩码至少含 updated_by）。
+		kept := req.UpdateMask.Paths[:0]
+		for _, p := range req.UpdateMask.Paths {
+			switch p {
+			case "access_key", "accessKey", "secret_hash", "secretHash", "tenant_id", "tenantId":
+				continue
+			}
+			kept = append(kept, p)
+		}
+		req.UpdateMask.Paths = kept
 	}
 	if err := s.repo.Update(ctx, req); err != nil {
 		return nil, err

@@ -268,15 +268,8 @@ func TestNotificationChannelServiceSqlite_Delete(t *testing.T) {
 }
 
 // TestNotificationChannelServiceSqlite_SendTestEmailBranches 覆盖 SendTestEmail
-// 的全部前置校验分支：id/recipient 缺失、停用渠道、SMTP 未配置
-// （SendMail 在拨号前快速失败，不触网）。
-//
-// 行为快照：WEBHOOK 渠道经创建转换器落库为 TypeWebhook，但读路径的
-// ToDTO 不回填 Type（DTO 侧保持缺省 EMAIL），因此 SendTestEmail 的
-// “仅 EMAIL 渠道”守卫对 WEBHOOK 渠道当前不生效——
-// 该渠道无 SMTP 主机，实际落到 SendMail 的快速失败分支。
-// 修复读路径枚举回填后，本用例的 WEBHOOK 段应改为断言
-// "only available for EMAIL channels"。
+// 的全部前置校验分支：id/recipient 缺失、停用渠道、非 EMAIL 渠道类型守卫、
+// SMTP 未配置（SendMail 在拨号前快速失败，不触网）。
 func TestNotificationChannelServiceSqlite_SendTestEmailBranches(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
@@ -323,14 +316,13 @@ func TestNotificationChannelServiceSqlite_SendTestEmailBranches(t *testing.T) {
 	require.Equal(t, notificationchannel.TypeWebhook, storedTypes["webhook 渠道"], "WEBHOOK 渠道应按声明落库")
 	require.Equal(t, notificationchannel.TypeEmail, storedTypes["停用渠道"], "EMAIL 渠道应按声明落库")
 
-	// 读路径行为快照：ToDTO 不回填 Type，WEBHOOK 渠道的 Get 视图为缺省 EMAIL
-	//（该值是 0 值枚举，nil 与 EMAIL 无法从 getter 区分）。
+	// 读路径：Type 回填修复后 WEBHOOK 渠道的 Get 视图如实呈 WEBHOOK。
 	webhookView, err := svc.GetNotificationChannel(ctx, &notificationChannelV1.GetNotificationChannelRequest{
 		Id: webhook.GetId(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, notificationChannelV1.NotificationChannel_EMAIL, webhookView.GetType(),
-		"行为快照：读路径当前不回填渠道类型，WEBHOOK 渠道视图呈缺省 EMAIL")
+	require.Equal(t, notificationChannelV1.NotificationChannel_WEBHOOK, webhookView.GetType(),
+		"读路径应回填渠道类型（此前 WEBHOOK 视图呈缺省 EMAIL）")
 
 	_, err = svc.SendTestEmail(ctx, nil)
 	require.Error(t, err, "nil 请求体应被拒绝")
@@ -355,6 +347,6 @@ func TestNotificationChannelServiceSqlite_SendTestEmailBranches(t *testing.T) {
 	require.Contains(t, err.Error(), "send test email failed")
 
 	_, err = svc.SendTestEmail(opCtx, &notificationChannelV1.SendTestEmailRequest{Id: webhook.GetId(), Recipient: "a@b.test"})
-	require.Error(t, err, "WEBHOOK 渠道无 SMTP 主机，发送应快速失败（读路径快照下类型守卫不生效）")
-	require.Contains(t, err.Error(), "send test email failed")
+	require.Error(t, err, "WEBHOOK 渠道应被类型守卫拒绝（Type 回填修复后仅 EMAIL 守卫生效）")
+	require.Contains(t, err.Error(), "only available for EMAIL channels")
 }
