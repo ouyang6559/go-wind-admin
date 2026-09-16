@@ -3,6 +3,7 @@ module go-wind-admin
 go 1.26.4
 
 require (
+	ariga.io/atlas v1.3.0
 	entgo.io/ent v0.14.6
 	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
@@ -72,7 +73,6 @@ require (
 )
 
 require (
-	ariga.io/atlas v1.3.0 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2 // indirect
 	buf.build/go/protovalidate v1.4.0 // indirect
 	cel.dev/cel-go v0.32.0 // indirect
