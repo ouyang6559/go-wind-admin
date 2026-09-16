@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useMatches } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 
@@ -21,6 +21,7 @@ import { useThemeConfig } from '@/core/preferences/hooks/useThemeConfig';
 import { PreferencesPanel } from '@/core/preferences/components';
 
 import { allRoutes } from '@/router';
+import { AccessibleRoutesContext } from '@/core/router';
 import type { AppRouteObject } from '@/core/router/types';
 
 interface LayoutRouteHandle {
@@ -102,11 +103,13 @@ export const MainLayout = ({ routes: dynamicRoutes }: MainLayoutProps) => {
     [setPreferences],
   );
 
-  // 菜单数据
+  // 菜单数据：mountedRoutes 取自 AccessibleRoutesContext（实际挂载的路由树）——
+  // 后端模式下侧栏必须镜像后端下发路由，回退静态全量表会造成未授权菜单可见、点击 404
   const permissions = useMemo(() => getAllPermissions(), [getAllPermissions]);
+  const mountedRoutes = dynamicRoutes ?? useContext(AccessibleRoutesContext) ?? undefined;
   const menuData = useMenuData({
     staticRoutes: allRoutes,
-    dynamicRoutes,
+    dynamicRoutes: mountedRoutes,
     permissions,
   });
 

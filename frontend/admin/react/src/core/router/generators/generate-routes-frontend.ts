@@ -16,8 +16,9 @@ export async function generateRoutesByFrontend(
     // 纯变换：逐层构造新节点（element 等属性按引用共享），绝不回写传入的树。
     // 该树是模块级单例（router/modules/* 经 business-routes 装配），本函数在
     // 未登录时就会以空权限被调用——就地过滤会把带 authority 的节点从单例里
-    // 永久剔除，登录后重建也找不回。不能照搬 vue 端的 cloneDeep 防线：react
-    // 路由携带活的 React 元素（函数型值），lodash 深拷贝会将其替换成空对象。
+    // 永久剔除，登录后重建也找不回。vue 端以 accessible 层 cloneDeep 防线解决同类
+    // 问题（实测 lodash 对嵌套函数按引用保留，cloneDeep 亦可行）；此处取纯过滤：
+    // 未触碰子树零拷贝，且避免整树复制含冻结的 React 元素。
     const walk = (nodes: AppRouteObject[]): AppRouteObject[] => {
         const kept: AppRouteObject[] = [];
         for (const node of nodes) {
