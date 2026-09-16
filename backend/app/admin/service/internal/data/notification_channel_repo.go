@@ -284,8 +284,10 @@ func (r *NotificationChannelRepo) GetFirstEnabledEmailChannel(ctx context.Contex
 		Username: derefStr(e.SMTPUsername),
 		Password: password,
 		From:     derefStr(e.SMTPFrom),
-		TlsMode:  string(*e.SMTPTLS),
-		Enabled:  true,
+		// SMTPTLS 为可空列：此前 string(*e.SMTPTLS) 裸解引用，NULL 行会 panic，
+		// 对齐同函数族其余字段的 nil 安全取值（derefStrP）。
+		TlsMode: derefStrP(e.SMTPTLS),
+		Enabled: true,
 	}, nil
 }
 
