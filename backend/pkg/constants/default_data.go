@@ -296,9 +296,9 @@ func ComponentToModule(component string) identityV1.Module {
 		return identityV1.Module_TENANT
 	case len(component) >= 15 && component[:15] == "app/permission/":
 		return identityV1.Module_PERMISSION
-	case len(component) >= 9 && component[:9] == "app/log/":
+	case len(component) >= 8 && component[:8] == "app/log/":
 		return identityV1.Module_LOG
-	case len(component) >= 20 && component[:20] == "app/internal_message/":
+	case len(component) >= 21 && component[:21] == "app/internal_message/":
 		return identityV1.Module_INTERNAL_MESSAGE
 	case len(component) >= 9 && component[:9] == "app/file/":
 		return identityV1.Module_FILE
