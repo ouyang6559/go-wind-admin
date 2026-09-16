@@ -110,6 +110,9 @@ func NewApiRepoForTest(entClient *entCrud.EntClient[*ent.Client]) *ApiRepo {
 		log:       bLogger.NewHelper(bLogger.NopLogger()),
 		entClient: entClient,
 		mapper:    mapper.NewCopierMapper[permissionV1.Api, ent.Api](),
+		statusConverter: mapper.NewEnumTypeConverter[permissionV1.Api_Status, entApi.Status](
+			permissionV1.Api_Status_name, permissionV1.Api_Status_value,
+		),
 		scopeConverter: mapper.NewEnumTypeConverter[permissionV1.Api_Scope, entApi.Scope](
 			permissionV1.Api_Scope_name, permissionV1.Api_Scope_value,
 		),
