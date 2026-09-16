@@ -473,9 +473,6 @@ func (r *MembershipRepo) GetMembershipByUserTenant(ctx context.Context, userID, 
 
 	dto := r.mapper.ToDTO(entity)
 
-	// status 回填：mapper 的枚举转换对无法赋入指针字段而丢弃（机制见 backfillEnumsFrom 注释）。
-	r.backfillEnumsFrom([]*identityV1.Membership{dto}, []*ent.Membership{entity})
-
 	return dto, nil
 }
 
@@ -502,36 +499,7 @@ func (r *MembershipRepo) GetUserActiveMemberships(ctx context.Context, userID ui
 		dtos = append(dtos, dto)
 	}
 
-	// status 回填：mapper 的枚举转换对无法赋入指针字段而丢弃（机制见 backfillEnumsFrom 注释）。
-	r.backfillEnumsFrom(dtos, entities)
-
 	return dtos, nil
-}
-
-// backfillEnumsFrom 用实体行回填 DTO 列表的 status 字段。
-//
-// 实体侧 status 为可空指针枚举、DTO 侧为可选指针字段——mapper 的枚举转换对
-// （值↔值）无法赋入指针字段而直接丢弃，读视图因此恒呈零值。经仓内既有的
-// statusConverter（实体枚举名 → proto 枚举值）统一回填（对齐 PositionRepo
-// 的同型修复范式）。
-func (r *MembershipRepo) backfillEnumsFrom(items []*identityV1.Membership, entities []*ent.Membership) {
-	if len(items) == 0 || len(entities) == 0 {
-		return
-	}
-	statuses := make(map[uint32]membership.Status, len(entities))
-	for _, e := range entities {
-		if e.Status != nil {
-			statuses[e.ID] = *e.Status
-		}
-	}
-	for _, it := range items {
-		if s, ok := statuses[it.GetId()]; ok {
-			sv := s
-			if p := r.statusConverter.ToDTO(&sv); p != nil {
-				it.Status = p
-			}
-		}
-	}
 }
 
 // ListMembershipRoleIDs 获取 Membership 关联的角色 ID 列表

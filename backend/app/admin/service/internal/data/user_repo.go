@@ -411,8 +411,6 @@ func (r *userRepo) List(ctx context.Context, req *paginationV1.PagingRequest) (*
 		return &identityV1.ListUserResponse{Total: 0, Items: nil}, nil
 	}
 
-	r.queryEnumsAndBackfill(ctx, ret.Items)
-
 	resp := &identityV1.ListUserResponse{
 		Total: ret.Total,
 		Items: ret.Items,
@@ -463,8 +461,6 @@ func (r *userRepo) Get(ctx context.Context, req *identityV1.GetUserRequest) (*id
 		return nil, err
 	}
 
-	r.queryEnumsAndBackfill(ctx, []*identityV1.User{dto})
-
 	roleIDs, positionIDs, orgUnitIDs, err := r.ListUserRelationIDs(ctx, dto.GetId())
 	if err != nil {
 		r.log.Errorf(ctx, "list user relation ids failed: %s", err.Error())
@@ -476,56 +472,6 @@ func (r *userRepo) Get(ctx context.Context, req *identityV1.GetUserRequest) (*id
 	r.log.Debugf(ctx, "get user id=%d role_ids=%v position_ids=%v org_unit_ids=%v", dto.GetId(), roleIDs, positionIDs, orgUnitIDs)
 
 	return dto, err
-}
-
-// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 status/gender 字段。
-//
-// 实体侧两者均为带列默认值的可空指针枚举，DTO 侧均为可选指针字段——
-// mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，读视图因此
-// 恒呈零值。经仓内既有 converter（实体枚举名 → proto 枚举值）统一回填
-// （对齐 PositionRepo 的同型修复范式）。
-func (r *userRepo) queryEnumsAndBackfill(ctx context.Context, items []*identityV1.User) {
-	if len(items) == 0 {
-		return
-	}
-	entities, err := r.entClient.Client().User.Query().
-		Select(user.FieldID, user.FieldStatus, user.FieldGender).
-		All(ctx)
-	if err != nil {
-		r.log.Errorf(ctx, "query user enum columns failed: %s", err.Error())
-		return
-	}
-	r.backfillEnumsFrom(items, entities)
-}
-
-func (r *userRepo) backfillEnumsFrom(items []*identityV1.User, entities []*ent.User) {
-	if len(items) == 0 || len(entities) == 0 {
-		return
-	}
-	statuses := make(map[uint32]user.Status, len(entities))
-	genders := make(map[uint32]user.Gender, len(entities))
-	for _, e := range entities {
-		if e.Status != nil {
-			statuses[e.ID] = *e.Status
-		}
-		if e.Gender != nil {
-			genders[e.ID] = *e.Gender
-		}
-	}
-	for _, it := range items {
-		if s, ok := statuses[it.GetId()]; ok {
-			sv := s
-			if p := r.statusConverter.ToDTO(&sv); p != nil {
-				it.Status = p
-			}
-		}
-		if g, ok := genders[it.GetId()]; ok {
-			gv := g
-			if p := r.genderConverter.ToDTO(&gv); p != nil {
-				it.Gender = p
-			}
-		}
-	}
 }
 
 // Create 创建用户
@@ -1195,8 +1141,6 @@ func (r *userRepo) ListUsersByIds(ctx context.Context, ids []uint32) ([]*identit
 		dto := r.mapper.ToDTO(entity)
 		dtos = append(dtos, dto)
 	}
-
-	r.backfillEnumsFrom(dtos, entities)
 
 	return dtos, nil
 }

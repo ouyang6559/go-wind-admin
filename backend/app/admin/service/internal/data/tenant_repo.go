@@ -106,8 +106,6 @@ func (r *TenantRepo) List(ctx context.Context, req *paginationV1.PagingRequest) 
 		return &identityV1.ListTenantResponse{Total: 0, Items: nil}, nil
 	}
 
-	r.queryEnumsAndBackfill(ctx, ret.Items)
-
 	return &identityV1.ListTenantResponse{
 		Total: ret.Total,
 		Items: ret.Items,
@@ -150,70 +148,7 @@ func (r *TenantRepo) Get(ctx context.Context, req *identityV1.GetTenantRequest) 
 		return nil, err
 	}
 
-	r.queryEnumsAndBackfill(ctx, []*identityV1.Tenant{dto})
-
 	return dto, err
-}
-
-// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 status/type/audit_status 字段。
-//
-// 实体侧三者均为可空指针枚举（status/type 带列默认值；audit_status 无默认、
-// 未写入的行保持 NULL），DTO 侧均为可选指针字段——mapper 的枚举转换对
-// （值↔值）无法赋入指针字段而直接丢弃，读视图因此恒呈零值。经仓内既有
-// converter（实体枚举名 → proto 枚举值）统一回填（对齐 PositionRepo 的
-// 同型修复范式）。
-func (r *TenantRepo) queryEnumsAndBackfill(ctx context.Context, items []*identityV1.Tenant) {
-	if len(items) == 0 {
-		return
-	}
-	entities, err := r.entClient.Client().Tenant.Query().
-		Select(tenant.FieldID, tenant.FieldStatus, tenant.FieldType, tenant.FieldAuditStatus).
-		All(ctx)
-	if err != nil {
-		r.log.Errorf(ctx, "query tenant enum columns failed: %s", err.Error())
-		return
-	}
-	r.backfillEnumsFrom(items, entities)
-}
-
-func (r *TenantRepo) backfillEnumsFrom(items []*identityV1.Tenant, entities []*ent.Tenant) {
-	if len(items) == 0 || len(entities) == 0 {
-		return
-	}
-	statuses := make(map[uint32]tenant.Status, len(entities))
-	types := make(map[uint32]tenant.Type, len(entities))
-	auditStatuses := make(map[uint32]tenant.AuditStatus, len(entities))
-	for _, e := range entities {
-		if e.Status != nil {
-			statuses[e.ID] = *e.Status
-		}
-		if e.Type != nil {
-			types[e.ID] = *e.Type
-		}
-		if e.AuditStatus != nil {
-			auditStatuses[e.ID] = *e.AuditStatus
-		}
-	}
-	for _, it := range items {
-		if s, ok := statuses[it.GetId()]; ok {
-			sv := s
-			if p := r.statusConverter.ToDTO(&sv); p != nil {
-				it.Status = p
-			}
-		}
-		if t, ok := types[it.GetId()]; ok {
-			tv := t
-			if p := r.typeConverter.ToDTO(&tv); p != nil {
-				it.Type = p
-			}
-		}
-		if a, ok := auditStatuses[it.GetId()]; ok {
-			av := a
-			if p := r.auditStatusConverter.ToDTO(&av); p != nil {
-				it.AuditStatus = p
-			}
-		}
-	}
 }
 
 func (r *TenantRepo) BeginTx(ctx context.Context) (tx *ent.Tx, cleanup func(), err error) {
@@ -433,8 +368,6 @@ func (r *TenantRepo) ListTenantsByIds(ctx context.Context, ids []uint32) ([]*ide
 		dto := r.mapper.ToDTO(entity)
 		dtos = append(dtos, dto)
 	}
-
-	r.backfillEnumsFrom(dtos, entities)
 
 	return dtos, nil
 }

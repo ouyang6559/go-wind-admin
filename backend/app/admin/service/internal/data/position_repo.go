@@ -164,18 +164,21 @@ func (r *PositionRepo) Get(ctx context.Context, req *identityV1.GetPositionReque
 	return dto, err
 }
 
-// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 status/type 字段。
+// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 type 字段。
 //
-// 实体侧 status 为可空指针枚举、type 为带默认值的值型枚举，DTO 侧两者均为
-// 可选指针字段——mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，
-// 读视图因此恒呈零值。经仓内既有 converter（实体枚举名 → proto 枚举值）
-// 统一回填（对齐 NotificationChannelRepo 的同型修复范式）。
+// 枚举转换机制注记：mapper 经 EnumTypeConverter.NewConverterPair 注册的
+// 是**指针↔指针对**（*ent枚举 → *proto枚举）——实体侧可空指针枚举列
+//（Optional+Nillable，如本仓 status）在 copier 的转换查表里精确命中、
+// 读路径本就如实流通，无需回填。被丢弃的是**混合形态**：实体侧为值型
+// 枚举列（带 Default 且无 Nillable，如本仓 type）而 DTO 侧为可选指针
+// 字段——值型源与指针对键失配，copier 转而给 DTO 指针分配零值。故此处
+// 只对 type 做二次查询回填（对齐 notification_channel 的 Type 同型修复）。
 func (r *PositionRepo) queryEnumsAndBackfill(ctx context.Context, items []*identityV1.Position) {
 	if len(items) == 0 {
 		return
 	}
 	entities, err := r.entClient.Client().Position.Query().
-		Select(position.FieldID, position.FieldStatus, position.FieldType).
+		Select(position.FieldID, position.FieldType).
 		All(ctx)
 	if err != nil {
 		r.log.Errorf(ctx, "query position enum columns failed: %s", err.Error())
@@ -188,23 +191,13 @@ func (r *PositionRepo) backfillEnumsFrom(items []*identityV1.Position, entities 
 	if len(items) == 0 || len(entities) == 0 {
 		return
 	}
-	statuses := make(map[uint32]position.Status, len(entities))
 	types := make(map[uint32]position.Type, len(entities))
 	for _, e := range entities {
-		if e.Status != nil {
-			statuses[e.ID] = *e.Status
-		}
 		if e.Type != "" {
 			types[e.ID] = e.Type
 		}
 	}
 	for _, it := range items {
-		if s, ok := statuses[it.GetId()]; ok {
-			sv := s
-			if p := r.statusConverter.ToDTO(&sv); p != nil {
-				it.Status = p
-			}
-		}
 		if t, ok := types[it.GetId()]; ok {
 			tv := t
 			if p := r.typeConverter.ToDTO(&tv); p != nil {

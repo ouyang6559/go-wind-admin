@@ -148,10 +148,6 @@ func (r *OrgUnitRepo) List(ctx context.Context, req *paginationV1.PagingRequest)
 		dtos = append(dtos, dto)
 	}
 
-	// 枚举回填须在 BuildTree 之前：树化后子节点会挂进 Children，
-	// 平铺遍历将漏掉子节点的回填。
-	r.backfillEnumsFrom(dtos, entities)
-
 	// 构建树形结构
 	dtos = pagination.BuildTree(
 		dtos,
@@ -201,59 +197,7 @@ func (r *OrgUnitRepo) Get(ctx context.Context, req *identityV1.GetOrgUnitRequest
 		return nil, err
 	}
 
-	r.queryEnumsAndBackfill(ctx, []*identityV1.OrgUnit{dto})
-
 	return dto, err
-}
-
-// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 status/type 字段。
-//
-// 实体侧两者均为带列默认值的可空指针枚举，DTO 侧均为可选指针字段——
-// mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，读视图因此
-// 恒呈零值。经仓内既有 converter（实体枚举名 → proto 枚举值）统一回填
-// （对齐 PositionRepo 的同型修复范式）。
-func (r *OrgUnitRepo) queryEnumsAndBackfill(ctx context.Context, items []*identityV1.OrgUnit) {
-	if len(items) == 0 {
-		return
-	}
-	entities, err := r.entClient.Client().OrgUnit.Query().
-		Select(orgunit.FieldID, orgunit.FieldStatus, orgunit.FieldType).
-		All(ctx)
-	if err != nil {
-		r.log.Errorf(ctx, "query org unit enum columns failed: %s", err.Error())
-		return
-	}
-	r.backfillEnumsFrom(items, entities)
-}
-
-func (r *OrgUnitRepo) backfillEnumsFrom(items []*identityV1.OrgUnit, entities []*ent.OrgUnit) {
-	if len(items) == 0 || len(entities) == 0 {
-		return
-	}
-	statuses := make(map[uint32]orgunit.Status, len(entities))
-	types := make(map[uint32]orgunit.Type, len(entities))
-	for _, e := range entities {
-		if e.Status != nil {
-			statuses[e.ID] = *e.Status
-		}
-		if e.Type != nil {
-			types[e.ID] = *e.Type
-		}
-	}
-	for _, it := range items {
-		if s, ok := statuses[it.GetId()]; ok {
-			sv := s
-			if p := r.statusConverter.ToDTO(&sv); p != nil {
-				it.Status = p
-			}
-		}
-		if t, ok := types[it.GetId()]; ok {
-			tv := t
-			if p := r.typeConverter.ToDTO(&tv); p != nil {
-				it.Type = p
-			}
-		}
-	}
 }
 
 // ListOrgUnitsByIds 通过多个ID获取组织列表
@@ -275,8 +219,6 @@ func (r *OrgUnitRepo) ListOrgUnitsByIds(ctx context.Context, ids []uint32) ([]*i
 		dto := r.mapper.ToDTO(entity)
 		dtos = append(dtos, dto)
 	}
-
-	r.backfillEnumsFrom(dtos, entities)
 
 	return dtos, nil
 }

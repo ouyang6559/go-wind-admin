@@ -153,8 +153,6 @@ func (r *LoginPolicyRepo) List(ctx context.Context, req *paginationV1.PagingRequ
 		return &authenticationV1.ListLoginPolicyResponse{Total: 0, Items: nil}, nil
 	}
 
-	r.queryEnumsAndBackfill(ctx, ret.Items)
-
 	return &authenticationV1.ListLoginPolicyResponse{
 		Total: ret.Total,
 		Items: ret.Items,
@@ -191,59 +189,7 @@ func (r *LoginPolicyRepo) Get(ctx context.Context, req *authenticationV1.GetLogi
 		return nil, err
 	}
 
-	r.queryEnumsAndBackfill(ctx, []*authenticationV1.LoginPolicy{dto})
-
 	return dto, err
-}
-
-// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 type/method 字段。
-//
-// 实体侧两者均为带列默认值的可空指针枚举，DTO 侧均为可选指针字段——
-// mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，读视图因此
-// 恒呈零值。经仓内既有 converter（实体枚举名 → proto 枚举值）统一回填
-// （对齐 PositionRepo 的同型修复范式）。
-func (r *LoginPolicyRepo) queryEnumsAndBackfill(ctx context.Context, items []*authenticationV1.LoginPolicy) {
-	if len(items) == 0 {
-		return
-	}
-	entities, err := r.entClient.Client().LoginPolicy.Query().
-		Select(loginpolicy.FieldID, loginpolicy.FieldType, loginpolicy.FieldMethod).
-		All(ctx)
-	if err != nil {
-		r.log.Errorf(ctx, "query login policy enum columns failed: %s", err.Error())
-		return
-	}
-	r.backfillEnumsFrom(items, entities)
-}
-
-func (r *LoginPolicyRepo) backfillEnumsFrom(items []*authenticationV1.LoginPolicy, entities []*ent.LoginPolicy) {
-	if len(items) == 0 || len(entities) == 0 {
-		return
-	}
-	types := make(map[uint32]loginpolicy.Type, len(entities))
-	methods := make(map[uint32]loginpolicy.Method, len(entities))
-	for _, e := range entities {
-		if e.Type != nil {
-			types[e.ID] = *e.Type
-		}
-		if e.Method != nil {
-			methods[e.ID] = *e.Method
-		}
-	}
-	for _, it := range items {
-		if t, ok := types[it.GetId()]; ok {
-			tv := t
-			if p := r.typeConverter.ToDTO(&tv); p != nil {
-				it.Type = p
-			}
-		}
-		if m, ok := methods[it.GetId()]; ok {
-			mv := m
-			if p := r.methodConverter.ToDTO(&mv); p != nil {
-				it.Method = p
-			}
-		}
-	}
 }
 
 func (r *LoginPolicyRepo) Create(ctx context.Context, req *authenticationV1.CreateLoginPolicyRequest) error {
