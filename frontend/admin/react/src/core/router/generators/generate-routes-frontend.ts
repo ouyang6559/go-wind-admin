@@ -1,6 +1,5 @@
 import type {ReactNode} from "react";
 
-import {filterTree, mapTree} from "@/utils";
 import type {AppRouteObject, RouteMeta} from "@/core/router/types";
 
 /**
@@ -14,26 +13,35 @@ export async function generateRoutesByFrontend(
     permissions: string[],
     forbiddenElement?: ReactNode
 ): Promise<AppRouteObject[]> {
-    // 1. 根据权限过滤路由树
-    const filteredRoutes = filterTree(routes, (route) => {
-        return hasPermission(route, permissions);
-    });
-
-    // 2. 如果没有提供 403 元素，直接返回
-    if (!forbiddenElement) {
-        return filteredRoutes;
-    }
-
-    // 3. 处理"菜单可见但访问返回 403"的节点
-    return mapTree(filteredRoutes, (route) => {
-        if (shouldRenderForbidden(route, permissions)) {
-            return {
-                ...route,
-                element: forbiddenElement,
-            };
+    // 纯变换：逐层构造新节点（element 等属性按引用共享），绝不回写传入的树。
+    // 该树是模块级单例（router/modules/* 经 business-routes 装配），本函数在
+    // 未登录时就会以空权限被调用——就地过滤会把带 authority 的节点从单例里
+    // 永久剔除，登录后重建也找不回。不能照搬 vue 端的 cloneDeep 防线：react
+    // 路由携带活的 React 元素（函数型值），lodash 深拷贝会将其替换成空对象。
+    const walk = (nodes: AppRouteObject[]): AppRouteObject[] => {
+        const kept: AppRouteObject[] = [];
+        for (const node of nodes) {
+            const pass = hasPermission(node, permissions);
+            const mvwf = menuVisibleWithForbidden(node);
+            if (!pass && !mvwf) {
+                continue;
+            }
+            const children = Array.isArray(node.children)
+                ? walk(node.children)
+                : undefined;
+            const next: AppRouteObject =
+                children === undefined ? node : {...node, children};
+            if (mvwf && forbiddenElement) {
+                // 对齐 vue-vben / vue-element：声明了 menuVisibleWithForbidden
+                // 的路由保留在菜单中，但无论是否持码，元素一律换成 403
+                kept.push({...next, element: forbiddenElement});
+            } else {
+                kept.push(next);
+            }
         }
-        return route;
-    });
+        return kept;
+    };
+    return walk(routes);
 }
 
 /**
@@ -65,23 +73,18 @@ function hasPermission(route: AppRouteObject, permissions: string[]): boolean {
 }
 
 /**
- * 判断是否渲染 403 页面（菜单可见但无权限访问）
+ * 判断路由是否声明了"菜单可见，但访问返回 403"
  * @param route - 路由对象
- * @param permissions - 用户权限码列表
- * @returns 是否应渲染禁止访问页面
+ * @returns 是否为 menuVisibleWithForbidden 节点
  */
-function shouldRenderForbidden(route: AppRouteObject, permissions: string[]): boolean {
+function menuVisibleWithForbidden(route: AppRouteObject): boolean {
     const meta = route.meta as RouteMeta | undefined;
 
-    // 必须同时满足：
-    // 1. 有权限要求
-    // 2. 当前用户无此权限
-    // 3. 配置了 menuVisibleWithForbidden = true
+    // 有权限要求且显式声明了 menuVisibleWithForbidden
     return (
         !!meta?.authority?.length &&
-        !hasPermission(route, permissions) &&
         meta?.menuVisibleWithForbidden === true
     );
 }
 
-export {hasPermission, shouldRenderForbidden};
+export {hasPermission};
