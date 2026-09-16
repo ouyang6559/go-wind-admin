@@ -38,11 +38,11 @@ func TestContentTypeToBucketName_OfficeSubstringsAndFallbacks(t *testing.T) {
 		// 带 MIME 参数：参数被剥离
 		{"image with params", "image/png; name=\"foo.png\"", BucketImages},
 
-		// 解析失败（空白）回退：TrimSpace + ToLower 后命中 image 主类型
-		{"whitespace padded image", "  image/png  ", BucketImages},
+	// 解析成功（标准库 TrimSpace 归一空白）后命中 image 主类型
+	{"whitespace padded image", "  image/png  ", BucketImages},
 
-		// 解析失败（无子类型）回退：mt 保留 "image/"，SplitN 后仍按主类型落桶
-		{"trailing slash parse failure falls back by main type", "image/", BucketImages},
+	// 解析失败（无子类型）：畸形串不再推断主类型，直接落默认 files 桶
+	{"trailing slash parse failure defaults to files", "image/", BucketFiles},
 
 		// multipart 等其它主类型落入默认 files
 		{"multipart main type", "multipart/form-data", BucketFiles},
@@ -147,44 +147,45 @@ func TestContentTypeToFileExtension_ExplicitArms(t *testing.T) {
 		want        string
 	}{
 		// images
-		{"image/jpg", "image/jpg", ".jpg"},
-		{"image/gif", "image/gif", ".gif"},
-		{"image/webp", "image/webp", ".webp"},
-		{"image/bmp", "image/bmp", ".bmp"},
-		{"image/vnd.microsoft.icon", "image/vnd.microsoft.icon", ".ico"},
+		{"image/jpg", "image/jpg", "jpg"},
+		{"image/gif", "image/gif", "gif"},
+		{"image/webp", "image/webp", "webp"},
+		{"image/bmp", "image/bmp", "bmp"},
+		{"image/vnd.microsoft.icon", "image/vnd.microsoft.icon", "ico"},
 
 		// videos
-		{"video/webm", "video/webm", ".webm"},
-		{"video/quicktime", "video/quicktime", ".mov"},
-		{"video/x-matroska", "video/x-matroska", ".mkv"},
-		{"video/mkv", "video/mkv", ".mkv"},
+		{"video/webm", "video/webm", "webm"},
+		{"video/quicktime", "video/quicktime", "mov"},
+		{"video/x-matroska", "video/x-matroska", "mkv"},
+		{"video/mkv", "video/mkv", "mkv"},
 
 		// audios
-		{"audio/wav", "audio/wav", ".wav"},
-		{"audio/x-wav", "audio/x-wav", ".wav"},
-		{"audio/ogg", "audio/ogg", ".ogg"},
-		{"audio/vorbis", "audio/vorbis", ".ogg"},
-		{"audio/mp4", "audio/mp4", ".m4a"},
+		{"audio/wav", "audio/wav", "wav"},
+		{"audio/x-wav", "audio/x-wav", "wav"},
+		{"audio/ogg", "audio/ogg", "ogg"},
+		{"audio/vorbis", "audio/vorbis", "ogg"},
+		{"audio/mp4", "audio/mp4", "m4a"},
 
 		// text
-		{"text/csv", "text/csv", ".csv"},
+		{"text/csv", "text/csv", "csv"},
 
 		// office documents
-		{"application/msword", "application/msword", ".doc"},
-		{"wordprocessingml document", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"},
-		{"vnd.ms-excel", "application/vnd.ms-excel", ".xls"},
-		{"spreadsheetml sheet", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"},
-		{"vnd.ms-powerpoint", "application/vnd.ms-powerpoint", ".ppt"},
-		{"presentationml presentation", "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"},
+		{"application/msword", "application/msword", "doc"},
+		{"wordprocessingml document", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"},
+		{"vnd.ms-excel", "application/vnd.ms-excel", "xls"},
+		{"spreadsheetml sheet", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"},
+		{"vnd.ms-powerpoint", "application/vnd.ms-powerpoint", "ppt"},
+		{"presentationml presentation", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx"},
 
-		// 解析失败（空白前缀）回退：TrimSpace + ToLower 后命中映射
-		{"whitespace padded image", "  image/png  ", ".png"},
+	// 解析成功（标准库 TrimSpace 归一空白）后命中映射
+	{"whitespace padded image", "  image/png  ", "png"},
 
-		// 解析失败（无子类型）回退：mt 保留 "image/"，无任何映射命中，返回空串
-		{"trailing slash parse failure", "image/", ""},
+	// 解析失败（无子类型）：mt 回退保留 "image/"，无任何映射命中，返回空串
+	{"trailing slash parse failure", "image/", ""},
 
-		// 不在显式 switch、但 mime.ExtensionsByType 有映射的回退路径（exts[0] 恒带点）
-		{"image/tiff via mime fallback", "image/tiff", ".tif"},
+	// 不在显式 switch、但 mime.ExtensionsByType 有映射的回退路径
+	//（标准库返回恒带点，函数统一剥点后返回）
+	{"image/tiff via mime fallback", "image/tiff", "tif"},
 
 		// 无映射：返回空串
 		{"unmapped application subtype", "application/x-custom-unknown", ""},

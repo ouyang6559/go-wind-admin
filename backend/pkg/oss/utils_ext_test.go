@@ -4,8 +4,7 @@ package oss
 //   - ExtractFileExtension：取最后一个点之后的片段（小写化），点在开头或无点返回空；
 //   - EnsureFileExtension：文件名 → MIME → 内容魔数的三级推导顺序，以及全部失败时的 "bin" 兜底。
 //
-// 注意：当前实现里 MIME 分支返回带点后缀（如 ".png"）、文件名/内容分支返回不带点后缀（如 "png"），
-// 形式不一致但为现状行为，测试按实际行为断言。
+// 三个分支的扩展名统一不带前导点（MIME 分支修复后与文件名/内容分支一致）。
 // 内容为 nil 且 MIME 未知时不做断言：该组合会经 DetectContentType(nil) 落入
 // text/plain，其后缀取 mime.ExtensionsByType 首项，在 Windows 注册表环境下不可稳定断言。
 
@@ -54,9 +53,9 @@ func TestEnsureFileExtension(t *testing.T) {
 		{"name wins over content type", "f.txt", "image/png", nil, "txt"},
 		{"uppercase name ext lowered", "F.TXT", "", nil, "txt"},
 
-		// MIME 分支（现状带点返回）
-		{"content type png keeps leading dot", "noext", "image/png", nil, ".png"},
-		{"content type json keeps leading dot", "noext", "application/json", nil, ".json"},
+		// MIME 分支（与文件名/内容分支一致，不带前导点）
+		{"content type png dotless", "noext", "image/png", nil, "png"},
+		{"content type json dotless", "noext", "application/json", nil, "json"},
 
 		// 内容魔数分支（点被 TrimPrefix 去除）
 		{"png magic via content detection", "noext", "application/unknown", testPNGMagic, "png"},

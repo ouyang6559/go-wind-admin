@@ -40,22 +40,24 @@ func TestIsAllowedMimeType(t *testing.T) {
 		{"exact ms-powerpoint", "application/vnd.ms-powerpoint", true},
 		{"exact presentationml", "application/vnd.openxmlformats-officedocument.presentationml.presentation", true},
 
-		// 前缀白名单命中（前缀匹配仅比对前缀长度内的字符，后缀不校验）
+		// 前缀白名单命中（输入先经 ParseMediaType 归一：剥离参数、去空白、
+		// 按 RFC 大小写不敏感归小写，然后前缀匹配）
 		{"prefix image png", "image/png", true},
 		{"prefix image svg", "image/svg+xml", true},
 		{"prefix image arbitrary subtype", "image/anything-custom", true},
-		{"prefix image alone", "image/", true},
-		{"prefix image trailing space", "image/png ", true},
+		{"prefix image wildcard literal", "image/*", true},
+		{"prefix image trailing space normalized", "image/png ", true},
+		{"mixed case normalized", "Image/png", true},
+		{"uppercase normalized", "IMAGE/PNG", true},
+		{"exact text/plain params stripped", "text/plain; charset=utf-8", true},
 		{"prefix video mp4", "video/mp4", true},
 		{"prefix audio mpeg", "audio/mpeg", true},
 
-		// 拒绝：空、大小写不一致、无斜杠、带参数、危险类型
+		// 拒绝：空、无斜杠、畸形/通配串、白名单外类型
 		{"empty", "", false},
-		{"mixed case prefix", "Image/png", false},
-		{"uppercase prefix", "IMAGE/PNG", false},
 		{"no slash image", "image", false},
 		{"no slash png", "png", false},
-		{"exact type with params not stripped", "text/plain; charset=utf-8", false},
+		{"malformed bare image slash", "image/", false},
 		{"text/html not whitelisted", "text/html", false},
 		{"text/csv not whitelisted", "text/csv", false},
 		{"application/javascript not whitelisted", "application/javascript", false},

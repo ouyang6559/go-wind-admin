@@ -12,7 +12,8 @@
 //     nil 来源），落库后 accumulator 必须清空；
 //  5. 进程内 server 路径：事件由业务闭包注入（模拟 driver wrapper 采集），
 //     IP/请求 ID 从真实请求映射；
-//  6. 写入函数为 nil 时只跳过落库（accumulator 不清空）。
+//  6. 写入函数为 nil 时跳过落库但 accumulator 仍被清空（与落库路径的
+//     清空语义一致，防残留事件被后续复用）。
 package logging
 
 import (
@@ -69,11 +70,12 @@ func TestDataAccessAuditLogHandleDirectGuards(t *testing.T) {
 	tr := &khttp.Transport{}
 	events := []audit.AuditEvent{{SqlText: "SELECT 1"}}
 
-	// 写入函数为 nil。
+	// 写入函数为 nil：跳过落库但 accumulator 仍被清空。
 	var opNilFunc options
 	mwNilFunc := NewDataAccessAuditLogMiddleware(&opNilFunc)
 	mwNilFunc.Handle(
 		context.WithValue(context.Background(), audit.AccumulatorKey(), &events), tr, nil, 0)
+	require.Nil(t, events, "nil 写入函数路径也应清空 accumulator（防残留事件被后续复用）")
 
 	// 写入函数存在但 ctx 无 accumulator。
 	var opNoAcc options
@@ -214,7 +216,8 @@ func TestDataAccessAuditLogHandleViaServer(t *testing.T) {
 }
 
 // TestDataAccessAuditLogHandleWriteFuncNil 验证写入函数为 nil 时：
-// 记录构造前的早退跳过落库（且 accumulator 不清空——清空只在落库路径执行）。
+// 记录构造前的早退跳过落库，但 accumulator 仍被清空
+//（与落库路径的清空语义一致，防残留事件被后续复用）。
 func TestDataAccessAuditLogHandleWriteFuncNil(t *testing.T) {
 	env := newAuditServer(t, WithWriteDataAccessAuditLogFunc(nil))
 	env.fire(nethttp.MethodPost, "/case/5", map[string]string{
@@ -227,7 +230,7 @@ func TestDataAccessAuditLogHandleWriteFuncNil(t *testing.T) {
 	assert.Len(t, env.capture.api, 1, "其余审计不受影响")
 	assert.Len(t, env.capture.operation, 1)
 	assert.Len(t, env.capture.permission, 1)
-	// 早退分支不做清空——当前行为，记录在案防回归时误判。
+	// 修复后早退分支同样清空 accumulator。
 	require.NotNil(t, env.acc)
-	require.Len(t, *env.acc, 4, "早退分支不清空 accumulator")
+	require.Empty(t, *env.acc, "早退分支也应清空 accumulator")
 }
