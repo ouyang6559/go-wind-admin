@@ -435,7 +435,16 @@ func (e *Engine) Execute(ctx context.Context, script *Script, execCtx *Context) 
 // executeLocked 在已持有 execMu 的前提下执行单个脚本。
 func (e *Engine) executeLocked(ctx context.Context, script *Script, execCtx *Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.VMTimeout)
-	defer cancel()
+	// 不立即 cancel()：上游 go-scripts/javascript（当前钉 v0.0.8）的取消监视
+	// goroutine 在 ctx.Done 与 done 双就绪时 select 随机选边——run 正常结束后
+	// 监视器若被调度器延迟唤醒，会对共享 runtime 迟到投递 rt.Interrupt（goja
+	// 粘性标志，毒化同引擎下一次执行；TestJSEngine_HookRegister 间歇性失败
+	// 的根因）。立即 cancel() 恰好制造"双就绪"窗口。把取消推迟到预算期限：
+	// 届时 WithTimeout 自身的 deadline 已先行触发（中断语义不受影响），此调用
+	// 仅兜底释放上下文资源；窗口内监视器只会观察到 done。
+	// 上游修复（监视器对带期限 ctx 改用父函数先行 timer.Stop 的本地计时器）
+	// 随 go-scripts 发版并升版本仓依赖后，本缓解可退役。
+	time.AfterFunc(e.config.VMTimeout, cancel)
 
 	// 记录当前脚本名（hook.register 回调归属、诊断日志用）
 	prevScript := e.execCtx.setScript(script.Name)
@@ -646,7 +655,16 @@ func (e *Engine) LoadScriptString(ctx context.Context, scriptName, source string
 	defer e.execMu.Unlock()
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, e.config.VMTimeout)
-	defer cancel()
+	// 不立即 cancel()：上游 go-scripts/javascript（当前钉 v0.0.8）的取消监视
+	// goroutine 在 ctx.Done 与 done 双就绪时 select 随机选边——run 正常结束后
+	// 监视器若被调度器延迟唤醒，会对共享 runtime 迟到投递 rt.Interrupt（goja
+	// 粘性标志，毒化同引擎下一次执行；TestJSEngine_HookRegister 间歇性失败
+	// 的根因）。立即 cancel() 恰好制造"双就绪"窗口。把取消推迟到预算期限：
+	// 届时 WithTimeout 自身的 deadline 已先行触发（中断语义不受影响），此调用
+	// 仅兜底释放上下文资源；窗口内监视器只会观察到 done。
+	// 上游修复（监视器对带期限 ctx 改用父函数先行 timer.Stop 的本地计时器）
+	// 随 go-scripts 发版并升版本仓依赖后，本缓解可退役。
+	time.AfterFunc(e.config.VMTimeout, cancel)
 
 	prevScript := e.execCtx.setScript(scriptName)
 	defer e.execCtx.setScript(prevScript)
