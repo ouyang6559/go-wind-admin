@@ -28,14 +28,12 @@ import (
 )
 
 // settleJSWatcherRace 等待本测试遗留的 go-scripts/js 中断监视 goroutine
-// （随每次带超时 ctx 的 ExecuteString/CallFunction 派生，退出时可能对本
-// 引擎——随即被 Close——做一次无害 Interrupt）调度完毕，并就地回收本测试
-// 创建的引擎垃圾：避免遗留 goroutine / GC 债务堆积推迟后续测试中同型监视
-// goroutine 的调度。该竞态的根因（上游 v0.0.8 监视器在双就绪 select 下随机
-// 选边 + 本仓对超时 ctx 的立即 cancel 制造双就绪窗口）已双端修复：上游
-// go-scripts 改为本地计时器 + 先行 timer.Stop，本仓把 cancel 推迟到预算期限
-// （见 engine.go executeLocked/LoadScriptString 处注释）——本函数保留作
-// 测试间调度/GC 噪声抑制。生产行为零改动。
+// （随每次带超时 ctx 的 ExecuteString/CallFunction 派生）调度完毕，并就地
+// 回收本测试创建的引擎垃圾：避免遗留 goroutine / GC 债务堆积推迟后续测试
+// 中同型监视 goroutine 的调度。该竞态的根因（旧版监视器在双就绪 select 下
+// 随机选边 + 立即 cancel 制造双就绪窗口）已在上游根修并随
+// go-scripts/javascript v0.0.9 升版本仓后彻底退役，本函数仅保留作测试间
+// 调度/GC 噪声抑制。生产行为零改动。
 func settleJSWatcherRace() {
 	runtime.GC()
 	time.Sleep(200 * time.Millisecond)

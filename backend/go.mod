@@ -29,7 +29,7 @@ require (
 	github.com/tx7do/go-crud/pagination v0.0.16
 	github.com/tx7do/go-crud/viewer v0.0.7
 	github.com/tx7do/go-scripts v0.0.8
-	github.com/tx7do/go-scripts/javascript v0.0.8
+	github.com/tx7do/go-scripts/javascript v0.0.9
 	github.com/tx7do/go-scripts/lua v0.0.9
 	github.com/tx7do/go-utils v1.1.40
 	github.com/tx7do/go-utils/aggregator v0.0.5
