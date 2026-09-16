@@ -107,6 +107,8 @@ func (r *PositionRepo) List(ctx context.Context, req *paginationV1.PagingRequest
 		return &identityV1.ListPositionResponse{Total: 0, Items: nil}, nil
 	}
 
+	r.queryEnumsAndBackfill(ctx, ret.Items)
+
 	return &identityV1.ListPositionResponse{
 		Total: ret.Total,
 		Items: ret.Items,
@@ -157,7 +159,59 @@ func (r *PositionRepo) Get(ctx context.Context, req *identityV1.GetPositionReque
 		return nil, err
 	}
 
+	r.queryEnumsAndBackfill(ctx, []*identityV1.Position{dto})
+
 	return dto, err
+}
+
+// queryEnumsAndBackfill 查询枚举列并回填 DTO 的 status/type 字段。
+//
+// 实体侧 status 为可空指针枚举、type 为带默认值的值型枚举，DTO 侧两者均为
+// 可选指针字段——mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，
+// 读视图因此恒呈零值。经仓内既有 converter（实体枚举名 → proto 枚举值）
+// 统一回填（对齐 NotificationChannelRepo 的同型修复范式）。
+func (r *PositionRepo) queryEnumsAndBackfill(ctx context.Context, items []*identityV1.Position) {
+	if len(items) == 0 {
+		return
+	}
+	entities, err := r.entClient.Client().Position.Query().
+		Select(position.FieldID, position.FieldStatus, position.FieldType).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query position enum columns failed: %s", err.Error())
+		return
+	}
+	r.backfillEnumsFrom(items, entities)
+}
+
+func (r *PositionRepo) backfillEnumsFrom(items []*identityV1.Position, entities []*ent.Position) {
+	if len(items) == 0 || len(entities) == 0 {
+		return
+	}
+	statuses := make(map[uint32]position.Status, len(entities))
+	types := make(map[uint32]position.Type, len(entities))
+	for _, e := range entities {
+		if e.Status != nil {
+			statuses[e.ID] = *e.Status
+		}
+		if e.Type != "" {
+			types[e.ID] = e.Type
+		}
+	}
+	for _, it := range items {
+		if s, ok := statuses[it.GetId()]; ok {
+			sv := s
+			if p := r.statusConverter.ToDTO(&sv); p != nil {
+				it.Status = p
+			}
+		}
+		if t, ok := types[it.GetId()]; ok {
+			tv := t
+			if p := r.typeConverter.ToDTO(&tv); p != nil {
+				it.Type = p
+			}
+		}
+	}
 }
 
 // ListPositionByIds 通过多个ID获取职位信息
@@ -179,6 +233,8 @@ func (r *PositionRepo) ListPositionByIds(ctx context.Context, ids []uint32) ([]*
 		dto := r.mapper.ToDTO(entity)
 		dtos = append(dtos, dto)
 	}
+
+	r.backfillEnumsFrom(dtos, entities)
 
 	return dtos, nil
 }

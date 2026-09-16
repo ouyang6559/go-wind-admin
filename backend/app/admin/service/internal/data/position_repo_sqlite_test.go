@@ -98,6 +98,11 @@ func TestPositionRepoSqlite_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), all.Total, "无过滤时应统计全部 2 条")
 	require.Len(t, all.Items, 2, "无过滤时应返回 2 条")
+	for _, item := range all.Items {
+		// 列表读视图：status 经回填如实呈现；type 未显式指定、按列默认落库并回填。
+		require.Equal(t, identityV1.Position_ON, item.GetStatus(), "列表读视图应回填 status")
+		require.Equal(t, identityV1.Position_REGULAR, item.GetType(), "列表读视图应回填列默认 type")
+	}
 
 	// contains 过滤：仅命中名称含 MARKERALPHA 的那条
 	filtered, err := repo.List(ctx, &paginationV1.PagingRequest{
@@ -137,6 +142,9 @@ func TestPositionRepoSqlite_Get(t *testing.T) {
 	require.NoError(t, err, "按主键查询已存在记录应命中")
 	require.Equal(t, "sqlite查询职位", gotByID.GetName(), "命中记录的 name 应与写入一致")
 	require.Equal(t, entPosition.StatusOn, *rows[0].Status, "status 应经转换器落库为 ON")
+	// 读视图：status 经回填如实呈现；type 未显式指定、按列默认 REGULAR 落库并回填。
+	require.Equal(t, identityV1.Position_ON, gotByID.GetStatus(), "读视图应回填 status")
+	require.Equal(t, identityV1.Position_REGULAR, gotByID.GetType(), "读视图应回填列默认 type")
 
 	// 未命中：不存在的主键
 	_, err = repo.Get(ctx, &identityV1.GetPositionRequest{
@@ -190,16 +198,17 @@ func TestPositionRepoSqlite_Update(t *testing.T) {
 }
 
 // TestPositionRepoSqlite_TypeAllValuesLand 验证全部 6 个岗位类型枚举值
-// 经 typeConverter 的 ToEntity 转换后如实落库。
+// 经 typeConverter 的 ToEntity 转换后如实落库，并在读路径（Get）经
+// queryEnumsAndBackfill 如实回填。
 //
 // 历史缺陷取证：proto 枚举名与 ent 枚举 DB 值此前在 LEADER↔LEAD 一处错位
 //（其余 5 值两侧全大写一致、往返正常），converter 按 proto 枚举名直转后
 // LEADER 产出非法枚举值被列校验拒绝——显式指定领导岗位类型从未生效过。
 // 本测试对全部 6 值逐一断言如实落库。
 //
-// 注：读路径（Get/List）DTO 的 type/status 为指针字段，mapper 的枚举转换
-// 对无法赋入指针字段而丢弃（与通知渠道 Type 读丢失同型的已知局限），故
-// 此处直接断言 ent 行值（与上方既有 Status 断言同法）。
+// 第二处历史缺陷：读路径（Get/List）DTO 的 type/status 为指针字段，mapper
+// 的枚举转换对无法赋入指针字段而丢弃（与通知渠道 Type 读丢失同型），仓内
+// 现经 converter 统一回填——落库断言走 ent 行值，回填断言走 DTO 读视图。
 func TestPositionRepoSqlite_TypeAllValuesLand(t *testing.T) {
 	repo := newPositionRepoSqlite(t)
 	// 注入系统级 ViewerContext，满足 ent mixin 的多租户隐私规则要求
@@ -233,6 +242,14 @@ func TestPositionRepoSqlite_TypeAllValuesLand(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, rows, 1, "按编码应反查到刚写入的行")
 		require.Equal(t, c.wantEnt, rows[0].Type, "类型 %v 应经转换器如实落库", c.protoType)
+
+		// 读路径：Get 按主键命中后，type/status 应经回填在 DTO 视图如实呈现。
+		got, err := repo.Get(ctx, &identityV1.GetPositionRequest{
+			QueryBy: &identityV1.GetPositionRequest_Id{Id: uint32(rows[0].ID)},
+		})
+		require.NoError(t, err, "按主键读取应命中")
+		require.Equal(t, c.protoType, got.GetType(), "读视图应回填类型 %v", c.protoType)
+		require.Equal(t, identityV1.Position_ON, got.GetStatus(), "读视图应回填状态")
 	}
 }
 
