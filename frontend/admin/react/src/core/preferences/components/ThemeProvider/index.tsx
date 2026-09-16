@@ -98,6 +98,16 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     };
   }, [effectiveMode]);
 
+  // 4.1 主色锚点变量：错误页插画等自定义 CSS 的取色源（随偏好主色联动）。
+  // 写在 <html> 上——antd v6 的 --ant-* cssVar 只注入在包裹层内，<html> 作用域引用会落空。
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--app-color-primary', themePrefs.colorPrimary);
+    return () => {
+      root.style.removeProperty('--app-color-primary');
+    };
+  }, [themePrefs.colorPrimary]);
+
   // 5. 应用 CSS 滤镜（色弱 / 灰色模式）
   useEffect(() => {
     const root = document.documentElement;
