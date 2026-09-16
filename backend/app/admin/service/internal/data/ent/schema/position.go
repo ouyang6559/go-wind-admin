@@ -83,7 +83,7 @@ func (Position) Fields() []ent.Field {
 			NamedValues(
 				"Regular", "REGULAR",
 				"Manager", "MANAGER",
-				"Lead", "LEAD",
+				"Lead", "LEADER",
 				"Intern", "INTERN",
 				"Contract", "CONTRACT",
 				"Other", "OTHER",

@@ -284,9 +284,10 @@ func TestUserServiceSqlite_ListEnrichment(t *testing.T) {
 			Name:      trans.Ptr("UserService 富集职位"),
 			Code:      trans.Ptr("USERSVC_POSITION_ENRICH"),
 			Status:    identityV1.Position_ON.Enum(),
-			// Type 不显式指定：proto 枚举名（大写）与 ent 枚举常量名（首字母大写）
-			// 在 name 映射 converter 下无法命中，任何显式值都会产出非法枚举值被列
-			// CHECK 拒绝，此处走列默认——与 position 仓储层既有测试的做法一致。
+			// LEADER 此前因 proto 枚举名与 ent 枚举 DB 值 LEAD 错位而无法写入
+			//（转换产出非法值被列校验拒绝），对齐后此处可显式行使——
+			// 全值往返断言见 position 仓储层 TypeAllValuesLand。
+			Type: identityV1.Position_LEADER.Enum(),
 		},
 	}))
 	posListResp, err := e.svc.positionRepo.List(e.ctx, &paginationV1.PagingRequest{})

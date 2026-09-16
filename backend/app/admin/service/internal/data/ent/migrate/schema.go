@@ -2115,7 +2115,7 @@ var (
 		{Name: "level", Type: field.TypeInt32, Nullable: true, Comment: "数值化职级"},
 		{Name: "headcount", Type: field.TypeUint32, Comment: "编制人数", Default: 0},
 		{Name: "is_key_position", Type: field.TypeBool, Comment: "是否关键岗位", Default: false},
-		{Name: "type", Type: field.TypeEnum, Comment: "岗位类型", Enums: []string{"REGULAR", "MANAGER", "LEAD", "INTERN", "CONTRACT", "OTHER"}, Default: "REGULAR"},
+		{Name: "type", Type: field.TypeEnum, Comment: "岗位类型", Enums: []string{"REGULAR", "MANAGER", "LEADER", "INTERN", "CONTRACT", "OTHER"}, Default: "REGULAR"},
 		{Name: "start_at", Type: field.TypeTime, Nullable: true, Comment: "生效时间（UTC）"},
 		{Name: "end_at", Type: field.TypeTime, Nullable: true, Comment: "结束有效期（UTC）"},
 	}

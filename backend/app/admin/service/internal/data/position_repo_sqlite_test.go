@@ -189,6 +189,53 @@ func TestPositionRepoSqlite_Update(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("POS_SQLITE_%d", 4001), *after.Code, "掩码外字段 code 应保持原值")
 }
 
+// TestPositionRepoSqlite_TypeAllValuesLand 验证全部 6 个岗位类型枚举值
+// 经 typeConverter 的 ToEntity 转换后如实落库。
+//
+// 历史缺陷取证：proto 枚举名与 ent 枚举 DB 值此前在 LEADER↔LEAD 一处错位
+//（其余 5 值两侧全大写一致、往返正常），converter 按 proto 枚举名直转后
+// LEADER 产出非法枚举值被列校验拒绝——显式指定领导岗位类型从未生效过。
+// 本测试对全部 6 值逐一断言如实落库。
+//
+// 注：读路径（Get/List）DTO 的 type/status 为指针字段，mapper 的枚举转换
+// 对无法赋入指针字段而丢弃（与通知渠道 Type 读丢失同型的已知局限），故
+// 此处直接断言 ent 行值（与上方既有 Status 断言同法）。
+func TestPositionRepoSqlite_TypeAllValuesLand(t *testing.T) {
+	repo := newPositionRepoSqlite(t)
+	// 注入系统级 ViewerContext，满足 ent mixin 的多租户隐私规则要求
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	cases := []struct {
+		protoType identityV1.Position_Type
+		wantEnt   entPosition.Type
+	}{
+		{identityV1.Position_REGULAR, entPosition.TypeRegular},
+		{identityV1.Position_LEADER, entPosition.TypeLead},
+		{identityV1.Position_MANAGER, entPosition.TypeManager},
+		{identityV1.Position_INTERN, entPosition.TypeIntern},
+		{identityV1.Position_CONTRACT, entPosition.TypeContract},
+		{identityV1.Position_OTHER, entPosition.TypeOther},
+	}
+	for i, c := range cases {
+		code := fmt.Sprintf("POS_SQLITE_TYPE_%d", 6000+i)
+		require.NoError(t, repo.Create(ctx, &identityV1.CreatePositionRequest{
+			Data: &identityV1.Position{
+				Name:   trans.Ptr("类型落库职位"),
+				Code:   trans.Ptr(code),
+				Status: identityV1.Position_ON.Enum(),
+				Type:   c.protoType.Enum(),
+			},
+		}), "类型 %v 创建应成功", c.protoType)
+
+		rows, err := repo.entClient.Client().Position.Query().
+			Where(entPosition.CodeEQ(code)).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, rows, 1, "按编码应反查到刚写入的行")
+		require.Equal(t, c.wantEnt, rows[0].Type, "类型 %v 应经转换器如实落库", c.protoType)
+	}
+}
+
 // TestPositionRepoSqlite_Delete 验证 PositionRepo.Delete 删除记录后表内计数归零，
 // 且删除不存在的记录返回错误。
 func TestPositionRepoSqlite_Delete(t *testing.T) {
