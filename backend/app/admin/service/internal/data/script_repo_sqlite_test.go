@@ -168,16 +168,13 @@ func TestScriptRepoSqlite_Get(t *testing.T) {
 	_, err = repo.GetSourceByName(ctx, "no-such-script-zzz")
 	require.Error(t, err, "不存在的名字取源码应返回错误")
 
-	// GetVersionByName 命中。
-	// 现状 bug：实体 version 列为 *uint32（nillable），GetVersionByName 的
-	// fmt.Sprintf("%d", entity.Version) 格式化的是指针地址而非版本值，
-	// 返回形如 "54121176522472" 的指针地址串。版本语义由上方直查断言覆盖
-	// （*rows[0].Version == 1）；此处只固化"命中不报错"，若后续修复为解引用，
-	// 应把断言收紧为 "1"。
+	// GetVersionByName 命中：返回的是版本号数字串（修复前格式化的是
+	// *uint32 指针地址，DBSource 热更新变更检测指纹因此失效）。
 	version, err := repo.GetVersionByName(ctx, "sqlite_script_get")
 	require.NoError(t, err)
-	require.NotEmpty(t, version)
-	_ = version
+	require.Equal(t, "1", version, "按名应返回初始版本号 1 的十进制串")
+	_, err = repo.GetVersionByName(ctx, "no-such-script-zzz")
+	require.Error(t, err, "不存在的名字取版本指纹应返回错误")
 }
 
 // TestScriptRepoSqlite_ListEnabledScripts 验证只返回启用脚本。

@@ -325,5 +325,10 @@ func (r *ScriptRepo) GetVersionByName(ctx context.Context, name string) (string,
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%d", entity.Version), nil
+	// Version 为 nillable 列（*uint32）：此前 fmt.Sprintf("%d", entity.Version)
+	// 格式化的是指针地址而非版本号，DBSource 热更新的变更检测指纹因此失效。
+	if entity.Version == nil {
+		return "", nil
+	}
+	return fmt.Sprintf("%d", *entity.Version), nil
 }
