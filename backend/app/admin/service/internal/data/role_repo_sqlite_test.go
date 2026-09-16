@@ -298,8 +298,8 @@ func TestRoleRepoSqlite_Update(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("ROLE_SQLITE_%d", 13001), *after.Code, "掩码外字段 code 应保持原值")
 }
 
-// TestRoleRepoSqlite_Delete 验证 RoleRepo.Delete 删除非保护角色后角色表计数归零；
-// 注意当前实现只删角色行并清三张关联表，sys_role_metadata 中的元数据行不会被清理（记录该现状）。
+// TestRoleRepoSqlite_Delete 验证 RoleRepo.Delete 删除非保护角色后
+// 角色表与其元数据、三张关联表一并清空。
 func TestRoleRepoSqlite_Delete(t *testing.T) {
 	repo := newRoleRepoSqlite(t)
 	ctx := enttest.NewSystemViewerCtx(context.Background())
@@ -328,7 +328,7 @@ func TestRoleRepoSqlite_Delete(t *testing.T) {
 
 	metaCount, err := repo.entClient.Client().RoleMetadata.Query().Count(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 1, metaCount, "现状：角色删除不联动清理 sys_role_metadata（孤儿元数据）")
+	require.Zero(t, metaCount, "角色元数据应随角色删除一并清空，不留孤儿行")
 }
 
 // TestRoleRepoSqlite_ProtectedDeleteRejected 验证受保护角色禁止删除。

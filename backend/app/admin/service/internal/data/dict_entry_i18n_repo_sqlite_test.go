@@ -30,12 +30,10 @@ func newDictEntryI18nRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.
 	return repo
 }
 
-// TestDictEntryI18nRepoSqlite_UpsertMissingUniqueIndex 固化 Upsert 的现状：
-// 其 OnConflictColumns(language_code, entry_id) 要求这两列存在唯一索引，
-// 但 schema（sys_dict_entry_i18n）只有 language_code 普通索引，两列无唯一约束，
-// SQLite 因此报 "ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint"。
-// 该方法当前无生产调用方；若后续补上唯一索引，此断言应翻转为 NoError 并补冲突更新语义。
-func TestDictEntryI18nRepoSqlite_UpsertMissingUniqueIndex(t *testing.T) {
+// TestDictEntryI18nRepoSqlite_Upsert 验证 Upsert 语义（改为查得则更新、查无则插入后）：
+// 首次调用落新行；同 (entry, language) 二次调用走更新分支改写标签且不新增行；
+// 另一语言代码互不影响。
+func TestDictEntryI18nRepoSqlite_Upsert(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryI18nRepoSqlite(t, entClient)
 	ctx := enttest.NewSystemViewerCtx(context.Background())
@@ -45,12 +43,26 @@ func TestDictEntryI18nRepoSqlite_UpsertMissingUniqueIndex(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	err = repo.Upsert(ctx, 0, 1, entry.ID, "zh-CN", &dictV1.DictEntryI18N{EntryLabel: "标签"})
-	require.Error(t, err, "缺 (language_code, entry_id) 唯一索引时 OnConflictColumns 在 SQLite 必然报错")
-
+	// 首次：查无 → 插入分支
+	require.NoError(t, repo.Upsert(ctx, 0, 1, entry.ID, "zh-CN", &dictV1.DictEntryI18N{EntryLabel: "标签-首插"}))
 	cnt, err := entClient.Client().DictEntryI18n.Query().Count(ctx)
 	require.NoError(t, err)
-	require.Zero(t, cnt, "失败的 Upsert 不应留下任何行")
+	require.Equal(t, 1, cnt, "首次 Upsert 后应恰有 1 行")
+
+	// 同键二次：查得 → 更新分支，改写标签、不新增行
+	require.NoError(t, repo.Upsert(ctx, 0, 1, entry.ID, "zh-CN", &dictV1.DictEntryI18N{EntryLabel: "标签-更新"}))
+	cnt, err = entClient.Client().DictEntryI18n.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, cnt, "更新分支不得新增行")
+	got, err := repo.GetByEntryIDAndLangCode(ctx, entry.ID, "zh-CN")
+	require.NoError(t, err)
+	require.Equal(t, "标签-更新", got.GetEntryLabel(), "更新分支应改写标签")
+
+	// 另一语言代码：互不影响地独立落行
+	require.NoError(t, repo.Upsert(ctx, 0, 1, entry.ID, "en-US", &dictV1.DictEntryI18N{EntryLabel: "label-en"}))
+	cnt, err = entClient.Client().DictEntryI18n.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, cnt, "另一语言代码应独立落 1 行（共 2 行）")
 }
 
 // TestDictEntryI18nRepoSqlite_ListAndGet 验证 ListByEntryID /

@@ -127,10 +127,9 @@ func TestDictEntryServiceSqlite_ListByTypeCode(t *testing.T) {
 	require.Len(t, respA.Items, 2, "父类型 A 应只返回 2 条启用条目（禁用与其他父类型的条目排除）")
 	require.Equal(t, "ENTRY-SORT-1", respA.Items[0].GetEntryValue(), "条目应按 sort_order 升序排列（第 1 条 sort=1）")
 	require.Equal(t, "ENTRY-SORT-2", respA.Items[1].GetEntryValue(), "条目应按 sort_order 升序排列（第 2 条 sort=2）")
-	// 注：ListByTypeCode 路径不做 TypeId 回填（builder 无 WithDictType、也无手工
-	// 回填，与通用 List 路径不同），条目的 TypeId 保持零值。
+	// 修复后 ListByTypeCode 与通用 List 一致回填 TypeId（条目本就来自该父类型）。
 	for _, item := range respA.Items {
-		require.Zero(t, item.GetTypeId(), "该路径不回填 TypeId，应保持零值")
+		require.Equal(t, respA.Items[0].GetTypeId(), item.GetTypeId(), "TypeId 应回填为父类型 A 的 ID")
 	}
 
 	respB, err := svc.ListByTypeCode(ctx, &dictV1.ListDictEntryByTypeCodeRequest{
@@ -139,7 +138,7 @@ func TestDictEntryServiceSqlite_ListByTypeCode(t *testing.T) {
 	require.NoError(t, err, "按父类型 B 的代码列表应成功")
 	require.Len(t, respB.Items, 1, "父类型 B 应只返回其自身的 1 条条目")
 	require.Equal(t, "ENTRY-OTHER-PARENT", respB.Items[0].GetEntryValue())
-	require.Zero(t, respB.Items[0].GetTypeId(), "该路径不回填 TypeId，应保持零值")
+	require.NotEqual(t, respA.Items[0].GetTypeId(), respB.Items[0].GetTypeId(), "两父类型的 TypeId 回填应互不相同")
 
 	_, err = svc.ListByTypeCode(ctx, &dictV1.ListDictEntryByTypeCodeRequest{TypeCode: ""})
 	require.Error(t, err, "空类型代码应被服务层守卫拒绝（BadRequest）")

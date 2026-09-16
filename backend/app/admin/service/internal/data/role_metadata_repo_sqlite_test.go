@@ -153,30 +153,37 @@ func TestRoleMetadataRepoSqlite_TemplateVersionUpgrade(t *testing.T) {
 	require.Equal(t, int32(7), *plainRow.TemplateVersion, "非模板记录版本号应保持 7 不变")
 }
 
-// TestRoleMetadataRepoSqlite_Upsert 验证 Upsert 在 SQLite 下的实际行为：
-// 其冲突目标仅声明 role_id，而表上唯一的唯一索引是复合索引 (tenant_id, role_id)，
-// SQLite 要求 ON CONFLICT 目标必须精确匹配某个唯一索引，因此该语句被整体拒绝、
-// 新行也不会插入（记录该现状：Upsert 的冲突目标与 schema 唯一索引不一致）。
+// TestRoleMetadataRepoSqlite_Upsert 验证 Upsert 语义：
+// 冲突目标 (tenant_id, role_id) 与唯一索引 idx_role_metadata_tenant_role 一致后，
+// 首次调用走插入分支落新行；同键二次调用命中复合唯一索引走冲突更新分支
+// （AddTemplateVersion(1) 使版本号 +1），且不新增行。
+// tenant_id 为可空列，显式给非空值才能确定性命中索引（NULL 在唯一索引中互异）。
 func TestRoleMetadataRepoSqlite_Upsert(t *testing.T) {
 	repo := newRoleMetadataRepoSqlite(t)
 	ctx := enttest.NewSystemViewerCtx(context.Background())
 
 	const roleID = uint32(16004)
 
-	// Upsert 被数据库拒绝：冲突目标不匹配任何唯一索引
-	require.Error(t, repo.Upsert(ctx, &permissionV1.RoleMetadata{
+	payload := &permissionV1.RoleMetadata{
 		RoleId:          trans.Ptr(roleID),
+		TenantId:        trans.Ptr(uint32(0)),
 		IsTemplate:      trans.Ptr(false),
 		TemplateVersion: trans.Ptr(int32(5)),
 		SyncPolicy:      permissionV1.RoleMetadata_AUTO.Enum(),
 		Scope:           permissionV1.RoleMetadata_TENANT.Enum(),
-	}), "Upsert 的冲突目标 (role_id) 不匹配唯一索引 (tenant_id, role_id)，应被数据库拒绝")
+	}
 
-	// 被拒绝的 Upsert 不应留下任何行
-	exist, err := repo.IsExistByRoleID(ctx, roleID)
+	// 首次 Upsert：无冲突行 → 插入分支，版本号取载荷值
+	require.NoError(t, repo.Upsert(ctx, payload), "首次 Upsert 应插入新行")
+	rows, err := repo.entClient.Client().RoleMetadata.Query().All(ctx)
 	require.NoError(t, err)
-	require.False(t, exist, "被拒绝的 Upsert 不应落任何行")
-	rowCount, err := repo.entClient.Client().RoleMetadata.Query().Count(ctx)
+	require.Len(t, rows, 1, "首次 Upsert 后应恰有 1 行")
+	require.Equal(t, int32(5), *rows[0].TemplateVersion, "插入分支版本号应为载荷值 5")
+
+	// 同键二次 Upsert：命中 (tenant_id, role_id) 复合唯一索引 → 冲突更新分支
+	require.NoError(t, repo.Upsert(ctx, payload), "同键二次 Upsert 应走冲突更新分支不报错")
+	rows2, err := repo.entClient.Client().RoleMetadata.Query().All(ctx)
 	require.NoError(t, err)
-	require.Zero(t, rowCount, "sys_role_metadata 应无任何记录")
+	require.Len(t, rows2, 1, "冲突更新不得新增行")
+	require.Equal(t, int32(6), *rows2[0].TemplateVersion, "冲突更新分支 AddTemplateVersion(1) 应使版本号递增为 6")
 }

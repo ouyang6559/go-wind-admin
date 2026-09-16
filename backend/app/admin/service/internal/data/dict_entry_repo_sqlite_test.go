@@ -394,6 +394,7 @@ func TestDictEntryRepoSqlite_ListByTypeCode(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, resA.Items, 1, "类型 A 只应返回其启用条目")
 	require.Equal(t, "A-启用条目", *resA.Items[0].EntryValue, "返回的应是 A 的启用条目")
+	require.Equal(t, typeA.ID, resA.Items[0].GetTypeId(), "TypeId 应回填为父类型 A 的 ID（与通用 List 一致）")
 
 	// 按类型 B 列出：B 的启用条目
 	resB, err := repo.ListByTypeCode(ctx, &dictV1.ListDictEntryByTypeCodeRequest{
@@ -402,6 +403,7 @@ func TestDictEntryRepoSqlite_ListByTypeCode(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, resB.Items, 1)
 	require.Equal(t, "B-启用条目", *resB.Items[0].EntryValue)
+	require.Equal(t, typeB.ID, resB.Items[0].GetTypeId(), "TypeId 应回填为父类型 B 的 ID（与通用 List 一致）")
 
 	// 不存在的类型编码：空
 	resNone, err := repo.ListByTypeCode(ctx, &dictV1.ListDictEntryByTypeCodeRequest{
