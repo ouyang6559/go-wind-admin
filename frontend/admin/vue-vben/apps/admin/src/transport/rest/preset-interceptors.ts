@@ -102,6 +102,7 @@ export const authenticateResponseInterceptor = ({
           };
           const timer = setTimeout(() => {
             client.refreshTokenQueue = client.refreshTokenQueue.filter((cb) => cb !== callback);
+            console.warn('[Auth] 刷新等待超时，排队请求快速失败:', config.url);
             reject(
               Object.assign(new Error('Authentication refresh wait timeout'), {
                 __handledByAuthInterceptor: true,
