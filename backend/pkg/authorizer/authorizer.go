@@ -235,10 +235,18 @@ func (a *Authorizer) newEngineOPA(ctx context.Context) authzEngine.Engine {
 		return nil
 	}
 
+	// 模型有效性探测：上游 WithModulesFromString 对无法解析的自定义模型吞错，
+	// NewEngine 随即回退编译内置资产策略并正常返回引擎。此处显式再走一次解析：
+	// 出错即证明引擎当前跑的是内置资产策略而非运营者部署的模型——此前该分支
+	// 只记日志仍返回引擎（带错误语义静默上线），改为返回 denyAllEngine
+	// 全量拒绝（fail-closed），并高声报错提示运营者修复模型。
 	if err = state.InitModulesFromString(map[string]string{
 		modelName: string(model),
 	}); err != nil {
-		a.log.Errorf(ctx, "init opa modules error: %v", err)
+		a.log.Errorf(ctx,
+			"custom OPA model [%s] failed to parse, engine rejected (all requests will be denied until fixed): %v",
+			modelName, err)
+		return denyAllEngine{}
 	}
 
 	return state

@@ -193,17 +193,34 @@ func TestNewEngineOPA_CustomModelLoadsEngine(t *testing.T) {
 	assert.Equal(t, "opa", p.lastModelEngineArg)
 }
 
-// TestNewEngineOPA_InvalidModelStillBuildsEngine 非法模型内容（无法解析为 rego）
-// 时的实际行为：OPA 引擎构造过程吞掉模型解析错误并回退到内置策略资产，
-// 因此引擎仍然非 nil——记录该回退语义，防止误判为构造失败。
-func TestNewEngineOPA_InvalidModelStillBuildsEngine(t *testing.T) {
+// TestNewEngineOPA_InvalidModelReturnsDenyAllEngine 非法模型内容（无法解析为 rego）
+// 时的行为：上游 opa.NewEngine 会吞掉模型解析错误并回退编译内置资产策略、
+// 仍返回非 nil 引擎——此前构造函数照样把这套"并非运营者本意"的引擎交出去
+// 静默上线。修复后：模型解析失败一律换 denyAllEngine——全量拒绝（fail-closed）
+// 且各接口返回统一可观测错误，运营者须修复模型后重启才恢复。
+func TestNewEngineOPA_InvalidModelReturnsDenyAllEngine(t *testing.T) {
 	p := &stubProvider{models: ModelDataMap{
 		"rbac.rego": []byte("this is definitely not valid rego !!!"),
 	}}
 	a := newTestAuthorizer(p)
 	eng := a.newEngine(context.Background(), &conf.Authorization{Type: "opa"})
-	require.NotNil(t, eng, "OPA 引擎吞掉模型解析错误后回退到内置资产，仍会构造成功")
-	assert.Equal(t, "opa", eng.Name())
+	require.NotNil(t, eng,
+		"非法模型应返回 deny-all 兜底引擎而非 nil（nil 会使鉴权中间件整体消失、退化为全放行）")
+	assert.Equal(t, "deny-all", eng.Name())
+
+	allowed, err := eng.IsAuthorized(context.Background(), "s", "a", "r", "p")
+	assert.False(t, allowed, "deny-all 引擎应拒绝一切判定")
+	assert.Error(t, err, "拒绝应携带可观测错误")
+
+	pairs, err := eng.FilterAuthorizedPairs(context.Background(), nil, nil)
+	assert.Nil(t, pairs)
+	assert.Error(t, err, "过滤接口同样拒绝")
+
+	projects, err := eng.FilterAuthorizedProjects(context.Background(), nil)
+	assert.Nil(t, projects)
+	assert.Error(t, err, "过滤接口同样拒绝")
+
+	assert.Error(t, eng.SetPolicies(context.Background(), nil, nil), "策略写入同样拒绝")
 }
 
 // TestEngine_ReturnsAssignedEngine Engine() 应原样返回当前引擎字段。
