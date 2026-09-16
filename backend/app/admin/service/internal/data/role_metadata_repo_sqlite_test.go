@@ -76,6 +76,9 @@ func TestRoleMetadataRepoSqlite_CreateGetExist(t *testing.T) {
 	require.NoError(t, err, "按 roleID 查询已存在元数据应命中")
 	require.Equal(t, roleID, got.GetRoleId(), "命中记录的 role_id 应与写入一致")
 	require.False(t, got.GetIsTemplate(), "命中记录应为非模板")
+	// 读视图：两枚举字段经回填如实呈现（与上方 ent 行断言互为印证）。
+	require.Equal(t, permissionV1.RoleMetadata_AUTO, got.GetSyncPolicy(), "读视图应回填 sync_policy")
+	require.Equal(t, permissionV1.RoleMetadata_TENANT, got.GetScope(), "读视图应回填 scope")
 
 	// 存在性与模板判定
 	exist, err := repo.IsExistByRoleID(ctx, roleID)

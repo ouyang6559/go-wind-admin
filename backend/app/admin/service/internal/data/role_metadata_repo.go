@@ -149,6 +149,17 @@ func (r *RoleMetadataRepo) Get(ctx context.Context, roleID uint32) (*permissionV
 	}
 
 	dto := r.mapper.ToDTO(rm)
+	// 枚举回填：实体侧 sync_policy/scope 为可空指针枚举、DTO 侧为可选指针
+	// 字段，mapper 的枚举转换对（值↔值）无法赋入指针字段而直接丢弃，读视图
+	// 因此恒呈零值（写入侧正常落库）。经仓内既有 converter（实体枚举名 →
+	// proto 枚举值）统一回填（对齐 position/notification_channel 的同型修复
+	// 范式）。
+	if rm.SyncPolicy != nil {
+		dto.SyncPolicy = r.syncPolicyConverter.ToDTO(rm.SyncPolicy)
+	}
+	if rm.Scope != nil {
+		dto.Scope = r.scopeConverter.ToDTO(rm.Scope)
+	}
 	return dto, nil
 }
 
