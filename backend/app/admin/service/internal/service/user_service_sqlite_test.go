@@ -337,11 +337,10 @@ func TestUserServiceSqlite_ListEnrichment(t *testing.T) {
 			require.Equal(t, "UserService 富集职位", item.GetPositionNames()[0], "多值职位轨道应回填名称")
 		case 88002:
 			require.Empty(t, item.GetTenantName(), "平台用户不回填租户名")
-			// 单值 RoleId 轨道：extractRelationIDs 只提取 RoleIds（列表轨道），
-			// 不提取单值 RoleId（与租户/组织单元/职位的单值提取不一致——记录为
-			// 现状行为：单值角色引用不参与角色富集，RoleNames/Roles 恒为空）。
-			require.Empty(t, item.GetRoleNames(), "单值角色引用不进入富集（现状行为）")
-			require.Empty(t, item.GetRoles(), "单值角色引用不进入富集（现状行为）")
+			// 单值 RoleId 轨道：与租户/组织单元/职位的单值轨道一致，
+			// 单值角色引用参与角色富集，回填角色名与角色码。
+			require.Equal(t, []string{"UserService 角色 USERSVC_ROLE_SYSTEM_ENRICH"}, item.GetRoleNames(), "单值角色轨道应回填角色名")
+			require.Equal(t, []string{"USERSVC_ROLE_SYSTEM_ENRICH"}, item.GetRoles(), "单值角色轨道应回填角色码")
 			require.Equal(t, "UserService 富集组织单元", item.GetOrgUnitName(), "单值组织单元轨道应回填名称")
 			require.Equal(t, "UserService 富集职位", item.GetPositionName(), "单值职位轨道应回填名称")
 		default:
@@ -492,8 +491,8 @@ func TestUserServiceSqlite_CreatePlatform(t *testing.T) {
 	_, ferr = e.findCred(t, 0, "usersvc-custom-pw", constants.DefaultUserPassword)
 	require.True(t, authenticationV1.IsInvalidPassword(ferr), "旧密码不应通过校验")
 
-	// 弱密码路径。复杂度错误被凭证仓储包装为统一的 400
-	// "prepare new credential failed"（原文案不透传），此处断言状态码。
+	// 弱密码路径。复杂度错误自凭证仓储原样透传（与 ResetCredential /
+	// ChangeCredential 的既有透传范式一致），前端可据此给出可操作提示。
 	_, err = e.svc.Create(platformOp, &identityV1.CreateUserRequest{
 		Data: &identityV1.User{
 			Username: trans.Ptr("usersvc-weak-pw"),
@@ -503,6 +502,7 @@ func TestUserServiceSqlite_CreatePlatform(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.True(t, adminV1.IsBadRequest(err), "弱密码应被复杂度策略拒绝")
+	require.Contains(t, err.Error(), "password too short", "复杂度拒绝的具体原因应透传（长度不足）")
 	require.Equal(t, 2, e.credentialCount(t), "弱密码不应落库")
 }
 
@@ -588,7 +588,7 @@ func TestUserServiceSqlite_UpdatePasswordReset(t *testing.T) {
 	_, ferr = e.findCred(t, 0, "usersvc-reset-target", constants.DefaultUserPassword)
 	require.True(t, authenticationV1.IsInvalidPassword(ferr), "重置前的旧密码应失效")
 
-	// 弱密码重置被拒。
+	// 弱密码重置被拒：复杂度错误经 ResetCredential 原样透传（既有透传范式）。
 	_, err = e.svc.Update(platformOp, &identityV1.UpdateUserRequest{
 		Id:       10501,
 		Password: trans.Ptr(encryptLoginPassword(t, "abc")),
@@ -599,6 +599,7 @@ func TestUserServiceSqlite_UpdatePasswordReset(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.True(t, adminV1.IsBadRequest(err), "弱密码重置应被复杂度策略拒绝")
+	require.Contains(t, err.Error(), "password too short", "复杂度拒绝的具体原因应透传（长度不足）")
 
 	// 租户操作人重置跨租户用户：403。
 	// 角色校验会先于租户检查执行：租户操作人的请求须携带本租户（TENANT）角色

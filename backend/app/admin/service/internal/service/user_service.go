@@ -109,6 +109,9 @@ func (s *UserService) extractRelationIDs(
 			tenantSet[id] = nil
 		}
 
+		if id := v.GetRoleId(); id > 0 {
+			roleSet[id] = nil
+		}
 		for _, roleId := range v.RoleIds {
 			if roleId > 0 {
 				roleSet[roleId] = nil
