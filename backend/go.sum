@@ -709,8 +709,6 @@ github.com/tx7do/go-crud/viewer v0.0.7 h1:HF/1d85fv+fhZ8cNHtFCOOEQDEZUDQFUX3V0+R
 github.com/tx7do/go-crud/viewer v0.0.7/go.mod h1:t5MGistb4OfREu9aMj85eeYJqswnNpFRWgbL4nHTXiY=
 github.com/tx7do/go-scripts v0.0.8 h1:eH59OMDFfsIou4SGJoaFNbqS2NpFO0yJlYqw0zHGO08=
 github.com/tx7do/go-scripts v0.0.8/go.mod h1:OxJCiXouVGS36CZd29UvDClyEQfOCTxHPJ2jSlMf/GI=
-github.com/tx7do/go-scripts/javascript v0.0.8 h1:nTeoHZBw4xD0s27Sj+JntgZNN8r/JOeQf3M8FXUqIxo=
-github.com/tx7do/go-scripts/javascript v0.0.8/go.mod h1:2yIMSwuF+hksX62dYK0LNuSIovI0ilRkuo4qABt/MSw=
 github.com/tx7do/go-scripts/javascript v0.0.9 h1:j9Ks8DLdk0GGtmPBPmSQB20lGACLyQzcuyveD9HIGUg=
 github.com/tx7do/go-scripts/javascript v0.0.9/go.mod h1:2yIMSwuF+hksX62dYK0LNuSIovI0ilRkuo4qABt/MSw=
 github.com/tx7do/go-scripts/lua v0.0.9 h1:uhpXBF7ZWUzpdA1D0T090Go8ONmguZ1/XixV5T96+lY=

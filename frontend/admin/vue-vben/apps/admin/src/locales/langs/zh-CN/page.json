@@ -689,6 +689,7 @@
     "pingOk": "连通正常",
     "pingFail": "连通异常",
     "pingError": "错误信息",
+    "noData": "暂无数据",
     "dbDriver": "数据库类型",
     "maxOpenConnections": "最大连接数",
     "openConnections": "打开连接数",

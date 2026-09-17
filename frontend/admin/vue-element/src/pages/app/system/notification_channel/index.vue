@@ -1,333 +1,220 @@
 <template>
   <div class="app-container h-full flex flex-1 flex-col">
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ $t("pages.notification_channel.title") }}</span>
-          <el-button type="primary" :icon="Plus" @click="openCreate">
-            {{ $t("pages.notification_channel.create") }}
-          </el-button>
-        </div>
-      </template>
+  <ProPage
+    ref="pageRef"
+    :config="pageConfig"
+    @add="handleAdd"
+    @edit="handleEdit"
+    @operate="handleOperate"
+  >
+    <!-- 渠道类型 -->
+    <template #type="scope: any">
+      <ElTag size="small">{{ t("pages.notification_channel.typeEmail") }}</ElTag>
+    </template>
 
-      <el-table v-loading="isLoading" :data="items" border stripe row-key="id">
-        <el-table-column :label="$t('pages.notification_channel.name')" prop="name" min-width="140" />
-        <el-table-column :label="$t('pages.notification_channel.type')" width="110">
-          <template #default="{ row }">
-            <el-tag size="small" type="primary">{{ $t("pages.notification_channel.typeEmail") }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('pages.notification_channel.smtpHost')" prop="smtpHost" min-width="150" />
-        <el-table-column :label="$t('pages.notification_channel.smtpPort')" prop="smtpPort" width="80" />
-        <el-table-column :label="$t('pages.notification_channel.smtpFrom')" prop="smtpFrom" min-width="170" />
-        <el-table-column :label="$t('pages.notification_channel.smtpTls')" width="110">
-          <template #default="{ row }">{{ tlsLabel(row.smtpTls) }}</template>
-        </el-table-column>
-        <el-table-column :label="$t('pages.notification_channel.hasPassword')" width="100">
-          <template #default="{ row }">
-            <el-tag v-if="row.hasPassword" type="success" size="small">{{ $t("pages.notification_channel.passwordSet") }}</el-tag>
-            <el-tag v-else size="small">{{ $t("pages.notification_channel.passwordNotSet") }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('pages.notification_channel.enabled')" width="90">
-          <template #default="{ row }">
-            <el-tag v-if="row.enabled" type="success" size="small">{{ $t("pages.notification_channel.enabledOn") }}</el-tag>
-            <el-tag v-else size="small">{{ $t("pages.notification_channel.enabledOff") }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('common.table.action')" fixed="right" width="230">
-          <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="openEdit(row)">
-              {{ $t("common.button.edit") }}
-            </el-button>
-            <el-button type="primary" link size="small" @click="openTestSend(row)">
-              {{ $t("pages.notification_channel.testSend") }}
-            </el-button>
-            <el-popconfirm :title="$t('pages.notification_channel.deleteConfirm')" @confirm="handleDelete(row)">
-              <template #reference>
-                <el-button type="danger" link size="small">
-                  {{ $t("common.button.delete") }}
-                </el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 密码配置状态 -->
+    <template #hasPassword="scope: any">
+      <ElTag v-if="scope.row.hasPassword" type="success" size="small">
+        {{ t("pages.notification_channel.passwordSet") }}
+      </ElTag>
+      <ElTag v-else size="small">{{ t("pages.notification_channel.passwordNotSet") }}</ElTag>
+    </template>
 
-      <div class="pager">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @current-change="load"
-          @size-change="load"
-        />
-      </div>
-    </el-card>
+    <!-- 启用状态 -->
+    <template #enabled="scope: any">
+      <ElTag v-if="scope.row.enabled" type="success" size="small">
+        {{ t("pages.notification_channel.enabledOn") }}
+      </ElTag>
+      <ElTag v-else size="small">{{ t("pages.notification_channel.enabledOff") }}</ElTag>
+    </template>
+  </ProPage>
 
-    <!-- 创建/编辑对话框 -->
-    <el-dialog
-      v-model="formOpen"
-      :title="formMode === 'create' ? $t('pages.notification_channel.create') : $t('pages.notification_channel.edit')"
-      width="520px"
-      destroy-on-close
-    >
-      <el-form :model="form" label-width="140px">
-        <el-form-item :label="$t('pages.notification_channel.name')" required>
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.type')">
-          <el-select v-model="form.type" :disabled="formMode === 'edit'">
-            <el-option :label="$t('pages.notification_channel.typeEmail')" value="EMAIL" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.smtpHost')">
-          <el-input v-model="form.smtpHost" placeholder="smtp.example.com" />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.smtpPort')">
-          <el-input-number v-model="form.smtpPort" :min="1" :max="65535" />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.smtpUsername')">
-          <el-input v-model="form.smtpUsername" />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.password')">
-          <el-input
-            v-model="form.password"
-            type="password"
-            show-password
-            :placeholder="formMode === 'edit' ? $t('pages.notification_channel.passwordKeepHint') : $t('pages.notification_channel.passwordPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.smtpFrom')">
-          <el-input v-model="form.smtpFrom" placeholder="noreply@example.com" />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.smtpTls')">
-          <el-select v-model="form.smtpTls">
-            <el-option :label="$t('pages.notification_channel.tlsNone')" value="NONE" />
-            <el-option :label="$t('pages.notification_channel.tlsStartTls')" value="START_TLS" />
-            <el-option :label="$t('pages.notification_channel.tlsSsl')" value="SSL" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.enabled')">
-          <el-switch v-model="form.enabled" />
-        </el-form-item>
-        <el-form-item :label="$t('pages.notification_channel.remark')">
-          <el-input v-model="form.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="formOpen = false">{{ $t("common.button.cancel") }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">
-          {{ $t("common.button.confirm") }}
-        </el-button>
-      </template>
-    </el-dialog>
+  <!-- 创建/编辑抽屉 -->
+  <NotificationChannelDrawer ref="drawerRef" @success="handleSuccess" />
 
-    <!-- 测试发送对话框 -->
-    <el-dialog
-      v-model="testOpen"
-      :title="$t('pages.notification_channel.testSendTitle', { name: testTarget?.name || '' })"
-      width="420px"
-      destroy-on-close
-    >
-      <el-form label-width="140px">
-        <el-form-item :label="$t('pages.notification_channel.testRecipient')" required>
-          <el-input v-model="testRecipient" placeholder="you@example.com" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="testOpen = false">{{ $t("common.button.cancel") }}</el-button>
-        <el-button type="primary" :loading="testing" @click="handleTestSend">
-          {{ $t("pages.notification_channel.testSend") }}
-        </el-button>
-      </template>
-    </el-dialog>
+  <!-- 测试发送对话框 -->
+  <ElDialog
+    v-model="testVisible"
+    :title="t('pages.notification_channel.testSendTitle', { name: testTarget?.name || '' })"
+    width="480px"
+    align-center
+    :close-on-click-modal="false"
+    @closed="testTarget = undefined"
+  >
+    <ElForm ref="testFormRef" :model="testForm" :rules="testRules" label-width="120px">
+      <ElFormItem :label="t('pages.notification_channel.testRecipient')" prop="recipient">
+        <ElInput v-model="testForm.recipient" placeholder="you@example.com" clearable />
+      </ElFormItem>
+    </ElForm>
+    <template #footer>
+      <ElButton @click="testVisible = false">{{ $t("common.button.cancel") }}</ElButton>
+      <ElButton type="primary" :loading="testing" @click="handleTestSend">
+        {{ t("pages.notification_channel.testSend") }}
+      </ElButton>
+    </template>
+  </ElDialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from "vue";
-import { Plus } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
+import { computed, ref } from "vue";
+import {
+  ElButton,
+  ElDialog,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElMessage,
+  ElTag,
+} from "element-plus";
 
+import ProPage from "@/components/Pro/ProPage/index.vue";
+import type { ProPageConfig } from "@/components/Pro/ProPage/types";
+import NotificationChannelDrawer from "./notification-channel-drawer.vue";
+import { useI18n } from "@/core/i18n";
+import { PaginationQuery } from "@/core/transport/rest";
 import type { notification_channelservicev1_NotificationChannel as NotificationChannel } from "@/api/generated/admin/service/v1";
 import {
+  createPagedExportAction,
+  deleteNotificationChannel,
   fetchListNotificationChannels,
-  useCreateNotificationChannel,
-  useDeleteNotificationChannel,
-  useSendTestEmail,
-  useUpdateNotificationChannel,
+  sendTestEmail,
 } from "@/api/composables";
-import { $t } from "@/core/i18n";
 
-const { mutateAsync: createChannel } = useCreateNotificationChannel();
-const { mutateAsync: updateChannel } = useUpdateNotificationChannel();
-const { mutateAsync: deleteChannel } = useDeleteNotificationChannel();
-const { mutateAsync: sendTest } = useSendTestEmail();
+const { t } = useI18n();
 
-const isLoading = ref(false);
-const items = ref<NotificationChannel[]>([]);
-const total = ref(0);
-const page = ref(1);
-const pageSize = ref(20);
+const pageRef = ref();
+const drawerRef = ref();
 
-async function load() {
-  isLoading.value = true;
-  try {
-    const resp = await fetchListNotificationChannels({
-      page: page.value,
-      pageSize: pageSize.value,
-    });
-    items.value = (resp.items ?? []) as NotificationChannel[];
-    total.value = resp.total ?? 0;
-  } catch (error: any) {
-    ElMessage.error(error?.message || $t("pages.notification_channel.fetchFailed"));
-  } finally {
-    isLoading.value = false;
-  }
+const tlsLabels: Record<string, string> = {
+  NONE: t("pages.notification_channel.tlsNone"),
+  START_TLS: t("pages.notification_channel.tlsStartTls"),
+  SSL: t("pages.notification_channel.tlsSsl"),
+};
+
+function tlsLabel(mode?: string): string {
+  return (mode && tlsLabels[mode]) || mode || "-";
 }
 
-onMounted(load);
+const pageConfig = computed<ProPageConfig>(() => ({
+  skeleton: true,
+  exportFilename: "notification-channels",
 
-const formOpen = ref(false);
-const formMode = ref<"create" | "edit">("create");
-const saving = ref(false);
-const editingId = ref<number>();
-const form = ref({
-  name: "",
-  type: "EMAIL",
-  smtpHost: "",
-  smtpPort: 587,
-  smtpUsername: "",
-  password: "",
-  smtpFrom: "",
-  smtpTls: "START_TLS",
-  enabled: true,
-  remark: "",
-});
+  table: {
+    listAction: async (query: any) => {
+      const { page, pageSize, ...rest } = query;
+      const result = await fetchListNotificationChannels(
+        new PaginationQuery({
+          paging: { page: page || 1, pageSize: pageSize || 20 },
+          formValues: Object.keys(rest).length > 0 ? rest : undefined,
+        }),
+      );
+      return { items: result.items || [], total: result.total || 0 };
+    },
+    deleteAction: async (ids: string) => {
+      await deleteNotificationChannel(Number(ids));
+    },
+    exportsAction: createPagedExportAction(fetchListNotificationChannels),
+    toolbar: [],
+    toolbarRight: ["add"],
+    defaultToolbar: ["refresh", "exports", "filter"],
+    tableAttrs: { border: true, stripe: true },
+    emptyActionText: "common.button.add",
+    columns: [
+      { type: "index", label: t("common.table.seq"), width: 60 },
+      { prop: "name", label: t("pages.notification_channel.name"), minWidth: 140 },
+      { prop: "type", label: t("pages.notification_channel.type"), width: 120, slotName: "type" },
+      { prop: "smtpHost", label: t("pages.notification_channel.smtpHost"), minWidth: 150 },
+      { prop: "smtpPort", label: t("pages.notification_channel.smtpPort"), width: 90 },
+      { prop: "smtpFrom", label: t("pages.notification_channel.smtpFrom"), minWidth: 170 },
+      {
+        prop: "smtpTls",
+        label: t("pages.notification_channel.smtpTls"),
+        width: 110,
+        formatter: (row: any) => tlsLabel(row.smtpTls),
+      },
+      { prop: "hasPassword", label: t("pages.notification_channel.hasPassword"), width: 100, slotName: "hasPassword" },
+      { prop: "enabled", label: t("pages.notification_channel.enabled"), width: 90, slotName: "enabled" },
+      { prop: "remark", label: t("pages.notification_channel.remark"), minWidth: 140 },
+      {
+        prop: "action",
+        label: t("common.table.action"),
+        fixed: "right",
+        width: 170,
+        cellType: "tool",
+        buttons: [
+          { name: "edit", label: t("common.button.edit"), icon: "lucide:pen-line" },
+          { name: "test", label: t("pages.notification_channel.testSend"), icon: "lucide:send" },
+          {
+            name: "delete",
+            label: t("common.button.delete"),
+            icon: "lucide:trash-2",
+            attrs: { type: "danger" },
+          },
+        ],
+      },
+    ],
+  },
+}));
 
-function openCreate() {
-  formMode.value = "create";
-  editingId.value = undefined;
-  form.value = {
-    name: "", type: "EMAIL", smtpHost: "", smtpPort: 587, smtpUsername: "",
-    password: "", smtpFrom: "", smtpTls: "START_TLS", enabled: true, remark: "",
-  };
-  formOpen.value = true;
+function handleAdd() {
+  drawerRef.value?.open({ create: true });
 }
 
-function openEdit(row: NotificationChannel) {
-  formMode.value = "edit";
-  editingId.value = row.id;
-  form.value = {
-    name: row.name || "",
-    type: row.type || "EMAIL",
-    smtpHost: row.smtpHost || "",
-    smtpPort: row.smtpPort ?? 587,
-    smtpUsername: row.smtpUsername || "",
-    password: "",
-    smtpFrom: row.smtpFrom || "",
-    smtpTls: row.smtpTls || "START_TLS",
-    enabled: !!row.enabled,
-    remark: row.remark || "",
-  };
-  formOpen.value = true;
+function handleEdit(row: NotificationChannel) {
+  drawerRef.value?.open({ create: false, row });
 }
 
-async function handleSave() {
-  if (!form.value.name) {
-    ElMessage.error($t("pages.notification_channel.requiredName"));
-    return;
-  }
-  saving.value = true;
-  try {
-    const { password, ...data } = form.value as Record<string, any>;
-    if (formMode.value === "create") {
-      if (!password) {
-        ElMessage.error($t("pages.notification_channel.requiredPassword"));
-        return;
-      }
-      await createChannel({ data, password });
-      ElMessage.success($t("pages.notification_channel.createSuccess"));
-    } else {
-      await updateChannel({
-        id: editingId.value,
-        data,
-        password: password || undefined,
-        updateMask:
-          "name,smtpHost,smtpPort,smtpUsername,smtpFrom,smtpTls,enabled,remark",
-      });
-      ElMessage.success($t("pages.notification_channel.updateSuccess"));
-    }
-    formOpen.value = false;
-    await load();
-  } catch (error: any) {
-    ElMessage.error(error?.message || $t("pages.notification_channel.saveFailed"));
-  } finally {
-    saving.value = false;
-  }
+function handleSuccess() {
+  pageRef.value?.refresh();
 }
 
-async function handleDelete(row: NotificationChannel) {
-  if (!row.id) return;
-  try {
-    await deleteChannel({ id: row.id });
-    ElMessage.success($t("pages.notification_channel.deleteSuccess"));
-    await load();
-  } catch (error: any) {
-    ElMessage.error(error?.message || $t("pages.notification_channel.deleteFailed"));
-  }
+function handleOperate(data: { name: string; row: NotificationChannel }) {
+  if (data.name !== "test") return;
+  testTarget.value = data.row;
+  testForm.value.recipient = "";
+  testVisible.value = true;
 }
 
-const testOpen = ref(false);
+// === 测试发送 ===
+const testVisible = ref(false);
 const testing = ref(false);
+const testFormRef = ref();
 const testTarget = ref<NotificationChannel>();
-const testRecipient = ref("");
+const testForm = ref({ recipient: "" });
 
-function openTestSend(row: NotificationChannel) {
-  testTarget.value = row;
-  testRecipient.value = "";
-  testOpen.value = true;
-}
+const testRules = {
+  recipient: [
+    { required: true, message: t("pages.notification_channel.requiredRecipient"), trigger: "blur" },
+    { type: "email" as const, message: t("pages.notification_channel.invalidEmail"), trigger: "blur" },
+  ],
+};
 
 async function handleTestSend() {
-  if (!testTarget.value?.id || !testRecipient.value) return;
+  if (!testTarget.value?.id) return;
+  const valid = await testFormRef.value
+    ?.validate()
+    .then(() => true, () => false);
+  if (!valid) return;
   testing.value = true;
   try {
-    await sendTest({ id: testTarget.value.id, recipient: testRecipient.value });
-    ElMessage.success($t("pages.notification_channel.testSendSuccess"));
-    testOpen.value = false;
+    await sendTestEmail(testTarget.value.id, testForm.value.recipient);
+    ElMessage.success(t("pages.notification_channel.testSendSuccess"));
+    testVisible.value = false;
   } catch (error: any) {
-    ElMessage.error(error?.message || $t("pages.notification_channel.testSendFailed"));
+    console.error("send test email failed:", error);
+    ElMessage.error(error?.message || t("pages.notification_channel.testSendFailed"));
   } finally {
     testing.value = false;
   }
 }
-
-function tlsLabel(mode?: string): string {
-  const map: Record<string, string> = {
-    NONE: $t("pages.notification_channel.tlsNone"),
-    START_TLS: $t("pages.notification_channel.tlsStartTls"),
-    SSL: $t("pages.notification_channel.tlsSsl"),
-  };
-  return (mode && map[mode]) || mode || "-";
-}
 </script>
 
 <style lang="scss" scoped>
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.card-title {
-  font-weight: 600;
-}
-.pager {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
+.app-container {
+  padding: 20px;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
 }
 </style>

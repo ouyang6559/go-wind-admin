@@ -95,6 +95,8 @@ func (r *NotificationChannelRepo) List(ctx context.Context, req *paginationV1.Pa
 	r.queryHasPasswordByIDs(ctx, ret.Items)
 	// Type 回填（同 Get：mapper 无法赋入指针字段，见 Get 处注释）
 	r.queryTypeByIDs(ctx, ret.Items)
+	// Enabled 回填（实体侧为 status 枚举列，copier 字段名失配，见 Get 处注释）
+	r.queryEnabledByIDs(ctx, ret.Items)
 
 	return &notificationChannelV1.ListNotificationChannelResponse{
 		Total: ret.Total,
@@ -159,6 +161,31 @@ func (r *NotificationChannelRepo) queryTypeByIDs(ctx context.Context, items []*n
 	}
 }
 
+// queryEnabledByIDs 为 DTO 列表回填 Enabled 标识（status 枚举列 → 布尔，
+// copier 字段名失配同 Type/HasPassword，见 Get 处注释）。
+func (r *NotificationChannelRepo) queryEnabledByIDs(ctx context.Context, items []*notificationChannelV1.NotificationChannel) {
+	if len(items) == 0 {
+		return
+	}
+	entities, err := r.entClient.Client().NotificationChannel.Query().
+		Select(notificationchannel.FieldID, notificationchannel.FieldStatus).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query channel statuses failed: %s", err.Error())
+		return
+	}
+	statuses := make(map[uint32]notificationchannel.Status, len(entities))
+	for _, e := range entities {
+		if e.Status != nil {
+			statuses[e.ID] = *e.Status
+		}
+	}
+	for _, it := range items {
+		s, ok := statuses[it.GetId()]
+		it.Enabled = trans.Ptr(ok && s == notificationchannel.StatusOn)
+	}
+}
+
 func (r *NotificationChannelRepo) IsExist(ctx context.Context, id uint32) (bool, error) {
 	exist, err := r.entClient.Client().NotificationChannel.Query().
 		Where(notificationchannel.IDEQ(id)).
@@ -179,6 +206,9 @@ func (r *NotificationChannelRepo) Get(ctx context.Context, id uint32) (*notifica
 	}
 	dto := r.mapper.ToDTO(entity)
 	dto.HasPassword = trans.Ptr(entity.SMTPPassword != nil)
+	// Enabled 回填：写路径把 enabled 布尔落为 status 枚举列（statusFromEnabled），
+	// copier 按字段名映射 Status≠Enabled，读视图不回填则恒呈停用态。
+	dto.Enabled = trans.Ptr(entity.Status != nil && *entity.Status == notificationchannel.StatusOn)
 	// Type 回填：本仓 Type 为值型枚举列（带 Default、无 Nillable），DTO 侧
 	// 为可选指针字段——mapper 注册的是指针↔指针转换对，值型源与其失配，
 	// copier 给 DTO 指针分配零值（此前 WEBHOOK 渠道读视图恒呈缺省 EMAIL，
