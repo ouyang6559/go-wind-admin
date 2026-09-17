@@ -1,35 +1,35 @@
 {
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Overview",
     "analytics": "Analytics"
   },
   "opm": {
-    "moduleName": "Organizational Personnel Management",
+    "moduleName": "Organization & Personnel",
     "orgUnit": "Organization Structure",
     "position": "Position Management",
     "user": "User Management",
-    "userDetail": "User Detail"
+    "userDetail": "User Details"
   },
   "permission": {
     "moduleName": "Permission Management",
-    "code": "Permission Point Management",
+    "code": "Permission Codes",
     "role": "Role Management",
     "menu": "Menu Management",
     "api": "API Management"
   },
   "internalMessage": {
-    "moduleName": "Internal Message Management",
-    "internalMessage": "Message List",
-    "internalMessageCategory": "Message Category"
+    "moduleName": "Internal Messages",
+    "internalMessage": "Message Management",
+    "internalMessageCategory": "Message Categories"
   },
   "log": {
-    "moduleName": "Log Audit Management",
-    "loginAuditLog": "Login Audit Log",
-    "apiAuditLog": "API Audit Log",
-    "operationAuditLog": "Operation Audit Log",
-    "dataAccessAuditLog": "Data Access Audit Log",
-    "permissionAuditLog": "Permission Audit Log",
-    "policyEvaluationLog": "Policy Evaluation Log",
+    "moduleName": "Audit Logs",
+    "loginAuditLog": "Login Logs",
+    "apiAuditLog": "API Logs",
+    "operationAuditLog": "Operation Logs",
+    "dataAccessAuditLog": "Data Logs",
+    "permissionAuditLog": "Permission Logs",
+    "policyEvaluationLog": "Policy Evaluation Logs",
     "redisCacheMonitor": "Redis Cache Monitor"
   },
   "system": {
@@ -48,11 +48,11 @@
   },
   "tenant": {
     "moduleName": "Tenant Management",
-    "member": "Tenant Member",
+    "member": "Tenant List",
     "plan": "Subscription Plans"
   },
   "profile": {
     "settings": "Profile Center",
-    "internalMessage": "Internal Message"
+    "internalMessage": "Inbox"
   }
 }
