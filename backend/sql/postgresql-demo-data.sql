@@ -12,7 +12,14 @@ TRUNCATE TABLE public.sys_org_units,
                public.internal_message_categories,
                public.sys_plan_modules,
                public.sys_plan_quotas,
-               public.sys_plans
+               public.sys_plans,
+               public.sys_notification_channels,
+               public.sys_scripts,
+               public.sys_access_keys,
+               public.internal_messages,
+               public.internal_message_recipients,
+               public.sys_memberships,
+               public.sys_membership_roles
 RESTART IDENTITY CASCADE;
 
 -- 测试租户
@@ -21,21 +28,26 @@ VALUES (1, '测试租户', 'super', 'PAID', 'APPROVED', 'ON', 2, now())
 ;
 SELECT setval('sys_tenants_id_seq', (SELECT MAX(id) FROM sys_tenants));
 
--- 插入租户管理员用户
+-- 插入租户管理员用户（sys_users 不在上方 TRUNCATE 清单——需保留平台管理员 admin，
+-- 故以 ON CONFLICT 幂等插入，重复执行不冲突）
 INSERT INTO public.sys_users (id, tenant_id, username, nickname, realname, email, gender, created_at)
 VALUES
     -- 2. 租户管理员（TENANT_ADMIN）
     (2, 1, 'tenant_admin', '租户管理', '张管理员', 'tenant@company.com', 'MALE', now())
+ON CONFLICT (id) DO NOTHING
 ;
 SELECT setval('sys_users_id_seq', (SELECT MAX(id) FROM sys_users));
 
--- 插入4个用户的凭证（密码统一为admin，哈希值与原admin一致，方便测试）
+-- 插入4个用户的凭证（密码统一为admin，哈希值与原admin一致，方便测试）；
+-- NOT EXISTS 守卫：user_id=2 已有凭证时整组跳过，保证脚本可重复执行
 INSERT INTO public.sys_user_credentials (tenant_id, user_id, identity_type, identifier, credential_type, credential, status,
                                          is_primary, created_at)
-VALUES
+SELECT * FROM (VALUES
     -- 租户管理员（对应users表id=2，tenant_id=1）
     (1, 2, 'USERNAME', 'tenant_admin', 'PASSWORD_HASH', '$2a$10$yajZDX20Y40FkG0Bu4N19eXNqRizez/S9fK63.JxGkfLq.RoNKR/a', 'ENABLED', true, now()),
     (1, 2, 'EMAIL', 'tenant@company.com', 'PASSWORD_HASH', '$2a$10$yajZDX20Y40FkG0Bu4N19eXNqRizez/S9fK63.JxGkfLq.RoNKR/a', 'ENABLED', false, now())
+) AS seed(tenant_id, user_id, identity_type, identifier, credential_type, credential, status, is_primary, created_at)
+WHERE NOT EXISTS (SELECT 1 FROM public.sys_user_credentials WHERE user_id = 2)
 ;
 SELECT setval('sys_user_credentials_id_seq', (SELECT MAX(id) FROM sys_user_credentials));
 
@@ -302,6 +314,50 @@ VALUES
     (3, 'INTERNAL_MESSAGE', now()),
     (3, 'FILE', now()),
     (3, 'TASK', now())
+;
+
+-- ============================================================
+-- 增补：通知渠道 / 脚本 / 访问密钥 / 站内信（含收件人）
+-- （tenant_admin 的登录凭证已由上方 sys_user_credentials 段 provisioning）
+-- ============================================================
+
+-- 通知渠道（类型 tag：EMAIL；状态 tag：ON/OFF）
+INSERT INTO public.sys_notification_channels (status, name, type, smtp_host, smtp_port, smtp_username, smtp_password, smtp_from, smtp_tls, remark) VALUES
+    ('ON', '运维告警邮箱', 'EMAIL', 'smtp.example.com', 465, 'ops@example.com', 'demo-pass-1', 'ops@example.com', 'SSL_TLS', '生产告警主通道'),
+    ('ON', '市场活动通知', 'EMAIL', 'smtp.example.com', 587, 'mkt@example.com', 'demo-pass-2', 'mkt@example.com', 'START_TLS', '市场推广通知'),
+    ('OFF', '备用邮箱通道', 'EMAIL', 'smtp.backup.com', 25, 'bak@example.com', 'demo-pass-3', 'bak@example.com', 'NONE', '灾备备用，停用中')
+;
+
+-- 脚本（语言 tag：LUA/JAVASCRIPT；启用状态；关键脚本 tag）
+INSERT INTO public.sys_scripts (is_enabled, name, language, hook_point, source, priority, description, critical) VALUES
+    (true, '租户创建审计钩子', 'LUA', 'entity.after_create', 'function on_after_create(ctx) log("tenant created") end', 10, '租户创建后写审计日志', true),
+    (true, '用户敏感字段脱敏', 'JAVASCRIPT', 'entity.after_query', 'function afterQuery(ctx) { mask(ctx.user.mobile); }', 5, '查询返回前脱敏手机号', false),
+    (false, '订单校验规则（停用）', 'LUA', 'entity.before_update', 'function before_update(ctx) end', 0, '旧版校验规则，已停用', false)
+;
+
+-- 访问密钥（状态 tag：ON/OFF；含过期时间演示）
+INSERT INTO public.sys_access_keys (status, tenant_id, name, access_key, secret_hash, expires_at) VALUES
+    ('ON', 0, '监控平台接入', 'AK-demo-monitor-001', 'demo-hash-monitor', now() + interval '365 days'),
+    ('ON', 1, '测试租户数据同步', 'AK-demo-tenant-sync', 'demo-hash-sync', now() + interval '90 days'),
+    ('OFF', 0, '已停用的CI密钥', 'AK-demo-ci-old', 'demo-hash-ci', now() - interval '30 days')
+;
+
+-- 站内信（状态 tag：DRAFT/PUBLISHED/SCHEDULED/ARCHIVED；类型 tag：NOTIFICATION）
+INSERT INTO public.internal_messages (tenant_id, title, content, sender_id, category_id, status, type) VALUES
+    (0, '平台维护公告', '本周六 02:00-04:00 平台例行维护，期间服务短暂不可用。', 1,
+        (SELECT id FROM public.internal_message_categories ORDER BY id LIMIT 1), 'PUBLISHED', 'NOTIFICATION'),
+    (1, '租户版本更新说明', '新版工作台已上线，详情见帮助中心。', 1,
+        (SELECT id FROM public.internal_message_categories ORDER BY id OFFSET 1 LIMIT 1), 'PUBLISHED', 'NOTIFICATION'),
+    (0, '促销活动草稿', '双十一活动方案（草稿，待审批）。', 1, NULL, 'DRAFT', 'NOTIFICATION'),
+    (0, '下月功能预告', '定时发布：下月 1 日 09:00 自动推送。', 1, NULL, 'SCHEDULED', 'NOTIFICATION'),
+    (0, '已归档的旧公告', '2025 年度旧公告，已归档。', 1, NULL, 'ARCHIVED', 'NOTIFICATION')
+;
+
+-- 站内信收件人（收件箱列表：状态 tag RECEIVED/READ；仅已发出的消息有收件人）
+INSERT INTO public.internal_message_recipients (tenant_id, message_id, recipient_user_id, status, received_at, read_at) VALUES
+    (0, (SELECT id FROM public.internal_messages WHERE title = '平台维护公告'), 1, 'READ', now(), now()),
+    (0, (SELECT id FROM public.internal_messages WHERE title = '已归档的旧公告'), 1, 'RECEIVED', now(), NULL),
+    (1, (SELECT id FROM public.internal_messages WHERE title = '租户版本更新说明'), 2, 'READ', now(), now())
 ;
 
 COMMIT;

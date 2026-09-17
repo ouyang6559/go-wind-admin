@@ -9,22 +9,22 @@
   "profile": {
     "moduleName": "Personal Center",
     "profile": "Personal Information",
-    "settings": "Personal Settings",
+    "settings": "Profile Center",
     "security": "Security Settings",
     "customize": "Interface Customization",
     "notification": "Notifications",
-    "internalMessage": "Internal Messages"
+    "internalMessage": "Inbox"
   },
   "permission": {
     "moduleName": "Permission Management",
     "role": "Role Management",
-    "permission": "Permission Management",
+    "permission": "Permission Codes",
     "menu": "Menu Management",
     "api": "API Management"
   },
   "opm": {
     "moduleName": "Organization & Personnel",
-    "orgUnit": "Organization Management",
+    "orgUnit": "Organization Structure",
     "position": "Position Management",
     "user": "User Management",
     "userDetail": "User Details"
@@ -36,10 +36,11 @@
   },
   "system": {
     "moduleName": "System Management",
-    "dict": "Data Dictionary",
-    "task": "Task Scheduler",
+    "dict": "Dictionary Management",
+    "task": "Task Management",
     "file": "File Management",
     "loginPolicy": "Login Policy",
+    "language": "Language Management",
     "onlineSessions": "Online Users",
     "serverMonitor": "Server Monitor",
     "notificationChannels": "Notification Channels",
