@@ -54,7 +54,7 @@ interface HeaderContentProps {
   onToggleFullscreen: () => void;
   onLogout: () => void;
   isDark: boolean;
-  onToggleTheme: () => void;
+  onToggleTheme: (event?: React.MouseEvent<HTMLElement>) => void;
   onOpenSettings: () => void;
   widgetConfig: {
     fullscreen: boolean;

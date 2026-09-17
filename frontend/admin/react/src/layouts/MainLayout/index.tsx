@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Outlet, useLocation, useMatches } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 
@@ -18,6 +19,7 @@ import { useUserStore, useAuthStore, usePageRefreshStore } from '@/stores';
 import { useAccess } from '@/core/access';
 import { usePreferencesStore } from '@/core/preferences/store';
 import { useThemeConfig } from '@/core/preferences/hooks/useThemeConfig';
+import { startThemeViewTransition } from '@/core/preferences/theme-transition';
 import { PreferencesPanel } from '@/core/preferences/components';
 
 import { allRoutes } from '@/router';
@@ -206,10 +208,16 @@ export const MainLayout = ({ routes: dynamicRoutes }: MainLayoutProps) => {
 
   // 顶栏右侧
   const headerContentRender = useCallback(() => {
-    const toggleTheme = () => {
-      setPreferences({
-        theme: {
-          mode: isDark ? 'light' : 'dark',
+    const toggleTheme = (event?: ReactMouseEvent<HTMLElement>) => {
+      const nextMode = isDark ? 'light' : 'dark';
+      startThemeViewTransition({
+        origin: event ? { x: event.clientX, y: event.clientY } : undefined,
+        update: () => {
+          setPreferences({
+            theme: {
+              mode: nextMode,
+            },
+          });
         },
       });
     };
