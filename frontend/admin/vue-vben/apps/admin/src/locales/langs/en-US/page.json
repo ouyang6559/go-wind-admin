@@ -677,6 +677,7 @@
     "pingOk": "Reachable",
     "pingFail": "Unreachable",
     "pingError": "Error",
+    "noData": "No data",
     "dbDriver": "Driver",
     "maxOpenConnections": "Max Open Connections",
     "openConnections": "Open Connections",
