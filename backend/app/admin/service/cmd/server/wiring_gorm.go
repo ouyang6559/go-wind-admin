@@ -10,30 +10,24 @@ import (
 	gormData "go-wind-admin/app/admin/service/internal/data/gorm"
 )
 
-// GORM 后端的装配骨架(Phase 4 占位,go build -tags gorm_backend)。
+// GORM 后端的装配骨架 (gorm_backend 构建标签)。
 //
-// 与 wiring_ent.go 平行:基础设施/认证与鉴权/服务层/传输层四个小节最终同构,
-// 仅仓储层互斥(ent *data.XxxRepo ↔ gorm *gorm.XxxRepo)。
+// 与 wiring_ent.go 平行:基础设施/认证与鉴权/服务层/传输层四个小节最终同构，
+// 仅仓储层互斥 (ent *data.XxxRepo ↔ gorm *gorm.XxxRepo)。
 //
-// 当前阻塞清单(按解除顺序,全部解除后照 wiring_ent.go 补齐 initApp 即可切换):
+// 当前状态 (2026-09-19):
+//  1. [已完成] 上游 logger 接口错位与 gorm 包滞后：已修复，gorm 包可编译。
+//  2. [阻塞] 仓储缺口:data/gorm 缺 UserCredential/UserMfaFactor/AuditLogArchive 三个仓储。
+//  3. [阻塞] 服务层类型耦合:全部 service 构造器形参是 ent 具体类型，gorm 仓储无法传入。
+//     需先做 repo 接口抽取——把各 Repo 接口提到中立包，ent/gorm 双实现分别满足。
+//     这正是 ORM 切换 Phase 4 的主体工作。完成后本文件的仓储小节直接喂给与
+//     wiring_ent.go 相同的服务层。
+//  4. [阻塞] 认证与鉴权链:data.NewAuthorizerProvider 形参同为 ent 类型，与第 3 项一同解。
 //
-//  1. [已完成] 上游 logger 接口错位与 gorm 包滞后:kratos-bootstrap/database/gorm
-//     v0.1.6 与 go-wind/log 接口不匹配;gorm 包 40 个仓储的 log 字段仍为旧版
-//     kratos Helper。已在 data/gorm 内修复(自建 client + helperLogger 适配 +
-//     全量 logger 迁移),gorm 包现已可编译。
-//  2. [未动] 仓储缺口:data/gorm 缺 UserCredentialRepo / UserMfaFactorRepo /
-//     AuditLogArchiveRepo 三个仓储(涉及密码加密器与归档任务依赖)。
-//  3. [未动] 服务层类型耦合(最大缺口):全部 service 构造器形参是 ent 具体类型
-//     (如 *data.RoleRepo),gorm 仓储无法传入。需先做 repo 接口抽取——把各
-//     Repo 接口提到中立包,ent/gorm 双实现分别满足——这正是 orm 切换 Phase 4
-//     的主体工作。完成后本文件的仓储小节直接喂给与 wiring_ent.go 相同的服务层。
-//  4. [未动] 认证与鉴权链:data.NewAuthorizerProvider 形参同为 ent 类型,
-//     与第 3 项一同解。
-//
-// 基础设施(Redis/MinIO/令牌缓存/限流/验证码等)与 ORM 无关,切换时从
+// 基础设施 (Redis/MinIO/令牌缓存/限流/验证码等) 与 ORM 无关，切换时从
 // wiring_ent.go 原样复制即可。
 
-// gormRepos GORM 后端的仓储集合(与 wiring_ent.go 仓储小节一一对应)。
+// gormRepos GORM 后端的仓储集合 (与 wiring_ent.go 仓储小节一一对应)。
 type gormRepos struct {
 	// 身份与账号
 	userRoleRepo     *gormData.UserRoleRepo
@@ -82,11 +76,8 @@ type gormRepos struct {
 	internalMessageRecipientRepo *gormData.InternalMessageRecipientRepo
 }
 
-// newGormRepos 构造 GORM 后端全部仓储。签名全部为 (ctx, client) 平铺形态,
-// 不像 ent 侧存在子仓储聚合;成员仓储独立可用,聚合仓储按需自行组合。
-// TODO(Phase 4): UserCredentialRepo / UserMfaFactorRepo / AuditLogArchiveRepo
-// 另:BackupRepo / TenantUsageRepo / DashboardRepo 三个构造器不接 client,为 IsConfigured()=false 的空壳实现,真实实现同样待 Phase 4。
-// 三个仓储 gorm 侧尚无实现(见文件头阻塞清单第 2 项)。
+// newGormRepos 构造 GORM 后端全部仓储。签名全部为 (ctx, client) 平铺形态，
+// 不像 ent 侧存在子仓储聚合;成员仓储独立可用，聚合仓储按需自行组合。
 func newGormRepos(ctx *bootstrap.Context) (*gormRepos, *gormCrud.Client, error) {
 	client, err := gormData.NewGormClient(ctx)
 	if err != nil {
