@@ -13,6 +13,7 @@ package mailer
 
 import (
 	"bufio"
+	"context"
 	"net"
 	"strings"
 	"sync"
@@ -27,10 +28,10 @@ import (
 
 // fakeServerOptions 控制假服务器在各协议节点的脚本化行为。
 type fakeServerOptions struct {
-	badGreeting      bool   // 用 421 问候并断开：驱动 smtp.NewClient 读问候失败
-	advertiseStartTLS bool  // EHLO 应答广告 STARTTLS 扩展，但从不真正做 TLS
-	authReply        string // AUTH 命令的应答（如 "235 ok\r\n" 表示接受）；空串=以 502 拒绝
-	rejectCommand    string // 需要以 5xx 拒绝的会话命令（AUTH/MAIL/RCPT/DATA/TERM）；空串=全部接受
+	badGreeting       bool   // 用 421 问候并断开：驱动 smtp.NewClient 读问候失败
+	advertiseStartTLS bool   // EHLO 应答广告 STARTTLS 扩展，但从不真正做 TLS
+	authReply         string // AUTH 命令的应答（如 "235 ok\r\n" 表示接受）；空串=以 502 拒绝
+	rejectCommand     string // 需要以 5xx 拒绝的会话命令（AUTH/MAIL/RCPT/DATA/TERM）；空串=全部接受
 }
 
 // fakeSMTPServer 是一个只服务于单元测试的明文 SMTP 假服务器：
@@ -374,9 +375,22 @@ func TestSendMail_InvalidConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := SendMail(tc.cfg, tc.to, "subject", "body")
+			err := SendMail(context.Background(), tc.cfg, tc.to, "subject", "body")
 			require.EqualError(t, err, tc.wantError)
 		})
+	}
+}
+
+// TestIsSupportedTlsMode 加密方式自检的判定集，必须与 SendMail 的分拨号 switch 一致。
+// 尤其 SSL_TLS：演示数据/手工改库留下的值，判错会让配置问题伪装成投递失败。
+func TestIsSupportedTlsMode(t *testing.T) {
+	t.Parallel()
+
+	for _, mode := range []string{"", "NONE", "none", "START_TLS", "SSL", "ssl"} {
+		require.True(t, IsSupportedTlsMode(mode), "%q 应被识别", mode)
+	}
+	for _, mode := range []string{"SSL_TLS", "TLS", "STARTTLS", "QUANTUM"} {
+		require.False(t, IsSupportedTlsMode(mode), "%q 不该被识别", mode)
 	}
 }
 
@@ -407,7 +421,7 @@ func TestSendMail_ConnectFailure_ClosedPort(t *testing.T) {
 			t.Parallel()
 
 			cfg := SmtpConfig{Host: host, Port: port, From: "sender@example.test", TlsMode: m.mode}
-			err := SendMail(cfg, []string{"rcpt@example.test"}, "subject", "body")
+			err := SendMail(context.Background(), cfg, []string{"rcpt@example.test"}, "subject", "body")
 			require.ErrorContains(t, err, "connect smtp server failed")
 		})
 	}
@@ -421,7 +435,7 @@ func TestSendMail_ConnectFailure_BadGreeting(t *testing.T) {
 	srv := startFakeSMTPServer(t, fakeServerOptions{badGreeting: true})
 	cfg := SmtpConfig{Host: "127.0.0.1", Port: srv.port(), From: "sender@example.test", TlsMode: "NONE"}
 
-	err := SendMail(cfg, []string{"rcpt@example.test"}, "subject", "body")
+	err := SendMail(context.Background(), cfg, []string{"rcpt@example.test"}, "subject", "body")
 	require.ErrorContains(t, err, "connect smtp server failed")
 }
 
@@ -434,7 +448,7 @@ func TestSendMail_StartTLSAdvertisedButPlaintext(t *testing.T) {
 	srv := startFakeSMTPServer(t, fakeServerOptions{advertiseStartTLS: true})
 	cfg := SmtpConfig{Host: "127.0.0.1", Port: srv.port(), From: "sender@example.test", TlsMode: "NONE"}
 
-	err := SendMail(cfg, []string{"rcpt@example.test"}, "subject", "body")
+	err := SendMail(context.Background(), cfg, []string{"rcpt@example.test"}, "subject", "body")
 	require.ErrorContains(t, err, "STARTTLS failed")
 	require.ErrorContains(t, err, "connect smtp server failed")
 }
@@ -452,9 +466,9 @@ func TestSendMail_PlaintextSessionSucceeds(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name        string
-		from        string
-		fromLine    string
+		name     string
+		from     string
+		fromLine string
 	}{
 		{
 			name:     "explicit from",
@@ -481,7 +495,7 @@ func TestSendMail_PlaintextSessionSucceeds(t *testing.T) {
 			}
 			to := []string{"rcpt1@example.test", "rcpt2@example.test"}
 
-			err := SendMail(cfg, to, "plain subject", "plain body line 1\r\nplain body line 2")
+			err := SendMail(context.Background(), cfg, to, "plain subject", "plain body line 1\r\nplain body line 2")
 			require.NoError(t, err, "明文会话必须完整走通并返回 nil")
 
 			want := tc.fromLine +
@@ -514,7 +528,7 @@ func TestSendMail_AuthAcceptedThenSendSucceeds(t *testing.T) {
 		TlsMode:  "NONE",
 	}
 
-	err := SendMail(cfg, []string{"rcpt1@example.test"}, "auth subject", "auth body")
+	err := SendMail(context.Background(), cfg, []string{"rcpt1@example.test"}, "auth subject", "auth body")
 	require.NoError(t, err, "AUTH 被接受后必须完成发送并返回 nil")
 
 	want := "From: sender@example.test\r\n" +
@@ -591,7 +605,7 @@ func TestSendMail_SessionCommandFailures(t *testing.T) {
 				cfg.Password = "pw"
 			}
 
-			err := SendMail(cfg, []string{"rcpt1@example.test"}, "subject", "body")
+			err := SendMail(context.Background(), cfg, []string{"rcpt1@example.test"}, "subject", "body")
 			for _, want := range tc.wantContains {
 				require.ErrorContains(t, err, want)
 			}

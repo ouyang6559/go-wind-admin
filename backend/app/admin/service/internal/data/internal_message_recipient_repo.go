@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
+	"github.com/tx7do/go-crud/viewer"
 
 	"github.com/tx7do/go-utils/copierutil"
 	"github.com/tx7do/go-utils/mapper"
@@ -104,6 +105,15 @@ func (r *InternalMessageRecipientRepo) List(ctx context.Context, req *pagination
 
 	builder := r.entClient.Client().InternalMessageRecipient.Query()
 
+	// 收件箱按"我自己的"来读，归属谓词必须由服务端给出：查询条件整个来自调用方的 query 字符串，
+	// 不钉住 recipient_user_id 就等于同租户任何登录用户改一个 ID 就能翻别人的收件记录
+	// （title/content 随父消息回填，一并跟着走）。三端页面本来就各自在前端塞这个条件，
+	// 钉住之后前端传不传都只会拿到自己的行。
+	// 平台/系统视图豁免：用户详情页要看指定用户的收件箱，异步任务路径也需要全量读。
+	if vc, ok := viewer.FromContext(ctx); ok && !vc.IsPlatformContext() && !vc.IsSystemContext() {
+		builder.Where(internalmessagerecipient.RecipientUserIDEQ(uint32(vc.UserID())))
+	}
+
 	ret, err := r.repository.ListWithPaging(ctx, builder, builder.Clone(), req)
 	if err != nil {
 		return nil, err
@@ -140,6 +150,11 @@ func (r *InternalMessageRecipientRepo) Get(ctx context.Context, req *internalMes
 	return dto, err
 }
 
+// Create 落一条收件记录。
+// 注意：DTO 上的 title/content 无对应列，本方法不写入——它们是 SSE 推送负载与
+// 收件箱回填用的瞬态字段（写侧 internal_message_service.go 的 newMessageRecipient，
+// 读侧 internal_message_recipient_service.go 的 ListUserInbox），两条路径都填得到值，
+// 但不要指望 Create 把它们持久化。
 func (r *InternalMessageRecipientRepo) Create(ctx context.Context, req *internalMessageV1.InternalMessageRecipient) (*internalMessageV1.InternalMessageRecipient, error) {
 	if req == nil {
 		return nil, internalMessageV1.ErrorBadRequest("invalid parameter")
@@ -212,6 +227,43 @@ func (r *InternalMessageRecipientRepo) CreateBulk(ctx context.Context, reqs []*i
 	return errs
 }
 
+// IdsByMessageAndRecipients 按 (message_id, recipient_user_id) 回读收件记录主键。
+//
+// 为什么需要它：全员广播走 CreateBulk（ON CONFLICT DO NOTHING），upsert 路径不返回实体，
+// 而三端通知面板要求 SSE 载荷带收件行主键——vue-element 的 handleSseNotification 第一行就是
+// `if (!data.id || !data.messageId) return`。缺 id 会让整场广播在 ele 端不弹桌面通知、
+// 未读数不涨、列表不插入，且不报任何错（与 P1 修掉的 encoding/json snake_case 缺陷同一形态）。
+// 因此广播落库后按页回读一次主键再推送：一页一条 SELECT，代价可忽略。
+//
+// 租户语义：查询经 ent 租户隐私层，调用方 ctx 的 viewer 决定可见范围——广播的收件行正是
+// 同一 viewer 落库的，回读范围与写入范围天然一致。
+func (r *InternalMessageRecipientRepo) IdsByMessageAndRecipients(ctx context.Context, messageID uint32, userIDs []uint32) (map[uint32]uint32, error) {
+	if messageID == 0 || len(userIDs) == 0 {
+		return nil, nil
+	}
+
+	entities, err := r.entClient.Client().InternalMessageRecipient.Query().
+		Where(
+			internalmessagerecipient.MessageIDEQ(messageID),
+			internalmessagerecipient.RecipientUserIDIn(userIDs...),
+		).
+		All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query internal message recipient ids failed: %s", err.Error())
+		return nil, internalMessageV1.ErrorInternalServerError("query internal message recipient ids failed")
+	}
+
+	ids := make(map[uint32]uint32, len(entities))
+	for _, e := range entities {
+		if e.RecipientUserID == nil {
+			continue
+		}
+		ids[*e.RecipientUserID] = e.ID
+	}
+
+	return ids, nil
+}
+
 func (r *InternalMessageRecipientRepo) Update(ctx context.Context, req *internalMessageV1.UpdateInternalMessageRecipientRequest) error {
 	if req == nil || req.Data == nil {
 		return internalMessageV1.ErrorBadRequest("invalid parameter")
@@ -271,18 +323,33 @@ func (r *InternalMessageRecipientRepo) Delete(ctx context.Context, id uint32) er
 	return nil
 }
 
+// inboxScopedUserID 把"这次写操作算谁的"从请求体收回服务端，与 List 的归属谓词同形。
+//
+// 三个收件箱写口的 user_id 整个来自请求体：租户隔离只保证"动不到别租户的行"，同租户内换一个
+// user_id 就能把别人的收件行标成已读，而 DeleteNotificationFromInbox 在 recipient_ids 为空时
+// 是"按用户维度整箱清空"——换一个 id 就是清空别人的收件箱。平台/系统上下文豁免同读侧：
+// 用户详情页这类"代客"场景要按指定用户操作。
+func (r *InternalMessageRecipientRepo) inboxScopedUserID(ctx context.Context, reqUserID uint32) uint32 {
+	if vc, ok := viewer.FromContext(ctx); ok && !vc.IsPlatformContext() && !vc.IsSystemContext() {
+		return uint32(vc.UserID())
+	}
+
+	return reqUserID
+}
+
 // MarkNotificationAsRead 将通知标记为已读。
 // recipient_ids 为空表示"标记该用户全部未读"——前端"全部已读"入口只加载了当前页数据，
 // 无法枚举全部 id，由服务端按用户维度兜底（status <> READ 的守卫保证已读记录不被重写）。
 func (r *InternalMessageRecipientRepo) MarkNotificationAsRead(ctx context.Context, req *internalMessageV1.MarkNotificationAsReadRequest) error {
-	if req.GetUserId() == 0 {
+	userID := r.inboxScopedUserID(ctx, req.GetUserId())
+	if userID == 0 {
 		return internalMessageV1.ErrorBadRequest("invalid parameter")
 	}
 
 	now := time.Now()
 	builder := r.entClient.Client().InternalMessageRecipient.Update().
 		Where(
-			internalmessagerecipient.RecipientUserIDEQ(req.GetUserId()),
+			internalmessagerecipient.RecipientUserIDEQ(userID),
 			internalmessagerecipient.StatusNEQ(internalmessagerecipient.StatusRead),
 		)
 	if len(req.GetRecipientIds()) > 0 {
@@ -301,7 +368,9 @@ func (r *InternalMessageRecipientRepo) MarkNotificationsStatus(ctx context.Conte
 	if len(req.GetRecipientIds()) == 0 {
 		return internalMessageV1.ErrorBadRequest("invalid parameter")
 	}
-	if req.GetUserId() == 0 {
+
+	userID := r.inboxScopedUserID(ctx, req.GetUserId())
+	if userID == 0 {
 		return internalMessageV1.ErrorBadRequest("invalid parameter")
 	}
 
@@ -318,7 +387,7 @@ func (r *InternalMessageRecipientRepo) MarkNotificationsStatus(ctx context.Conte
 	_, err := r.entClient.Client().InternalMessageRecipient.Update().
 		Where(
 			internalmessagerecipient.IDIn(req.GetRecipientIds()...),
-			internalmessagerecipient.RecipientUserIDEQ(req.GetUserId()),
+			internalmessagerecipient.RecipientUserIDEQ(userID),
 			internalmessagerecipient.StatusNEQ(*r.statusConverter.ToEntity(trans.Ptr(req.GetNewStatus()))),
 		).
 		SetNillableStatus(r.statusConverter.ToEntity(trans.Ptr(req.GetNewStatus()))).
@@ -456,12 +525,13 @@ func (r *InternalMessageRecipientRepo) DeleteMessageWithRecipients(ctx context.C
 // recipient_ids 为空表示清空该用户收件箱（前端"清空"入口无法枚举全部ID，
 // 与 MarkNotificationAsRead 的空 ids 语义保持一致）。
 func (r *InternalMessageRecipientRepo) DeleteNotificationFromInbox(ctx context.Context, req *internalMessageV1.DeleteNotificationFromInboxRequest) error {
-	if req.GetUserId() == 0 {
+	userID := r.inboxScopedUserID(ctx, req.GetUserId())
+	if userID == 0 {
 		return internalMessageV1.ErrorBadRequest("invalid parameter")
 	}
 
 	builder := r.entClient.Client().InternalMessageRecipient.Delete().
-		Where(internalmessagerecipient.RecipientUserIDEQ(req.GetUserId()))
+		Where(internalmessagerecipient.RecipientUserIDEQ(userID))
 	if len(req.GetRecipientIds()) > 0 {
 		builder = builder.Where(internalmessagerecipient.IDIn(req.GetRecipientIds()...))
 	}

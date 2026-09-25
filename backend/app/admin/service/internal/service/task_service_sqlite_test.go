@@ -39,11 +39,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	crudViewer "github.com/tx7do/go-crud/viewer"
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	crudViewer "github.com/tx7do/go-crud/viewer"
 
-	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
+	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	taskV1 "go-wind-admin/api/gen/go/task/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
@@ -103,13 +103,13 @@ func newTaskServiceForTest(t *testing.T, scheduler TaskScheduler, withTenantUsag
 	t.Helper()
 	entClient := enttest.NewEntClientForTest(t)
 	svc := &TaskService{
-		log:                bLogger.NewHelper(bLogger.NopLogger()),
-		taskRepo:           data.NewTaskRepoForTest(entClient),
-		userRepo:           nil,
-		backupRepo:         nil,
-		tenantUsageRepo:    nil,
+		log:                 bLogger.NewHelper(bLogger.NopLogger()),
+		taskRepo:            data.NewTaskRepoForTest(entClient),
+		userRepo:            nil,
+		backupRepo:          nil,
+		tenantUsageRepo:     nil,
 		auditLogArchiveRepo: nil,
-		mc:                 nil,
+		mc:                  nil,
 	}
 	if withTenantUsage {
 		svc.tenantUsageRepo = data.NewTenantUsageRepoForTest(entClient, nil)
@@ -491,11 +491,12 @@ func TestTaskService_RestartAllTask(t *testing.T) {
 	require.Equal(t, 1, stub.removeAllCount, "RestartAllTask 应先全量注销")
 	require.Equal(t, []string{"tasksvc_delay_all_type"}, stub.newTask,
 		"DELAY 任务应经一次性投递入口")
-	require.Len(t, stub.newPeriodicTask, 3,
-		"周期注册应为 3 次：同名 PERIODIC 去重后 1 次 + 系统级到期扫描 1 次 + 审计归档 1 次")
+	require.Len(t, stub.newPeriodicTask, 4,
+		"周期注册应为 4 次：同名 PERIODIC 去重后 1 次 + 系统级到期扫描 1 次 + 审计归档 1 次 + 台账清扫 1 次")
 	require.Contains(t, stub.newPeriodicTask, "tasksvc_dup_type", "同名 PERIODIC 应恰好注册一次")
 	require.Contains(t, stub.newPeriodicTask, task.TenantExpiryScanTaskType, "系统级到期扫描应被注册")
 	require.Contains(t, stub.newPeriodicTask, task.AuditLogArchiveTaskType, "系统级审计归档应被注册")
+	require.Contains(t, stub.newPeriodicTask, task.NotificationDeliverySweepTaskType, "通知台账清扫应被注册")
 }
 
 // TestTaskService_StopAllTask 验证 StopAllTask 全量注销。

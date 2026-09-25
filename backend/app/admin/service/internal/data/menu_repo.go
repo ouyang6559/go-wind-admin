@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
@@ -24,15 +24,16 @@ import (
 	"github.com/tx7do/go-utils/trans"
 	"google.golang.org/protobuf/proto"
 
-	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
+	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
 	"go-wind-admin/pkg/constants"
 )
 
 type MenuRepo struct {
-	entClient *entCrud.EntClient[*ent.Client]
-	log       *bLogger.Helper
+	entClient  *entCrud.EntClient[*ent.Client]
+	driverName string
+	log        *bLogger.Helper
 
 	mapper          *mapper.CopierMapper[permissionV1.Menu, ent.Menu]
 	statusConverter *mapper.EnumTypeConverter[permissionV1.Menu_Status, menu.Status]
@@ -53,6 +54,7 @@ func NewMenuRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Clien
 	repo := &MenuRepo{
 		log:             ctx.NewLoggerHelper("menu/repo/admin-service"),
 		entClient:       entClient,
+		driverName:      driverNameOf(ctx),
 		mapper:          mapper.NewCopierMapper[permissionV1.Menu, ent.Menu](),
 		statusConverter: mapper.NewEnumTypeConverter[permissionV1.Menu_Status, menu.Status](permissionV1.Menu_Status_name, permissionV1.Menu_Status_value),
 		typeConverter:   mapper.NewEnumTypeConverter[permissionV1.Menu_Type, menu.Type](permissionV1.Menu_Type_name, permissionV1.Menu_Type_value),

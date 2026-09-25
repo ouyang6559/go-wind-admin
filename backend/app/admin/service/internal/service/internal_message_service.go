@@ -2,31 +2,35 @@ package service
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
+	"github.com/hibiken/asynq"
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/aggregator"
 	"github.com/tx7do/go-utils/id"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
-	"github.com/hibiken/asynq"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/tx7do/kratos-transport/transport/sse"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go-wind-admin/app/admin/service/internal/data"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
+	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
+	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 
-	"go-wind-admin/pkg/middleware/auth"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/sseevent"
 	"go-wind-admin/pkg/task"
 )
 
@@ -77,9 +81,21 @@ type InternalMessageService struct {
 	userRepo                     data.UserRepo
 
 	internalMessagePublisher InternalMessagePublisher
-	taskEnqueuer            TaskEnqueuer
+	taskEnqueuer             TaskEnqueuer
+	notifier                 Notifier
 	authenticator            *data.Authenticator
 	clientType               authenticationV1.ClientType
+}
+
+// unwiredNotifier 是 Notifier 的未装配占位实现。
+//
+// 与 noopInternalMessagePublisher 相反，这里不能静默返回成功：站内信一旦改走缝，
+// 缝没接上就等于消息凭空消失且无痕迹。返回 error 让既有的 per-recipient 日志与
+// failCount 把它暴露出来——装配漏注册时表现为发送日志里一行明确原因。
+type unwiredNotifier struct{}
+
+func (unwiredNotifier) SendDirect(_ context.Context, _ *notificationV1.SendDirectNotificationRequest) (*notificationV1.SendNotificationResponse, error) {
+	return nil, errors.New("notifier is not wired: internal message cannot be delivered through the notification domain")
 }
 
 func NewInternalMessageService(
@@ -104,11 +120,21 @@ func NewInternalMessageService(
 		// taskEnqueuer 默认 nil：asynq 未配置时广播回退到 goroutine；
 		// 配置后由 RegisterTaskEnqueuer 覆盖
 		taskEnqueuer: nil,
+		// notifier 默认"未装配"实现（一律报错）：装配后由 RegisterNotifier 换成 NotificationService
+		notifier: unwiredNotifier{},
 	}
 }
 
 func (s *InternalMessageService) RegisterInternalMessagePublisher(internalMessagePublisher InternalMessagePublisher) {
 	s.internalMessagePublisher = internalMessagePublisher
+}
+
+// RegisterNotifier 注入通知域的投递出口。
+// 与 RegisterInternalMessagePublisher 同模式：构造期给占位实现，装配期换成真身，
+// 因为 NotificationService 与 InternalMessageService 互为依赖（前者经 Registry 调后者的
+// 渠道实现，后者经 Notifier 走前者的缝），谁都不能作为后者的构造参数。
+func (s *InternalMessageService) RegisterNotifier(notifier Notifier) {
+	s.notifier = notifier
 }
 
 // RegisterTaskEnqueuer 注入 asynq 任务入队能力。
@@ -350,7 +376,10 @@ func (s *InternalMessageService) SendMessage(ctx context.Context, req *internalM
 		vc, _ := viewer.FromContext(ctx)
 
 		if s.taskEnqueuer != nil {
-			if err := s.taskEnqueuer.NewTask(task.BroadcastMessageTaskType, &task.BroadcastMessageTaskData{MessageId: msgId}); err != nil {
+			if err := s.taskEnqueuer.NewTask(task.BroadcastMessageTaskType, &task.BroadcastMessageTaskData{
+				MessageId: msgId,
+				TenantId:  operator.GetTenantId(),
+			}); err != nil {
 				s.log.Errorf(ctx, "enqueue broadcast task for message [%d] failed, falling back to goroutine: %s", msgId, err)
 				s.fanoutBroadcastGoroutine(msgId, senderId, title, content, vc)
 			}
@@ -358,15 +387,17 @@ func (s *InternalMessageService) SendMessage(ctx context.Context, req *internalM
 			s.fanoutBroadcastGoroutine(msgId, senderId, title, content, vc)
 		}
 	} else {
-		// 定向发送：人数少，仍同步执行，但同样上报错误而非全部丢弃。
+		// 定向发送：人数少，仍同步执行，但改走通知域的缝——
+		// 路由表定渠道（INTERNAL_MESSAGE → INTERNAL），缝落台账 + 调 INTERNAL 渠道落收件行。
+		// 部分失败照旧只记日志、不影响 HTTP 结论（收件箱与台账各自留有痕迹）。
 		if req.RecipientUserId != nil {
-			if err := s.sendNotification(ctx, msg.GetId(), req.GetRecipientUserId(), operator.GetUserId(), &now, msg.GetTitle(), msg.GetContent()); err != nil {
-				s.log.Errorf(ctx, "send message to user [%d] failed: %s", req.GetRecipientUserId(), err)
+			if err := s.deliverViaNotifier(ctx, msg.GetId(), req.GetRecipientUserId(), operator.GetUserId(), msg.GetTitle(), msg.GetContent()); err != nil {
+				s.log.Errorf(ctx, "send message [%d] to user [%d] failed: %s", msg.GetId(), req.GetRecipientUserId(), err)
 			}
 		} else {
 			var failCount int
 			for _, uid := range req.TargetUserIds {
-				if err := s.sendNotification(ctx, msg.GetId(), uid, operator.GetUserId(), &now, msg.GetTitle(), msg.GetContent()); err != nil {
+				if err := s.deliverViaNotifier(ctx, msg.GetId(), uid, operator.GetUserId(), msg.GetTitle(), msg.GetContent()); err != nil {
 					failCount++
 				}
 			}
@@ -385,8 +416,15 @@ func (s *InternalMessageService) SendMessage(ctx context.Context, req *internalM
 // 状态直接写 RECEIVED 并落 received_at：SENT→RECEIVED 的流转本应由客户端确认送达
 // （MarkNotificationsStatus），但该接口没有 HTTP 路由也无人调用，若写 SENT，
 // 按 status=RECEIVED 过滤的收件箱/未读列表将永远查不到新消息。
-func newMessageRecipient(messageId, recipientUserId, senderUserId uint32, now *time.Time, title, content string) *internalMessageV1.InternalMessageRecipient {
+//
+// tenantId 必须由调用方显式传入，且取的是**收件用户自己的**租户（不是操作人的）：
+// 收件箱读取被 go-crud TenantPrivacy 按 viewer 租户过滤，打在别的租户上的收件行
+// 对收件人来说是"落了库但永远读不到"，既不报错也不留日志（§2.4-2 的原始成因）。
+// 租户上下文下这一列会被 TenantPrivacy 强制覆盖为 viewer 租户，与受众必然同值，
+// 所以两条入口都不会因为传参而分叉。
+func newMessageRecipient(messageId, recipientUserId, senderUserId, tenantId uint32, now *time.Time, title, content string) *internalMessageV1.InternalMessageRecipient {
 	return &internalMessageV1.InternalMessageRecipient{
+		TenantId:        trans.Ptr(tenantId),
 		MessageId:       trans.Ptr(messageId),
 		RecipientUserId: trans.Ptr(recipientUserId),
 		Status:          trans.Ptr(internalMessageV1.InternalMessageRecipient_RECEIVED),
@@ -400,8 +438,14 @@ func newMessageRecipient(messageId, recipientUserId, senderUserId uint32, now *t
 
 // publishNotification 尽力而为地实时推送一条收件记录。
 // 站内信以落库为准，推送失败（用户离线、缓冲已满）不影响投递，客户端重连后可从收件箱补取。
+//
+// data 必须用 protojson 而不是 encoding/json 序列化：后者按结构体 tag 出 snake_case 键
+// （message_id / created_at），而三端通知面板读的是与 REST 收件箱同形的 camelCase，
+// vue-element 的 handleSseNotification 因此在 `if (!data.messageId) return` 处直接退出——
+// 桌面通知与未读计数全不触发且不报错。protojson 另外把 status 输出成枚举名而非 varint。
+// （protojson 会在字段间插入随机空白，消费方只能 JSON.parse，不许比对字节。）
 func (s *InternalMessageService) publishNotification(ctx context.Context, recipient *internalMessageV1.InternalMessageRecipient) {
-	recipientJson, err := json.Marshal(recipient)
+	recipientJson, err := protojson.Marshal(recipient)
 	if err != nil {
 		s.log.Errorf(ctx, "marshal recipient failed, skip sse push: %s", err)
 		return
@@ -415,15 +459,46 @@ func (s *InternalMessageService) publishNotification(ctx context.Context, recipi
 	if ok := s.internalMessagePublisher.TryPublish(ctx, sse.StreamID(streamId), &sse.Event{
 		ID:    []byte(id.NewGUIDv4(false)),
 		Data:  recipientJson,
-		Event: []byte("notification"),
+		Event: []byte(sseevent.Notification),
 	}); !ok {
 		s.log.Debugf(ctx, "sse try publish skipped (stream not exist or buffer full): user=%d stream=%s", recipient.GetRecipientUserId(), streamId)
 	}
 }
 
-// sendNotification 单个收件人：落库 + 实时推送
+// deliverViaNotifier 把一个定向收件人交给通知域投递：路由表决定渠道，缝负责台账与
+// INTERNAL 渠道的实际落库（见 internal_message_sender.go）。
+//
+// 站内信自此没有"绕过缝"的第二条单收件人路径——这正是 P1 结束时它还是半吊子的地方：
+// 消息发没发过、走的哪个渠道、成没成，此前只在收件箱表里有半个答案。
+//
+// 不显式传 Channel：让 sys_notification_rules 的 INTERNAL_MESSAGE 一行成为唯一声明处，
+// 路由表被绕开时测试会红。
+func (s *InternalMessageService) deliverViaNotifier(ctx context.Context, messageId, recipientUserId, operatorUserId uint32, title, content string) error {
+	// Target 是收件用户 ID 的十进制字符串：缝要求调用方自己给出投递目标，
+	// INTERNAL 渠道的"地址"就是这个人（台账里与脱敏邮箱并列时保持可读）。
+	target := strconv.FormatUint(uint64(recipientUserId), 10)
+
+	resp, err := s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
+		EventType:       notificationV1.EventType_INTERNAL_MESSAGE,
+		Target:          target,
+		Title:           title,
+		Content:         content,
+		RecipientUserId: trans.Ptr(recipientUserId),
+		OperatorUserId:  trans.Ptr(operatorUserId),
+		RelatedId:       trans.Ptr(messageId),
+	})
+	if err != nil {
+		s.log.Errorf(ctx, "deliver message [%d] to user [%d] via notification domain failed (delivery=%d): %s",
+			messageId, recipientUserId, resp.GetDeliveryId(), err)
+	}
+
+	return err
+}
+
+// sendNotification 单个收件人：落库 + 实时推送。这是 INTERNAL 渠道的投递内核，
+// 由 InternalMessageSender 经缝调用（全员广播的批量形态见 executeBroadcast）。
 func (s *InternalMessageService) sendNotification(ctx context.Context, messageId, recipientUserId, senderUserId uint32, now *time.Time, title, content string) error {
-	recipient := newMessageRecipient(messageId, recipientUserId, senderUserId, now, title, content)
+	recipient := newMessageRecipient(messageId, recipientUserId, senderUserId, s.recipientTenantID(ctx, recipientUserId), now, title, content)
 
 	var err error
 	var entity *internalMessageV1.InternalMessageRecipient
@@ -438,11 +513,50 @@ func (s *InternalMessageService) sendNotification(ctx context.Context, messageId
 	return nil
 }
 
+// recipientTenantID 查收件用户自己的租户，用于给收件行打标（定向路径；广播路径的受众
+// 已经带着这个字段，见 executeBroadcast）。
+//
+// 查不到就回退 ctx viewer 的租户并留下 error：跨租户定向（租户 A 的收件人在 B，读取被
+// 隐私层挡掉）与"DTO 没带 tenant_id"都属异常，此时按操作人租户落库至少保持改动前的行为，
+// 而不是静默写 0 —— 0 是"平台"，会把行藏进任何租户读者都看不见的地方。
+func (s *InternalMessageService) recipientTenantID(ctx context.Context, recipientUserId uint32) uint32 {
+	user, err := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
+		QueryBy: &identityV1.GetUserRequest_Id{Id: recipientUserId},
+	})
+	if err != nil {
+		s.log.Errorf(ctx, "get recipient [%d] for tenant labeling failed, fall back to viewer tenant: %s", recipientUserId, err)
+		return viewerTenantID(ctx)
+	}
+
+	return user.GetTenantId()
+}
+
+// viewerTenantID 取 ctx viewer 的租户，viewer 缺失时返回 0（调用方负责把这次兜底记成 error，
+// 因为"缺 viewer"只有结合具体投递才知道后果）。
+func viewerTenantID(ctx context.Context) uint32 {
+	if vc, ok := viewer.FromContext(ctx); ok {
+		return uint32(vc.TenantID())
+	}
+	return 0
+}
+
 // executeBroadcast 执行全员广播 fan-out：按页拉取用户 + 分批幂等写入收件记录 + 逐条 SSE 推送。
 // 由 AsyncBroadcastMessage（asynq handler）和 fanoutBroadcastGoroutine（回退路径）共用。
 // 注意 viewer：ent 的 TenantPrivacy 在 viewer 缺失时会返回 error，调用方必须传入带 viewer 的 ctx。
+//
+// 收件行的 tenant_id 逐行取自**收件用户自己**（受众 DTO 上的 tenant_id），不取 viewer 的：
+// 平台管理员的广播在 SystemViewer 下跑，viewer 租户恒为 0，用它打标会把全平台的收件行都写进
+// 租户 0，而收件箱读取按读者租户过滤 → 租户用户一行都读不到（父消息行本身也是 tenant 0，
+// 读侧的回填同因，见 internal_message_recipient_service.go 的 ListUserInbox）。
+// 租户管理员的广播不受影响：受众已被隐私层筛成本租户，逐行取值与 viewer 同值。
 func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId, senderUserId uint32, title, content string) {
 	now := time.Now()
+
+	broadcastTenantId := viewerTenantID(ctx)
+	if _, ok := viewer.FromContext(ctx); !ok {
+		s.log.Errorf(ctx, "broadcast message [%d]: no viewer in context, recipients will be written as tenant 0", messageId)
+	}
+
 	var total int
 	for page := uint32(1); ; page++ {
 		users, err := s.userRepo.List(ctx, &paginationV1.PagingRequest{
@@ -459,17 +573,36 @@ func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId
 
 		recipients := make([]*internalMessageV1.InternalMessageRecipient, 0, len(users.GetItems()))
 		for _, user := range users.GetItems() {
-			recipients = append(recipients, newMessageRecipient(messageId, user.GetId(), senderUserId, &now, title, content))
+			userTenantId := user.GetTenantId()
+			if userTenantId == 0 && broadcastTenantId != 0 {
+				// 平台用户的租户确实是 0，所以"受众没带租户"只在广播方是租户时才可能被察觉——
+				// 那种情况下按 0 落库等于把行藏进收件人读不到的地方（go-crud 的 DTO 映射退化即触发）。
+				s.log.Errorf(ctx, "broadcast message [%d]: recipient user [%d] carries no tenant, labeled with broadcaster tenant [%d]",
+					messageId, user.GetId(), broadcastTenantId)
+				userTenantId = broadcastTenantId
+			}
+			recipients = append(recipients, newMessageRecipient(messageId, user.GetId(), senderUserId, userTenantId, &now, title, content))
 		}
 
 		// CreateBulk 用 ON CONFLICT DO NOTHING 幂等写入：asynq 重试时已落库的行会被忽略而非报错。
-		// upsert 模式不返回实体，推送阶段直接对构造的 recipients 逐条 publish。
+		// upsert 模式不返回实体，所以推送前先按页回读主键——SSE 载荷缺 id 会让 vue-element 的
+		// 通知面板在第一行守卫处静默丢弃整场广播（详见仓储方法注释）。
 		if err := s.internalMessageRecipientRepo.CreateBulk(ctx, recipients); err != nil {
 			s.log.Errorf(ctx, "broadcast message [%d]: bulk insert recipients (page %d) partial fail: %s", messageId, page, err)
 		}
 		total += len(recipients)
 
+		userIds := make([]uint32, 0, len(recipients))
 		for _, recipient := range recipients {
+			userIds = append(userIds, recipient.GetRecipientUserId())
+		}
+		recipientIds, err := s.internalMessageRecipientRepo.IdsByMessageAndRecipients(ctx, messageId, userIds)
+		if err != nil {
+			// 回读失败不中断：宁可推一条缺 id 的通知，也不丢掉整个广播。
+			s.log.Errorf(ctx, "broadcast message [%d]: read back recipient ids (page %d) failed: %s", messageId, page, err)
+		}
+		for _, recipient := range recipients {
+			recipient.Id = trans.Ptr(recipientIds[recipient.GetRecipientUserId()])
 			s.publishNotification(ctx, recipient)
 		}
 
@@ -499,13 +632,21 @@ func (s *InternalMessageService) fanoutBroadcastGoroutine(messageId, senderUserI
 // 从 payload 取 messageId，从 DB 取回消息本体后执行 fan-out。
 // asynq 的重试机制保证进程重启后未完成的投递自动恢复；
 // 幂等性由 (message_id, recipient_user_id) 唯一约束 + CreateBulk 的 ON CONFLICT DO NOTHING 保证。
-// 注意：asynq handler 的 ctx 不携带请求期的 viewer，需注入 SystemViewer 以通过 ent 租户隐私层。
+// 注意：asynq handler 的 ctx 不携带请求期的 viewer，需按 payload 的发送方租户重建，
+// 否则 ent 租户隐私层会拒绝查询。
 func (s *InternalMessageService) AsyncBroadcastMessage(taskType string, taskData *task.BroadcastMessageTaskData) error {
-	s.log.Infof(context.Background(), "AsyncBroadcastMessage [%s] messageId=%d", taskType, taskData.MessageId)
+	s.log.Infof(context.Background(), "AsyncBroadcastMessage [%s] messageId=%d tenantId=%d", taskType, taskData.MessageId, taskData.TenantId)
 
 	// asynq handler 的 ctx 不携带请求期的 viewer，ent 的 TenantPrivacy 会拒绝无 viewer 的查询。
-	// 注入 SystemViewer（平台级全可见）以通过隐私层。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	// 平台管理员（tid==0）用 SystemViewer 保持"全平台受众"；租户管理员必须用本租户的 viewer，
+	// 因为平台上下文不给 userRepo.List 注入租户谓词，全员广播会变成跨租户全平台投递。
+	// 升级前已入队的旧任务无 tenant_id 字段，按 tid==0 处理，退化为升级前的行为。
+	var ctx context.Context
+	if taskData.TenantId == 0 {
+		ctx = appViewer.NewSystemViewerContext(context.Background())
+	} else {
+		ctx = viewer.WithContext(context.Background(), appViewer.NewUserViewer(0, uint64(taskData.TenantId), 0, "", nil))
+	}
 
 	msg, err := s.internalMessageRepo.Get(ctx, &internalMessageV1.GetInternalMessageRequest{
 		QueryBy: &internalMessageV1.GetInternalMessageRequest_Id{

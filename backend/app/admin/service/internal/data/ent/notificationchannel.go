@@ -49,8 +49,16 @@ type NotificationChannel struct {
 	// 发件人地址
 	SMTPFrom *string `json:"smtp_from,omitempty"`
 	// 加密方式
-	SMTPTLS      *notificationchannel.SMTPTLS `json:"smtp_tls,omitempty"`
-	selectValues sql.SelectValues
+	SMTPTLS *notificationchannel.SMTPTLS `json:"smtp_tls,omitempty"`
+	// Webhook 回调地址（仅 WEBHOOK 渠道）
+	WebhookURL *string `json:"webhook_url,omitempty"`
+	// Webhook 签名密钥（EncryptIfNeeded 加密存储，仅 WEBHOOK 渠道）
+	WebhookSecret *string `json:"-"`
+	// Webhook 出站风格（签名位置/算法与应答判据，仅 WEBHOOK 渠道）
+	WebhookSignStyle *notificationchannel.WebhookSignStyle `json:"webhook_sign_style,omitempty"`
+	// Webhook 载荷模板（{{占位符}} 渲染；留空则用该风格的内置默认 JSON）
+	WebhookPayloadTemplate *string `json:"webhook_payload_template,omitempty"`
+	selectValues           sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -60,7 +68,7 @@ func (*NotificationChannel) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case notificationchannel.FieldID, notificationchannel.FieldCreatedBy, notificationchannel.FieldUpdatedBy, notificationchannel.FieldDeletedBy, notificationchannel.FieldSMTPPort:
 			values[i] = new(sql.NullInt64)
-		case notificationchannel.FieldRemark, notificationchannel.FieldStatus, notificationchannel.FieldName, notificationchannel.FieldType, notificationchannel.FieldSMTPHost, notificationchannel.FieldSMTPUsername, notificationchannel.FieldSMTPPassword, notificationchannel.FieldSMTPFrom, notificationchannel.FieldSMTPTLS:
+		case notificationchannel.FieldRemark, notificationchannel.FieldStatus, notificationchannel.FieldName, notificationchannel.FieldType, notificationchannel.FieldSMTPHost, notificationchannel.FieldSMTPUsername, notificationchannel.FieldSMTPPassword, notificationchannel.FieldSMTPFrom, notificationchannel.FieldSMTPTLS, notificationchannel.FieldWebhookURL, notificationchannel.FieldWebhookSecret, notificationchannel.FieldWebhookSignStyle, notificationchannel.FieldWebhookPayloadTemplate:
 			values[i] = new(sql.NullString)
 		case notificationchannel.FieldCreatedAt, notificationchannel.FieldUpdatedAt, notificationchannel.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -195,6 +203,34 @@ func (_m *NotificationChannel) assignValues(columns []string, values []any) erro
 				_m.SMTPTLS = new(notificationchannel.SMTPTLS)
 				*_m.SMTPTLS = notificationchannel.SMTPTLS(value.String)
 			}
+		case notificationchannel.FieldWebhookURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_url", values[i])
+			} else if value.Valid {
+				_m.WebhookURL = new(string)
+				*_m.WebhookURL = value.String
+			}
+		case notificationchannel.FieldWebhookSecret:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_secret", values[i])
+			} else if value.Valid {
+				_m.WebhookSecret = new(string)
+				*_m.WebhookSecret = value.String
+			}
+		case notificationchannel.FieldWebhookSignStyle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_sign_style", values[i])
+			} else if value.Valid {
+				_m.WebhookSignStyle = new(notificationchannel.WebhookSignStyle)
+				*_m.WebhookSignStyle = notificationchannel.WebhookSignStyle(value.String)
+			}
+		case notificationchannel.FieldWebhookPayloadTemplate:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_payload_template", values[i])
+			} else if value.Valid {
+				_m.WebhookPayloadTemplate = new(string)
+				*_m.WebhookPayloadTemplate = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -302,6 +338,23 @@ func (_m *NotificationChannel) String() string {
 	if v := _m.SMTPTLS; v != nil {
 		builder.WriteString("smtp_tls=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.WebhookURL; v != nil {
+		builder.WriteString("webhook_url=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("webhook_secret=<sensitive>")
+	builder.WriteString(", ")
+	if v := _m.WebhookSignStyle; v != nil {
+		builder.WriteString("webhook_sign_style=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.WebhookPayloadTemplate; v != nil {
+		builder.WriteString("webhook_payload_template=")
+		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')
 	return builder.String()

@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
@@ -59,6 +59,12 @@ func (s *ApiService) init() {
 	ctx := appViewer.NewSystemViewerContext(context.Background())
 	if count, _ := s.repo.Count(ctx, nil); count.Count == 0 {
 		_, _ = s.SyncApis(ctx, &emptypb.Empty{})
+	}
+	// SyncApis 内部的对齐只在空表首启（或手工触发同步）时跑到；已部署实例的
+	// sys_apis 序列被上一次同步的显式 ID 留在原地，只能靠这条启动期自愈补上。
+	// 重复执行是幂等的（只前进不回退）。
+	if err := s.repo.AlignIdentitySequence(ctx); err != nil {
+		s.log.Errorf(ctx, "接口 id 序列对齐失败: %v", err)
 	}
 }
 
@@ -153,6 +159,12 @@ func (s *ApiService) SyncApis(ctx context.Context, _ *emptypb.Empty) (*emptypb.E
 		return nil, err
 	}
 
+	// 重建是 truncate + 按显式 ID 逐行写入，PG 的序列不会跟着走；不对齐的话
+	// 之后「新建 API」必撞 sys_apis_pkey（HTTP 500）。
+	if err := s.repo.AlignIdentitySequence(ctx); err != nil {
+		s.log.Errorf(ctx, "接口 id 序列对齐失败: %v", err)
+	}
+
 	// 重置权限策略
 	if err := s.authorizer.ResetPolicies(ctx); err != nil {
 		return nil, err
@@ -234,6 +246,7 @@ func (s *ApiService) syncWithOpenAPI(ctx context.Context) error {
 
 	return nil
 }
+
 // GetWalkRouteData 获取通过 WalkRoute 获取的路由数据，用于调试
 func (s *ApiService) GetWalkRouteData(_ context.Context, _ *emptypb.Empty) (*permissionV1.ListApiResponse, error) {
 	if s.routeWalker == nil {

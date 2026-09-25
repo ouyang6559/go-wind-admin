@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go-wind-admin/app/admin/service/internal/data"
@@ -42,6 +42,13 @@ func (s *MenuService) init() {
 	ctx := appViewer.NewSystemViewerContext(context.Background())
 	if count, _ := s.menuRepo.Count(ctx, nil); count == 0 {
 		_ = s.createDefaultMenus(ctx)
+	}
+
+	// 种子是带显式 ID 插入的，PG 的 identity 序列不会因此前进；不对齐的话
+	// 「新建菜单」与菜单同步的新增分支必撞 sys_menus_pkey（HTTP 500）。
+	// 放在 count==0 守卫之外：已部署实例的序列同样落后，需要每次启动自愈。
+	if err := s.menuRepo.AlignIdentitySequence(ctx); err != nil {
+		s.log.Errorf(ctx, "菜单 id 序列对齐失败: %v", err)
 	}
 }
 

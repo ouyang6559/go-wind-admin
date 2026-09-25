@@ -23,6 +23,8 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/membershiprole"
 	"go-wind-admin/app/admin/service/internal/data/ent/menu"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
+	"go-wind-admin/app/admin/service/internal/data/ent/notificationdelivery"
+	"go-wind-admin/app/admin/service/internal/data/ent/notificationrule"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
@@ -62,7 +64,7 @@ import (
 
 // schemaGraph holds a representation of ent/schema at runtime.
 var schemaGraph = func() *sqlgraph.Schema {
-	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 49)}
+	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 51)}
 	graph.Nodes[0] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   accesskey.Table,
@@ -618,25 +620,83 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "NotificationChannel",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			notificationchannel.FieldCreatedAt:    {Type: field.TypeTime, Column: notificationchannel.FieldCreatedAt},
-			notificationchannel.FieldUpdatedAt:    {Type: field.TypeTime, Column: notificationchannel.FieldUpdatedAt},
-			notificationchannel.FieldDeletedAt:    {Type: field.TypeTime, Column: notificationchannel.FieldDeletedAt},
-			notificationchannel.FieldCreatedBy:    {Type: field.TypeUint32, Column: notificationchannel.FieldCreatedBy},
-			notificationchannel.FieldUpdatedBy:    {Type: field.TypeUint32, Column: notificationchannel.FieldUpdatedBy},
-			notificationchannel.FieldDeletedBy:    {Type: field.TypeUint32, Column: notificationchannel.FieldDeletedBy},
-			notificationchannel.FieldRemark:       {Type: field.TypeString, Column: notificationchannel.FieldRemark},
-			notificationchannel.FieldStatus:       {Type: field.TypeEnum, Column: notificationchannel.FieldStatus},
-			notificationchannel.FieldName:         {Type: field.TypeString, Column: notificationchannel.FieldName},
-			notificationchannel.FieldType:         {Type: field.TypeEnum, Column: notificationchannel.FieldType},
-			notificationchannel.FieldSMTPHost:     {Type: field.TypeString, Column: notificationchannel.FieldSMTPHost},
-			notificationchannel.FieldSMTPPort:     {Type: field.TypeUint32, Column: notificationchannel.FieldSMTPPort},
-			notificationchannel.FieldSMTPUsername: {Type: field.TypeString, Column: notificationchannel.FieldSMTPUsername},
-			notificationchannel.FieldSMTPPassword: {Type: field.TypeString, Column: notificationchannel.FieldSMTPPassword},
-			notificationchannel.FieldSMTPFrom:     {Type: field.TypeString, Column: notificationchannel.FieldSMTPFrom},
-			notificationchannel.FieldSMTPTLS:      {Type: field.TypeEnum, Column: notificationchannel.FieldSMTPTLS},
+			notificationchannel.FieldCreatedAt:              {Type: field.TypeTime, Column: notificationchannel.FieldCreatedAt},
+			notificationchannel.FieldUpdatedAt:              {Type: field.TypeTime, Column: notificationchannel.FieldUpdatedAt},
+			notificationchannel.FieldDeletedAt:              {Type: field.TypeTime, Column: notificationchannel.FieldDeletedAt},
+			notificationchannel.FieldCreatedBy:              {Type: field.TypeUint32, Column: notificationchannel.FieldCreatedBy},
+			notificationchannel.FieldUpdatedBy:              {Type: field.TypeUint32, Column: notificationchannel.FieldUpdatedBy},
+			notificationchannel.FieldDeletedBy:              {Type: field.TypeUint32, Column: notificationchannel.FieldDeletedBy},
+			notificationchannel.FieldRemark:                 {Type: field.TypeString, Column: notificationchannel.FieldRemark},
+			notificationchannel.FieldStatus:                 {Type: field.TypeEnum, Column: notificationchannel.FieldStatus},
+			notificationchannel.FieldName:                   {Type: field.TypeString, Column: notificationchannel.FieldName},
+			notificationchannel.FieldType:                   {Type: field.TypeEnum, Column: notificationchannel.FieldType},
+			notificationchannel.FieldSMTPHost:               {Type: field.TypeString, Column: notificationchannel.FieldSMTPHost},
+			notificationchannel.FieldSMTPPort:               {Type: field.TypeUint32, Column: notificationchannel.FieldSMTPPort},
+			notificationchannel.FieldSMTPUsername:           {Type: field.TypeString, Column: notificationchannel.FieldSMTPUsername},
+			notificationchannel.FieldSMTPPassword:           {Type: field.TypeString, Column: notificationchannel.FieldSMTPPassword},
+			notificationchannel.FieldSMTPFrom:               {Type: field.TypeString, Column: notificationchannel.FieldSMTPFrom},
+			notificationchannel.FieldSMTPTLS:                {Type: field.TypeEnum, Column: notificationchannel.FieldSMTPTLS},
+			notificationchannel.FieldWebhookURL:             {Type: field.TypeString, Column: notificationchannel.FieldWebhookURL},
+			notificationchannel.FieldWebhookSecret:          {Type: field.TypeString, Column: notificationchannel.FieldWebhookSecret},
+			notificationchannel.FieldWebhookSignStyle:       {Type: field.TypeEnum, Column: notificationchannel.FieldWebhookSignStyle},
+			notificationchannel.FieldWebhookPayloadTemplate: {Type: field.TypeString, Column: notificationchannel.FieldWebhookPayloadTemplate},
 		},
 	}
 	graph.Nodes[20] = &sqlgraph.Node{
+		NodeSpec: sqlgraph.NodeSpec{
+			Table:   notificationdelivery.Table,
+			Columns: notificationdelivery.Columns,
+			ID: &sqlgraph.FieldSpec{
+				Type:   field.TypeUint32,
+				Column: notificationdelivery.FieldID,
+			},
+		},
+		Type: "NotificationDelivery",
+		Fields: map[string]*sqlgraph.FieldSpec{
+			notificationdelivery.FieldCreatedAt:       {Type: field.TypeTime, Column: notificationdelivery.FieldCreatedAt},
+			notificationdelivery.FieldUpdatedAt:       {Type: field.TypeTime, Column: notificationdelivery.FieldUpdatedAt},
+			notificationdelivery.FieldDeletedAt:       {Type: field.TypeTime, Column: notificationdelivery.FieldDeletedAt},
+			notificationdelivery.FieldCreatedBy:       {Type: field.TypeUint32, Column: notificationdelivery.FieldCreatedBy},
+			notificationdelivery.FieldUpdatedBy:       {Type: field.TypeUint32, Column: notificationdelivery.FieldUpdatedBy},
+			notificationdelivery.FieldDeletedBy:       {Type: field.TypeUint32, Column: notificationdelivery.FieldDeletedBy},
+			notificationdelivery.FieldEventType:       {Type: field.TypeEnum, Column: notificationdelivery.FieldEventType},
+			notificationdelivery.FieldChannel:         {Type: field.TypeEnum, Column: notificationdelivery.FieldChannel},
+			notificationdelivery.FieldChannelID:       {Type: field.TypeUint32, Column: notificationdelivery.FieldChannelID},
+			notificationdelivery.FieldRecipientUserID: {Type: field.TypeUint32, Column: notificationdelivery.FieldRecipientUserID},
+			notificationdelivery.FieldRelatedID:       {Type: field.TypeUint32, Column: notificationdelivery.FieldRelatedID},
+			notificationdelivery.FieldTarget:          {Type: field.TypeString, Column: notificationdelivery.FieldTarget},
+			notificationdelivery.FieldStatus:          {Type: field.TypeEnum, Column: notificationdelivery.FieldStatus},
+			notificationdelivery.FieldLastError:       {Type: field.TypeString, Column: notificationdelivery.FieldLastError},
+			notificationdelivery.FieldRequestID:       {Type: field.TypeString, Column: notificationdelivery.FieldRequestID},
+			notificationdelivery.FieldAttempts:        {Type: field.TypeUint32, Column: notificationdelivery.FieldAttempts},
+			notificationdelivery.FieldSentAt:          {Type: field.TypeTime, Column: notificationdelivery.FieldSentAt},
+		},
+	}
+	graph.Nodes[21] = &sqlgraph.Node{
+		NodeSpec: sqlgraph.NodeSpec{
+			Table:   notificationrule.Table,
+			Columns: notificationrule.Columns,
+			ID: &sqlgraph.FieldSpec{
+				Type:   field.TypeUint32,
+				Column: notificationrule.FieldID,
+			},
+		},
+		Type: "NotificationRule",
+		Fields: map[string]*sqlgraph.FieldSpec{
+			notificationrule.FieldCreatedAt: {Type: field.TypeTime, Column: notificationrule.FieldCreatedAt},
+			notificationrule.FieldUpdatedAt: {Type: field.TypeTime, Column: notificationrule.FieldUpdatedAt},
+			notificationrule.FieldDeletedAt: {Type: field.TypeTime, Column: notificationrule.FieldDeletedAt},
+			notificationrule.FieldCreatedBy: {Type: field.TypeUint32, Column: notificationrule.FieldCreatedBy},
+			notificationrule.FieldUpdatedBy: {Type: field.TypeUint32, Column: notificationrule.FieldUpdatedBy},
+			notificationrule.FieldDeletedBy: {Type: field.TypeUint32, Column: notificationrule.FieldDeletedBy},
+			notificationrule.FieldIsEnabled: {Type: field.TypeBool, Column: notificationrule.FieldIsEnabled},
+			notificationrule.FieldRemark:    {Type: field.TypeString, Column: notificationrule.FieldRemark},
+			notificationrule.FieldEventType: {Type: field.TypeEnum, Column: notificationrule.FieldEventType},
+			notificationrule.FieldChannel:   {Type: field.TypeEnum, Column: notificationrule.FieldChannel},
+			notificationrule.FieldIsAsync:   {Type: field.TypeBool, Column: notificationrule.FieldIsAsync},
+		},
+	}
+	graph.Nodes[22] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   operationauditlog.Table,
 			Columns: operationauditlog.Columns,
@@ -668,7 +728,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			operationauditlog.FieldSignature:      {Type: field.TypeBytes, Column: operationauditlog.FieldSignature},
 		},
 	}
-	graph.Nodes[21] = &sqlgraph.Node{
+	graph.Nodes[23] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   orgunit.Table,
 			Columns: orgunit.Columns,
@@ -715,7 +775,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			orgunit.FieldPermissionTags:     {Type: field.TypeJSON, Column: orgunit.FieldPermissionTags},
 		},
 	}
-	graph.Nodes[22] = &sqlgraph.Node{
+	graph.Nodes[24] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   permission.Table,
 			Columns: permission.Columns,
@@ -739,7 +799,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			permission.FieldGroupID:     {Type: field.TypeUint32, Column: permission.FieldGroupID},
 		},
 	}
-	graph.Nodes[23] = &sqlgraph.Node{
+	graph.Nodes[25] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   permissionapi.Table,
 			Columns: permissionapi.Columns,
@@ -760,7 +820,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			permissionapi.FieldAPIID:        {Type: field.TypeUint32, Column: permissionapi.FieldAPIID},
 		},
 	}
-	graph.Nodes[24] = &sqlgraph.Node{
+	graph.Nodes[26] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   permissionauditlog.Table,
 			Columns: permissionauditlog.Columns,
@@ -788,7 +848,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			permissionauditlog.FieldSignature:    {Type: field.TypeBytes, Column: permissionauditlog.FieldSignature},
 		},
 	}
-	graph.Nodes[25] = &sqlgraph.Node{
+	graph.Nodes[27] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   permissiongroup.Table,
 			Columns: permissiongroup.Columns,
@@ -814,7 +874,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			permissiongroup.FieldModule:      {Type: field.TypeString, Column: permissiongroup.FieldModule},
 		},
 	}
-	graph.Nodes[26] = &sqlgraph.Node{
+	graph.Nodes[28] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   permissionmenu.Table,
 			Columns: permissionmenu.Columns,
@@ -835,7 +895,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			permissionmenu.FieldMenuID:       {Type: field.TypeUint32, Column: permissionmenu.FieldMenuID},
 		},
 	}
-	graph.Nodes[27] = &sqlgraph.Node{
+	graph.Nodes[29] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   permissionpolicy.Table,
 			Columns: permissionpolicy.Columns,
@@ -861,7 +921,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			permissionpolicy.FieldCacheTTL:     {Type: field.TypeUint32, Column: permissionpolicy.FieldCacheTTL},
 		},
 	}
-	graph.Nodes[28] = &sqlgraph.Node{
+	graph.Nodes[30] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   plan.Table,
 			Columns: plan.Columns,
@@ -886,7 +946,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			plan.FieldDescription:       {Type: field.TypeString, Column: plan.FieldDescription},
 		},
 	}
-	graph.Nodes[29] = &sqlgraph.Node{
+	graph.Nodes[31] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   planmodule.Table,
 			Columns: planmodule.Columns,
@@ -906,7 +966,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			planmodule.FieldModule:    {Type: field.TypeEnum, Column: planmodule.FieldModule},
 		},
 	}
-	graph.Nodes[30] = &sqlgraph.Node{
+	graph.Nodes[32] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   planquota.Table,
 			Columns: planquota.Columns,
@@ -927,7 +987,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			planquota.FieldQuotaValue: {Type: field.TypeUint64, Column: planquota.FieldQuotaValue},
 		},
 	}
-	graph.Nodes[31] = &sqlgraph.Node{
+	graph.Nodes[33] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   policyevaluationlog.Table,
 			Columns: policyevaluationlog.Columns,
@@ -956,7 +1016,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			policyevaluationlog.FieldSignature:         {Type: field.TypeBytes, Column: policyevaluationlog.FieldSignature},
 		},
 	}
-	graph.Nodes[32] = &sqlgraph.Node{
+	graph.Nodes[34] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   position.Table,
 			Columns: position.Columns,
@@ -992,7 +1052,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			position.FieldEndAt:               {Type: field.TypeTime, Column: position.FieldEndAt},
 		},
 	}
-	graph.Nodes[33] = &sqlgraph.Node{
+	graph.Nodes[35] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   role.Table,
 			Columns: role.Columns,
@@ -1021,7 +1081,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			role.FieldDataScope:   {Type: field.TypeEnum, Column: role.FieldDataScope},
 		},
 	}
-	graph.Nodes[34] = &sqlgraph.Node{
+	graph.Nodes[36] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   rolefieldpermission.Table,
 			Columns: rolefieldpermission.Columns,
@@ -1044,7 +1104,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			rolefieldpermission.FieldFieldName: {Type: field.TypeString, Column: rolefieldpermission.FieldFieldName},
 		},
 	}
-	graph.Nodes[35] = &sqlgraph.Node{
+	graph.Nodes[37] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   rolemetadata.Table,
 			Columns: rolemetadata.Columns,
@@ -1073,7 +1133,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			rolemetadata.FieldCustomOverrides:   {Type: field.TypeJSON, Column: rolemetadata.FieldCustomOverrides},
 		},
 	}
-	graph.Nodes[36] = &sqlgraph.Node{
+	graph.Nodes[38] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   roleorgunit.Table,
 			Columns: roleorgunit.Columns,
@@ -1095,7 +1155,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			roleorgunit.FieldOrgUnitID: {Type: field.TypeUint32, Column: roleorgunit.FieldOrgUnitID},
 		},
 	}
-	graph.Nodes[37] = &sqlgraph.Node{
+	graph.Nodes[39] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   rolepermission.Table,
 			Columns: rolepermission.Columns,
@@ -1120,7 +1180,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			rolepermission.FieldPriority:     {Type: field.TypeInt32, Column: rolepermission.FieldPriority},
 		},
 	}
-	graph.Nodes[38] = &sqlgraph.Node{
+	graph.Nodes[40] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   script.Table,
 			Columns: script.Columns,
@@ -1148,7 +1208,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			script.FieldVersion:     {Type: field.TypeUint32, Column: script.FieldVersion},
 		},
 	}
-	graph.Nodes[39] = &sqlgraph.Node{
+	graph.Nodes[41] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   scriptlog.Table,
 			Columns: scriptlog.Columns,
@@ -1173,7 +1233,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			scriptlog.FieldError:       {Type: field.TypeString, Column: scriptlog.FieldError},
 		},
 	}
-	graph.Nodes[40] = &sqlgraph.Node{
+	graph.Nodes[42] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   sysconfig.Table,
 			Columns: sysconfig.Columns,
@@ -1197,7 +1257,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			sysconfig.FieldIsBuiltIn: {Type: field.TypeBool, Column: sysconfig.FieldIsBuiltIn},
 		},
 	}
-	graph.Nodes[41] = &sqlgraph.Node{
+	graph.Nodes[43] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   task.Table,
 			Columns: task.Columns,
@@ -1224,7 +1284,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			task.FieldEnable:      {Type: field.TypeBool, Column: task.FieldEnable},
 		},
 	}
-	graph.Nodes[42] = &sqlgraph.Node{
+	graph.Nodes[44] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   tenant.Table,
 			Columns: tenant.Columns,
@@ -1257,7 +1317,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			tenant.FieldExpiredAt:        {Type: field.TypeTime, Column: tenant.FieldExpiredAt},
 		},
 	}
-	graph.Nodes[43] = &sqlgraph.Node{
+	graph.Nodes[45] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   user.Table,
 			Columns: user.Columns,
@@ -1293,7 +1353,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			user.FieldStatus:      {Type: field.TypeEnum, Column: user.FieldStatus},
 		},
 	}
-	graph.Nodes[44] = &sqlgraph.Node{
+	graph.Nodes[46] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   usercredential.Table,
 			Columns: usercredential.Columns,
@@ -1326,7 +1386,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			usercredential.FieldResetTokenUsedAt:       {Type: field.TypeTime, Column: usercredential.FieldResetTokenUsedAt},
 		},
 	}
-	graph.Nodes[45] = &sqlgraph.Node{
+	graph.Nodes[47] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   usermfafactor.Table,
 			Columns: usermfafactor.Columns,
@@ -1349,7 +1409,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			usermfafactor.FieldLastUsedAt:  {Type: field.TypeTime, Column: usermfafactor.FieldLastUsedAt},
 		},
 	}
-	graph.Nodes[46] = &sqlgraph.Node{
+	graph.Nodes[48] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userorgunit.Table,
 			Columns: userorgunit.Columns,
@@ -1379,7 +1439,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			userorgunit.FieldStatus:     {Type: field.TypeEnum, Column: userorgunit.FieldStatus},
 		},
 	}
-	graph.Nodes[47] = &sqlgraph.Node{
+	graph.Nodes[49] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userposition.Table,
 			Columns: userposition.Columns,
@@ -1408,7 +1468,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			userposition.FieldStatus:     {Type: field.TypeEnum, Column: userposition.FieldStatus},
 		},
 	}
-	graph.Nodes[48] = &sqlgraph.Node{
+	graph.Nodes[50] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   userrole.Table,
 			Columns: userrole.Columns,
@@ -4086,6 +4146,246 @@ func (f *NotificationChannelFilter) WhereSMTPTLS(p entql.StringP) {
 	f.Where(p.Field(notificationchannel.FieldSMTPTLS))
 }
 
+// WhereWebhookURL applies the entql string predicate on the webhook_url field.
+func (f *NotificationChannelFilter) WhereWebhookURL(p entql.StringP) {
+	f.Where(p.Field(notificationchannel.FieldWebhookURL))
+}
+
+// WhereWebhookSecret applies the entql string predicate on the webhook_secret field.
+func (f *NotificationChannelFilter) WhereWebhookSecret(p entql.StringP) {
+	f.Where(p.Field(notificationchannel.FieldWebhookSecret))
+}
+
+// WhereWebhookSignStyle applies the entql string predicate on the webhook_sign_style field.
+func (f *NotificationChannelFilter) WhereWebhookSignStyle(p entql.StringP) {
+	f.Where(p.Field(notificationchannel.FieldWebhookSignStyle))
+}
+
+// WhereWebhookPayloadTemplate applies the entql string predicate on the webhook_payload_template field.
+func (f *NotificationChannelFilter) WhereWebhookPayloadTemplate(p entql.StringP) {
+	f.Where(p.Field(notificationchannel.FieldWebhookPayloadTemplate))
+}
+
+// addPredicate implements the predicateAdder interface.
+func (_q *NotificationDeliveryQuery) addPredicate(pred func(s *sql.Selector)) {
+	_q.predicates = append(_q.predicates, pred)
+}
+
+// Filter returns a Filter implementation to apply filters on the NotificationDeliveryQuery builder.
+func (_q *NotificationDeliveryQuery) Filter() *NotificationDeliveryFilter {
+	return &NotificationDeliveryFilter{config: _q.config, predicateAdder: _q}
+}
+
+// addPredicate implements the predicateAdder interface.
+func (m *NotificationDeliveryMutation) addPredicate(pred func(s *sql.Selector)) {
+	m.predicates = append(m.predicates, pred)
+}
+
+// Filter returns an entql.Where implementation to apply filters on the NotificationDeliveryMutation builder.
+func (m *NotificationDeliveryMutation) Filter() *NotificationDeliveryFilter {
+	return &NotificationDeliveryFilter{config: m.config, predicateAdder: m}
+}
+
+// NotificationDeliveryFilter provides a generic filtering capability at runtime for NotificationDeliveryQuery.
+type NotificationDeliveryFilter struct {
+	predicateAdder
+	config
+}
+
+// Where applies the entql predicate on the query filter.
+func (f *NotificationDeliveryFilter) Where(p entql.P) {
+	f.addPredicate(func(s *sql.Selector) {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[20].Type, p, s); err != nil {
+			s.AddError(err)
+		}
+	})
+}
+
+// WhereID applies the entql uint32 predicate on the id field.
+func (f *NotificationDeliveryFilter) WhereID(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldID))
+}
+
+// WhereCreatedAt applies the entql time.Time predicate on the created_at field.
+func (f *NotificationDeliveryFilter) WhereCreatedAt(p entql.TimeP) {
+	f.Where(p.Field(notificationdelivery.FieldCreatedAt))
+}
+
+// WhereUpdatedAt applies the entql time.Time predicate on the updated_at field.
+func (f *NotificationDeliveryFilter) WhereUpdatedAt(p entql.TimeP) {
+	f.Where(p.Field(notificationdelivery.FieldUpdatedAt))
+}
+
+// WhereDeletedAt applies the entql time.Time predicate on the deleted_at field.
+func (f *NotificationDeliveryFilter) WhereDeletedAt(p entql.TimeP) {
+	f.Where(p.Field(notificationdelivery.FieldDeletedAt))
+}
+
+// WhereCreatedBy applies the entql uint32 predicate on the created_by field.
+func (f *NotificationDeliveryFilter) WhereCreatedBy(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldCreatedBy))
+}
+
+// WhereUpdatedBy applies the entql uint32 predicate on the updated_by field.
+func (f *NotificationDeliveryFilter) WhereUpdatedBy(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldUpdatedBy))
+}
+
+// WhereDeletedBy applies the entql uint32 predicate on the deleted_by field.
+func (f *NotificationDeliveryFilter) WhereDeletedBy(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldDeletedBy))
+}
+
+// WhereEventType applies the entql string predicate on the event_type field.
+func (f *NotificationDeliveryFilter) WhereEventType(p entql.StringP) {
+	f.Where(p.Field(notificationdelivery.FieldEventType))
+}
+
+// WhereChannel applies the entql string predicate on the channel field.
+func (f *NotificationDeliveryFilter) WhereChannel(p entql.StringP) {
+	f.Where(p.Field(notificationdelivery.FieldChannel))
+}
+
+// WhereChannelID applies the entql uint32 predicate on the channel_id field.
+func (f *NotificationDeliveryFilter) WhereChannelID(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldChannelID))
+}
+
+// WhereRecipientUserID applies the entql uint32 predicate on the recipient_user_id field.
+func (f *NotificationDeliveryFilter) WhereRecipientUserID(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldRecipientUserID))
+}
+
+// WhereRelatedID applies the entql uint32 predicate on the related_id field.
+func (f *NotificationDeliveryFilter) WhereRelatedID(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldRelatedID))
+}
+
+// WhereTarget applies the entql string predicate on the target field.
+func (f *NotificationDeliveryFilter) WhereTarget(p entql.StringP) {
+	f.Where(p.Field(notificationdelivery.FieldTarget))
+}
+
+// WhereStatus applies the entql string predicate on the status field.
+func (f *NotificationDeliveryFilter) WhereStatus(p entql.StringP) {
+	f.Where(p.Field(notificationdelivery.FieldStatus))
+}
+
+// WhereLastError applies the entql string predicate on the last_error field.
+func (f *NotificationDeliveryFilter) WhereLastError(p entql.StringP) {
+	f.Where(p.Field(notificationdelivery.FieldLastError))
+}
+
+// WhereRequestID applies the entql string predicate on the request_id field.
+func (f *NotificationDeliveryFilter) WhereRequestID(p entql.StringP) {
+	f.Where(p.Field(notificationdelivery.FieldRequestID))
+}
+
+// WhereAttempts applies the entql uint32 predicate on the attempts field.
+func (f *NotificationDeliveryFilter) WhereAttempts(p entql.Uint32P) {
+	f.Where(p.Field(notificationdelivery.FieldAttempts))
+}
+
+// WhereSentAt applies the entql time.Time predicate on the sent_at field.
+func (f *NotificationDeliveryFilter) WhereSentAt(p entql.TimeP) {
+	f.Where(p.Field(notificationdelivery.FieldSentAt))
+}
+
+// addPredicate implements the predicateAdder interface.
+func (_q *NotificationRuleQuery) addPredicate(pred func(s *sql.Selector)) {
+	_q.predicates = append(_q.predicates, pred)
+}
+
+// Filter returns a Filter implementation to apply filters on the NotificationRuleQuery builder.
+func (_q *NotificationRuleQuery) Filter() *NotificationRuleFilter {
+	return &NotificationRuleFilter{config: _q.config, predicateAdder: _q}
+}
+
+// addPredicate implements the predicateAdder interface.
+func (m *NotificationRuleMutation) addPredicate(pred func(s *sql.Selector)) {
+	m.predicates = append(m.predicates, pred)
+}
+
+// Filter returns an entql.Where implementation to apply filters on the NotificationRuleMutation builder.
+func (m *NotificationRuleMutation) Filter() *NotificationRuleFilter {
+	return &NotificationRuleFilter{config: m.config, predicateAdder: m}
+}
+
+// NotificationRuleFilter provides a generic filtering capability at runtime for NotificationRuleQuery.
+type NotificationRuleFilter struct {
+	predicateAdder
+	config
+}
+
+// Where applies the entql predicate on the query filter.
+func (f *NotificationRuleFilter) Where(p entql.P) {
+	f.addPredicate(func(s *sql.Selector) {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[21].Type, p, s); err != nil {
+			s.AddError(err)
+		}
+	})
+}
+
+// WhereID applies the entql uint32 predicate on the id field.
+func (f *NotificationRuleFilter) WhereID(p entql.Uint32P) {
+	f.Where(p.Field(notificationrule.FieldID))
+}
+
+// WhereCreatedAt applies the entql time.Time predicate on the created_at field.
+func (f *NotificationRuleFilter) WhereCreatedAt(p entql.TimeP) {
+	f.Where(p.Field(notificationrule.FieldCreatedAt))
+}
+
+// WhereUpdatedAt applies the entql time.Time predicate on the updated_at field.
+func (f *NotificationRuleFilter) WhereUpdatedAt(p entql.TimeP) {
+	f.Where(p.Field(notificationrule.FieldUpdatedAt))
+}
+
+// WhereDeletedAt applies the entql time.Time predicate on the deleted_at field.
+func (f *NotificationRuleFilter) WhereDeletedAt(p entql.TimeP) {
+	f.Where(p.Field(notificationrule.FieldDeletedAt))
+}
+
+// WhereCreatedBy applies the entql uint32 predicate on the created_by field.
+func (f *NotificationRuleFilter) WhereCreatedBy(p entql.Uint32P) {
+	f.Where(p.Field(notificationrule.FieldCreatedBy))
+}
+
+// WhereUpdatedBy applies the entql uint32 predicate on the updated_by field.
+func (f *NotificationRuleFilter) WhereUpdatedBy(p entql.Uint32P) {
+	f.Where(p.Field(notificationrule.FieldUpdatedBy))
+}
+
+// WhereDeletedBy applies the entql uint32 predicate on the deleted_by field.
+func (f *NotificationRuleFilter) WhereDeletedBy(p entql.Uint32P) {
+	f.Where(p.Field(notificationrule.FieldDeletedBy))
+}
+
+// WhereIsEnabled applies the entql bool predicate on the is_enabled field.
+func (f *NotificationRuleFilter) WhereIsEnabled(p entql.BoolP) {
+	f.Where(p.Field(notificationrule.FieldIsEnabled))
+}
+
+// WhereRemark applies the entql string predicate on the remark field.
+func (f *NotificationRuleFilter) WhereRemark(p entql.StringP) {
+	f.Where(p.Field(notificationrule.FieldRemark))
+}
+
+// WhereEventType applies the entql string predicate on the event_type field.
+func (f *NotificationRuleFilter) WhereEventType(p entql.StringP) {
+	f.Where(p.Field(notificationrule.FieldEventType))
+}
+
+// WhereChannel applies the entql string predicate on the channel field.
+func (f *NotificationRuleFilter) WhereChannel(p entql.StringP) {
+	f.Where(p.Field(notificationrule.FieldChannel))
+}
+
+// WhereIsAsync applies the entql bool predicate on the is_async field.
+func (f *NotificationRuleFilter) WhereIsAsync(p entql.BoolP) {
+	f.Where(p.Field(notificationrule.FieldIsAsync))
+}
+
 // addPredicate implements the predicateAdder interface.
 func (_q *OperationAuditLogQuery) addPredicate(pred func(s *sql.Selector)) {
 	_q.predicates = append(_q.predicates, pred)
@@ -4115,7 +4415,7 @@ type OperationAuditLogFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *OperationAuditLogFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[20].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[22].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4250,7 +4550,7 @@ type OrgUnitFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *OrgUnitFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[21].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[23].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4488,7 +4788,7 @@ type PermissionFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PermissionFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[22].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[24].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4583,7 +4883,7 @@ type PermissionApiFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PermissionApiFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[23].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[25].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4663,7 +4963,7 @@ type PermissionAuditLogFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PermissionAuditLogFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[24].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[26].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4778,7 +5078,7 @@ type PermissionGroupFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PermissionGroupFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[25].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[27].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4911,7 +5211,7 @@ type PermissionMenuFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PermissionMenuFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[26].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[28].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -4991,7 +5291,7 @@ type PermissionPolicyFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PermissionPolicyFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[27].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[29].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5096,7 +5396,7 @@ type PlanFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PlanFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[28].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[30].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5238,7 +5538,7 @@ type PlanModuleFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PlanModuleFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[29].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[31].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5327,7 +5627,7 @@ type PlanQuotaFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PlanQuotaFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[30].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[32].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5421,7 +5721,7 @@ type PolicyEvaluationLogFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PolicyEvaluationLogFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[31].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[33].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5541,7 +5841,7 @@ type PositionFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *PositionFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[32].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[34].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5696,7 +5996,7 @@ type RoleFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *RoleFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[33].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[35].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5816,7 +6116,7 @@ type RoleFieldPermissionFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *RoleFieldPermissionFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[34].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[36].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -5906,7 +6206,7 @@ type RoleMetadataFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *RoleMetadataFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[35].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[37].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6026,7 +6326,7 @@ type RoleOrgUnitFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *RoleOrgUnitFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[36].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[38].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6111,7 +6411,7 @@ type RolePermissionFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *RolePermissionFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[37].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[39].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6211,7 +6511,7 @@ type ScriptFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *ScriptFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[38].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[40].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6326,7 +6626,7 @@ type ScriptLogFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *ScriptLogFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[39].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[41].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6426,7 +6726,7 @@ type SysConfigFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *SysConfigFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[40].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[42].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6521,7 +6821,7 @@ type TaskFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *TaskFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[41].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[43].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6631,7 +6931,7 @@ type TenantFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *TenantFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[42].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[44].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6785,7 +7085,7 @@ type UserFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[43].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[45].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -6940,7 +7240,7 @@ type UserCredentialFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserCredentialFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[44].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[46].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -7080,7 +7380,7 @@ type UserMfaFactorFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserMfaFactorFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[45].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[47].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -7170,7 +7470,7 @@ type UserOrgUnitFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserOrgUnitFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[46].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[48].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -7295,7 +7595,7 @@ type UserPositionFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserPositionFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[47].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[49].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -7415,7 +7715,7 @@ type UserRoleFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserRoleFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[48].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[50].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})

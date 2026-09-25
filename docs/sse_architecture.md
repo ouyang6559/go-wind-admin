@@ -8,7 +8,7 @@
 ## 1. 组件地图
 
 ```
-生产方    InternalMessageService（当前唯一）
+生产方    InternalMessageService（当前唯一，但 P2 起它是"被通知域调用"的一方，见第 4 节）
           └─ publishNotification：收件记录落库后 TryPublish（非阻塞、best-effort）
                      │ 事件 { id: GUIDv4, event: "notification", data: <收件记录 JSON> }
                      ▼
@@ -59,18 +59,42 @@ SSE 连接不走 REST 的 auth 中间件链——transport 自带鉴权钩子，
 
 `InternalMessageService.publishNotification`（投递链上每个收件人调用）：
 
+- **P2 之后它是 INTERNAL 渠道的投递内核，不再由业务代码直接调用**：定向发送走
+  `NotificationService.SendDirect` → `InternalMessageSender.Send` → `sendNotification` →
+  本方法（一次投递在台账里留一行）；全员广播保留批量扇出、不经缝（理由见
+  [notification_domain_design.md](./notification_domain_design.md) §4 P2）。
+  **新增"发一条站内信"的需求一律调 `Notifier`，不要自己调 `publishNotification`**——
+  绕过缝 = 台账上没有这一行，排障时"发过没发过、走的哪个渠道"就答不出来；
 - **落库优先**：收件记录先经 `internalMessageRecipientRepo.Create` 落库，
   推送是 best-effort 增强——`TryPublish` 非阻塞（流不存在=用户离线、或缓冲已满，立即跳过，
   只记 debug 日志），失败不影响投递；离线用户重连后从**收件箱接口**补取（不依赖推送）；
 - 事件结构：`{ ID: GUIDv4, Event: "notification", Data: <收件记录 JSON> }`；
   `Event` 字段即前端的事件名（三端 `on('notification', …)`）；
+- **`Data` 的编码是三端的解析契约，不是可"顺手换一个"的细节**：必须是
+  `protojson.Marshal(收件记录 DTO)`。换回 `encoding/json` 会一次坏掉三处
+  （2026-09-25 同一条消息两跑对照，见 `pkg/sseevent/sseevent.go` 注释）：
+
+  | | 帧样例 |
+  |---|---|
+  | protojson（现行） | `{"id":10,"messageId":11,"status":"RECEIVED","createdAt":"2023-11-14T22:13:20.000000123Z"}` |
+  | encoding/json | `{"id":10,"message_id":11,"status":1,"created_at":{"seconds":1700000000,"nanos":123}}` |
+
+  生成的 `pb.go` 带 `json:"message_id,omitempty"` 一类蛇形 tag，所以键名变蛇形、枚举变数字、
+  时间戳变成 `{seconds,nanos}` 对象，而三端读的是与 REST 收件箱同形的驼峰 → 静默全断
+  （ele 在 `if (!data.id || !data.messageId) return` 处直接退出，桌面通知与未读数不触发也不报错）。
+  同一条契约还有个容易漏的半边：广播路径的收件行是批量构造的，`id` 只有落库后回读才非零，
+  而 protojson **整个省略**零值 optional 字段——缺 `id` 的广播帧与上面键名故障的现象一模一样。
+  2026-09-20 已在 `executeBroadcast` 修掉并补回归测试
+  （`internal_message_notify_seam_sqlite_test.go`，实测帧：`{"id":10,"messageId":11,…}`）。
+  载荷形状另有 `internal_message_sse_payload_test.go` 钉住；
 - 广播投递的落库侧（`broadcast_message` 任务、幂等约束）见
   [task_system.md](./task_system.md) 第 5.4 节。
 
 **新增事件类型**的生产端落点：持有 publisher 的 service 内调用
 `TryPublish(StreamID(userId), &sse.Event{Event: []byte("<类型名>"), …})`；
-消费端在页面 `globalSSEClient.on('<类型名>', handler)` 注册。事件类型当前无注册表/枚举约束，
-生产与消费两端字符串需人工对齐。
+消费端在页面 `globalSSEClient.on('<类型名>', handler)` 注册。类型名自 P1 起有注册表：
+后端 `pkg/sseevent`（常量值即线协议，注释钉死"不可改"）+ 三端各一个 `transport/sse/event.ts`
+（`SSE_EVENT.<Name>`），新增类型四处一起加，不要在任何一端再写裸字符串。
 
 ## 5. 前端消费（三端）
 
@@ -78,9 +102,9 @@ SSE 连接不走 REST 的 auth 中间件链——transport 自带鉴权钩子，
 |---|---|---|---|
 | 模块 | `src/core/transport/sse/`（`sse_client.ts` + `index.ts` 单例 `globalSSEClient`） | `src/core/transport/sse/`（同构） | `apps/admin/src/transport/sse/`（路径不同，同构） |
 | 传输 | `@microsoft/fetch-event-source`（支持自定义 headers 携带凭证；原生 EventSource 不支持） | 同左 | 同左 |
-| URL 构造 | `${VITE_SSE_URL}?stream=${userInfo.id}`（`useTokenRefresh.ts`；id 取自登录用户信息） | 同构（`VITE_APP_SSE_URL`） | 同构（`VITE_GLOB_SSE_URL`） |
-| 重连 | 内置，`reconnectDelay` 5000ms | 同左 | 同左 |
-| 现有消费 | `HeaderContent.tsx`：`on('notification')` 刷新顶栏铃铛未读数（卸载时 `off`） | 同构（顶栏通知组件） | 同构 |
+| URL 构造 | `${VITE_SSE_URL}?stream=${userInfo.id}`（`hooks/useTokenRefresh.ts:188`；env 缺失时回落 `/api/sse`，另两端无此回落） | 同构（`VITE_APP_SSE_URL`，`composables/use-token-refresh.ts:271`） | 同构（`VITE_GLOB_SSE_URL`，`stores/authentication.store.ts:502`） |
+| 重连 | 内置，`reconnectDelay` 取单例配置值 5000ms（`core/transport/sse/index.ts:10`；`SSEClient` 的类默认是 3000ms，`sse_client.ts:29`，未被单例覆盖时才生效） | 同左 | 同左 |
+| 订阅落点 | 收到事件即刷新顶栏铃铛未读数：`layouts/MainLayout/components/HeaderContent.tsx:272` `on(SSE_EVENT.Notification)`，卸载时 `off`（`:274`） | 同构（`components/NoticeDropdown/useNotice.ts:221`，`off` 见 `:241`） | 同构（`layouts/basic.vue:219`） |
 
 订阅生命周期：仅登录会话内；登出/会话吊销后连接鉴权失效（下次重连被拒）。
 收件数据补取一律走收件箱查询接口（`internal_message` 域），
@@ -108,7 +132,7 @@ TLS 由外层负载均衡终止（与静态前端一致），网关仅监听 HTT
 
 | 项 | 现状 |
 |---|---|
-| 事件类型 | 仅 `notification`（站内信）；无类型注册表，新增类型靠两端字符串人工对齐 |
+| 事件类型 | 仅 `notification`（站内信）；注册表见第 4 节末（`pkg/sseevent` + 三端 `SSE_EVENT`），但**注册表是常量约定、不是运行时校验**，漏加一端仍然静默失效 |
 | 推送可靠性 | 设计即 best-effort：无重放、无 ack、离线不积压（补取靠收件箱） |
 | 慢消费者 | `TryPublish` 缓冲满即丢（debug 日志），不阻塞生产方；无背压 |
 | 观测 | 连接建立/断开（HandleSubscribe/日志）与跳过（debug 级）可查，无投递指标面板 |

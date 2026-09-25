@@ -5,7 +5,8 @@
 //     UpdateNotificationChannel / DeleteNotificationChannel 的落库与字段映射：
 //     枚举经转换器落库、操作人盖入 created_by、HasPassword 标识按落库密码有无回填。
 //   - SendTestEmail 的全部前置校验分支（id/recipient 缺失、非 EMAIL 渠道、
-//     渠道停用、SMTP 主机未配置导致的发送失败）。
+//     渠道停用、SMTP 主机未配置导致的发送失败），以及这些分支落到投递台账的
+//     状态归类（SKIPPED / FAILED）。
 //
 // 跳过项：真实 SMTP 投递（mailer.SendMail 需要外部 SMTP 服务；本测试用
 // 未配置主机/端口的渠道覆盖到 SendMail 的快速失败分支为止）。
@@ -26,19 +27,36 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	notificationChannelV1 "go-wind-admin/api/gen/go/notification_channel/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/data/channel"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
+	"go-wind-admin/app/admin/service/internal/data/ent/notificationdelivery"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
 // newNotificationChannelServiceForTest 白盒复刻 NewNotificationChannelService 的
 // 字段初始化：log 换 NopLogger，repo 走 data.NewNotificationChannelRepoForTest。
+//
+// notifier 给的是真货（NotificationService + 真 EmailSender，同库共台账 repo）：
+// SendTestEmail 已改走 Notifier，渠道类型/启用状态的校验也随之内移到 EmailSender，
+// 用 nil 或替身等于把这条路径唯一有意义的断言——SMTP/配置报错原文能否传到配置页——绕开测。
 func newNotificationChannelServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Client]) *NotificationChannelService {
 	t.Helper()
+
+	registry := channel.NewRegistry()
+	channelRepo := data.NewNotificationChannelRepoForTest(entClient)
+	registry.Register(channel.NewEmailSender(channelRepo))
+
 	return &NotificationChannelService{
 		log:  bLogger.NewHelper(bLogger.NopLogger()),
-		repo: data.NewNotificationChannelRepoForTest(entClient),
+		repo: channelRepo,
+		notifier: &NotificationService{
+			log:          bLogger.NewHelper(bLogger.NopLogger()),
+			deliveryRepo: data.NewNotificationDeliveryRepoForTest(entClient),
+			ruleRepo:     newSeededRuleRepoForTest(t, entClient),
+			channels:     registry,
+		},
 	}
 }
 
@@ -48,8 +66,11 @@ func newNotificationChannelServiceForTest(t *testing.T, entClient *entCrud.EntCl
 func TestNotificationChannelServiceSqlite_CreateAndGet(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
-	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71})
+	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
+	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
+	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
+	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71, IsPlatformAdmin: trans.Ptr(true)})
 
 	created, err := svc.CreateNotificationChannel(opCtx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -109,8 +130,11 @@ func TestNotificationChannelServiceSqlite_CreateAndGet(t *testing.T) {
 func TestNotificationChannelServiceSqlite_CreateAndGetValidation(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
-	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71})
+	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
+	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
+	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
+	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71, IsPlatformAdmin: trans.Ptr(true)})
 
 	_, err := svc.CreateNotificationChannel(opCtx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -140,8 +164,11 @@ func TestNotificationChannelServiceSqlite_CreateAndGetValidation(t *testing.T) {
 func TestNotificationChannelServiceSqlite_ListHasPasswordFlag(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
-	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71})
+	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
+	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
+	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
+	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71, IsPlatformAdmin: trans.Ptr(true)})
 
 	_, err := svc.CreateNotificationChannel(opCtx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -183,8 +210,11 @@ func TestNotificationChannelServiceSqlite_ListHasPasswordFlag(t *testing.T) {
 func TestNotificationChannelServiceSqlite_UpdateRename(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
-	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 72})
+	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
+	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
+	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
+	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 72, IsPlatformAdmin: trans.Ptr(true)})
 
 	created, err := svc.CreateNotificationChannel(opCtx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -233,8 +263,11 @@ func TestNotificationChannelServiceSqlite_UpdateRename(t *testing.T) {
 func TestNotificationChannelServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
-	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 72})
+	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
+	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
+	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
+	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 72, IsPlatformAdmin: trans.Ptr(true)})
 
 	created, err := svc.CreateNotificationChannel(opCtx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -273,8 +306,11 @@ func TestNotificationChannelServiceSqlite_Delete(t *testing.T) {
 func TestNotificationChannelServiceSqlite_SendTestEmailBranches(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newNotificationChannelServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
-	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 73})
+	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
+	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
+	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
+	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 73, IsPlatformAdmin: trans.Ptr(true)})
 
 	// 非 EMAIL 渠道。
 	webhook, err := svc.CreateNotificationChannel(opCtx, &notificationChannelV1.CreateNotificationChannelRequest{
@@ -335,18 +371,42 @@ func TestNotificationChannelServiceSqlite_SendTestEmailBranches(t *testing.T) {
 	require.Error(t, err, "空收件人应被拒绝")
 	require.Contains(t, err.Error(), "recipient is required")
 
-	// 停用渠道：在任何发送前即被拒绝。
+	// 三条真正走到发送的分支：每次各留一条台账（入参守卫的三次不会）。
 	_, err = svc.SendTestEmail(opCtx, &notificationChannelV1.SendTestEmailRequest{Id: disabled.GetId(), Recipient: "a@b.test"})
 	require.Error(t, err, "停用渠道应被拒绝")
-	require.Contains(t, err.Error(), "notification channel is disabled")
+	require.Contains(t, err.Error(), "is disabled",
+		"渠道校验已内移到 EmailSender，报错原文必须仍然透到配置页——管理员看得懂才知道去启用")
 
-	// 未配置 SMTP 主机/端口：SendMail 拨号前快速失败，不触网。
-	// （WEBHOOK 渠道因上述读路径快照同样走到此分支。）
+	// 启用但没配 SMTP 主机/端口：SendMail 拨号前快速失败，不触网。
 	_, err = svc.SendTestEmail(opCtx, &notificationChannelV1.SendTestEmailRequest{Id: noHost.GetId(), Recipient: "a@b.test"})
 	require.Error(t, err, "未配置 SMTP 主机/端口的发送应快速失败（不触网）")
-	require.Contains(t, err.Error(), "send test email failed")
+	require.Contains(t, err.Error(), "smtp host/port is not configured")
 
 	_, err = svc.SendTestEmail(opCtx, &notificationChannelV1.SendTestEmailRequest{Id: webhook.GetId(), Recipient: "a@b.test"})
 	require.Error(t, err, "WEBHOOK 渠道应被类型守卫拒绝（Type 回填修复后仅 EMAIL 守卫生效）")
-	require.Contains(t, err.Error(), "only available for EMAIL channels")
+	require.Contains(t, err.Error(), "is not an EMAIL channel")
+
+	// 台账归类：渠道本身用不了（停用/类型不对）＝一条都没尝试发 → SKIPPED；
+	// 拿得到账号、SMTP 报的错 → FAILED。两者混成一个状态，配置页就再也分不出
+	// "该去启用渠道"和"该查 SMTP 服务"。
+	deliveries, err := entClient.Client().NotificationDelivery.Query().All(ctx)
+	require.NoError(t, err)
+	require.Len(t, deliveries, 3, "入参守卫的三次调用不该留台账")
+
+	statusByError := map[string]notificationdelivery.Status{}
+	for _, row := range deliveries {
+		require.NotNil(t, row.Status)
+		require.NotNil(t, row.LastError, "失败原因不写进台账，这行就没有存在意义")
+		require.NotNil(t, row.ChannelID, "显式指定渠道时台账该记下用的是哪一条")
+		require.Equal(t, "a***@b.test", *row.Target)
+		require.Nil(t, row.SentAt, "三条都没发出去，不该有完成时间")
+		statusByError[*row.LastError] = *row.Status
+	}
+
+	require.Equal(t, notificationdelivery.StatusSkipped,
+		statusByError["no enabled notification channel configured: channel ["+itoa(disabled.GetId())+"] is disabled"])
+	require.Equal(t, notificationdelivery.StatusSkipped,
+		statusByError["no enabled notification channel configured: channel ["+itoa(webhook.GetId())+"] is not an EMAIL channel"])
+	require.Equal(t, notificationdelivery.StatusFailed,
+		statusByError["send mail via channel ["+itoa(noHost.GetId())+"] failed: smtp host/port is not configured"])
 }

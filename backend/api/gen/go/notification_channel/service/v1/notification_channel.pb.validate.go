@@ -93,6 +93,22 @@ func (m *NotificationChannel) validate(all bool) error {
 		// no validation rules for SmtpTls
 	}
 
+	if m.WebhookUrl != nil {
+		// no validation rules for WebhookUrl
+	}
+
+	if m.HasWebhookSecret != nil {
+		// no validation rules for HasWebhookSecret
+	}
+
+	if m.WebhookSignStyle != nil {
+		// no validation rules for WebhookSignStyle
+	}
+
+	if m.WebhookPayloadTemplate != nil {
+		// no validation rules for WebhookPayloadTemplate
+	}
+
 	if m.Enabled != nil {
 		// no validation rules for Enabled
 	}
@@ -555,6 +571,10 @@ func (m *CreateNotificationChannelRequest) validate(all bool) error {
 		// no validation rules for Password
 	}
 
+	if m.WebhookSecret != nil {
+		// no validation rules for WebhookSecret
+	}
+
 	if len(errors) > 0 {
 		return CreateNotificationChannelRequestMultiError(errors)
 	}
@@ -722,6 +742,10 @@ func (m *UpdateNotificationChannelRequest) validate(all bool) error {
 
 	if m.Password != nil {
 		// no validation rules for Password
+	}
+
+	if m.WebhookSecret != nil {
+		// no validation rules for WebhookSecret
 	}
 
 	if len(errors) > 0 {

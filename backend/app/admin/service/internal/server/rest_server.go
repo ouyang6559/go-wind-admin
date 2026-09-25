@@ -160,6 +160,7 @@ func NewRestServer(
 	redisCacheMonitorService *service.RedisCacheMonitorService,
 	serverMonitorService *service.ServerMonitorService,
 	notificationChannelService *service.NotificationChannelService,
+	notificationService *service.NotificationService,
 	onlineSessionService *service.OnlineSessionService,
 	dashboardService *service.DashboardService,
 
@@ -171,6 +172,7 @@ func NewRestServer(
 	scriptLogService *service.ScriptLogService,
 
 	// register:param ── 新模块服务形参在此行后注册(make register 工具锚点,勿删)
+	notificationRuleService *service.NotificationRuleService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
 ) (*http.Server, error) {
@@ -230,6 +232,7 @@ func NewRestServer(
 	adminV1.RegisterRedisCacheMonitorServiceHTTPServer(srv, redisCacheMonitorService)
 	adminV1.RegisterServerMonitorServiceHTTPServer(srv, serverMonitorService)
 	adminV1.RegisterNotificationChannelServiceHTTPServer(srv, notificationChannelService)
+	adminV1.RegisterNotificationServiceHTTPServer(srv, notificationService)
 	adminV1.RegisterOnlineSessionServiceHTTPServer(srv, onlineSessionService)
 	adminV1.RegisterDashboardServiceHTTPServer(srv, dashboardService)
 
@@ -248,6 +251,7 @@ func NewRestServer(
 	adminV1.RegisterScriptLogServiceHTTPServer(srv, scriptLogService)
 
 	// register:route ── 新模块路由在此行后注册(make register 工具锚点,勿删)
+	adminV1.RegisterNotificationRuleServiceHTTPServer(srv, notificationRuleService)
 	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
 	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
 

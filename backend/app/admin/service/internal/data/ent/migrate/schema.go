@@ -1383,6 +1383,10 @@ var (
 		{Name: "smtp_password", Type: field.TypeString, Nullable: true, Comment: "SMTP 密码/授权码（EncryptIfNeeded 加密存储）"},
 		{Name: "smtp_from", Type: field.TypeString, Nullable: true, Comment: "发件人地址"},
 		{Name: "smtp_tls", Type: field.TypeEnum, Nullable: true, Comment: "加密方式", Enums: []string{"NONE", "START_TLS", "SSL"}, Default: "START_TLS"},
+		{Name: "webhook_url", Type: field.TypeString, Nullable: true, Comment: "Webhook 回调地址（仅 WEBHOOK 渠道）"},
+		{Name: "webhook_secret", Type: field.TypeString, Nullable: true, Comment: "Webhook 签名密钥（EncryptIfNeeded 加密存储，仅 WEBHOOK 渠道）"},
+		{Name: "webhook_sign_style", Type: field.TypeEnum, Nullable: true, Comment: "Webhook 出站风格（签名位置/算法与应答判据，仅 WEBHOOK 渠道）", Enums: []string{"CUSTOM", "NONE", "DINGTALK", "FEISHU", "WECOM"}, Default: "CUSTOM"},
+		{Name: "webhook_payload_template", Type: field.TypeString, Nullable: true, Comment: "Webhook 载荷模板（{{占位符}} 渲染；留空则用该风格的内置默认 JSON）"},
 	}
 	// SysNotificationChannelsTable holds the schema information for the "sys_notification_channels" table.
 	SysNotificationChannelsTable = &schema.Table{
@@ -1395,6 +1399,95 @@ var (
 				Name:    "uidx_sys_notification_channel_name",
 				Unique:  true,
 				Columns: []*schema.Column{SysNotificationChannelsColumns[9]},
+			},
+		},
+	}
+	// SysNotificationDeliveriesColumns holds the columns for the "sys_notification_deliveries" table.
+	SysNotificationDeliveriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "event_type", Type: field.TypeEnum, Nullable: true, Comment: "业务事件类型", Enums: []string{"PASSWORD_RESET_CODE", "CONTACT_BIND_CODE", "CHANNEL_TEST_EMAIL", "INTERNAL_MESSAGE"}},
+		{Name: "channel", Type: field.TypeEnum, Nullable: true, Comment: "投递渠道", Enums: []string{"EMAIL", "SMS", "WEBHOOK", "INTERNAL"}},
+		{Name: "channel_id", Type: field.TypeUint32, Nullable: true, Comment: "实际选中的渠道配置ID"},
+		{Name: "recipient_user_id", Type: field.TypeUint32, Nullable: true, Comment: "收件用户ID（直发模式可为空）"},
+		{Name: "related_id", Type: field.TypeUint32, Nullable: true, Comment: "关联业务对象ID（按事件类型解释）"},
+		{Name: "target", Type: field.TypeString, Nullable: true, Comment: "投递目标（脱敏后的地址）"},
+		{Name: "status", Type: field.TypeEnum, Nullable: true, Comment: "投递状态", Enums: []string{"SENDING", "SENT", "FAILED", "SKIPPED"}, Default: "SENDING"},
+		{Name: "last_error", Type: field.TypeString, Nullable: true, Comment: "最近一次失败原因"},
+		{Name: "request_id", Type: field.TypeString, Nullable: true, Size: 64, Comment: "派发请求ID（幂等锚）"},
+		{Name: "attempts", Type: field.TypeUint32, Nullable: true, Comment: "实际尝试投递次数（含首次）", Default: 0},
+		{Name: "sent_at", Type: field.TypeTime, Nullable: true, Comment: "投递完成时间"},
+	}
+	// SysNotificationDeliveriesTable holds the schema information for the "sys_notification_deliveries" table.
+	SysNotificationDeliveriesTable = &schema.Table{
+		Name:       "sys_notification_deliveries",
+		Comment:    "通知投递台账表",
+		Columns:    SysNotificationDeliveriesColumns,
+		PrimaryKey: []*schema.Column{SysNotificationDeliveriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_sys_notification_delivery_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysNotificationDeliveriesColumns[1]},
+			},
+			{
+				Name:    "idx_sys_notification_delivery_event_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysNotificationDeliveriesColumns[7], SysNotificationDeliveriesColumns[1]},
+			},
+			{
+				Name:    "idx_sys_notification_delivery_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysNotificationDeliveriesColumns[13], SysNotificationDeliveriesColumns[1]},
+			},
+			{
+				Name:    "idx_sys_notification_delivery_recipient_user",
+				Unique:  false,
+				Columns: []*schema.Column{SysNotificationDeliveriesColumns[10]},
+			},
+			{
+				Name:    "idx_sys_notification_delivery_event_related",
+				Unique:  false,
+				Columns: []*schema.Column{SysNotificationDeliveriesColumns[7], SysNotificationDeliveriesColumns[11]},
+			},
+			{
+				Name:    "uidx_sys_notification_delivery_request_channel",
+				Unique:  true,
+				Columns: []*schema.Column{SysNotificationDeliveriesColumns[15], SysNotificationDeliveriesColumns[8]},
+			},
+		},
+	}
+	// SysNotificationRulesColumns holds the columns for the "sys_notification_rules" table.
+	SysNotificationRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "is_enabled", Type: field.TypeBool, Nullable: true, Comment: "是否启用", Default: true},
+		{Name: "remark", Type: field.TypeString, Nullable: true, Comment: "备注"},
+		{Name: "event_type", Type: field.TypeEnum, Nullable: true, Comment: "业务事件类型", Enums: []string{"PASSWORD_RESET_CODE", "CONTACT_BIND_CODE", "CHANNEL_TEST_EMAIL", "INTERNAL_MESSAGE"}},
+		{Name: "channel", Type: field.TypeEnum, Nullable: true, Comment: "投递渠道", Enums: []string{"EMAIL", "SMS", "WEBHOOK", "INTERNAL"}},
+		{Name: "is_async", Type: field.TypeBool, Nullable: true, Comment: "是否异步派发（true = 入队 asynq，请求不等投递结论）", Default: false},
+	}
+	// SysNotificationRulesTable holds the schema information for the "sys_notification_rules" table.
+	SysNotificationRulesTable = &schema.Table{
+		Name:       "sys_notification_rules",
+		Comment:    "通知路由规则表（事件类型 → 渠道）",
+		Columns:    SysNotificationRulesColumns,
+		PrimaryKey: []*schema.Column{SysNotificationRulesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uidx_sys_notification_rule_event_type",
+				Unique:  true,
+				Columns: []*schema.Column{SysNotificationRulesColumns[9]},
 			},
 		},
 	}
@@ -3233,6 +3326,8 @@ var (
 		SysMembershipRolesTable,
 		SysMenusTable,
 		SysNotificationChannelsTable,
+		SysNotificationDeliveriesTable,
+		SysNotificationRulesTable,
 		SysOperationAuditLogsTable,
 		SysOrgUnitsTable,
 		SysPermissionsTable,
@@ -3366,6 +3461,16 @@ func init() {
 	}
 	SysNotificationChannelsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_notification_channels",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysNotificationDeliveriesTable.Annotation = &entsql.Annotation{
+		Table:     "sys_notification_deliveries",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysNotificationRulesTable.Annotation = &entsql.Annotation{
+		Table:     "sys_notification_rules",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}
