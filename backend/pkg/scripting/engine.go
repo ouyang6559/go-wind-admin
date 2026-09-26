@@ -51,6 +51,7 @@ type Engine struct {
 	rdb             *redis.Client
 	eventbusManager *eventbus.Manager
 	ossClient       *oss.MinIOClient
+	aiCompleter     api.AICompleter
 
 	// Hook 回调（hook 名称 -> 多个回调），由脚本 hook.register 注册
 	callbacks   map[string][]ScriptCallback
@@ -226,6 +227,7 @@ func (e *Engine) buildBindHook(binder RuntimeBinder) gsEngine.RuntimeHook {
 			Rdb:             e.rdb,
 			EventBusManager: e.eventbusManager,
 			OSSClient:       e.ossClient,
+			AI:              e.aiCompleter,
 			Orchestrator:    e,
 		}
 		return binder.Bind(e.scriptEngine, deps)
@@ -684,7 +686,12 @@ func (e *Engine) rebind() {
 	}
 }
 
-// SetRedis 注入 Redis 客户端，启用 cache API。
+// SetAICompleter 注入脚本 ai 模块的对话实现（nil = 不注册 ai 模块）。
+func (e *Engine) SetAICompleter(completer api.AICompleter) {
+	e.aiCompleter = completer
+	e.rebind()
+}
+
 func (e *Engine) SetRedis(rdb *redis.Client) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

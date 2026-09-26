@@ -239,7 +239,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// 平台脚本：运行时（多语言引擎）+ 管理服务
 	scriptLogRepo := data.NewScriptLogRepo(ctx, entClient)
-	scriptRuntime := service.NewScriptRuntime(ctx, scriptRepo, redisClient, minioClient, scriptLogRepo)
+	scriptRuntime := service.NewScriptRuntime(ctx, scriptRepo, redisClient, minioClient, scriptLogRepo, aiProviderRepo, aiUsageLogRepo)
 	cleanups = append(cleanups, scriptRuntime.Close)
 	scriptService := service.NewScriptService(ctx, scriptRepo, scriptRuntime)
 	scriptLogService := service.NewScriptLogService(ctx, scriptLogRepo)
