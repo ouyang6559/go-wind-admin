@@ -1096,6 +1096,118 @@ var _ interface {
 	ErrorName() string
 } = UploadAiDocRequestValidationError{}
 
+// Validate checks the field values on UploadAiDocFileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UploadAiDocFileRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UploadAiDocFileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UploadAiDocFileRequestMultiError, or nil if none found.
+func (m *UploadAiDocFileRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UploadAiDocFileRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for BaseId
+
+	// no validation rules for FileName
+
+	// no validation rules for ContentBase64
+
+	if m.DocName != nil {
+		// no validation rules for DocName
+	}
+
+	if len(errors) > 0 {
+		return UploadAiDocFileRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UploadAiDocFileRequestMultiError is an error wrapping multiple validation
+// errors returned by UploadAiDocFileRequest.ValidateAll() if the designated
+// constraints aren't met.
+type UploadAiDocFileRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UploadAiDocFileRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UploadAiDocFileRequestMultiError) AllErrors() []error { return m }
+
+// UploadAiDocFileRequestValidationError is the validation error returned by
+// UploadAiDocFileRequest.Validate if the designated constraints aren't met.
+type UploadAiDocFileRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UploadAiDocFileRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UploadAiDocFileRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UploadAiDocFileRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UploadAiDocFileRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UploadAiDocFileRequestValidationError) ErrorName() string {
+	return "UploadAiDocFileRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UploadAiDocFileRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUploadAiDocFileRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UploadAiDocFileRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UploadAiDocFileRequestValidationError{}
+
 // Validate checks the field values on UploadAiDocResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.

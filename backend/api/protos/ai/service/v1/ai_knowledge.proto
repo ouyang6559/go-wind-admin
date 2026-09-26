@@ -30,6 +30,9 @@ service AiKnowledgeBaseService {
   // 上传文档（纯文本入库：切片 → 向量化 → 落库）
   rpc UploadDoc (UploadAiDocRequest) returns (UploadAiDocResponse) {}
 
+  // 上传文档文件（txt/md/docx/pdf：抽取文本后走同一入库链）
+  rpc UploadDocFile (UploadAiDocFileRequest) returns (UploadAiDocResponse) {}
+
   // 分页查询知识库下的文档
   rpc ListDocs (ListAiDocsRequest) returns (ListAiDocsResponse) {}
 
@@ -131,6 +134,17 @@ message UploadAiDocRequest {
 
   string name = 2;   // 文档名称
   string content = 3; // 文档纯文本内容
+}
+
+// 上传文档文件 - 请求（文件字节经 protojson 即 base64 字符串传输）
+message UploadAiDocFileRequest {
+  uint32 base_id = 1 [json_name = "baseId"]; // 知识库ID
+
+  string file_name = 2 [json_name = "fileName"]; // 原始文件名（扩展名决定抽取器）
+
+  bytes content_base64 = 3 [json_name = "contentBase64"]; // 文件内容（≤10MB）
+
+  optional string doc_name = 4 [json_name = "docName"]; // 文档显示名，缺省取文件名去扩展名
 }
 
 // 上传文档 - 回应

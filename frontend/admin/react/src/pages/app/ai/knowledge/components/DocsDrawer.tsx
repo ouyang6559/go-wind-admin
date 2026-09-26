@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Button, Empty, Input, Modal, Popconfirm, Table, Tag, App } from 'antd';
+import { Button, Empty, Input, Modal, Popconfirm, Table, Tag, Typography, Upload, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import { DeleteOutlined, FileAddOutlined, UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { aiservicev1_AiDoc as AiDoc, aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '@/api/generated/admin/service/v1';
-import { fetchListAiDocs, useDeleteAiDoc, useUploadAiDoc } from '@/api/hooks/ai-knowledge';
+import { fetchListAiDocs, useDeleteAiDoc, useUploadAiDoc, useUploadDocFile } from '@/api/hooks/ai-knowledge';
+
+// 大文件安全转 base64（分块避免 btoa 栈溢出）
+function bytesToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
 
 interface DocsDrawerProps {
   open: boolean;
@@ -24,6 +35,7 @@ export default function DocsDrawer({ open, data, onClose }: DocsDrawerProps) {
   const [content, setContent] = useState('');
 
   const uploadMutation = useUploadAiDoc();
+  const uploadFileMutation = useUploadDocFile();
   const deleteMutation = useDeleteAiDoc();
 
   const loadDocs = (baseId: number) => {
@@ -76,6 +88,26 @@ export default function DocsDrawer({ open, data, onClose }: DocsDrawerProps) {
     }
   };
 
+  // 文件上传：读 base64 交后端抽取入库（不自动上传）
+  const handleFileUpload = async (file: File) => {
+    if (!data?.id) return false;
+    try {
+      const b64 = bytesToBase64(await file.arrayBuffer());
+      const res = await uploadFileMutation.mutateAsync({
+        baseId: data.id,
+        fileName: file.name,
+        contentBase64: b64,
+      });
+      message.success(t('uploadSuccess', { chunks: res.chunkCount ?? 0 }));
+      loadDocs(data.id);
+      queryClient.invalidateQueries({ queryKey: ['listAiKnowledgeBases'] });
+    } catch (error) {
+      console.error('upload ai doc file failed:', error);
+      message.error((error as Error).message || t('uploadFailed'));
+    }
+    return false;
+  };
+
   const columns: ColumnsType<AiDoc> = [
     { title: t('docName'), dataIndex: 'name', ellipsis: true },
     {
@@ -126,15 +158,30 @@ export default function DocsDrawer({ open, data, onClose }: DocsDrawerProps) {
           maxLength={50000}
           showCount
         />
-        <Button
-          type="primary"
-          icon={<UploadOutlined />}
-          loading={uploadMutation.isPending}
-          disabled={!name.trim() || !content.trim()}
-          onClick={handleUpload}
-        >
-          {t('upload')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="primary"
+            icon={<UploadOutlined />}
+            loading={uploadMutation.isPending}
+            disabled={!name.trim() || !content.trim()}
+            onClick={handleUpload}
+          >
+            {t('upload')}
+          </Button>
+          <Upload
+            beforeUpload={handleFileUpload}
+            showUploadList={false}
+            disabled={uploadFileMutation.isPending}
+            accept=".txt,.md,.markdown,.csv,.log,.json,.xml,.yml,.yaml,.html,.htm,.docx,.pdf"
+          >
+            <Button icon={<FileAddOutlined />} loading={uploadFileMutation.isPending}>
+              {t('uploadFile')}
+            </Button>
+          </Upload>
+          <Typography.Text type="secondary" className="!text-xs">
+            {t('supportedFormats')}
+          </Typography.Text>
+        </div>
       </div>
 
       <Table<AiDoc>

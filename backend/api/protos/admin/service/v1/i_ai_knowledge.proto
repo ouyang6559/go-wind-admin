@@ -55,6 +55,14 @@ service AiKnowledgeBaseService {
     };
   }
 
+  // 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+  rpc UploadDocFile (ai.service.v1.UploadAiDocFileRequest) returns (ai.service.v1.UploadAiDocResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/ai/knowledge-bases/{base_id}/docs/file"
+      body: "*"
+    };
+  }
+
   // 查询知识库下的文档
   rpc ListDocs (ai.service.v1.ListAiDocsRequest) returns (ai.service.v1.ListAiDocsResponse) {
     option (google.api.http) = {

@@ -1077,6 +1077,10 @@ export interface AiKnowledgeBaseService {
   UploadDoc(
     request: aiservicev1_UploadAiDocRequest,
   ): Promise<aiservicev1_UploadAiDocResponse>;
+  // 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+  UploadDocFile(
+    request: aiservicev1_UploadAiDocFileRequest,
+  ): Promise<aiservicev1_UploadAiDocResponse>;
   // 查询知识库下的文档
   ListDocs(
     request: aiservicev1_ListAiDocsRequest,
@@ -1272,6 +1276,17 @@ export function createAiKnowledgeBaseServiceClient(
         method: 'UploadDoc',
       }) as Promise<aiservicev1_UploadAiDocResponse>;
     },
+    UploadDocFile(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs/file`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'UploadDocFile',
+      }) as Promise<aiservicev1_UploadAiDocResponse>;
+    },
     ListDocs(request) {
       if (request.baseId === undefined || request.baseId === null) {
         throw new Error('missing required field request.base_id');
@@ -1382,6 +1397,14 @@ export type aiservicev1_AiDoc = {
   status?: string;
   tenantId?: number;
   userId?: number;
+};
+
+// 上传文档文件 - 请求（文件字节经 protojson 即 base64 字符串传输）
+export type aiservicev1_UploadAiDocFileRequest = {
+  baseId: number | undefined;
+  contentBase64: string | undefined;
+  docName?: string;
+  fileName: string | undefined;
 };
 
 // 查询文档列表 - 请求

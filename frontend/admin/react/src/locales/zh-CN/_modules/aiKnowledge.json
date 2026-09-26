@@ -33,5 +33,7 @@
   "deleteSuccess": "删除成功",
   "fetchFailed": "获取数据失败",
   "knowledgeBase": "知识库",
-  "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段"
+  "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段",
+  "uploadFile": "上传文件",
+  "supportedFormats": "支持 txt/md/docx/pdf 等，≤10MB"
 }

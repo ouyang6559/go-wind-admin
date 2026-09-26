@@ -95,6 +95,22 @@ export function useUploadAiDoc(
   });
 }
 
+// useUploadDocFile — 文件上传（txt/md/docx/pdf：后端抽取文本后走同一入库链）
+// contentBase64 在 protojson 下就是 base64 字符串（bytes 类型）
+export function useUploadDocFile(
+  options?: UseMutationOptions<
+    { doc?: aiservicev1_AiDoc; chunkCount?: number },
+    Error,
+    { baseId: number; fileName: string; contentBase64: string }
+  >,
+) {
+  return useMutation({
+    mutationFn: ({ baseId, fileName, contentBase64 }) =>
+      apiClient.aiKnowledgeBaseService.UploadDocFile({ baseId, fileName, contentBase64 }),
+    ...options,
+  });
+}
+
 // useDeleteAiDoc — 级联删除切片
 export function useDeleteAiDoc(
   options?: UseMutationOptions<{}, Error, { baseId: number; id: number }>,

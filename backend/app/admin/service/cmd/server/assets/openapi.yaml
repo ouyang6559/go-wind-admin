@@ -522,6 +522,32 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UploadAiDocResponse'
+    /admin/v1/ai/knowledge-bases/{baseId}/docs/file:
+        post:
+            tags:
+                - AiKnowledgeBaseService
+            description: 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+            operationId: AiKnowledgeBaseService_UploadDocFile
+            parameters:
+                - name: baseId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UploadAiDocFileRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UploadAiDocResponse'
     /admin/v1/ai/knowledge-bases/{baseId}/docs/{id}:
         delete:
             tags:
@@ -12433,6 +12459,20 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新用户 - 请求
+        UploadAiDocFileRequest:
+            type: object
+            properties:
+                baseId:
+                    type: integer
+                    format: uint32
+                fileName:
+                    type: string
+                contentBase64:
+                    type: string
+                    format: bytes
+                docName:
+                    type: string
+            description: 上传文档文件 - 请求（文件字节经 protojson 即 base64 字符串传输）
         UploadAiDocRequest:
             type: object
             properties:

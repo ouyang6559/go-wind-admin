@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
@@ -20,6 +21,7 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/pkg/doctext"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
 )
@@ -130,8 +132,7 @@ func (s *AiKnowledgeService) Delete(ctx context.Context, req *aiV1.DeleteAiKnowl
 
 // ── 文档入库：切片 → embedding → 落库 ───────────────────────────────
 
-// UploadDoc 同步入库：小文本直接处理；失败时文档行标 FAILED（错误信息保留），
-// 不让一次 embedding 故障污染整个请求语义。
+// UploadDoc 纯文本入库入口。
 func (s *AiKnowledgeService) UploadDoc(ctx context.Context, req *aiV1.UploadAiDocRequest) (*aiV1.UploadAiDocResponse, error) {
 	operator, err := auth.FromContext(ctx)
 	if err != nil {
@@ -145,17 +146,60 @@ func (s *AiKnowledgeService) UploadDoc(ctx context.Context, req *aiV1.UploadAiDo
 	if err != nil {
 		return nil, err
 	}
+
+	doc, err := s.ingestDoc(ctx, operator, base, req.GetName(), req.GetContent())
+	if err != nil {
+		return nil, err
+	}
+	return &aiV1.UploadAiDocResponse{Doc: doc, ChunkCount: doc.GetChunkCount()}, nil
+}
+
+// UploadDocFile 文件入库入口：按扩展名抽取文本（txt/md/.../docx/pdf）后走同一入库链。
+func (s *AiKnowledgeService) UploadDocFile(ctx context.Context, req *aiV1.UploadAiDocFileRequest) (*aiV1.UploadAiDocResponse, error) {
+	operator, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.GetBaseId() == 0 || req.GetFileName() == "" || len(req.GetContentBase64()) == 0 {
+		return nil, adminV1.ErrorBadRequest("base_id, fileName and contentBase64 are required")
+	}
+
+	base, err := s.repo.GetEntityByID(ctx, req.GetBaseId())
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := doctext.Extract(req.GetFileName(), req.GetContentBase64())
+	if err != nil {
+		return nil, adminV1.ErrorBadRequest("extract text failed: %v", err)
+	}
+
+	docName := req.GetDocName()
+	if docName == "" {
+		docName = strings.TrimSuffix(req.GetFileName(), filepath.Ext(req.GetFileName()))
+	}
+
+	doc, err := s.ingestDoc(ctx, operator, base, docName, content)
+	if err != nil {
+		return nil, err
+	}
+	return &aiV1.UploadAiDocResponse{Doc: doc, ChunkCount: doc.GetChunkCount()}, nil
+}
+
+// ingestDoc 切片 → 向量化 → 落库的共用主链（纯文本与文件入口共用）。
+// 失败时文档行标 FAILED（错误信息保留），不让一次 embedding 故障污染整个请求语义。
+func (s *AiKnowledgeService) ingestDoc(ctx context.Context, operator *authenticationV1.UserTokenPayload, base *ent.AiKnowledgeBase, docName, content string) (*aiV1.AiDoc, error) {
 	if base.EmbeddingModel == nil || base.ProviderID == nil {
 		return nil, adminV1.ErrorBadRequest("knowledge base embedding config is incomplete")
 	}
 
 	// 1. 切片
-	chunks := splitIntoChunks(req.GetContent(), ragChunkRunes, ragChunkOverlap)
+	chunks := splitIntoChunks(content, ragChunkRunes, ragChunkOverlap)
 
 	// 2. 建文档行（先 READY 假设成功，失败置 FAILED）
 	doc, err := s.repo.CreateDoc(ctx, &aiV1.AiDoc{
 		BaseId:   &base.ID,
-		Name:     trans.Ptr(req.Name),
+		Name:     trans.Ptr(docName),
 		Status:   trans.Ptr("READY"),
 		UserId:   &operator.UserId,
 		TenantId: trans.Ptr(operator.GetTenantId()),
@@ -188,11 +232,7 @@ func (s *AiKnowledgeService) UploadDoc(ctx context.Context, req *aiV1.UploadAiDo
 	if err != nil {
 		return nil, err
 	}
-
-	return &aiV1.UploadAiDocResponse{
-		Doc:        s.repo.ToDocDTO(doc),
-		ChunkCount: chunkCount,
-	}, nil
+	return s.repo.ToDocDTO(doc), nil
 }
 
 func (s *AiKnowledgeService) ListDocs(ctx context.Context, req *aiV1.ListAiDocsRequest) (*aiV1.ListAiDocsResponse, error) {

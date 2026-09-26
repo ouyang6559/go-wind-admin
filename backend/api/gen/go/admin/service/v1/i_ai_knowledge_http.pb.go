@@ -31,6 +31,7 @@ const OperationAiKnowledgeBaseServiceListDocs = "/admin.service.v1.AiKnowledgeBa
 const OperationAiKnowledgeBaseServiceSearch = "/admin.service.v1.AiKnowledgeBaseService/Search"
 const OperationAiKnowledgeBaseServiceUpdate = "/admin.service.v1.AiKnowledgeBaseService/Update"
 const OperationAiKnowledgeBaseServiceUploadDoc = "/admin.service.v1.AiKnowledgeBaseService/UploadDoc"
+const OperationAiKnowledgeBaseServiceUploadDocFile = "/admin.service.v1.AiKnowledgeBaseService/UploadDocFile"
 
 type AiKnowledgeBaseServiceHTTPServer interface {
 	// Create 创建知识库
@@ -51,6 +52,8 @@ type AiKnowledgeBaseServiceHTTPServer interface {
 	Update(context.Context, *v11.UpdateAiKnowledgeBaseRequest) (*emptypb.Empty, error)
 	// UploadDoc 上传文档（纯文本：切片 → 向量化 → 落库）
 	UploadDoc(context.Context, *v11.UploadAiDocRequest) (*v11.UploadAiDocResponse, error)
+	// UploadDocFile 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+	UploadDocFile(context.Context, *v11.UploadAiDocFileRequest) (*v11.UploadAiDocResponse, error)
 }
 
 func RegisterAiKnowledgeBaseServiceHTTPServer(s *http.Server, srv AiKnowledgeBaseServiceHTTPServer) {
@@ -61,6 +64,7 @@ func RegisterAiKnowledgeBaseServiceHTTPServer(s *http.Server, srv AiKnowledgeBas
 	r.PUT("/admin/v1/ai/knowledge-bases/{id}", _AiKnowledgeBaseService_Update2_HTTP_Handler(srv))
 	r.DELETE("/admin/v1/ai/knowledge-bases/{id}", _AiKnowledgeBaseService_Delete2_HTTP_Handler(srv))
 	r.POST("/admin/v1/ai/knowledge-bases/{base_id}/docs", _AiKnowledgeBaseService_UploadDoc0_HTTP_Handler(srv))
+	r.POST("/admin/v1/ai/knowledge-bases/{base_id}/docs/file", _AiKnowledgeBaseService_UploadDocFile0_HTTP_Handler(srv))
 	r.GET("/admin/v1/ai/knowledge-bases/{base_id}/docs", _AiKnowledgeBaseService_ListDocs0_HTTP_Handler(srv))
 	r.DELETE("/admin/v1/ai/knowledge-bases/{base_id}/docs/{id}", _AiKnowledgeBaseService_DeleteDoc0_HTTP_Handler(srv))
 	r.POST("/admin/v1/ai/knowledge-bases/{base_id}/search", _AiKnowledgeBaseService_Search0_HTTP_Handler(srv))
@@ -201,6 +205,31 @@ func _AiKnowledgeBaseService_UploadDoc0_HTTP_Handler(srv AiKnowledgeBaseServiceH
 	}
 }
 
+func _AiKnowledgeBaseService_UploadDocFile0_HTTP_Handler(srv AiKnowledgeBaseServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v11.UploadAiDocFileRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAiKnowledgeBaseServiceUploadDocFile)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UploadDocFile(ctx, req.(*v11.UploadAiDocFileRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v11.UploadAiDocResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AiKnowledgeBaseService_ListDocs0_HTTP_Handler(srv AiKnowledgeBaseServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v11.ListAiDocsRequest
@@ -289,6 +318,8 @@ type AiKnowledgeBaseServiceHTTPClient interface {
 	Update(ctx context.Context, req *v11.UpdateAiKnowledgeBaseRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// UploadDoc 上传文档（纯文本：切片 → 向量化 → 落库）
 	UploadDoc(ctx context.Context, req *v11.UploadAiDocRequest, opts ...http.CallOption) (rsp *v11.UploadAiDocResponse, err error)
+	// UploadDocFile 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+	UploadDocFile(ctx context.Context, req *v11.UploadAiDocFileRequest, opts ...http.CallOption) (rsp *v11.UploadAiDocResponse, err error)
 }
 
 type AiKnowledgeBaseServiceHTTPClientImpl struct {
@@ -417,6 +448,20 @@ func (c *AiKnowledgeBaseServiceHTTPClientImpl) UploadDoc(ctx context.Context, in
 	pattern := "/admin/v1/ai/knowledge-bases/{base_id}/docs"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAiKnowledgeBaseServiceUploadDoc))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UploadDocFile 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+func (c *AiKnowledgeBaseServiceHTTPClientImpl) UploadDocFile(ctx context.Context, in *v11.UploadAiDocFileRequest, opts ...http.CallOption) (*v11.UploadAiDocResponse, error) {
+	var out v11.UploadAiDocResponse
+	pattern := "/admin/v1/ai/knowledge-bases/{base_id}/docs/file"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAiKnowledgeBaseServiceUploadDocFile))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

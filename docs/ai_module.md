@@ -33,7 +33,13 @@
 
 ## 知识库 RAG
 
-链路：上传纯文本 → 切片（500 字符/片，50 重叠）→ 调 provider 端点的 OpenAI 兼容 `/v1/embeddings` 批量向量化 → `sys_ai_chunks` 落库 → 检索（pgvector `<=>` 余弦距离 topK，SQL 层 tenant 过滤兜底）→ chat 携带 `knowledgeBaseId` 时把命中片段注入 system 消息（检索失败降级为普通对话，不阻断）。
+链路：上传纯文本或文件 → 切片（500 字符/片，50 重叠）→ 调 provider 端点的 OpenAI 兼容 `/v1/embeddings` 批量向量化 → `sys_ai_chunks` 落库 → 检索（pgvector `<=>` 余弦距离 topK，SQL 层 tenant 过滤兜底）→ chat 携带 `knowledgeBaseId` 时把命中片段注入 system 消息（检索失败降级为普通对话，不阻断）。
+
+**文件上传**：`POST /admin/v1/ai/knowledge-bases/{baseId}/docs/file`，body 为 JSON（`fileName` + `contentBase64`，protojson 的 bytes 即 base64——kratos 无 form-data codec 的既定形态）。抽取器在 `pkg/doctext`：纯文本族直读、docx 走标准库 zip+XML 剥标签、pdf 走 `ledongthuc/pdf` 文本层（扫描件无文本层会明确报错），其余扩展名拒绝；上限 10MB。
+
+**重索引**：更换知识库 embedding 模型后，经「任务管理」创建 `ai_doc_reindex` 类型任务（payload `{"baseId":N}`，0=全部库）触发全量重算——切片文本不变只换向量，分批 32 条/次。
+
+**审计日报**：系统常驻任务 `ai_audit_digest`（每日 08:00）聚合昨日操作审计（总数/失败/用户/动作分布），经默认模型生成 150 字中文摘要，站内信投递平台侧用户；LLM 失败自动降级为纯统计文本。
 
 **部署要求（pgvector）**：
 

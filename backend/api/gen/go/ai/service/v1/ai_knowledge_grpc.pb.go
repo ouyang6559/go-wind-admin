@@ -21,15 +21,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AiKnowledgeBaseService_List_FullMethodName      = "/ai.service.v1.AiKnowledgeBaseService/List"
-	AiKnowledgeBaseService_Get_FullMethodName       = "/ai.service.v1.AiKnowledgeBaseService/Get"
-	AiKnowledgeBaseService_Create_FullMethodName    = "/ai.service.v1.AiKnowledgeBaseService/Create"
-	AiKnowledgeBaseService_Update_FullMethodName    = "/ai.service.v1.AiKnowledgeBaseService/Update"
-	AiKnowledgeBaseService_Delete_FullMethodName    = "/ai.service.v1.AiKnowledgeBaseService/Delete"
-	AiKnowledgeBaseService_UploadDoc_FullMethodName = "/ai.service.v1.AiKnowledgeBaseService/UploadDoc"
-	AiKnowledgeBaseService_ListDocs_FullMethodName  = "/ai.service.v1.AiKnowledgeBaseService/ListDocs"
-	AiKnowledgeBaseService_DeleteDoc_FullMethodName = "/ai.service.v1.AiKnowledgeBaseService/DeleteDoc"
-	AiKnowledgeBaseService_Search_FullMethodName    = "/ai.service.v1.AiKnowledgeBaseService/Search"
+	AiKnowledgeBaseService_List_FullMethodName          = "/ai.service.v1.AiKnowledgeBaseService/List"
+	AiKnowledgeBaseService_Get_FullMethodName           = "/ai.service.v1.AiKnowledgeBaseService/Get"
+	AiKnowledgeBaseService_Create_FullMethodName        = "/ai.service.v1.AiKnowledgeBaseService/Create"
+	AiKnowledgeBaseService_Update_FullMethodName        = "/ai.service.v1.AiKnowledgeBaseService/Update"
+	AiKnowledgeBaseService_Delete_FullMethodName        = "/ai.service.v1.AiKnowledgeBaseService/Delete"
+	AiKnowledgeBaseService_UploadDoc_FullMethodName     = "/ai.service.v1.AiKnowledgeBaseService/UploadDoc"
+	AiKnowledgeBaseService_UploadDocFile_FullMethodName = "/ai.service.v1.AiKnowledgeBaseService/UploadDocFile"
+	AiKnowledgeBaseService_ListDocs_FullMethodName      = "/ai.service.v1.AiKnowledgeBaseService/ListDocs"
+	AiKnowledgeBaseService_DeleteDoc_FullMethodName     = "/ai.service.v1.AiKnowledgeBaseService/DeleteDoc"
+	AiKnowledgeBaseService_Search_FullMethodName        = "/ai.service.v1.AiKnowledgeBaseService/Search"
 )
 
 // AiKnowledgeBaseServiceClient is the client API for AiKnowledgeBaseService service.
@@ -50,6 +51,8 @@ type AiKnowledgeBaseServiceClient interface {
 	Delete(ctx context.Context, in *DeleteAiKnowledgeBaseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 上传文档（纯文本入库：切片 → 向量化 → 落库）
 	UploadDoc(ctx context.Context, in *UploadAiDocRequest, opts ...grpc.CallOption) (*UploadAiDocResponse, error)
+	// 上传文档文件（txt/md/docx/pdf：抽取文本后走同一入库链）
+	UploadDocFile(ctx context.Context, in *UploadAiDocFileRequest, opts ...grpc.CallOption) (*UploadAiDocResponse, error)
 	// 分页查询知识库下的文档
 	ListDocs(ctx context.Context, in *ListAiDocsRequest, opts ...grpc.CallOption) (*ListAiDocsResponse, error)
 	// 删除文档（级联删除切片）
@@ -126,6 +129,16 @@ func (c *aiKnowledgeBaseServiceClient) UploadDoc(ctx context.Context, in *Upload
 	return out, nil
 }
 
+func (c *aiKnowledgeBaseServiceClient) UploadDocFile(ctx context.Context, in *UploadAiDocFileRequest, opts ...grpc.CallOption) (*UploadAiDocResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UploadAiDocResponse)
+	err := c.cc.Invoke(ctx, AiKnowledgeBaseService_UploadDocFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aiKnowledgeBaseServiceClient) ListDocs(ctx context.Context, in *ListAiDocsRequest, opts ...grpc.CallOption) (*ListAiDocsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAiDocsResponse)
@@ -174,6 +187,8 @@ type AiKnowledgeBaseServiceServer interface {
 	Delete(context.Context, *DeleteAiKnowledgeBaseRequest) (*emptypb.Empty, error)
 	// 上传文档（纯文本入库：切片 → 向量化 → 落库）
 	UploadDoc(context.Context, *UploadAiDocRequest) (*UploadAiDocResponse, error)
+	// 上传文档文件（txt/md/docx/pdf：抽取文本后走同一入库链）
+	UploadDocFile(context.Context, *UploadAiDocFileRequest) (*UploadAiDocResponse, error)
 	// 分页查询知识库下的文档
 	ListDocs(context.Context, *ListAiDocsRequest) (*ListAiDocsResponse, error)
 	// 删除文档（级联删除切片）
@@ -207,6 +222,9 @@ func (UnimplementedAiKnowledgeBaseServiceServer) Delete(context.Context, *Delete
 }
 func (UnimplementedAiKnowledgeBaseServiceServer) UploadDoc(context.Context, *UploadAiDocRequest) (*UploadAiDocResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UploadDoc not implemented")
+}
+func (UnimplementedAiKnowledgeBaseServiceServer) UploadDocFile(context.Context, *UploadAiDocFileRequest) (*UploadAiDocResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UploadDocFile not implemented")
 }
 func (UnimplementedAiKnowledgeBaseServiceServer) ListDocs(context.Context, *ListAiDocsRequest) (*ListAiDocsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListDocs not implemented")
@@ -347,6 +365,24 @@ func _AiKnowledgeBaseService_UploadDoc_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AiKnowledgeBaseService_UploadDocFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadAiDocFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AiKnowledgeBaseServiceServer).UploadDocFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AiKnowledgeBaseService_UploadDocFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AiKnowledgeBaseServiceServer).UploadDocFile(ctx, req.(*UploadAiDocFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AiKnowledgeBaseService_ListDocs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAiDocsRequest)
 	if err := dec(in); err != nil {
@@ -431,6 +467,10 @@ var AiKnowledgeBaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UploadDoc",
 			Handler:    _AiKnowledgeBaseService_UploadDoc_Handler,
+		},
+		{
+			MethodName: "UploadDocFile",
+			Handler:    _AiKnowledgeBaseService_UploadDocFile_Handler,
 		},
 		{
 			MethodName: "ListDocs",

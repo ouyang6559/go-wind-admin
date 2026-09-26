@@ -33,5 +33,7 @@
   "deleteSuccess": "Deleted",
   "fetchFailed": "Failed to load data",
   "knowledgeBase": "Knowledge base",
-  "knowledgeBasePlaceholder": "Pick one to inject relevant chunks into chats"
+  "knowledgeBasePlaceholder": "Pick one to inject relevant chunks into chats",
+  "uploadFile": "Upload file",
+  "supportedFormats": "txt/md/docx/pdf etc., ≤10MB"
 }

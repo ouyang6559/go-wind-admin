@@ -28,14 +28,16 @@ var File_admin_service_v1_i_ai_knowledge_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_ai_knowledge_proto_rawDesc = "" +
 	"\n" +
-	"%admin/service/v1/i_ai_knowledge.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a ai/service/v1/ai_knowledge.proto2\xa7\t\n" +
+	"%admin/service/v1/i_ai_knowledge.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a ai/service/v1/ai_knowledge.proto2\xc1\n" +
+	"\n" +
 	"\x16AiKnowledgeBaseService\x12s\n" +
 	"\x04List\x12\x19.pagination.PagingRequest\x1a*.ai.service.v1.ListAiKnowledgeBaseResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/admin/v1/ai/knowledge-bases\x12z\n" +
 	"\x03Get\x12(.ai.service.v1.GetAiKnowledgeBaseRequest\x1a\x1e.ai.service.v1.AiKnowledgeBase\")\x82\xd3\xe4\x93\x02#\x12!/admin/v1/ai/knowledge-bases/{id}\x12v\n" +
 	"\x06Create\x12+.ai.service.v1.CreateAiKnowledgeBaseRequest\x1a\x16.google.protobuf.Empty\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/admin/v1/ai/knowledge-bases\x12{\n" +
 	"\x06Update\x12+.ai.service.v1.UpdateAiKnowledgeBaseRequest\x1a\x16.google.protobuf.Empty\",\x82\xd3\xe4\x93\x02&:\x01*\x1a!/admin/v1/ai/knowledge-bases/{id}\x12x\n" +
 	"\x06Delete\x12+.ai.service.v1.DeleteAiKnowledgeBaseRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#*!/admin/v1/ai/knowledge-bases/{id}\x12\x8a\x01\n" +
-	"\tUploadDoc\x12!.ai.service.v1.UploadAiDocRequest\x1a\".ai.service.v1.UploadAiDocResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/admin/v1/ai/knowledge-bases/{base_id}/docs\x12\x84\x01\n" +
+	"\tUploadDoc\x12!.ai.service.v1.UploadAiDocRequest\x1a\".ai.service.v1.UploadAiDocResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/admin/v1/ai/knowledge-bases/{base_id}/docs\x12\x97\x01\n" +
+	"\rUploadDocFile\x12%.ai.service.v1.UploadAiDocFileRequest\x1a\".ai.service.v1.UploadAiDocResponse\";\x82\xd3\xe4\x93\x025:\x01*\"0/admin/v1/ai/knowledge-bases/{base_id}/docs/file\x12\x84\x01\n" +
 	"\bListDocs\x12 .ai.service.v1.ListAiDocsRequest\x1a!.ai.service.v1.ListAiDocsResponse\"3\x82\xd3\xe4\x93\x02-\x12+/admin/v1/ai/knowledge-bases/{base_id}/docs\x12\x80\x01\n" +
 	"\tDeleteDoc\x12!.ai.service.v1.DeleteAiDocRequest\x1a\x16.google.protobuf.Empty\"8\x82\xd3\xe4\x93\x022*0/admin/v1/ai/knowledge-bases/{base_id}/docs/{id}\x12\x95\x01\n" +
 	"\x06Search\x12'.ai.service.v1.SearchAiKnowledgeRequest\x1a(.ai.service.v1.SearchAiKnowledgeResponse\"8\x82\xd3\xe4\x93\x022:\x01*\"-/admin/v1/ai/knowledge-bases/{base_id}/searchB\xbe\x01\n" +
@@ -48,15 +50,16 @@ var file_admin_service_v1_i_ai_knowledge_proto_goTypes = []any{
 	(*v11.UpdateAiKnowledgeBaseRequest)(nil), // 3: ai.service.v1.UpdateAiKnowledgeBaseRequest
 	(*v11.DeleteAiKnowledgeBaseRequest)(nil), // 4: ai.service.v1.DeleteAiKnowledgeBaseRequest
 	(*v11.UploadAiDocRequest)(nil),           // 5: ai.service.v1.UploadAiDocRequest
-	(*v11.ListAiDocsRequest)(nil),            // 6: ai.service.v1.ListAiDocsRequest
-	(*v11.DeleteAiDocRequest)(nil),           // 7: ai.service.v1.DeleteAiDocRequest
-	(*v11.SearchAiKnowledgeRequest)(nil),     // 8: ai.service.v1.SearchAiKnowledgeRequest
-	(*v11.ListAiKnowledgeBaseResponse)(nil),  // 9: ai.service.v1.ListAiKnowledgeBaseResponse
-	(*v11.AiKnowledgeBase)(nil),              // 10: ai.service.v1.AiKnowledgeBase
-	(*emptypb.Empty)(nil),                    // 11: google.protobuf.Empty
-	(*v11.UploadAiDocResponse)(nil),          // 12: ai.service.v1.UploadAiDocResponse
-	(*v11.ListAiDocsResponse)(nil),           // 13: ai.service.v1.ListAiDocsResponse
-	(*v11.SearchAiKnowledgeResponse)(nil),    // 14: ai.service.v1.SearchAiKnowledgeResponse
+	(*v11.UploadAiDocFileRequest)(nil),       // 6: ai.service.v1.UploadAiDocFileRequest
+	(*v11.ListAiDocsRequest)(nil),            // 7: ai.service.v1.ListAiDocsRequest
+	(*v11.DeleteAiDocRequest)(nil),           // 8: ai.service.v1.DeleteAiDocRequest
+	(*v11.SearchAiKnowledgeRequest)(nil),     // 9: ai.service.v1.SearchAiKnowledgeRequest
+	(*v11.ListAiKnowledgeBaseResponse)(nil),  // 10: ai.service.v1.ListAiKnowledgeBaseResponse
+	(*v11.AiKnowledgeBase)(nil),              // 11: ai.service.v1.AiKnowledgeBase
+	(*emptypb.Empty)(nil),                    // 12: google.protobuf.Empty
+	(*v11.UploadAiDocResponse)(nil),          // 13: ai.service.v1.UploadAiDocResponse
+	(*v11.ListAiDocsResponse)(nil),           // 14: ai.service.v1.ListAiDocsResponse
+	(*v11.SearchAiKnowledgeResponse)(nil),    // 15: ai.service.v1.SearchAiKnowledgeResponse
 }
 var file_admin_service_v1_i_ai_knowledge_proto_depIdxs = []int32{
 	0,  // 0: admin.service.v1.AiKnowledgeBaseService.List:input_type -> pagination.PagingRequest
@@ -65,20 +68,22 @@ var file_admin_service_v1_i_ai_knowledge_proto_depIdxs = []int32{
 	3,  // 3: admin.service.v1.AiKnowledgeBaseService.Update:input_type -> ai.service.v1.UpdateAiKnowledgeBaseRequest
 	4,  // 4: admin.service.v1.AiKnowledgeBaseService.Delete:input_type -> ai.service.v1.DeleteAiKnowledgeBaseRequest
 	5,  // 5: admin.service.v1.AiKnowledgeBaseService.UploadDoc:input_type -> ai.service.v1.UploadAiDocRequest
-	6,  // 6: admin.service.v1.AiKnowledgeBaseService.ListDocs:input_type -> ai.service.v1.ListAiDocsRequest
-	7,  // 7: admin.service.v1.AiKnowledgeBaseService.DeleteDoc:input_type -> ai.service.v1.DeleteAiDocRequest
-	8,  // 8: admin.service.v1.AiKnowledgeBaseService.Search:input_type -> ai.service.v1.SearchAiKnowledgeRequest
-	9,  // 9: admin.service.v1.AiKnowledgeBaseService.List:output_type -> ai.service.v1.ListAiKnowledgeBaseResponse
-	10, // 10: admin.service.v1.AiKnowledgeBaseService.Get:output_type -> ai.service.v1.AiKnowledgeBase
-	11, // 11: admin.service.v1.AiKnowledgeBaseService.Create:output_type -> google.protobuf.Empty
-	11, // 12: admin.service.v1.AiKnowledgeBaseService.Update:output_type -> google.protobuf.Empty
-	11, // 13: admin.service.v1.AiKnowledgeBaseService.Delete:output_type -> google.protobuf.Empty
-	12, // 14: admin.service.v1.AiKnowledgeBaseService.UploadDoc:output_type -> ai.service.v1.UploadAiDocResponse
-	13, // 15: admin.service.v1.AiKnowledgeBaseService.ListDocs:output_type -> ai.service.v1.ListAiDocsResponse
-	11, // 16: admin.service.v1.AiKnowledgeBaseService.DeleteDoc:output_type -> google.protobuf.Empty
-	14, // 17: admin.service.v1.AiKnowledgeBaseService.Search:output_type -> ai.service.v1.SearchAiKnowledgeResponse
-	9,  // [9:18] is the sub-list for method output_type
-	0,  // [0:9] is the sub-list for method input_type
+	6,  // 6: admin.service.v1.AiKnowledgeBaseService.UploadDocFile:input_type -> ai.service.v1.UploadAiDocFileRequest
+	7,  // 7: admin.service.v1.AiKnowledgeBaseService.ListDocs:input_type -> ai.service.v1.ListAiDocsRequest
+	8,  // 8: admin.service.v1.AiKnowledgeBaseService.DeleteDoc:input_type -> ai.service.v1.DeleteAiDocRequest
+	9,  // 9: admin.service.v1.AiKnowledgeBaseService.Search:input_type -> ai.service.v1.SearchAiKnowledgeRequest
+	10, // 10: admin.service.v1.AiKnowledgeBaseService.List:output_type -> ai.service.v1.ListAiKnowledgeBaseResponse
+	11, // 11: admin.service.v1.AiKnowledgeBaseService.Get:output_type -> ai.service.v1.AiKnowledgeBase
+	12, // 12: admin.service.v1.AiKnowledgeBaseService.Create:output_type -> google.protobuf.Empty
+	12, // 13: admin.service.v1.AiKnowledgeBaseService.Update:output_type -> google.protobuf.Empty
+	12, // 14: admin.service.v1.AiKnowledgeBaseService.Delete:output_type -> google.protobuf.Empty
+	13, // 15: admin.service.v1.AiKnowledgeBaseService.UploadDoc:output_type -> ai.service.v1.UploadAiDocResponse
+	13, // 16: admin.service.v1.AiKnowledgeBaseService.UploadDocFile:output_type -> ai.service.v1.UploadAiDocResponse
+	14, // 17: admin.service.v1.AiKnowledgeBaseService.ListDocs:output_type -> ai.service.v1.ListAiDocsResponse
+	12, // 18: admin.service.v1.AiKnowledgeBaseService.DeleteDoc:output_type -> google.protobuf.Empty
+	15, // 19: admin.service.v1.AiKnowledgeBaseService.Search:output_type -> ai.service.v1.SearchAiKnowledgeResponse
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
