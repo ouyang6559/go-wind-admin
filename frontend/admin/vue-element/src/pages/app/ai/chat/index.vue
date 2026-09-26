@@ -89,6 +89,23 @@
 
         <!-- 输入区 -->
         <div class="border-t border-solid border-gray-200 p-3 dark:border-gray-700">
+          <div class="mb-2 flex items-center gap-2">
+            <span class="shrink-0 text-xs text-gray-400">{{ t("pages.ai_knowledge.knowledgeBase") }}</span>
+            <ElSelect
+              v-model="knowledgeBaseId"
+              clearable
+              size="small"
+              class="!w-56"
+              :placeholder="t('pages.ai_knowledge.knowledgeBasePlaceholder')"
+            >
+              <ElOption
+                v-for="kb in knowledgeBases"
+                :key="kb.id"
+                :label="kb.name || `#${kb.id}`"
+                :value="kb.id!"
+              />
+            </ElSelect>
+          </div>
           <div class="flex items-end gap-2">
             <ElInput
               v-model="input"
@@ -110,7 +127,7 @@
 
 <script lang="ts" setup>
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { ElButton, ElIcon, ElInput, ElMessage, ElMessageBox } from "element-plus";
+import { ElButton, ElIcon, ElInput, ElMessage, ElMessageBox, ElOption, ElSelect } from "element-plus";
 import { Icon } from "@iconify/vue";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -124,9 +141,11 @@ import type {
 import {
   deleteAiConversation,
   fetchListAiConversations,
+  fetchListAiKnowledgeBases,
   fetchListAiMessages,
   sendAiChat,
 } from "@/api/composables";
+import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from "@/api/generated/admin/service/v1";
 
 const { t } = useI18n();
 
@@ -221,6 +240,18 @@ onBeforeUnmount(() => {
   globalSSEClient.off(SSE_EVENT.AIChatChunk, handleChunk);
 });
 
+// ── 知识库选择（RAG：发送时携带 knowledgeBaseId） ─────────────────
+const knowledgeBases = ref<AiKnowledgeBase[]>([]);
+const knowledgeBaseId = ref<number | undefined>(undefined);
+
+onMounted(() => {
+  fetchListAiKnowledgeBases(new PaginationQuery({ paging: { page: 1, pageSize: 100 } }))
+    .then((res) => {
+      knowledgeBases.value = (res.items || []) as AiKnowledgeBase[];
+    })
+    .catch((error: any) => console.error("fetch ai knowledge bases failed:", error));
+});
+
 // ── 发送 ──────────────────────────────────────────────────────────
 const input = ref("");
 const sending = ref(false);
@@ -232,7 +263,7 @@ async function handleSend() {
   sending.value = true;
   scrollToBottom();
   try {
-    const resp = await sendAiChat({ conversationId: activeId.value ?? 0, content });
+    const resp = await sendAiChat({ conversationId: activeId.value ?? 0, content, knowledgeBaseId: knowledgeBaseId.value ?? 0 });
     input.value = "";
     streamingText.value = "";
     if (resp.conversation?.id) {

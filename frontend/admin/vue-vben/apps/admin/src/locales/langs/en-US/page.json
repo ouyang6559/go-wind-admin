@@ -917,11 +917,31 @@
     "streaming": "Generating…",
     "you": "Me",
     "assistant": "AI",
-    "tokensUsage": "prompt {prompt} / completion {completion} tokens"
+    "tokensUsage": "prompt {prompt} / completion {completion} tokens",
+    "knowledgeBase": "Knowledge base",
+    "knowledgeBasePlaceholder": "Pick one to inject relevant chunks"
   },
   "ai": {
     "moduleName": "AI Assistant",
     "chat": "AI Assistant",
     "providers": "AI Providers"
+  },
+  "aiKnowledge": {
+    "moduleName": "knowledge base",
+    "name": "Name",
+    "description": "Description",
+    "provider": "Embedding provider",
+    "embeddingModel": "Embedding model",
+    "docCount": "Docs",
+    "docs": "Docs",
+    "docName": "Doc name",
+    "docContentPlaceholder": "Paste plain text content (chunked and embedded on upload)",
+    "docStatus": "Status",
+    "docChunks": "Chunks",
+    "noDocs": "No docs yet",
+    "upload": "Upload",
+    "deleteDocConfirm": "Delete this doc? Its chunks will be removed too.",
+    "action": "Actions",
+    "uploadSuccess": "Ingested with {chunks} chunks"
   }
 }

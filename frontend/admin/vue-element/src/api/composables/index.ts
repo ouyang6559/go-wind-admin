@@ -10,6 +10,7 @@ export * from "./shared";
 export * from "./auth";
 export * from "./ai-provider";
 export * from "./ai-chat";
+export * from "./ai-knowledge";
 export * from "./access_key";
 
 // MFA 相关

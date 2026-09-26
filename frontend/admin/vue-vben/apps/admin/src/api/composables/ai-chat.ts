@@ -39,10 +39,12 @@ export async function sendAiChat(req: {
   conversationId?: number;
   providerId?: number;
   content: string;
+  knowledgeBaseId?: number;
 }) {
   return apiClient.aiChatService.Chat({
     conversationId: req.conversationId || 0,
     providerId: req.providerId || 0,
     content: req.content,
+    knowledgeBaseId: req.knowledgeBaseId || 0,
   } as any);
 }

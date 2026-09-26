@@ -5,6 +5,7 @@
 
 // AI 模块
 export * from './ai-chat';
+export * from './ai-knowledge';
 export * from './ai-provider';
 
 // 管理门户相关

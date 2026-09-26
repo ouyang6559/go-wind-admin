@@ -36,10 +36,16 @@ export async function fetchListAiMessages(query: PaginationQuery) {
  * 同步返回完整回复；增量 token 通过 SSE 网关以 `ai_chat_chunk` 事件实时推送
  * （订阅见聊天页），chunk 尽力而为，以本响应为最终事实。
  */
-export async function sendAiChat(req: { conversationId?: number; providerId?: number; content: string }) {
+export async function sendAiChat(req: {
+  conversationId?: number;
+  providerId?: number;
+  content: string;
+  knowledgeBaseId?: number;
+}) {
   return apiClient.aiChatService.Chat({
     conversationId: req.conversationId || 0,
     providerId: req.providerId || 0,
     content: req.content,
+    knowledgeBaseId: req.knowledgeBaseId || 0,
   } as any);
 }

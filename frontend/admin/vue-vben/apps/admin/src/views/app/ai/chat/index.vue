@@ -10,7 +10,8 @@ import { Icon as Iconify } from '@iconify/vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-import { PaginationQuery, deleteAiConversation, fetchListAiConversations, fetchListAiMessages, sendAiChat } from '#/api';
+import { PaginationQuery, deleteAiConversation, fetchListAiConversations, fetchListAiKnowledgeBases, fetchListAiMessages, sendAiChat } from '#/api';
+import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '#/api/generated/admin/service/v1';
 import { globalSSEClient, SSE_EVENT } from '#/transport/sse';
 import type {
   aiservicev1_AiConversation as AiConversation,
@@ -108,6 +109,18 @@ onBeforeUnmount(() => {
   globalSSEClient.off(SSE_EVENT.AIChatChunk, handleChunk);
 });
 
+// ── 知识库选择（RAG：发送时携带 knowledgeBaseId） ─────────────────
+const knowledgeBases = ref<AiKnowledgeBase[]>([]);
+const knowledgeBaseId = ref<number | undefined>(undefined);
+
+onMounted(() => {
+  fetchListAiKnowledgeBases(new PaginationQuery({ paging: { page: 1, pageSize: 100 } }))
+    .then((res) => {
+      knowledgeBases.value = (res.items || []) as AiKnowledgeBase[];
+    })
+    .catch((error) => console.error('fetch ai knowledge bases failed:', error));
+});
+
 // ── 发送 ──────────────────────────────────────────────────────────
 const input = ref('');
 const sending = ref(false);
@@ -119,7 +132,7 @@ async function handleSend() {
   sending.value = true;
   scrollToBottom();
   try {
-    const resp = await sendAiChat({ conversationId: activeId.value ?? 0, content });
+    const resp = await sendAiChat({ conversationId: activeId.value ?? 0, content, knowledgeBaseId: knowledgeBaseId.value ?? 0 });
     input.value = '';
     streamingText.value = '';
     if (resp.conversation?.id) {
@@ -265,6 +278,17 @@ function handleNewConversation() {
 
         <!-- 输入区 -->
         <div class="border-t border-solid border-gray-200 p-3 dark:border-gray-700">
+          <div class="mb-2 flex items-center gap-2">
+            <span class="shrink-0 text-xs text-gray-400">{{ $t('page.aiChat.knowledgeBase') }}</span>
+            <a-select
+              v-model:value="knowledgeBaseId"
+              allow-clear
+              class="!w-56"
+              size="small"
+              :placeholder="$t('page.aiChat.knowledgeBasePlaceholder')"
+              :options="knowledgeBases.map((kb) => ({ label: kb.name || `#${kb.id}`, value: kb.id }))"
+            />
+          </div>
           <div class="flex items-end gap-2">
             <a-textarea
               v-model:value="input"

@@ -31,6 +31,17 @@ const ai: RouteRecordRaw[] = [
         component: () => import("@/pages/app/ai/chat/index.vue"),
       },
       {
+        path: "knowledge",
+        name: "AiKnowledgeManagement",
+        meta: {
+          order: 3,
+          icon: "lucide:book-open",
+          title: "routes.ai.knowledge",
+          authority: ["sys:platform_admin"],
+        },
+        component: () => import("@/pages/app/ai/knowledge/index.vue"),
+      },
+      {
         path: "providers",
         name: "AiProviderManagement",
         meta: {

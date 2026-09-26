@@ -35,7 +35,8 @@
   "ai": {
     "moduleName": "AI Assistant",
     "chat": "AI Assistant",
-    "providers": "AI Providers"
+    "providers": "AI Providers",
+    "knowledge": "Knowledge Bases"
   },
   "system": {
     "moduleName": "System Management",
