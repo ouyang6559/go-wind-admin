@@ -416,3 +416,59 @@ func (r *AiKnowledgeRepo) FillDocCounts(ctx context.Context, bases []*aiV1.AiKno
 		}
 	}
 }
+
+// ── 重索引（批量重算 embedding） ─────────────────────────────────────
+
+// ChunkRef 重索引用的切片引用。
+type ChunkRef struct {
+	ID      uint32
+	Content string
+}
+
+// ListBases 全量知识库（系统查看器；重索引任务无请求上下文）。
+func (r *AiKnowledgeRepo) ListBases(ctx context.Context) ([]*ent.AiKnowledgeBase, error) {
+	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	return r.entClient.Client().AiKnowledgeBase.Query().All(sysCtx)
+}
+
+// ListChunkRefsByBase 取知识库下全部切片的 id+content（原生 SQL：chunks 表不在泛型仓库域）。
+func (r *AiKnowledgeRepo) ListChunkRefsByBase(ctx context.Context, baseId uint32) ([]ChunkRef, error) {
+	rows, err := r.entClient.DB().QueryContext(ctx,
+		`SELECT c.id, c.content FROM sys_ai_chunks c
+		 JOIN sys_ai_docs d ON d.id = c.doc_id
+		 WHERE d.base_id = $1
+		 ORDER BY c.id`,
+		baseId,
+	)
+	if err != nil {
+		r.log.Errorf(ctx, "list chunks for reindex failed: %s", err.Error())
+		return nil, aiV1.ErrorInternalServerError("list chunks failed")
+	}
+	defer func() { _ = rows.Close() }()
+
+	refs := make([]ChunkRef, 0, 64)
+	for rows.Next() {
+		var ref ChunkRef
+		var content []byte
+		if err := rows.Scan(&ref.ID, &content); err != nil {
+			r.log.Errorf(ctx, "scan chunk ref failed: %s", err.Error())
+			return nil, aiV1.ErrorInternalServerError("scan chunks failed")
+		}
+		ref.Content = string(content)
+		refs = append(refs, ref)
+	}
+	return refs, rows.Err()
+}
+
+// UpdateChunkEmbedding 就地更新切片向量。
+func (r *AiKnowledgeRepo) UpdateChunkEmbedding(ctx context.Context, chunkId uint32, vecLiteral string) error {
+	_, err := r.entClient.DB().ExecContext(ctx,
+		`UPDATE sys_ai_chunks SET embedding = $1::vector WHERE id = $2`,
+		vecLiteral, chunkId,
+	)
+	if err != nil {
+		r.log.Errorf(ctx, "update chunk embedding failed: chunk=%d: %s", chunkId, err.Error())
+		return aiV1.ErrorInternalServerError("update chunk embedding failed")
+	}
+	return nil
+}

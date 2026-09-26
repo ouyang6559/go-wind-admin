@@ -24,7 +24,7 @@ type AiMessageRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
 	log       *bLogger.Helper
 
-	mapper *mapper.CopierMapper[aiV1.AiMessage, ent.AiMessage]
+	mapper        *mapper.CopierMapper[aiV1.AiMessage, ent.AiMessage]
 	roleConverter *mapper.EnumTypeConverter[aiV1.AiRole, aimessage.Role]
 
 	repository *entCrud.Repository[

@@ -13,12 +13,15 @@ import (
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 
+	appViewer "go-wind-admin/pkg/entgo/viewer"
+
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/task"
 )
 
 const (
@@ -351,4 +354,81 @@ func derefUint32(p *uint32) uint32 {
 		return 0
 	}
 	return *p
+}
+
+// ── 重索引任务（asynq：ai_doc_reindex） ─────────────────────────────
+
+// reindexEmbedBatchSize 每批送 /v1/embeddings 的切片数。
+const reindexEmbedBatchSize = 32
+
+// AsyncAiDocReindex 重索引任务 handler：对指定（或全部）知识库的既有切片
+// 用当前 embedding 模型重算向量。切片文本不变，只换 embedding 列——
+// 场景是管理员更换了知识库的 embedding 模型（或 provider 端点）后需要重建。
+func (s *AiKnowledgeService) AsyncAiDocReindex(taskType string, data *task.AiDocReindexTaskData) error {
+	// asynq ctx 不携带 viewer，租户隔离 mixin 会拒绝无 viewer 查询；重索引是平台操作，用系统查看器。
+	ctx := appViewer.NewSystemViewerContext(context.Background())
+
+	var baseIds []uint32
+	if data != nil && data.BaseID > 0 {
+		baseIds = append(baseIds, data.BaseID)
+	} else {
+		bases, err := s.repo.ListBases(ctx)
+		if err != nil {
+			return err
+		}
+		for _, b := range bases {
+			baseIds = append(baseIds, b.ID)
+		}
+	}
+
+	for _, baseId := range baseIds {
+		updated, err := s.reindexBase(ctx, baseId)
+		if err != nil {
+			s.log.Errorf(ctx, "reindex base %d failed: %v", baseId, err)
+			continue // 单库失败不阻断其余库
+		}
+		s.log.Infof(ctx, "reindex base %d done: %d chunks re-embedded", baseId, updated)
+	}
+	return nil
+}
+
+// reindexBase 对单个知识库分批重算全部切片向量，返回更新的切片数。
+func (s *AiKnowledgeService) reindexBase(ctx context.Context, baseId uint32) (int, error) {
+	base, err := s.repo.GetEntityByID(ctx, baseId)
+	if err != nil {
+		return 0, err
+	}
+
+	refs, err := s.repo.ListChunkRefsByBase(ctx, baseId)
+	if err != nil {
+		return 0, err
+	}
+	if len(refs) == 0 {
+		return 0, nil
+	}
+
+	updated := 0
+	for start := 0; start < len(refs); start += reindexEmbedBatchSize {
+		end := start + reindexEmbedBatchSize
+		if end > len(refs) {
+			end = len(refs)
+		}
+		batch := refs[start:end]
+
+		texts := make([]string, 0, len(batch))
+		for _, ref := range batch {
+			texts = append(texts, ref.Content)
+		}
+		vectors, err := embedTextsForBase(ctx, s.providerRepo, base, texts)
+		if err != nil {
+			return updated, err
+		}
+		for i, ref := range batch {
+			if err = s.repo.UpdateChunkEmbedding(ctx, ref.ID, vectors[i]); err != nil {
+				return updated, err
+			}
+			updated++
+		}
+	}
+	return updated, nil
 }

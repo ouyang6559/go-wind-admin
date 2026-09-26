@@ -25,7 +25,7 @@ type AiProviderRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
 	log       *bLogger.Helper
 
-	mapper          *mapper.CopierMapper[aiV1.AiProvider, ent.AiProvider]
+	mapper             *mapper.CopierMapper[aiV1.AiProvider, ent.AiProvider]
 	modelTypeConverter *mapper.EnumTypeConverter[aiV1.AiProvider_ModelType, aiprovider.ModelType]
 
 	repository *entCrud.Repository[
@@ -40,9 +40,9 @@ type AiProviderRepo struct {
 
 func NewAiProviderRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client]) *AiProviderRepo {
 	repo := &AiProviderRepo{
-		log:               ctx.NewLoggerHelper("ai_provider/repo/admin-service"),
-		entClient:         entClient,
-		mapper:            mapper.NewCopierMapper[aiV1.AiProvider, ent.AiProvider](),
+		log:       ctx.NewLoggerHelper("ai_provider/repo/admin-service"),
+		entClient: entClient,
+		mapper:    mapper.NewCopierMapper[aiV1.AiProvider, ent.AiProvider](),
 		modelTypeConverter: mapper.NewEnumTypeConverter[aiV1.AiProvider_ModelType, aiprovider.ModelType](
 			aiV1.AiProvider_ModelType_name, aiV1.AiProvider_ModelType_value,
 		),
