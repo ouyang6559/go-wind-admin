@@ -19,5 +19,7 @@
   "you": "Me",
   "assistant": "AI",
   "tokensUsage": "prompt {{prompt}} / completion {{completion}} tokens",
-  "sseDisconnected": "Live stream offline; the full reply still returns"
+  "sseDisconnected": "Live stream offline; the full reply still returns",
+  "knowledgeBase": "Knowledge base",
+  "knowledgeBasePlaceholder": "Pick one to inject relevant chunks"
 }

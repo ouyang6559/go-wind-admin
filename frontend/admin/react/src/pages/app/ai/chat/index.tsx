@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Empty, Input, Popconfirm, Spin, Tooltip, Typography, App } from 'antd';
+import { Button, Empty, Input, Popconfirm, Select, Spin, Tooltip, Typography, App } from 'antd';
 import {
   DeleteOutlined,
   PlusOutlined,
@@ -19,6 +19,8 @@ import {
   useListAiMessages,
   useSendChat,
 } from '@/api/hooks/ai-chat';
+import { fetchListAiKnowledgeBases } from '@/api/hooks/ai-knowledge';
+import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '@/api/generated/admin/service/v1';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 
 interface ChatChunk {
@@ -63,6 +65,16 @@ export default function AiChatPage() {
     () => (messagesQuery.data?.items ?? []) as aiservicev1_AiMessage[],
     [messagesQuery.data],
   );
+
+  // ── 知识库选择（RAG：发送时携带 knowledgeBaseId） ─────────────────
+  const [knowledgeBases, setKnowledgeBases] = useState<AiKnowledgeBase[]>([]);
+  const [knowledgeBaseId, setKnowledgeBaseId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    fetchListAiKnowledgeBases(new PaginationQuery({ paging: { page: 1, pageSize: 100 } }))
+      .then((res) => setKnowledgeBases((res.items ?? []) as AiKnowledgeBase[]))
+      .catch((error: Error) => console.error('fetch ai knowledge bases failed:', error));
+  }, []);
 
   // ── 流式累积 ──────────────────────────────────────────────────────
   const [streamingText, setStreamingText] = useState('');
@@ -115,7 +127,7 @@ export default function AiChatPage() {
     if (!content || sendMutation.isPending) return;
     // 先本地渲染用户气泡与占位：响应到达后由列表刷新接管
     setStreamingText('');
-    sendMutation.mutate({ conversationId: activeId ?? 0, providerId: 0, content });
+    sendMutation.mutate({ conversationId: activeId ?? 0, providerId: 0, content, knowledgeBaseId: knowledgeBaseId ?? 0 });
   };
 
   // ── 删除会话 ──────────────────────────────────────────────────────
@@ -238,6 +250,20 @@ export default function AiChatPage() {
 
           {/* 输入区 */}
           <div className="border-t border-solid border-gray-200 p-3 dark:border-gray-700">
+            <div className="mb-2 flex items-center gap-2">
+              <Typography.Text type="secondary" className="!text-xs shrink-0">
+                {t('knowledgeBase')}
+              </Typography.Text>
+              <Select
+                value={knowledgeBaseId}
+                onChange={(v) => setKnowledgeBaseId(v)}
+                allowClear
+                size="small"
+                className="min-w-48"
+                placeholder={t('knowledgeBasePlaceholder')}
+                options={knowledgeBases.map((kb) => ({ label: kb.name ?? `#${kb.id}`, value: kb.id! }))}
+              />
+            </div>
             <div className="flex items-end gap-2">
               <Input.TextArea
                 value={input}

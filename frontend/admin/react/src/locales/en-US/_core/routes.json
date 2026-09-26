@@ -54,5 +54,6 @@
   "forgot-password": "Forgot Password",
   "accessKeys": "OpenAPI Credentials",
   "ai": "AI Assistant",
-  "ai-providers": "AI Providers"
+  "ai-providers": "AI Providers",
+  "ai-knowledge": "Knowledge Bases"
 }

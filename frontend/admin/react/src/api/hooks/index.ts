@@ -80,3 +80,6 @@ export * from './ai-provider';
 
 // AI 对话
 export * from './ai-chat';
+
+// AI 知识库
+export * from './ai-knowledge';

@@ -65,6 +65,7 @@ func (s *AiKnowledgeService) List(ctx context.Context, req *paginationV1.PagingR
 	if err != nil {
 		return nil, err
 	}
+	s.repo.FillDocCounts(ctx, items)
 	return &aiV1.ListAiKnowledgeBaseResponse{Items: items, Total: total}, nil
 }
 

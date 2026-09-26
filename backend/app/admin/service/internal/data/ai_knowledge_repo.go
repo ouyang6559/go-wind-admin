@@ -14,6 +14,8 @@ import (
 	"github.com/tx7do/go-utils/copierutil"
 	"github.com/tx7do/go-utils/mapper"
 
+	appViewer "go-wind-admin/pkg/entgo/viewer"
+
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/aidoc"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiknowledgebase"
@@ -373,4 +375,44 @@ func timestamppbPtr(t *time.Time) *timestamppb.Timestamp {
 		return nil
 	}
 	return timestamppb.New(*t)
+}
+
+// FillDocCounts 一次聚合填充各知识库的文档数（List 读视图）。
+func (r *AiKnowledgeRepo) FillDocCounts(ctx context.Context, bases []*aiV1.AiKnowledgeBase) {
+	if len(bases) == 0 {
+		return
+	}
+	ids := make([]uint32, 0, len(bases))
+	for _, b := range bases {
+		if b.Id != nil {
+			ids = append(ids, *b.Id)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+
+	var rows []struct {
+		BaseID uint32 `sql:"base_id"`
+		Count  uint64 `sql:"count"`
+	}
+	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	if err := r.entClient.Client().AiDoc.Query().
+		Where(aidoc.BaseIDIn(ids...)).
+		GroupBy(aidoc.FieldBaseID).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(sysCtx, &rows); err != nil {
+		r.log.Errorf(ctx, "count ai docs failed: %s", err.Error())
+		return
+	}
+	counts := make(map[uint32]uint32, len(rows))
+	for _, row := range rows {
+		counts[row.BaseID] = uint32(row.Count)
+	}
+	for _, b := range bases {
+		if b.Id != nil {
+			c := counts[*b.Id]
+			b.DocCount = &c
+		}
+	}
 }

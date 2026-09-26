@@ -54,5 +54,6 @@
   "forgot-password": "找回密码",
   "accessKeys": "OpenAPI 凭证",
   "ai": "AI 助手",
-  "ai-providers": "AI 提供商"
+  "ai-providers": "AI 提供商",
+  "ai-knowledge": "知识库"
 }
