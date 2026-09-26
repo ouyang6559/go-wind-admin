@@ -310,6 +310,8 @@ func ComponentToModule(component string) identityV1.Module {
 		return identityV1.Module_FILE
 	case len(component) >= 9 && component[:9] == "app/task/":
 		return identityV1.Module_TASK
+	case len(component) >= 7 && component[:7] == "app/ai/":
+		return identityV1.Module_AI
 	default:
 		return identityV1.Module_MODULE_UNSPECIFIED
 	}

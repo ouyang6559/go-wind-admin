@@ -57,6 +57,7 @@ func (Api) Fields() []ent.Field {
 				"InternalMessage", "INTERNAL_MESSAGE",
 				"File", "FILE",
 				"Task", "TASK",
+				"Ai", "AI",
 			).
 			Optional().
 			Nillable(),

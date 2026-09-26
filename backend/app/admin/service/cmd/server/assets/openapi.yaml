@@ -7451,6 +7451,7 @@ components:
                         - INTERNAL_MESSAGE
                         - FILE
                         - TASK
+                        - AI
                     type: string
                     description: 所属业务功能模块（用于套餐白名单过滤）
                     format: enum
@@ -9889,6 +9890,7 @@ components:
                         - INTERNAL_MESSAGE
                         - FILE
                         - TASK
+                        - AI
                     type: string
                     description: 所属业务功能模块
                     format: enum
@@ -10844,6 +10846,7 @@ components:
                         - INTERNAL_MESSAGE
                         - FILE
                         - TASK
+                        - AI
                     type: string
                     description: 功能模块
                     format: enum
