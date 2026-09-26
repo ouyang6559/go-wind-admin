@@ -24,12 +24,13 @@ const (
 
 // 发起对话 - 请求
 type ChatRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ConversationId *uint32                `protobuf:"varint,1,opt,name=conversation_id,json=conversationId,proto3,oneof" json:"conversation_id,omitempty"` // 会话ID，0=新建
-	ProviderId     *uint32                `protobuf:"varint,2,opt,name=provider_id,json=providerId,proto3,oneof" json:"provider_id,omitempty"`             // 提供商ID，0=默认
-	Content        *string                `protobuf:"bytes,3,opt,name=content,proto3,oneof" json:"content,omitempty"`                                      // 用户输入内容
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId  *uint32                `protobuf:"varint,1,opt,name=conversation_id,json=conversationId,proto3,oneof" json:"conversation_id,omitempty"`      // 会话ID，0=新建
+	ProviderId      *uint32                `protobuf:"varint,2,opt,name=provider_id,json=providerId,proto3,oneof" json:"provider_id,omitempty"`                  // 提供商ID，0=默认
+	Content         *string                `protobuf:"bytes,3,opt,name=content,proto3,oneof" json:"content,omitempty"`                                           // 用户输入内容
+	KnowledgeBaseId *uint32                `protobuf:"varint,4,opt,name=knowledge_base_id,json=knowledgeBaseId,proto3,oneof" json:"knowledge_base_id,omitempty"` // 知识库ID，0=不检索
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ChatRequest) Reset() {
@@ -81,6 +82,13 @@ func (x *ChatRequest) GetContent() string {
 		return *x.Content
 	}
 	return ""
+}
+
+func (x *ChatRequest) GetKnowledgeBaseId() uint32 {
+	if x != nil && x.KnowledgeBaseId != nil {
+		return *x.KnowledgeBaseId
+	}
+	return 0
 }
 
 // 发起对话 - 回应
@@ -205,16 +213,18 @@ var File_ai_service_v1_ai_chat_proto protoreflect.FileDescriptor
 
 const file_ai_service_v1_ai_chat_proto_rawDesc = "" +
 	"\n" +
-	"\x1bai/service/v1/ai_chat.proto\x12\rai.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a#ai/service/v1/ai_conversation.proto\x1a\x1eai/service/v1/ai_message.proto\"\xa4\x02\n" +
+	"\x1bai/service/v1/ai_chat.proto\x12\rai.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a#ai/service/v1/ai_conversation.proto\x1a\x1eai/service/v1/ai_message.proto\"\xc9\x03\n" +
 	"\vChatRequest\x12S\n" +
 	"\x0fconversation_id\x18\x01 \x01(\rB%\xbaG\"\x92\x02\x1f会话ID；0 表示新建会话H\x00R\x0econversationId\x88\x01\x01\x12W\n" +
 	"\vprovider_id\x18\x02 \x01(\rB1\xbaG.\x92\x02+提供商ID；0 表示使用默认提供商H\x01R\n" +
 	"providerId\x88\x01\x01\x127\n" +
-	"\acontent\x18\x03 \x01(\tB\x18\xbaG\x15\x92\x02\x12用户输入内容H\x02R\acontent\x88\x01\x01B\x12\n" +
+	"\acontent\x18\x03 \x01(\tB\x18\xbaG\x15\x92\x02\x12用户输入内容H\x02R\acontent\x88\x01\x01\x12\x8c\x01\n" +
+	"\x11knowledge_base_id\x18\x04 \x01(\rB[\xbaGX\x92\x02U知识库ID；>0 时先检索该库并将相关片段注入 system 上下文（RAG）H\x03R\x0fknowledgeBaseId\x88\x01\x01B\x12\n" +
 	"\x10_conversation_idB\x0e\n" +
 	"\f_provider_idB\n" +
 	"\n" +
-	"\b_content\"\x85\x01\n" +
+	"\b_contentB\x14\n" +
+	"\x12_knowledge_base_id\"\x85\x01\n" +
 	"\fChatResponse\x12A\n" +
 	"\fconversation\x18\x01 \x01(\v2\x1d.ai.service.v1.AiConversationR\fconversation\x122\n" +
 	"\amessage\x18\x02 \x01(\v2\x18.ai.service.v1.AiMessageR\amessage\"a\n" +

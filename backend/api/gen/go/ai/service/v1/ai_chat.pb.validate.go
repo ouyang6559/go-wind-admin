@@ -69,6 +69,10 @@ func (m *ChatRequest) validate(all bool) error {
 		// no validation rules for Content
 	}
 
+	if m.KnowledgeBaseId != nil {
+		// no validation rules for KnowledgeBaseId
+	}
+
 	if len(errors) > 0 {
 		return ChatRequestMultiError(errors)
 	}

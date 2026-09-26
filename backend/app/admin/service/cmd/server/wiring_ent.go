@@ -156,6 +156,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	aiConversationRepo := data.NewAiConversationRepo(ctx, entClient)
 	aiMessageRepo := data.NewAiMessageRepo(ctx, entClient)
 	aiUsageLogRepo := data.NewAiUsageLogRepo(ctx, entClient)
+	aiKnowledgeRepo := data.NewAiKnowledgeRepo(ctx, entClient)
 
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
 
@@ -274,7 +275,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	aiConversationService := service.NewAiConversationService(ctx, aiConversationRepo)
 	aiMessageService := service.NewAiMessageService(ctx, aiMessageRepo)
 	aiUsageLogService := service.NewAiUsageLogService(ctx, aiUsageLogRepo)
-	aiChatService := service.NewAiChatService(ctx, aiConversationRepo, aiMessageRepo, aiProviderRepo, aiUsageLogRepo)
+	aiKnowledgeService := service.NewAiKnowledgeService(ctx, aiKnowledgeRepo, aiProviderRepo)
+	aiChatService := service.NewAiChatService(ctx, aiConversationRepo, aiMessageRepo, aiProviderRepo, aiUsageLogRepo, aiKnowledgeRepo)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 
@@ -303,6 +305,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		aiConversationService,
 		aiMessageService,
 		aiUsageLogService,
+		aiKnowledgeService,
 		aiChatService,
 	)
 	if err != nil {

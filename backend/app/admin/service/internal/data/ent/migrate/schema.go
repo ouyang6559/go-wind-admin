@@ -45,6 +45,30 @@ var (
 			},
 		},
 	}
+	// SysAiChunksColumns holds the columns for the "sys_ai_chunks" table.
+	SysAiChunksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "tenant_id", Type: field.TypeUint32, Nullable: true, Comment: "租户ID", Default: 0},
+		{Name: "content", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "切片文本"},
+		{Name: "chunk_index", Type: field.TypeUint32, Nullable: true, Comment: "切片序号"},
+		{Name: "doc_id", Type: field.TypeUint32, Nullable: true, Comment: "所属文档ID（edge 外键）"},
+	}
+	// SysAiChunksTable holds the schema information for the "sys_ai_chunks" table.
+	SysAiChunksTable = &schema.Table{
+		Name:       "sys_ai_chunks",
+		Comment:    "AI 知识库切片",
+		Columns:    SysAiChunksColumns,
+		PrimaryKey: []*schema.Column{SysAiChunksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sys_ai_chunks_sys_ai_docs_chunks",
+				Columns:    []*schema.Column{SysAiChunksColumns[5]},
+				RefColumns: []*schema.Column{SysAiDocsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// SysAiConversationsColumns holds the columns for the "sys_ai_conversations" table.
 	SysAiConversationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -76,6 +100,75 @@ var (
 				Name:    "idx_sys_ai_conversations_last_message_at",
 				Unique:  false,
 				Columns: []*schema.Column{SysAiConversationsColumns[11]},
+			},
+		},
+	}
+	// SysAiDocsColumns holds the columns for the "sys_ai_docs" table.
+	SysAiDocsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "tenant_id", Type: field.TypeUint32, Nullable: true, Comment: "租户ID", Default: 0},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "文档名称"},
+		{Name: "chunk_count", Type: field.TypeUint32, Nullable: true, Comment: "切片数"},
+		{Name: "status", Type: field.TypeString, Nullable: true, Comment: "状态：READY/FAILED"},
+		{Name: "error_message", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "失败原因"},
+		{Name: "user_id", Type: field.TypeUint32, Nullable: true, Comment: "上传人用户ID"},
+		{Name: "base_id", Type: field.TypeUint32, Nullable: true, Comment: "所属知识库ID（edge 外键）"},
+	}
+	// SysAiDocsTable holds the schema information for the "sys_ai_docs" table.
+	SysAiDocsTable = &schema.Table{
+		Name:       "sys_ai_docs",
+		Comment:    "AI 知识库文档",
+		Columns:    SysAiDocsColumns,
+		PrimaryKey: []*schema.Column{SysAiDocsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sys_ai_docs_sys_ai_knowledge_bases_docs",
+				Columns:    []*schema.Column{SysAiDocsColumns[13]},
+				RefColumns: []*schema.Column{SysAiKnowledgeBasesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_sys_ai_docs_tenant",
+				Unique:  false,
+				Columns: []*schema.Column{SysAiDocsColumns[7]},
+			},
+		},
+	}
+	// SysAiKnowledgeBasesColumns holds the columns for the "sys_ai_knowledge_bases" table.
+	SysAiKnowledgeBasesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "tenant_id", Type: field.TypeUint32, Nullable: true, Comment: "租户ID", Default: 0},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "知识库名称"},
+		{Name: "description", Type: field.TypeString, Nullable: true, Comment: "描述"},
+		{Name: "provider_id", Type: field.TypeUint32, Nullable: true, Comment: "向量化使用的模型提供商ID"},
+		{Name: "embedding_model", Type: field.TypeString, Nullable: true, Comment: "embedding 模型名"},
+		{Name: "user_id", Type: field.TypeUint32, Nullable: true, Comment: "创建人用户ID"},
+	}
+	// SysAiKnowledgeBasesTable holds the schema information for the "sys_ai_knowledge_bases" table.
+	SysAiKnowledgeBasesTable = &schema.Table{
+		Name:       "sys_ai_knowledge_bases",
+		Comment:    "AI 知识库",
+		Columns:    SysAiKnowledgeBasesColumns,
+		PrimaryKey: []*schema.Column{SysAiKnowledgeBasesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_sys_ai_knowledge_bases_tenant",
+				Unique:  false,
+				Columns: []*schema.Column{SysAiKnowledgeBasesColumns[7]},
 			},
 		},
 	}
@@ -3459,7 +3552,10 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		SysAccessKeysTable,
+		SysAiChunksTable,
 		SysAiConversationsTable,
+		SysAiDocsTable,
+		SysAiKnowledgeBasesTable,
 		SysAiMessagesTable,
 		SysAiProvidersTable,
 		SysAiUsageLogsTable,
@@ -3522,8 +3618,25 @@ func init() {
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}
+	SysAiChunksTable.ForeignKeys[0].RefTable = SysAiDocsTable
+	SysAiChunksTable.Annotation = &entsql.Annotation{
+		Table:     "sys_ai_chunks",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
 	SysAiConversationsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_ai_conversations",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysAiDocsTable.ForeignKeys[0].RefTable = SysAiKnowledgeBasesTable
+	SysAiDocsTable.Annotation = &entsql.Annotation{
+		Table:     "sys_ai_docs",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	SysAiKnowledgeBasesTable.Annotation = &entsql.Annotation{
+		Table:     "sys_ai_knowledge_bases",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

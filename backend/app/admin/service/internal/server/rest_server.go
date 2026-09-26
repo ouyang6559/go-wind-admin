@@ -179,6 +179,7 @@ func NewRestServer(
 	aiConversationService *service.AiConversationService,
 	aiMessageService *service.AiMessageService,
 	aiUsageLogService *service.AiUsageLogService,
+	aiKnowledgeService *service.AiKnowledgeService,
 	aiChatService *service.AiChatService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
@@ -263,6 +264,7 @@ func NewRestServer(
 	adminV1.RegisterAiConversationServiceHTTPServer(srv, aiConversationService)
 	adminV1.RegisterAiMessageServiceHTTPServer(srv, aiMessageService)
 	adminV1.RegisterAiUsageLogServiceHTTPServer(srv, aiUsageLogService)
+	adminV1.RegisterAiKnowledgeBaseServiceHTTPServer(srv, aiKnowledgeService)
 	adminV1.RegisterAiChatServiceHTTPServer(srv, aiChatService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {

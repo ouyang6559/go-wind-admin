@@ -787,6 +787,7 @@ export function createAiChatServiceClient(
 export type aiservicev1_ChatRequest = {
   content?: string;
   conversationId?: number;
+  knowledgeBaseId?: number;
   providerId?: number;
 };
 
@@ -1048,6 +1049,376 @@ export type aiservicev1_UpdateAiConversationRequest = {
 // 删除会话 - 请求
 export type aiservicev1_DeleteAiConversationRequest = {
   id?: number;
+};
+
+// AI 知识库管理服务（RAG）
+export interface AiKnowledgeBaseService {
+  // 分页查询知识库列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiKnowledgeBaseResponse>;
+  // 查询知识库详情
+  Get(
+    request: aiservicev1_GetAiKnowledgeBaseRequest,
+  ): Promise<aiservicev1_AiKnowledgeBase>;
+  // 创建知识库
+  Create(
+    request: aiservicev1_CreateAiKnowledgeBaseRequest,
+  ): Promise<wellKnownEmpty>;
+  // 更新知识库
+  Update(
+    request: aiservicev1_UpdateAiKnowledgeBaseRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除知识库
+  Delete(
+    request: aiservicev1_DeleteAiKnowledgeBaseRequest,
+  ): Promise<wellKnownEmpty>;
+  // 上传文档（纯文本：切片 → 向量化 → 落库）
+  UploadDoc(
+    request: aiservicev1_UploadAiDocRequest,
+  ): Promise<aiservicev1_UploadAiDocResponse>;
+  // 查询知识库下的文档
+  ListDocs(
+    request: aiservicev1_ListAiDocsRequest,
+  ): Promise<aiservicev1_ListAiDocsResponse>;
+  // 删除文档
+  DeleteDoc(
+    request: aiservicev1_DeleteAiDocRequest,
+  ): Promise<wellKnownEmpty>;
+  // 检索测试
+  Search(
+    request: aiservicev1_SearchAiKnowledgeRequest,
+  ): Promise<aiservicev1_SearchAiKnowledgeResponse>;
+}
+
+export function createAiKnowledgeBaseServiceClient(
+  transport: ClientTransport,
+): AiKnowledgeBaseService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/knowledge-bases`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiKnowledgeBaseResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.viewMask) {
+        queryParams.push(
+          `viewMask=${encodeURIComponent(request.viewMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiKnowledgeBase>;
+    },
+    Create(request) {
+      const path = `admin/v1/ai/knowledge-bases`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Create',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+    UploadDoc(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'UploadDoc',
+      }) as Promise<aiservicev1_UploadAiDocResponse>;
+    },
+    ListDocs(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'ListDocs',
+      }) as Promise<aiservicev1_ListAiDocsResponse>;
+    },
+    DeleteDoc(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'DeleteDoc',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Search(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/search`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Search',
+      }) as Promise<aiservicev1_SearchAiKnowledgeResponse>;
+    },
+  };
+}
+// 查询知识库列表 - 回应
+export type aiservicev1_ListAiKnowledgeBaseResponse = {
+  items: aiservicev1_AiKnowledgeBase[] | undefined;
+  total: number | undefined;
+};
+
+// AI 知识库
+export type aiservicev1_AiKnowledgeBase = {
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  description?: string;
+  docCount?: number;
+  embeddingModel?: string;
+  id?: number;
+  name?: string;
+  providerId?: number;
+  tenantId?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+  userId?: number;
+};
+
+// 查询知识库详情 - 请求
+export type aiservicev1_GetAiKnowledgeBaseRequest = {
+  id?: number;
+  viewMask?: wellKnownFieldMask;
+};
+
+// 创建知识库 - 请求
+export type aiservicev1_CreateAiKnowledgeBaseRequest = {
+  data: aiservicev1_AiKnowledgeBase | undefined;
+};
+
+// 更新知识库 - 请求
+export type aiservicev1_UpdateAiKnowledgeBaseRequest = {
+  allowMissing?: boolean;
+  data: aiservicev1_AiKnowledgeBase | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除知识库 - 请求
+export type aiservicev1_DeleteAiKnowledgeBaseRequest = {
+  id?: number;
+};
+
+// 上传文档 - 请求（纯文本；内容直接随请求体传输）
+export type aiservicev1_UploadAiDocRequest = {
+  baseId: number | undefined;
+  content: string | undefined;
+  name: string | undefined;
+};
+
+// 上传文档 - 回应
+export type aiservicev1_UploadAiDocResponse = {
+  chunkCount: number | undefined;
+  doc: aiservicev1_AiDoc | undefined;
+};
+
+// AI 文档
+export type aiservicev1_AiDoc = {
+  baseId?: number;
+  chunkCount?: number;
+  createdAt?: wellKnownTimestamp;
+  errorMessage?: string;
+  id?: number;
+  name?: string;
+  status?: string;
+  tenantId?: number;
+  userId?: number;
+};
+
+// 查询文档列表 - 请求
+export type aiservicev1_ListAiDocsRequest = {
+  baseId: number | undefined;
+};
+
+// 查询文档列表 - 回应
+export type aiservicev1_ListAiDocsResponse = {
+  items: aiservicev1_AiDoc[] | undefined;
+  total: number | undefined;
+};
+
+// 删除文档 - 请求
+export type aiservicev1_DeleteAiDocRequest = {
+  baseId: number | undefined;
+  id: number | undefined;
+};
+
+// 检索 - 请求
+export type aiservicev1_SearchAiKnowledgeRequest = {
+  baseId: number | undefined;
+  query: string | undefined;
+  topK?: number;
+};
+
+// 检索 - 回应
+export type aiservicev1_SearchAiKnowledgeResponse = {
+  hits: aiservicev1_KnowledgeHit[] | undefined;
+};
+
+// 检索命中片段
+export type aiservicev1_KnowledgeHit = {
+  chunkIndex: number | undefined;
+  content: string | undefined;
+  doc: aiservicev1_AiDoc | undefined;
+  score: number | undefined;
 };
 
 // AI 对话消息服务
@@ -11702,6 +12073,7 @@ export class ApiClient {
   private _adminPortalService?: AdminPortalService;
   private _aiChatService?: AiChatService;
   private _aiConversationService?: AiConversationService;
+  private _aiKnowledgeBaseService?: AiKnowledgeBaseService;
   private _aiMessageService?: AiMessageService;
   private _aiProviderService?: AiProviderService;
   private _aiUsageLogService?: AiUsageLogService;
@@ -11766,6 +12138,10 @@ export class ApiClient {
 
   get aiConversationService(): AiConversationService {
     return this._aiConversationService ??= createAiConversationServiceClient(this._transport);
+  }
+
+  get aiKnowledgeBaseService(): AiKnowledgeBaseService {
+    return this._aiKnowledgeBaseService ??= createAiKnowledgeBaseServiceClient(this._transport);
   }
 
   get aiMessageService(): AiMessageService {

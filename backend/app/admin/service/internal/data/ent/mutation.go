@@ -10,7 +10,10 @@ import (
 	permissionpb "go-wind-admin/api/gen/go/permission/service/v1"
 	taskpb "go-wind-admin/api/gen/go/task/service/v1"
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
+	"go-wind-admin/app/admin/service/internal/data/ent/aichunk"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiconversation"
+	"go-wind-admin/app/admin/service/internal/data/ent/aidoc"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiknowledgebase"
 	"go-wind-admin/app/admin/service/internal/data/ent/aimessage"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiprovider"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
@@ -82,7 +85,10 @@ const (
 
 	// Node types.
 	TypeAccessKey                = "AccessKey"
+	TypeAiChunk                  = "AiChunk"
 	TypeAiConversation           = "AiConversation"
+	TypeAiDoc                    = "AiDoc"
+	TypeAiKnowledgeBase          = "AiKnowledgeBase"
 	TypeAiMessage                = "AiMessage"
 	TypeAiProvider               = "AiProvider"
 	TypeAiUsageLog               = "AiUsageLog"
@@ -1488,6 +1494,777 @@ func (m *AccessKeyMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown AccessKey edge %s", name)
 }
 
+// AiChunkMutation represents an operation that mutates the AiChunk nodes in the graph.
+type AiChunkMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uint32
+	created_at     *time.Time
+	tenant_id      *uint32
+	addtenant_id   *int32
+	content        *string
+	chunk_index    *uint32
+	addchunk_index *int32
+	clearedFields  map[string]struct{}
+	doc            *uint32
+	cleareddoc     bool
+	done           bool
+	oldValue       func(context.Context) (*AiChunk, error)
+	predicates     []predicate.AiChunk
+}
+
+var _ ent.Mutation = (*AiChunkMutation)(nil)
+
+// aichunkOption allows management of the mutation configuration using functional options.
+type aichunkOption func(*AiChunkMutation)
+
+// newAiChunkMutation creates new mutation for the AiChunk entity.
+func newAiChunkMutation(c config, op Op, opts ...aichunkOption) *AiChunkMutation {
+	m := &AiChunkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAiChunk,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAiChunkID sets the ID field of the mutation.
+func withAiChunkID(id uint32) aichunkOption {
+	return func(m *AiChunkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AiChunk
+		)
+		m.oldValue = func(ctx context.Context) (*AiChunk, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AiChunk.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAiChunk sets the old AiChunk of the mutation.
+func withAiChunk(node *AiChunk) aichunkOption {
+	return func(m *AiChunkMutation) {
+		m.oldValue = func(context.Context) (*AiChunk, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AiChunkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AiChunkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AiChunk entities.
+func (m *AiChunkMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AiChunkMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AiChunkMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AiChunk.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AiChunkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AiChunkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AiChunk entity.
+// If the AiChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiChunkMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *AiChunkMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[aichunk.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *AiChunkMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[aichunk.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AiChunkMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, aichunk.FieldCreatedAt)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *AiChunkMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *AiChunkMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the AiChunk entity.
+// If the AiChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiChunkMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *AiChunkMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *AiChunkMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *AiChunkMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[aichunk.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *AiChunkMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[aichunk.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *AiChunkMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, aichunk.FieldTenantID)
+}
+
+// SetDocID sets the "doc_id" field.
+func (m *AiChunkMutation) SetDocID(u uint32) {
+	m.doc = &u
+}
+
+// DocID returns the value of the "doc_id" field in the mutation.
+func (m *AiChunkMutation) DocID() (r uint32, exists bool) {
+	v := m.doc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDocID returns the old "doc_id" field's value of the AiChunk entity.
+// If the AiChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiChunkMutation) OldDocID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDocID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDocID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDocID: %w", err)
+	}
+	return oldValue.DocID, nil
+}
+
+// ClearDocID clears the value of the "doc_id" field.
+func (m *AiChunkMutation) ClearDocID() {
+	m.doc = nil
+	m.clearedFields[aichunk.FieldDocID] = struct{}{}
+}
+
+// DocIDCleared returns if the "doc_id" field was cleared in this mutation.
+func (m *AiChunkMutation) DocIDCleared() bool {
+	_, ok := m.clearedFields[aichunk.FieldDocID]
+	return ok
+}
+
+// ResetDocID resets all changes to the "doc_id" field.
+func (m *AiChunkMutation) ResetDocID() {
+	m.doc = nil
+	delete(m.clearedFields, aichunk.FieldDocID)
+}
+
+// SetContent sets the "content" field.
+func (m *AiChunkMutation) SetContent(s string) {
+	m.content = &s
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *AiChunkMutation) Content() (r string, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the AiChunk entity.
+// If the AiChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiChunkMutation) OldContent(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *AiChunkMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[aichunk.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *AiChunkMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[aichunk.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *AiChunkMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, aichunk.FieldContent)
+}
+
+// SetChunkIndex sets the "chunk_index" field.
+func (m *AiChunkMutation) SetChunkIndex(u uint32) {
+	m.chunk_index = &u
+	m.addchunk_index = nil
+}
+
+// ChunkIndex returns the value of the "chunk_index" field in the mutation.
+func (m *AiChunkMutation) ChunkIndex() (r uint32, exists bool) {
+	v := m.chunk_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChunkIndex returns the old "chunk_index" field's value of the AiChunk entity.
+// If the AiChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiChunkMutation) OldChunkIndex(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChunkIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChunkIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChunkIndex: %w", err)
+	}
+	return oldValue.ChunkIndex, nil
+}
+
+// AddChunkIndex adds u to the "chunk_index" field.
+func (m *AiChunkMutation) AddChunkIndex(u int32) {
+	if m.addchunk_index != nil {
+		*m.addchunk_index += u
+	} else {
+		m.addchunk_index = &u
+	}
+}
+
+// AddedChunkIndex returns the value that was added to the "chunk_index" field in this mutation.
+func (m *AiChunkMutation) AddedChunkIndex() (r int32, exists bool) {
+	v := m.addchunk_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearChunkIndex clears the value of the "chunk_index" field.
+func (m *AiChunkMutation) ClearChunkIndex() {
+	m.chunk_index = nil
+	m.addchunk_index = nil
+	m.clearedFields[aichunk.FieldChunkIndex] = struct{}{}
+}
+
+// ChunkIndexCleared returns if the "chunk_index" field was cleared in this mutation.
+func (m *AiChunkMutation) ChunkIndexCleared() bool {
+	_, ok := m.clearedFields[aichunk.FieldChunkIndex]
+	return ok
+}
+
+// ResetChunkIndex resets all changes to the "chunk_index" field.
+func (m *AiChunkMutation) ResetChunkIndex() {
+	m.chunk_index = nil
+	m.addchunk_index = nil
+	delete(m.clearedFields, aichunk.FieldChunkIndex)
+}
+
+// ClearDoc clears the "doc" edge to the AiDoc entity.
+func (m *AiChunkMutation) ClearDoc() {
+	m.cleareddoc = true
+	m.clearedFields[aichunk.FieldDocID] = struct{}{}
+}
+
+// DocCleared reports if the "doc" edge to the AiDoc entity was cleared.
+func (m *AiChunkMutation) DocCleared() bool {
+	return m.DocIDCleared() || m.cleareddoc
+}
+
+// DocIDs returns the "doc" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DocID instead. It exists only for internal usage by the builders.
+func (m *AiChunkMutation) DocIDs() (ids []uint32) {
+	if id := m.doc; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDoc resets all changes to the "doc" edge.
+func (m *AiChunkMutation) ResetDoc() {
+	m.doc = nil
+	m.cleareddoc = false
+}
+
+// Where appends a list predicates to the AiChunkMutation builder.
+func (m *AiChunkMutation) Where(ps ...predicate.AiChunk) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AiChunkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AiChunkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AiChunk, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AiChunkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AiChunkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AiChunk).
+func (m *AiChunkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AiChunkMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, aichunk.FieldCreatedAt)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, aichunk.FieldTenantID)
+	}
+	if m.doc != nil {
+		fields = append(fields, aichunk.FieldDocID)
+	}
+	if m.content != nil {
+		fields = append(fields, aichunk.FieldContent)
+	}
+	if m.chunk_index != nil {
+		fields = append(fields, aichunk.FieldChunkIndex)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AiChunkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case aichunk.FieldCreatedAt:
+		return m.CreatedAt()
+	case aichunk.FieldTenantID:
+		return m.TenantID()
+	case aichunk.FieldDocID:
+		return m.DocID()
+	case aichunk.FieldContent:
+		return m.Content()
+	case aichunk.FieldChunkIndex:
+		return m.ChunkIndex()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AiChunkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case aichunk.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case aichunk.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case aichunk.FieldDocID:
+		return m.OldDocID(ctx)
+	case aichunk.FieldContent:
+		return m.OldContent(ctx)
+	case aichunk.FieldChunkIndex:
+		return m.OldChunkIndex(ctx)
+	}
+	return nil, fmt.Errorf("unknown AiChunk field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiChunkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case aichunk.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case aichunk.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case aichunk.FieldDocID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDocID(v)
+		return nil
+	case aichunk.FieldContent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	case aichunk.FieldChunkIndex:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChunkIndex(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiChunk field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AiChunkMutation) AddedFields() []string {
+	var fields []string
+	if m.addtenant_id != nil {
+		fields = append(fields, aichunk.FieldTenantID)
+	}
+	if m.addchunk_index != nil {
+		fields = append(fields, aichunk.FieldChunkIndex)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AiChunkMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case aichunk.FieldTenantID:
+		return m.AddedTenantID()
+	case aichunk.FieldChunkIndex:
+		return m.AddedChunkIndex()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiChunkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case aichunk.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	case aichunk.FieldChunkIndex:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChunkIndex(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiChunk numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AiChunkMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(aichunk.FieldCreatedAt) {
+		fields = append(fields, aichunk.FieldCreatedAt)
+	}
+	if m.FieldCleared(aichunk.FieldTenantID) {
+		fields = append(fields, aichunk.FieldTenantID)
+	}
+	if m.FieldCleared(aichunk.FieldDocID) {
+		fields = append(fields, aichunk.FieldDocID)
+	}
+	if m.FieldCleared(aichunk.FieldContent) {
+		fields = append(fields, aichunk.FieldContent)
+	}
+	if m.FieldCleared(aichunk.FieldChunkIndex) {
+		fields = append(fields, aichunk.FieldChunkIndex)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AiChunkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AiChunkMutation) ClearField(name string) error {
+	switch name {
+	case aichunk.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case aichunk.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case aichunk.FieldDocID:
+		m.ClearDocID()
+		return nil
+	case aichunk.FieldContent:
+		m.ClearContent()
+		return nil
+	case aichunk.FieldChunkIndex:
+		m.ClearChunkIndex()
+		return nil
+	}
+	return fmt.Errorf("unknown AiChunk nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AiChunkMutation) ResetField(name string) error {
+	switch name {
+	case aichunk.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case aichunk.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case aichunk.FieldDocID:
+		m.ResetDocID()
+		return nil
+	case aichunk.FieldContent:
+		m.ResetContent()
+		return nil
+	case aichunk.FieldChunkIndex:
+		m.ResetChunkIndex()
+		return nil
+	}
+	return fmt.Errorf("unknown AiChunk field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AiChunkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.doc != nil {
+		edges = append(edges, aichunk.EdgeDoc)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AiChunkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case aichunk.EdgeDoc:
+		if id := m.doc; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AiChunkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AiChunkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AiChunkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareddoc {
+		edges = append(edges, aichunk.EdgeDoc)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AiChunkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case aichunk.EdgeDoc:
+		return m.cleareddoc
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AiChunkMutation) ClearEdge(name string) error {
+	switch name {
+	case aichunk.EdgeDoc:
+		m.ClearDoc()
+		return nil
+	}
+	return fmt.Errorf("unknown AiChunk unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AiChunkMutation) ResetEdge(name string) error {
+	switch name {
+	case aichunk.EdgeDoc:
+		m.ResetDoc()
+		return nil
+	}
+	return fmt.Errorf("unknown AiChunk edge %s", name)
+}
+
 // AiConversationMutation represents an operation that mutates the AiConversation nodes in the graph.
 type AiConversationMutation struct {
 	config
@@ -2870,6 +3647,3039 @@ func (m *AiConversationMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AiConversation edge %s", name)
+}
+
+// AiDocMutation represents an operation that mutates the AiDoc nodes in the graph.
+type AiDocMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uint32
+	created_at     *time.Time
+	updated_at     *time.Time
+	deleted_at     *time.Time
+	created_by     *uint32
+	addcreated_by  *int32
+	updated_by     *uint32
+	addupdated_by  *int32
+	deleted_by     *uint32
+	adddeleted_by  *int32
+	tenant_id      *uint32
+	addtenant_id   *int32
+	name           *string
+	chunk_count    *uint32
+	addchunk_count *int32
+	status         *string
+	error_message  *string
+	user_id        *uint32
+	adduser_id     *int32
+	clearedFields  map[string]struct{}
+	base           *uint32
+	clearedbase    bool
+	chunks         map[uint32]struct{}
+	removedchunks  map[uint32]struct{}
+	clearedchunks  bool
+	done           bool
+	oldValue       func(context.Context) (*AiDoc, error)
+	predicates     []predicate.AiDoc
+}
+
+var _ ent.Mutation = (*AiDocMutation)(nil)
+
+// aidocOption allows management of the mutation configuration using functional options.
+type aidocOption func(*AiDocMutation)
+
+// newAiDocMutation creates new mutation for the AiDoc entity.
+func newAiDocMutation(c config, op Op, opts ...aidocOption) *AiDocMutation {
+	m := &AiDocMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAiDoc,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAiDocID sets the ID field of the mutation.
+func withAiDocID(id uint32) aidocOption {
+	return func(m *AiDocMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AiDoc
+		)
+		m.oldValue = func(ctx context.Context) (*AiDoc, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AiDoc.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAiDoc sets the old AiDoc of the mutation.
+func withAiDoc(node *AiDoc) aidocOption {
+	return func(m *AiDocMutation) {
+		m.oldValue = func(context.Context) (*AiDoc, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AiDocMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AiDocMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AiDoc entities.
+func (m *AiDocMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AiDocMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AiDocMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AiDoc.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AiDocMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AiDocMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *AiDocMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[aidoc.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *AiDocMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AiDocMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, aidoc.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AiDocMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AiDocMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *AiDocMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[aidoc.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *AiDocMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AiDocMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, aidoc.FieldUpdatedAt)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *AiDocMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *AiDocMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *AiDocMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[aidoc.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *AiDocMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *AiDocMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, aidoc.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *AiDocMutation) SetCreatedBy(u uint32) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *AiDocMutation) CreatedBy() (r uint32, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldCreatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *AiDocMutation) AddCreatedBy(u int32) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *AiDocMutation) AddedCreatedBy() (r int32, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *AiDocMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	m.clearedFields[aidoc.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *AiDocMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *AiDocMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	delete(m.clearedFields, aidoc.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *AiDocMutation) SetUpdatedBy(u uint32) {
+	m.updated_by = &u
+	m.addupdated_by = nil
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *AiDocMutation) UpdatedBy() (r uint32, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldUpdatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// AddUpdatedBy adds u to the "updated_by" field.
+func (m *AiDocMutation) AddUpdatedBy(u int32) {
+	if m.addupdated_by != nil {
+		*m.addupdated_by += u
+	} else {
+		m.addupdated_by = &u
+	}
+}
+
+// AddedUpdatedBy returns the value that was added to the "updated_by" field in this mutation.
+func (m *AiDocMutation) AddedUpdatedBy() (r int32, exists bool) {
+	v := m.addupdated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *AiDocMutation) ClearUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	m.clearedFields[aidoc.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *AiDocMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *AiDocMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	delete(m.clearedFields, aidoc.FieldUpdatedBy)
+}
+
+// SetDeletedBy sets the "deleted_by" field.
+func (m *AiDocMutation) SetDeletedBy(u uint32) {
+	m.deleted_by = &u
+	m.adddeleted_by = nil
+}
+
+// DeletedBy returns the value of the "deleted_by" field in the mutation.
+func (m *AiDocMutation) DeletedBy() (r uint32, exists bool) {
+	v := m.deleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedBy returns the old "deleted_by" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldDeletedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedBy: %w", err)
+	}
+	return oldValue.DeletedBy, nil
+}
+
+// AddDeletedBy adds u to the "deleted_by" field.
+func (m *AiDocMutation) AddDeletedBy(u int32) {
+	if m.adddeleted_by != nil {
+		*m.adddeleted_by += u
+	} else {
+		m.adddeleted_by = &u
+	}
+}
+
+// AddedDeletedBy returns the value that was added to the "deleted_by" field in this mutation.
+func (m *AiDocMutation) AddedDeletedBy() (r int32, exists bool) {
+	v := m.adddeleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeletedBy clears the value of the "deleted_by" field.
+func (m *AiDocMutation) ClearDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	m.clearedFields[aidoc.FieldDeletedBy] = struct{}{}
+}
+
+// DeletedByCleared returns if the "deleted_by" field was cleared in this mutation.
+func (m *AiDocMutation) DeletedByCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldDeletedBy]
+	return ok
+}
+
+// ResetDeletedBy resets all changes to the "deleted_by" field.
+func (m *AiDocMutation) ResetDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	delete(m.clearedFields, aidoc.FieldDeletedBy)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *AiDocMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *AiDocMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *AiDocMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *AiDocMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *AiDocMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[aidoc.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *AiDocMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *AiDocMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, aidoc.FieldTenantID)
+}
+
+// SetBaseID sets the "base_id" field.
+func (m *AiDocMutation) SetBaseID(u uint32) {
+	m.base = &u
+}
+
+// BaseID returns the value of the "base_id" field in the mutation.
+func (m *AiDocMutation) BaseID() (r uint32, exists bool) {
+	v := m.base
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBaseID returns the old "base_id" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldBaseID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBaseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBaseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBaseID: %w", err)
+	}
+	return oldValue.BaseID, nil
+}
+
+// ClearBaseID clears the value of the "base_id" field.
+func (m *AiDocMutation) ClearBaseID() {
+	m.base = nil
+	m.clearedFields[aidoc.FieldBaseID] = struct{}{}
+}
+
+// BaseIDCleared returns if the "base_id" field was cleared in this mutation.
+func (m *AiDocMutation) BaseIDCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldBaseID]
+	return ok
+}
+
+// ResetBaseID resets all changes to the "base_id" field.
+func (m *AiDocMutation) ResetBaseID() {
+	m.base = nil
+	delete(m.clearedFields, aidoc.FieldBaseID)
+}
+
+// SetName sets the "name" field.
+func (m *AiDocMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AiDocMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *AiDocMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[aidoc.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *AiDocMutation) NameCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AiDocMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, aidoc.FieldName)
+}
+
+// SetChunkCount sets the "chunk_count" field.
+func (m *AiDocMutation) SetChunkCount(u uint32) {
+	m.chunk_count = &u
+	m.addchunk_count = nil
+}
+
+// ChunkCount returns the value of the "chunk_count" field in the mutation.
+func (m *AiDocMutation) ChunkCount() (r uint32, exists bool) {
+	v := m.chunk_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChunkCount returns the old "chunk_count" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldChunkCount(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChunkCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChunkCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChunkCount: %w", err)
+	}
+	return oldValue.ChunkCount, nil
+}
+
+// AddChunkCount adds u to the "chunk_count" field.
+func (m *AiDocMutation) AddChunkCount(u int32) {
+	if m.addchunk_count != nil {
+		*m.addchunk_count += u
+	} else {
+		m.addchunk_count = &u
+	}
+}
+
+// AddedChunkCount returns the value that was added to the "chunk_count" field in this mutation.
+func (m *AiDocMutation) AddedChunkCount() (r int32, exists bool) {
+	v := m.addchunk_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearChunkCount clears the value of the "chunk_count" field.
+func (m *AiDocMutation) ClearChunkCount() {
+	m.chunk_count = nil
+	m.addchunk_count = nil
+	m.clearedFields[aidoc.FieldChunkCount] = struct{}{}
+}
+
+// ChunkCountCleared returns if the "chunk_count" field was cleared in this mutation.
+func (m *AiDocMutation) ChunkCountCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldChunkCount]
+	return ok
+}
+
+// ResetChunkCount resets all changes to the "chunk_count" field.
+func (m *AiDocMutation) ResetChunkCount() {
+	m.chunk_count = nil
+	m.addchunk_count = nil
+	delete(m.clearedFields, aidoc.FieldChunkCount)
+}
+
+// SetStatus sets the "status" field.
+func (m *AiDocMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *AiDocMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldStatus(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ClearStatus clears the value of the "status" field.
+func (m *AiDocMutation) ClearStatus() {
+	m.status = nil
+	m.clearedFields[aidoc.FieldStatus] = struct{}{}
+}
+
+// StatusCleared returns if the "status" field was cleared in this mutation.
+func (m *AiDocMutation) StatusCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldStatus]
+	return ok
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *AiDocMutation) ResetStatus() {
+	m.status = nil
+	delete(m.clearedFields, aidoc.FieldStatus)
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (m *AiDocMutation) SetErrorMessage(s string) {
+	m.error_message = &s
+}
+
+// ErrorMessage returns the value of the "error_message" field in the mutation.
+func (m *AiDocMutation) ErrorMessage() (r string, exists bool) {
+	v := m.error_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorMessage returns the old "error_message" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldErrorMessage(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorMessage: %w", err)
+	}
+	return oldValue.ErrorMessage, nil
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (m *AiDocMutation) ClearErrorMessage() {
+	m.error_message = nil
+	m.clearedFields[aidoc.FieldErrorMessage] = struct{}{}
+}
+
+// ErrorMessageCleared returns if the "error_message" field was cleared in this mutation.
+func (m *AiDocMutation) ErrorMessageCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldErrorMessage]
+	return ok
+}
+
+// ResetErrorMessage resets all changes to the "error_message" field.
+func (m *AiDocMutation) ResetErrorMessage() {
+	m.error_message = nil
+	delete(m.clearedFields, aidoc.FieldErrorMessage)
+}
+
+// SetUserID sets the "user_id" field.
+func (m *AiDocMutation) SetUserID(u uint32) {
+	m.user_id = &u
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *AiDocMutation) UserID() (r uint32, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the AiDoc entity.
+// If the AiDoc object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiDocMutation) OldUserID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds u to the "user_id" field.
+func (m *AiDocMutation) AddUserID(u int32) {
+	if m.adduser_id != nil {
+		*m.adduser_id += u
+	} else {
+		m.adduser_id = &u
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *AiDocMutation) AddedUserID() (r int32, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (m *AiDocMutation) ClearUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+	m.clearedFields[aidoc.FieldUserID] = struct{}{}
+}
+
+// UserIDCleared returns if the "user_id" field was cleared in this mutation.
+func (m *AiDocMutation) UserIDCleared() bool {
+	_, ok := m.clearedFields[aidoc.FieldUserID]
+	return ok
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *AiDocMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+	delete(m.clearedFields, aidoc.FieldUserID)
+}
+
+// ClearBase clears the "base" edge to the AiKnowledgeBase entity.
+func (m *AiDocMutation) ClearBase() {
+	m.clearedbase = true
+	m.clearedFields[aidoc.FieldBaseID] = struct{}{}
+}
+
+// BaseCleared reports if the "base" edge to the AiKnowledgeBase entity was cleared.
+func (m *AiDocMutation) BaseCleared() bool {
+	return m.BaseIDCleared() || m.clearedbase
+}
+
+// BaseIDs returns the "base" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BaseID instead. It exists only for internal usage by the builders.
+func (m *AiDocMutation) BaseIDs() (ids []uint32) {
+	if id := m.base; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBase resets all changes to the "base" edge.
+func (m *AiDocMutation) ResetBase() {
+	m.base = nil
+	m.clearedbase = false
+}
+
+// AddChunkIDs adds the "chunks" edge to the AiChunk entity by ids.
+func (m *AiDocMutation) AddChunkIDs(ids ...uint32) {
+	if m.chunks == nil {
+		m.chunks = make(map[uint32]struct{})
+	}
+	for i := range ids {
+		m.chunks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChunks clears the "chunks" edge to the AiChunk entity.
+func (m *AiDocMutation) ClearChunks() {
+	m.clearedchunks = true
+}
+
+// ChunksCleared reports if the "chunks" edge to the AiChunk entity was cleared.
+func (m *AiDocMutation) ChunksCleared() bool {
+	return m.clearedchunks
+}
+
+// RemoveChunkIDs removes the "chunks" edge to the AiChunk entity by IDs.
+func (m *AiDocMutation) RemoveChunkIDs(ids ...uint32) {
+	if m.removedchunks == nil {
+		m.removedchunks = make(map[uint32]struct{})
+	}
+	for i := range ids {
+		delete(m.chunks, ids[i])
+		m.removedchunks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChunks returns the removed IDs of the "chunks" edge to the AiChunk entity.
+func (m *AiDocMutation) RemovedChunksIDs() (ids []uint32) {
+	for id := range m.removedchunks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChunksIDs returns the "chunks" edge IDs in the mutation.
+func (m *AiDocMutation) ChunksIDs() (ids []uint32) {
+	for id := range m.chunks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChunks resets all changes to the "chunks" edge.
+func (m *AiDocMutation) ResetChunks() {
+	m.chunks = nil
+	m.clearedchunks = false
+	m.removedchunks = nil
+}
+
+// Where appends a list predicates to the AiDocMutation builder.
+func (m *AiDocMutation) Where(ps ...predicate.AiDoc) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AiDocMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AiDocMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AiDoc, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AiDocMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AiDocMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AiDoc).
+func (m *AiDocMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AiDocMutation) Fields() []string {
+	fields := make([]string, 0, 13)
+	if m.created_at != nil {
+		fields = append(fields, aidoc.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, aidoc.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, aidoc.FieldDeletedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, aidoc.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, aidoc.FieldUpdatedBy)
+	}
+	if m.deleted_by != nil {
+		fields = append(fields, aidoc.FieldDeletedBy)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, aidoc.FieldTenantID)
+	}
+	if m.base != nil {
+		fields = append(fields, aidoc.FieldBaseID)
+	}
+	if m.name != nil {
+		fields = append(fields, aidoc.FieldName)
+	}
+	if m.chunk_count != nil {
+		fields = append(fields, aidoc.FieldChunkCount)
+	}
+	if m.status != nil {
+		fields = append(fields, aidoc.FieldStatus)
+	}
+	if m.error_message != nil {
+		fields = append(fields, aidoc.FieldErrorMessage)
+	}
+	if m.user_id != nil {
+		fields = append(fields, aidoc.FieldUserID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AiDocMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case aidoc.FieldCreatedAt:
+		return m.CreatedAt()
+	case aidoc.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case aidoc.FieldDeletedAt:
+		return m.DeletedAt()
+	case aidoc.FieldCreatedBy:
+		return m.CreatedBy()
+	case aidoc.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case aidoc.FieldDeletedBy:
+		return m.DeletedBy()
+	case aidoc.FieldTenantID:
+		return m.TenantID()
+	case aidoc.FieldBaseID:
+		return m.BaseID()
+	case aidoc.FieldName:
+		return m.Name()
+	case aidoc.FieldChunkCount:
+		return m.ChunkCount()
+	case aidoc.FieldStatus:
+		return m.Status()
+	case aidoc.FieldErrorMessage:
+		return m.ErrorMessage()
+	case aidoc.FieldUserID:
+		return m.UserID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AiDocMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case aidoc.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case aidoc.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case aidoc.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case aidoc.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case aidoc.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case aidoc.FieldDeletedBy:
+		return m.OldDeletedBy(ctx)
+	case aidoc.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case aidoc.FieldBaseID:
+		return m.OldBaseID(ctx)
+	case aidoc.FieldName:
+		return m.OldName(ctx)
+	case aidoc.FieldChunkCount:
+		return m.OldChunkCount(ctx)
+	case aidoc.FieldStatus:
+		return m.OldStatus(ctx)
+	case aidoc.FieldErrorMessage:
+		return m.OldErrorMessage(ctx)
+	case aidoc.FieldUserID:
+		return m.OldUserID(ctx)
+	}
+	return nil, fmt.Errorf("unknown AiDoc field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiDocMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case aidoc.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case aidoc.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case aidoc.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case aidoc.FieldCreatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case aidoc.FieldUpdatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case aidoc.FieldDeletedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedBy(v)
+		return nil
+	case aidoc.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case aidoc.FieldBaseID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBaseID(v)
+		return nil
+	case aidoc.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case aidoc.FieldChunkCount:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChunkCount(v)
+		return nil
+	case aidoc.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case aidoc.FieldErrorMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorMessage(v)
+		return nil
+	case aidoc.FieldUserID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiDoc field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AiDocMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, aidoc.FieldCreatedBy)
+	}
+	if m.addupdated_by != nil {
+		fields = append(fields, aidoc.FieldUpdatedBy)
+	}
+	if m.adddeleted_by != nil {
+		fields = append(fields, aidoc.FieldDeletedBy)
+	}
+	if m.addtenant_id != nil {
+		fields = append(fields, aidoc.FieldTenantID)
+	}
+	if m.addchunk_count != nil {
+		fields = append(fields, aidoc.FieldChunkCount)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, aidoc.FieldUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AiDocMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case aidoc.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case aidoc.FieldUpdatedBy:
+		return m.AddedUpdatedBy()
+	case aidoc.FieldDeletedBy:
+		return m.AddedDeletedBy()
+	case aidoc.FieldTenantID:
+		return m.AddedTenantID()
+	case aidoc.FieldChunkCount:
+		return m.AddedChunkCount()
+	case aidoc.FieldUserID:
+		return m.AddedUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiDocMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case aidoc.FieldCreatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case aidoc.FieldUpdatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdatedBy(v)
+		return nil
+	case aidoc.FieldDeletedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeletedBy(v)
+		return nil
+	case aidoc.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	case aidoc.FieldChunkCount:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChunkCount(v)
+		return nil
+	case aidoc.FieldUserID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiDoc numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AiDocMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(aidoc.FieldCreatedAt) {
+		fields = append(fields, aidoc.FieldCreatedAt)
+	}
+	if m.FieldCleared(aidoc.FieldUpdatedAt) {
+		fields = append(fields, aidoc.FieldUpdatedAt)
+	}
+	if m.FieldCleared(aidoc.FieldDeletedAt) {
+		fields = append(fields, aidoc.FieldDeletedAt)
+	}
+	if m.FieldCleared(aidoc.FieldCreatedBy) {
+		fields = append(fields, aidoc.FieldCreatedBy)
+	}
+	if m.FieldCleared(aidoc.FieldUpdatedBy) {
+		fields = append(fields, aidoc.FieldUpdatedBy)
+	}
+	if m.FieldCleared(aidoc.FieldDeletedBy) {
+		fields = append(fields, aidoc.FieldDeletedBy)
+	}
+	if m.FieldCleared(aidoc.FieldTenantID) {
+		fields = append(fields, aidoc.FieldTenantID)
+	}
+	if m.FieldCleared(aidoc.FieldBaseID) {
+		fields = append(fields, aidoc.FieldBaseID)
+	}
+	if m.FieldCleared(aidoc.FieldName) {
+		fields = append(fields, aidoc.FieldName)
+	}
+	if m.FieldCleared(aidoc.FieldChunkCount) {
+		fields = append(fields, aidoc.FieldChunkCount)
+	}
+	if m.FieldCleared(aidoc.FieldStatus) {
+		fields = append(fields, aidoc.FieldStatus)
+	}
+	if m.FieldCleared(aidoc.FieldErrorMessage) {
+		fields = append(fields, aidoc.FieldErrorMessage)
+	}
+	if m.FieldCleared(aidoc.FieldUserID) {
+		fields = append(fields, aidoc.FieldUserID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AiDocMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AiDocMutation) ClearField(name string) error {
+	switch name {
+	case aidoc.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case aidoc.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case aidoc.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case aidoc.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case aidoc.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case aidoc.FieldDeletedBy:
+		m.ClearDeletedBy()
+		return nil
+	case aidoc.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case aidoc.FieldBaseID:
+		m.ClearBaseID()
+		return nil
+	case aidoc.FieldName:
+		m.ClearName()
+		return nil
+	case aidoc.FieldChunkCount:
+		m.ClearChunkCount()
+		return nil
+	case aidoc.FieldStatus:
+		m.ClearStatus()
+		return nil
+	case aidoc.FieldErrorMessage:
+		m.ClearErrorMessage()
+		return nil
+	case aidoc.FieldUserID:
+		m.ClearUserID()
+		return nil
+	}
+	return fmt.Errorf("unknown AiDoc nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AiDocMutation) ResetField(name string) error {
+	switch name {
+	case aidoc.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case aidoc.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case aidoc.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case aidoc.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case aidoc.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case aidoc.FieldDeletedBy:
+		m.ResetDeletedBy()
+		return nil
+	case aidoc.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case aidoc.FieldBaseID:
+		m.ResetBaseID()
+		return nil
+	case aidoc.FieldName:
+		m.ResetName()
+		return nil
+	case aidoc.FieldChunkCount:
+		m.ResetChunkCount()
+		return nil
+	case aidoc.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case aidoc.FieldErrorMessage:
+		m.ResetErrorMessage()
+		return nil
+	case aidoc.FieldUserID:
+		m.ResetUserID()
+		return nil
+	}
+	return fmt.Errorf("unknown AiDoc field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AiDocMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.base != nil {
+		edges = append(edges, aidoc.EdgeBase)
+	}
+	if m.chunks != nil {
+		edges = append(edges, aidoc.EdgeChunks)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AiDocMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case aidoc.EdgeBase:
+		if id := m.base; id != nil {
+			return []ent.Value{*id}
+		}
+	case aidoc.EdgeChunks:
+		ids := make([]ent.Value, 0, len(m.chunks))
+		for id := range m.chunks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AiDocMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedchunks != nil {
+		edges = append(edges, aidoc.EdgeChunks)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AiDocMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case aidoc.EdgeChunks:
+		ids := make([]ent.Value, 0, len(m.removedchunks))
+		for id := range m.removedchunks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AiDocMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedbase {
+		edges = append(edges, aidoc.EdgeBase)
+	}
+	if m.clearedchunks {
+		edges = append(edges, aidoc.EdgeChunks)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AiDocMutation) EdgeCleared(name string) bool {
+	switch name {
+	case aidoc.EdgeBase:
+		return m.clearedbase
+	case aidoc.EdgeChunks:
+		return m.clearedchunks
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AiDocMutation) ClearEdge(name string) error {
+	switch name {
+	case aidoc.EdgeBase:
+		m.ClearBase()
+		return nil
+	}
+	return fmt.Errorf("unknown AiDoc unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AiDocMutation) ResetEdge(name string) error {
+	switch name {
+	case aidoc.EdgeBase:
+		m.ResetBase()
+		return nil
+	case aidoc.EdgeChunks:
+		m.ResetChunks()
+		return nil
+	}
+	return fmt.Errorf("unknown AiDoc edge %s", name)
+}
+
+// AiKnowledgeBaseMutation represents an operation that mutates the AiKnowledgeBase nodes in the graph.
+type AiKnowledgeBaseMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uint32
+	created_at      *time.Time
+	updated_at      *time.Time
+	deleted_at      *time.Time
+	created_by      *uint32
+	addcreated_by   *int32
+	updated_by      *uint32
+	addupdated_by   *int32
+	deleted_by      *uint32
+	adddeleted_by   *int32
+	tenant_id       *uint32
+	addtenant_id    *int32
+	name            *string
+	description     *string
+	provider_id     *uint32
+	addprovider_id  *int32
+	embedding_model *string
+	user_id         *uint32
+	adduser_id      *int32
+	clearedFields   map[string]struct{}
+	docs            map[uint32]struct{}
+	removeddocs     map[uint32]struct{}
+	cleareddocs     bool
+	done            bool
+	oldValue        func(context.Context) (*AiKnowledgeBase, error)
+	predicates      []predicate.AiKnowledgeBase
+}
+
+var _ ent.Mutation = (*AiKnowledgeBaseMutation)(nil)
+
+// aiknowledgebaseOption allows management of the mutation configuration using functional options.
+type aiknowledgebaseOption func(*AiKnowledgeBaseMutation)
+
+// newAiKnowledgeBaseMutation creates new mutation for the AiKnowledgeBase entity.
+func newAiKnowledgeBaseMutation(c config, op Op, opts ...aiknowledgebaseOption) *AiKnowledgeBaseMutation {
+	m := &AiKnowledgeBaseMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAiKnowledgeBase,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAiKnowledgeBaseID sets the ID field of the mutation.
+func withAiKnowledgeBaseID(id uint32) aiknowledgebaseOption {
+	return func(m *AiKnowledgeBaseMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AiKnowledgeBase
+		)
+		m.oldValue = func(ctx context.Context) (*AiKnowledgeBase, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AiKnowledgeBase.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAiKnowledgeBase sets the old AiKnowledgeBase of the mutation.
+func withAiKnowledgeBase(node *AiKnowledgeBase) aiknowledgebaseOption {
+	return func(m *AiKnowledgeBaseMutation) {
+		m.oldValue = func(context.Context) (*AiKnowledgeBase, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AiKnowledgeBaseMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AiKnowledgeBaseMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AiKnowledgeBase entities.
+func (m *AiKnowledgeBaseMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AiKnowledgeBaseMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AiKnowledgeBaseMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AiKnowledgeBase.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AiKnowledgeBaseMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AiKnowledgeBaseMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *AiKnowledgeBaseMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[aiknowledgebase.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AiKnowledgeBaseMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, aiknowledgebase.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AiKnowledgeBaseMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AiKnowledgeBaseMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *AiKnowledgeBaseMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[aiknowledgebase.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AiKnowledgeBaseMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, aiknowledgebase.FieldUpdatedAt)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *AiKnowledgeBaseMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *AiKnowledgeBaseMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *AiKnowledgeBaseMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[aiknowledgebase.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *AiKnowledgeBaseMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, aiknowledgebase.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *AiKnowledgeBaseMutation) SetCreatedBy(u uint32) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *AiKnowledgeBaseMutation) CreatedBy() (r uint32, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldCreatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *AiKnowledgeBaseMutation) AddCreatedBy(u int32) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedCreatedBy() (r int32, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *AiKnowledgeBaseMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	m.clearedFields[aiknowledgebase.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *AiKnowledgeBaseMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	delete(m.clearedFields, aiknowledgebase.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *AiKnowledgeBaseMutation) SetUpdatedBy(u uint32) {
+	m.updated_by = &u
+	m.addupdated_by = nil
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *AiKnowledgeBaseMutation) UpdatedBy() (r uint32, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldUpdatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// AddUpdatedBy adds u to the "updated_by" field.
+func (m *AiKnowledgeBaseMutation) AddUpdatedBy(u int32) {
+	if m.addupdated_by != nil {
+		*m.addupdated_by += u
+	} else {
+		m.addupdated_by = &u
+	}
+}
+
+// AddedUpdatedBy returns the value that was added to the "updated_by" field in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedUpdatedBy() (r int32, exists bool) {
+	v := m.addupdated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *AiKnowledgeBaseMutation) ClearUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	m.clearedFields[aiknowledgebase.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *AiKnowledgeBaseMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	delete(m.clearedFields, aiknowledgebase.FieldUpdatedBy)
+}
+
+// SetDeletedBy sets the "deleted_by" field.
+func (m *AiKnowledgeBaseMutation) SetDeletedBy(u uint32) {
+	m.deleted_by = &u
+	m.adddeleted_by = nil
+}
+
+// DeletedBy returns the value of the "deleted_by" field in the mutation.
+func (m *AiKnowledgeBaseMutation) DeletedBy() (r uint32, exists bool) {
+	v := m.deleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedBy returns the old "deleted_by" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldDeletedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedBy: %w", err)
+	}
+	return oldValue.DeletedBy, nil
+}
+
+// AddDeletedBy adds u to the "deleted_by" field.
+func (m *AiKnowledgeBaseMutation) AddDeletedBy(u int32) {
+	if m.adddeleted_by != nil {
+		*m.adddeleted_by += u
+	} else {
+		m.adddeleted_by = &u
+	}
+}
+
+// AddedDeletedBy returns the value that was added to the "deleted_by" field in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedDeletedBy() (r int32, exists bool) {
+	v := m.adddeleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeletedBy clears the value of the "deleted_by" field.
+func (m *AiKnowledgeBaseMutation) ClearDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	m.clearedFields[aiknowledgebase.FieldDeletedBy] = struct{}{}
+}
+
+// DeletedByCleared returns if the "deleted_by" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) DeletedByCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldDeletedBy]
+	return ok
+}
+
+// ResetDeletedBy resets all changes to the "deleted_by" field.
+func (m *AiKnowledgeBaseMutation) ResetDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	delete(m.clearedFields, aiknowledgebase.FieldDeletedBy)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *AiKnowledgeBaseMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *AiKnowledgeBaseMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *AiKnowledgeBaseMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *AiKnowledgeBaseMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[aiknowledgebase.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *AiKnowledgeBaseMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, aiknowledgebase.FieldTenantID)
+}
+
+// SetName sets the "name" field.
+func (m *AiKnowledgeBaseMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AiKnowledgeBaseMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *AiKnowledgeBaseMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[aiknowledgebase.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) NameCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AiKnowledgeBaseMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, aiknowledgebase.FieldName)
+}
+
+// SetDescription sets the "description" field.
+func (m *AiKnowledgeBaseMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *AiKnowledgeBaseMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldDescription(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *AiKnowledgeBaseMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[aiknowledgebase.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *AiKnowledgeBaseMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, aiknowledgebase.FieldDescription)
+}
+
+// SetProviderID sets the "provider_id" field.
+func (m *AiKnowledgeBaseMutation) SetProviderID(u uint32) {
+	m.provider_id = &u
+	m.addprovider_id = nil
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *AiKnowledgeBaseMutation) ProviderID() (r uint32, exists bool) {
+	v := m.provider_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldProviderID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// AddProviderID adds u to the "provider_id" field.
+func (m *AiKnowledgeBaseMutation) AddProviderID(u int32) {
+	if m.addprovider_id != nil {
+		*m.addprovider_id += u
+	} else {
+		m.addprovider_id = &u
+	}
+}
+
+// AddedProviderID returns the value that was added to the "provider_id" field in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedProviderID() (r int32, exists bool) {
+	v := m.addprovider_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (m *AiKnowledgeBaseMutation) ClearProviderID() {
+	m.provider_id = nil
+	m.addprovider_id = nil
+	m.clearedFields[aiknowledgebase.FieldProviderID] = struct{}{}
+}
+
+// ProviderIDCleared returns if the "provider_id" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) ProviderIDCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldProviderID]
+	return ok
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *AiKnowledgeBaseMutation) ResetProviderID() {
+	m.provider_id = nil
+	m.addprovider_id = nil
+	delete(m.clearedFields, aiknowledgebase.FieldProviderID)
+}
+
+// SetEmbeddingModel sets the "embedding_model" field.
+func (m *AiKnowledgeBaseMutation) SetEmbeddingModel(s string) {
+	m.embedding_model = &s
+}
+
+// EmbeddingModel returns the value of the "embedding_model" field in the mutation.
+func (m *AiKnowledgeBaseMutation) EmbeddingModel() (r string, exists bool) {
+	v := m.embedding_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmbeddingModel returns the old "embedding_model" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldEmbeddingModel(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmbeddingModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmbeddingModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmbeddingModel: %w", err)
+	}
+	return oldValue.EmbeddingModel, nil
+}
+
+// ClearEmbeddingModel clears the value of the "embedding_model" field.
+func (m *AiKnowledgeBaseMutation) ClearEmbeddingModel() {
+	m.embedding_model = nil
+	m.clearedFields[aiknowledgebase.FieldEmbeddingModel] = struct{}{}
+}
+
+// EmbeddingModelCleared returns if the "embedding_model" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) EmbeddingModelCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldEmbeddingModel]
+	return ok
+}
+
+// ResetEmbeddingModel resets all changes to the "embedding_model" field.
+func (m *AiKnowledgeBaseMutation) ResetEmbeddingModel() {
+	m.embedding_model = nil
+	delete(m.clearedFields, aiknowledgebase.FieldEmbeddingModel)
+}
+
+// SetUserID sets the "user_id" field.
+func (m *AiKnowledgeBaseMutation) SetUserID(u uint32) {
+	m.user_id = &u
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *AiKnowledgeBaseMutation) UserID() (r uint32, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the AiKnowledgeBase entity.
+// If the AiKnowledgeBase object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiKnowledgeBaseMutation) OldUserID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds u to the "user_id" field.
+func (m *AiKnowledgeBaseMutation) AddUserID(u int32) {
+	if m.adduser_id != nil {
+		*m.adduser_id += u
+	} else {
+		m.adduser_id = &u
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedUserID() (r int32, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (m *AiKnowledgeBaseMutation) ClearUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+	m.clearedFields[aiknowledgebase.FieldUserID] = struct{}{}
+}
+
+// UserIDCleared returns if the "user_id" field was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) UserIDCleared() bool {
+	_, ok := m.clearedFields[aiknowledgebase.FieldUserID]
+	return ok
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *AiKnowledgeBaseMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+	delete(m.clearedFields, aiknowledgebase.FieldUserID)
+}
+
+// AddDocIDs adds the "docs" edge to the AiDoc entity by ids.
+func (m *AiKnowledgeBaseMutation) AddDocIDs(ids ...uint32) {
+	if m.docs == nil {
+		m.docs = make(map[uint32]struct{})
+	}
+	for i := range ids {
+		m.docs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDocs clears the "docs" edge to the AiDoc entity.
+func (m *AiKnowledgeBaseMutation) ClearDocs() {
+	m.cleareddocs = true
+}
+
+// DocsCleared reports if the "docs" edge to the AiDoc entity was cleared.
+func (m *AiKnowledgeBaseMutation) DocsCleared() bool {
+	return m.cleareddocs
+}
+
+// RemoveDocIDs removes the "docs" edge to the AiDoc entity by IDs.
+func (m *AiKnowledgeBaseMutation) RemoveDocIDs(ids ...uint32) {
+	if m.removeddocs == nil {
+		m.removeddocs = make(map[uint32]struct{})
+	}
+	for i := range ids {
+		delete(m.docs, ids[i])
+		m.removeddocs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDocs returns the removed IDs of the "docs" edge to the AiDoc entity.
+func (m *AiKnowledgeBaseMutation) RemovedDocsIDs() (ids []uint32) {
+	for id := range m.removeddocs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DocsIDs returns the "docs" edge IDs in the mutation.
+func (m *AiKnowledgeBaseMutation) DocsIDs() (ids []uint32) {
+	for id := range m.docs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDocs resets all changes to the "docs" edge.
+func (m *AiKnowledgeBaseMutation) ResetDocs() {
+	m.docs = nil
+	m.cleareddocs = false
+	m.removeddocs = nil
+}
+
+// Where appends a list predicates to the AiKnowledgeBaseMutation builder.
+func (m *AiKnowledgeBaseMutation) Where(ps ...predicate.AiKnowledgeBase) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AiKnowledgeBaseMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AiKnowledgeBaseMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AiKnowledgeBase, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AiKnowledgeBaseMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AiKnowledgeBaseMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AiKnowledgeBase).
+func (m *AiKnowledgeBaseMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AiKnowledgeBaseMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.created_at != nil {
+		fields = append(fields, aiknowledgebase.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, aiknowledgebase.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, aiknowledgebase.FieldDeletedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, aiknowledgebase.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, aiknowledgebase.FieldUpdatedBy)
+	}
+	if m.deleted_by != nil {
+		fields = append(fields, aiknowledgebase.FieldDeletedBy)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, aiknowledgebase.FieldTenantID)
+	}
+	if m.name != nil {
+		fields = append(fields, aiknowledgebase.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, aiknowledgebase.FieldDescription)
+	}
+	if m.provider_id != nil {
+		fields = append(fields, aiknowledgebase.FieldProviderID)
+	}
+	if m.embedding_model != nil {
+		fields = append(fields, aiknowledgebase.FieldEmbeddingModel)
+	}
+	if m.user_id != nil {
+		fields = append(fields, aiknowledgebase.FieldUserID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AiKnowledgeBaseMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case aiknowledgebase.FieldCreatedAt:
+		return m.CreatedAt()
+	case aiknowledgebase.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case aiknowledgebase.FieldDeletedAt:
+		return m.DeletedAt()
+	case aiknowledgebase.FieldCreatedBy:
+		return m.CreatedBy()
+	case aiknowledgebase.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case aiknowledgebase.FieldDeletedBy:
+		return m.DeletedBy()
+	case aiknowledgebase.FieldTenantID:
+		return m.TenantID()
+	case aiknowledgebase.FieldName:
+		return m.Name()
+	case aiknowledgebase.FieldDescription:
+		return m.Description()
+	case aiknowledgebase.FieldProviderID:
+		return m.ProviderID()
+	case aiknowledgebase.FieldEmbeddingModel:
+		return m.EmbeddingModel()
+	case aiknowledgebase.FieldUserID:
+		return m.UserID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AiKnowledgeBaseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case aiknowledgebase.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case aiknowledgebase.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case aiknowledgebase.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case aiknowledgebase.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case aiknowledgebase.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case aiknowledgebase.FieldDeletedBy:
+		return m.OldDeletedBy(ctx)
+	case aiknowledgebase.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case aiknowledgebase.FieldName:
+		return m.OldName(ctx)
+	case aiknowledgebase.FieldDescription:
+		return m.OldDescription(ctx)
+	case aiknowledgebase.FieldProviderID:
+		return m.OldProviderID(ctx)
+	case aiknowledgebase.FieldEmbeddingModel:
+		return m.OldEmbeddingModel(ctx)
+	case aiknowledgebase.FieldUserID:
+		return m.OldUserID(ctx)
+	}
+	return nil, fmt.Errorf("unknown AiKnowledgeBase field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiKnowledgeBaseMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case aiknowledgebase.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case aiknowledgebase.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case aiknowledgebase.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case aiknowledgebase.FieldCreatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case aiknowledgebase.FieldUpdatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case aiknowledgebase.FieldDeletedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedBy(v)
+		return nil
+	case aiknowledgebase.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case aiknowledgebase.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case aiknowledgebase.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case aiknowledgebase.FieldProviderID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
+		return nil
+	case aiknowledgebase.FieldEmbeddingModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmbeddingModel(v)
+		return nil
+	case aiknowledgebase.FieldUserID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiKnowledgeBase field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AiKnowledgeBaseMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, aiknowledgebase.FieldCreatedBy)
+	}
+	if m.addupdated_by != nil {
+		fields = append(fields, aiknowledgebase.FieldUpdatedBy)
+	}
+	if m.adddeleted_by != nil {
+		fields = append(fields, aiknowledgebase.FieldDeletedBy)
+	}
+	if m.addtenant_id != nil {
+		fields = append(fields, aiknowledgebase.FieldTenantID)
+	}
+	if m.addprovider_id != nil {
+		fields = append(fields, aiknowledgebase.FieldProviderID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, aiknowledgebase.FieldUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AiKnowledgeBaseMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case aiknowledgebase.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case aiknowledgebase.FieldUpdatedBy:
+		return m.AddedUpdatedBy()
+	case aiknowledgebase.FieldDeletedBy:
+		return m.AddedDeletedBy()
+	case aiknowledgebase.FieldTenantID:
+		return m.AddedTenantID()
+	case aiknowledgebase.FieldProviderID:
+		return m.AddedProviderID()
+	case aiknowledgebase.FieldUserID:
+		return m.AddedUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiKnowledgeBaseMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case aiknowledgebase.FieldCreatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case aiknowledgebase.FieldUpdatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdatedBy(v)
+		return nil
+	case aiknowledgebase.FieldDeletedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeletedBy(v)
+		return nil
+	case aiknowledgebase.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	case aiknowledgebase.FieldProviderID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProviderID(v)
+		return nil
+	case aiknowledgebase.FieldUserID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiKnowledgeBase numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AiKnowledgeBaseMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(aiknowledgebase.FieldCreatedAt) {
+		fields = append(fields, aiknowledgebase.FieldCreatedAt)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldUpdatedAt) {
+		fields = append(fields, aiknowledgebase.FieldUpdatedAt)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldDeletedAt) {
+		fields = append(fields, aiknowledgebase.FieldDeletedAt)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldCreatedBy) {
+		fields = append(fields, aiknowledgebase.FieldCreatedBy)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldUpdatedBy) {
+		fields = append(fields, aiknowledgebase.FieldUpdatedBy)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldDeletedBy) {
+		fields = append(fields, aiknowledgebase.FieldDeletedBy)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldTenantID) {
+		fields = append(fields, aiknowledgebase.FieldTenantID)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldName) {
+		fields = append(fields, aiknowledgebase.FieldName)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldDescription) {
+		fields = append(fields, aiknowledgebase.FieldDescription)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldProviderID) {
+		fields = append(fields, aiknowledgebase.FieldProviderID)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldEmbeddingModel) {
+		fields = append(fields, aiknowledgebase.FieldEmbeddingModel)
+	}
+	if m.FieldCleared(aiknowledgebase.FieldUserID) {
+		fields = append(fields, aiknowledgebase.FieldUserID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AiKnowledgeBaseMutation) ClearField(name string) error {
+	switch name {
+	case aiknowledgebase.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case aiknowledgebase.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case aiknowledgebase.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case aiknowledgebase.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case aiknowledgebase.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case aiknowledgebase.FieldDeletedBy:
+		m.ClearDeletedBy()
+		return nil
+	case aiknowledgebase.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case aiknowledgebase.FieldName:
+		m.ClearName()
+		return nil
+	case aiknowledgebase.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case aiknowledgebase.FieldProviderID:
+		m.ClearProviderID()
+		return nil
+	case aiknowledgebase.FieldEmbeddingModel:
+		m.ClearEmbeddingModel()
+		return nil
+	case aiknowledgebase.FieldUserID:
+		m.ClearUserID()
+		return nil
+	}
+	return fmt.Errorf("unknown AiKnowledgeBase nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AiKnowledgeBaseMutation) ResetField(name string) error {
+	switch name {
+	case aiknowledgebase.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case aiknowledgebase.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case aiknowledgebase.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case aiknowledgebase.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case aiknowledgebase.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case aiknowledgebase.FieldDeletedBy:
+		m.ResetDeletedBy()
+		return nil
+	case aiknowledgebase.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case aiknowledgebase.FieldName:
+		m.ResetName()
+		return nil
+	case aiknowledgebase.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case aiknowledgebase.FieldProviderID:
+		m.ResetProviderID()
+		return nil
+	case aiknowledgebase.FieldEmbeddingModel:
+		m.ResetEmbeddingModel()
+		return nil
+	case aiknowledgebase.FieldUserID:
+		m.ResetUserID()
+		return nil
+	}
+	return fmt.Errorf("unknown AiKnowledgeBase field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.docs != nil {
+		edges = append(edges, aiknowledgebase.EdgeDocs)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AiKnowledgeBaseMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case aiknowledgebase.EdgeDocs:
+		ids := make([]ent.Value, 0, len(m.docs))
+		for id := range m.docs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AiKnowledgeBaseMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removeddocs != nil {
+		edges = append(edges, aiknowledgebase.EdgeDocs)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AiKnowledgeBaseMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case aiknowledgebase.EdgeDocs:
+		ids := make([]ent.Value, 0, len(m.removeddocs))
+		for id := range m.removeddocs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareddocs {
+		edges = append(edges, aiknowledgebase.EdgeDocs)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AiKnowledgeBaseMutation) EdgeCleared(name string) bool {
+	switch name {
+	case aiknowledgebase.EdgeDocs:
+		return m.cleareddocs
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AiKnowledgeBaseMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AiKnowledgeBase unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AiKnowledgeBaseMutation) ResetEdge(name string) error {
+	switch name {
+	case aiknowledgebase.EdgeDocs:
+		m.ResetDocs()
+		return nil
+	}
+	return fmt.Errorf("unknown AiKnowledgeBase edge %s", name)
 }
 
 // AiMessageMutation represents an operation that mutates the AiMessage nodes in the graph.

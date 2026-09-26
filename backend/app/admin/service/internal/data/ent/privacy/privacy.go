@@ -135,6 +135,30 @@ func (f AccessKeyMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutat
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AccessKeyMutation", m)
 }
 
+// The AiChunkQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiChunkQueryRuleFunc func(context.Context, *ent.AiChunkQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiChunkQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiChunkQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiChunkQuery", q)
+}
+
+// The AiChunkMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiChunkMutationRuleFunc func(context.Context, *ent.AiChunkMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiChunkMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiChunkMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiChunkMutation", m)
+}
+
 // The AiConversationQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type AiConversationQueryRuleFunc func(context.Context, *ent.AiConversationQuery) error
@@ -157,6 +181,54 @@ func (f AiConversationMutationRuleFunc) EvalMutation(ctx context.Context, m ent.
 		return f(ctx, m)
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiConversationMutation", m)
+}
+
+// The AiDocQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiDocQueryRuleFunc func(context.Context, *ent.AiDocQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiDocQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiDocQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiDocQuery", q)
+}
+
+// The AiDocMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiDocMutationRuleFunc func(context.Context, *ent.AiDocMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiDocMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiDocMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiDocMutation", m)
+}
+
+// The AiKnowledgeBaseQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiKnowledgeBaseQueryRuleFunc func(context.Context, *ent.AiKnowledgeBaseQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiKnowledgeBaseQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiKnowledgeBaseQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiKnowledgeBaseQuery", q)
+}
+
+// The AiKnowledgeBaseMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiKnowledgeBaseMutationRuleFunc func(context.Context, *ent.AiKnowledgeBaseMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiKnowledgeBaseMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiKnowledgeBaseMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiKnowledgeBaseMutation", m)
 }
 
 // The AiMessageQueryRuleFunc type is an adapter to allow the use of ordinary
@@ -1468,7 +1540,13 @@ func queryFilter(q ent.Query) (Filter, error) {
 	switch q := q.(type) {
 	case *ent.AccessKeyQuery:
 		return q.Filter(), nil
+	case *ent.AiChunkQuery:
+		return q.Filter(), nil
 	case *ent.AiConversationQuery:
+		return q.Filter(), nil
+	case *ent.AiDocQuery:
+		return q.Filter(), nil
+	case *ent.AiKnowledgeBaseQuery:
 		return q.Filter(), nil
 	case *ent.AiMessageQuery:
 		return q.Filter(), nil
@@ -1585,7 +1663,13 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	switch m := m.(type) {
 	case *ent.AccessKeyMutation:
 		return m.Filter(), nil
+	case *ent.AiChunkMutation:
+		return m.Filter(), nil
 	case *ent.AiConversationMutation:
+		return m.Filter(), nil
+	case *ent.AiDocMutation:
+		return m.Filter(), nil
+	case *ent.AiKnowledgeBaseMutation:
 		return m.Filter(), nil
 	case *ent.AiMessageMutation:
 		return m.Filter(), nil

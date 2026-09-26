@@ -34,6 +34,11 @@ message ChatRequest {
     json_name = "content",
     (gnostic.openapi.v3.property) = {description: "用户输入内容"}
   ]; // 用户输入内容
+
+  optional uint32 knowledge_base_id = 4 [
+    json_name = "knowledgeBaseId",
+    (gnostic.openapi.v3.property) = {description: "知识库ID；>0 时先检索该库并将相关片段注入 system 上下文（RAG）"}
+  ]; // 知识库ID，0=不检索
 }
 
 // 发起对话 - 回应

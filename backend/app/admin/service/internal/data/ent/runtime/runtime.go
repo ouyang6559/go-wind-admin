@@ -6,7 +6,10 @@ import (
 	"context"
 	permissionpb "go-wind-admin/api/gen/go/permission/service/v1"
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
+	"go-wind-admin/app/admin/service/internal/data/ent/aichunk"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiconversation"
+	"go-wind-admin/app/admin/service/internal/data/ent/aidoc"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiknowledgebase"
 	"go-wind-admin/app/admin/service/internal/data/ent/aimessage"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiprovider"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
@@ -96,6 +99,30 @@ func init() {
 	accesskeyDescID := accesskeyMixinFields0[0].Descriptor()
 	// accesskey.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	accesskey.IDValidator = accesskeyDescID.Validators[0].(func(uint32) error)
+	aichunkMixin := schema.AiChunk{}.Mixin()
+	aichunk.Policy = privacy.NewPolicies(aichunkMixin[2], schema.AiChunk{})
+	aichunk.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := aichunk.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	aichunkMixinFields0 := aichunkMixin[0].Fields()
+	_ = aichunkMixinFields0
+	aichunkMixinFields2 := aichunkMixin[2].Fields()
+	_ = aichunkMixinFields2
+	aichunkFields := schema.AiChunk{}.Fields()
+	_ = aichunkFields
+	// aichunkDescTenantID is the schema descriptor for tenant_id field.
+	aichunkDescTenantID := aichunkMixinFields2[0].Descriptor()
+	// aichunk.DefaultTenantID holds the default value on creation for the tenant_id field.
+	aichunk.DefaultTenantID = aichunkDescTenantID.Default.(uint32)
+	// aichunkDescID is the schema descriptor for id field.
+	aichunkDescID := aichunkMixinFields0[0].Descriptor()
+	// aichunk.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	aichunk.IDValidator = aichunkDescID.Validators[0].(func(uint32) error)
 	aiconversationMixin := schema.AiConversation{}.Mixin()
 	aiconversation.Policy = privacy.NewPolicies(aiconversationMixin[3], schema.AiConversation{})
 	aiconversation.Hooks[0] = func(next ent.Mutator) ent.Mutator {
@@ -120,6 +147,54 @@ func init() {
 	aiconversationDescID := aiconversationMixinFields0[0].Descriptor()
 	// aiconversation.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	aiconversation.IDValidator = aiconversationDescID.Validators[0].(func(uint32) error)
+	aidocMixin := schema.AiDoc{}.Mixin()
+	aidoc.Policy = privacy.NewPolicies(aidocMixin[3], schema.AiDoc{})
+	aidoc.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := aidoc.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	aidocMixinFields0 := aidocMixin[0].Fields()
+	_ = aidocMixinFields0
+	aidocMixinFields3 := aidocMixin[3].Fields()
+	_ = aidocMixinFields3
+	aidocFields := schema.AiDoc{}.Fields()
+	_ = aidocFields
+	// aidocDescTenantID is the schema descriptor for tenant_id field.
+	aidocDescTenantID := aidocMixinFields3[0].Descriptor()
+	// aidoc.DefaultTenantID holds the default value on creation for the tenant_id field.
+	aidoc.DefaultTenantID = aidocDescTenantID.Default.(uint32)
+	// aidocDescID is the schema descriptor for id field.
+	aidocDescID := aidocMixinFields0[0].Descriptor()
+	// aidoc.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	aidoc.IDValidator = aidocDescID.Validators[0].(func(uint32) error)
+	aiknowledgebaseMixin := schema.AiKnowledgeBase{}.Mixin()
+	aiknowledgebase.Policy = privacy.NewPolicies(aiknowledgebaseMixin[3], schema.AiKnowledgeBase{})
+	aiknowledgebase.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := aiknowledgebase.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	aiknowledgebaseMixinFields0 := aiknowledgebaseMixin[0].Fields()
+	_ = aiknowledgebaseMixinFields0
+	aiknowledgebaseMixinFields3 := aiknowledgebaseMixin[3].Fields()
+	_ = aiknowledgebaseMixinFields3
+	aiknowledgebaseFields := schema.AiKnowledgeBase{}.Fields()
+	_ = aiknowledgebaseFields
+	// aiknowledgebaseDescTenantID is the schema descriptor for tenant_id field.
+	aiknowledgebaseDescTenantID := aiknowledgebaseMixinFields3[0].Descriptor()
+	// aiknowledgebase.DefaultTenantID holds the default value on creation for the tenant_id field.
+	aiknowledgebase.DefaultTenantID = aiknowledgebaseDescTenantID.Default.(uint32)
+	// aiknowledgebaseDescID is the schema descriptor for id field.
+	aiknowledgebaseDescID := aiknowledgebaseMixinFields0[0].Descriptor()
+	// aiknowledgebase.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	aiknowledgebase.IDValidator = aiknowledgebaseDescID.Validators[0].(func(uint32) error)
 	aimessageMixin := schema.AiMessage{}.Mixin()
 	aimessage.Policy = privacy.NewPolicies(aimessageMixin[3], schema.AiMessage{})
 	aimessage.Hooks[0] = func(next ent.Mutator) ent.Mutator {

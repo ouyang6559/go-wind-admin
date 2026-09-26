@@ -14,8 +14,14 @@ type Tx struct {
 	config
 	// AccessKey is the client for interacting with the AccessKey builders.
 	AccessKey *AccessKeyClient
+	// AiChunk is the client for interacting with the AiChunk builders.
+	AiChunk *AiChunkClient
 	// AiConversation is the client for interacting with the AiConversation builders.
 	AiConversation *AiConversationClient
+	// AiDoc is the client for interacting with the AiDoc builders.
+	AiDoc *AiDocClient
+	// AiKnowledgeBase is the client for interacting with the AiKnowledgeBase builders.
+	AiKnowledgeBase *AiKnowledgeBaseClient
 	// AiMessage is the client for interacting with the AiMessage builders.
 	AiMessage *AiMessageClient
 	// AiProvider is the client for interacting with the AiProvider builders.
@@ -254,7 +260,10 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.AccessKey = NewAccessKeyClient(tx.config)
+	tx.AiChunk = NewAiChunkClient(tx.config)
 	tx.AiConversation = NewAiConversationClient(tx.config)
+	tx.AiDoc = NewAiDocClient(tx.config)
+	tx.AiKnowledgeBase = NewAiKnowledgeBaseClient(tx.config)
 	tx.AiMessage = NewAiMessageClient(tx.config)
 	tx.AiProvider = NewAiProviderClient(tx.config)
 	tx.AiUsageLog = NewAiUsageLogClient(tx.config)

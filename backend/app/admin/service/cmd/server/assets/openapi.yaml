@@ -384,6 +384,256 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /admin/v1/ai/knowledge-bases:
+        get:
+            tags:
+                - AiKnowledgeBaseService
+            description: 分页查询知识库列表
+            operationId: AiKnowledgeBaseService_List
+            parameters:
+                - name: page
+                  in: query
+                  description: 当前页码（从1开始，默认1）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  description: 每页条数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  description: 跳过的记录数（从0开始，默认0）
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  description: 最多返回的记录数（默认10，建议设置上限如100）
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: token
+                  in: query
+                  description: 上一页最后一条记录的游标（如ID/时间戳+ID，首次请求为空）
+                  schema:
+                    type: string
+                - name: noPaging
+                  in: query
+                  description: 是否不分页，如果为true，则page和pageSize参数无效。
+                  schema:
+                    type: boolean
+                - name: query
+                  in: query
+                  description: JSON字符串过滤条件，基础语法：{"field1":"val1", "field2___icontains":"val2"}，具体请参见：https://github.com/tx7do/go-crud/tree/main/pagination/filter/README.md
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: Google AIP规范字符串过滤条件
+                  schema:
+                    type: string
+                - name: filterExpr.type
+                  in: query
+                  description: 过滤表达式类型
+                  schema:
+                    enum:
+                        - EXPR_TYPE_UNSPECIFIED
+                        - AND
+                        - OR
+                    type: string
+                    format: enum
+                - name: orderBy
+                  in: query
+                  description: 排序条件
+                  schema:
+                    type: string
+                - name: fieldMask
+                  in: query
+                  description: 字段掩码，其作用为SELECT中的字段，其语法为使用逗号分隔字段名，例如：id,realName,userName。如果为空则选中所有字段，即SELECT *。
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListAiKnowledgeBaseResponse'
+        post:
+            tags:
+                - AiKnowledgeBaseService
+            description: 创建知识库
+            operationId: AiKnowledgeBaseService_Create
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAiKnowledgeBaseRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /admin/v1/ai/knowledge-bases/{baseId}/docs:
+        get:
+            tags:
+                - AiKnowledgeBaseService
+            description: 查询知识库下的文档
+            operationId: AiKnowledgeBaseService_ListDocs
+            parameters:
+                - name: baseId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListAiDocsResponse'
+        post:
+            tags:
+                - AiKnowledgeBaseService
+            description: 上传文档（纯文本：切片 → 向量化 → 落库）
+            operationId: AiKnowledgeBaseService_UploadDoc
+            parameters:
+                - name: baseId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UploadAiDocRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UploadAiDocResponse'
+    /admin/v1/ai/knowledge-bases/{baseId}/docs/{id}:
+        delete:
+            tags:
+                - AiKnowledgeBaseService
+            description: 删除文档
+            operationId: AiKnowledgeBaseService_DeleteDoc
+            parameters:
+                - name: baseId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /admin/v1/ai/knowledge-bases/{baseId}/search:
+        post:
+            tags:
+                - AiKnowledgeBaseService
+            description: 检索测试
+            operationId: AiKnowledgeBaseService_Search
+            parameters:
+                - name: baseId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchAiKnowledgeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchAiKnowledgeResponse'
+    /admin/v1/ai/knowledge-bases/{id}:
+        get:
+            tags:
+                - AiKnowledgeBaseService
+            description: 查询知识库详情
+            operationId: AiKnowledgeBaseService_Get
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: viewMask
+                  in: query
+                  schema:
+                    type: string
+                    format: field-mask
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AiKnowledgeBase'
+        put:
+            tags:
+                - AiKnowledgeBaseService
+            description: 更新知识库
+            operationId: AiKnowledgeBaseService_Update
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateAiKnowledgeBaseRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+        delete:
+            tags:
+                - AiKnowledgeBaseService
+            description: 删除知识库
+            operationId: AiKnowledgeBaseService_Delete
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /admin/v1/ai/messages:
         get:
             tags:
@@ -6885,6 +7135,85 @@ components:
                     description: 删除时间
                     format: date-time
             description: AI 对话会话
+        AiDoc:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: uint32
+                baseId:
+                    type: integer
+                    format: uint32
+                name:
+                    type: string
+                chunkCount:
+                    type: integer
+                    format: uint32
+                status:
+                    type: string
+                errorMessage:
+                    type: string
+                userId:
+                    type: integer
+                    format: uint32
+                tenantId:
+                    type: integer
+                    format: uint32
+                createdAt:
+                    type: string
+                    format: date-time
+            description: AI 文档
+        AiKnowledgeBase:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: 知识库ID
+                    format: uint32
+                name:
+                    type: string
+                    description: 知识库名称
+                description:
+                    type: string
+                    description: 描述
+                providerId:
+                    type: integer
+                    description: 向量化使用的模型提供商ID（其端点须支持 OpenAI 兼容 /v1/embeddings）
+                    format: uint32
+                embeddingModel:
+                    type: string
+                    description: embedding 模型名，如 text-embedding-3-small
+                userId:
+                    type: integer
+                    description: 创建人用户ID
+                    format: uint32
+                tenantId:
+                    type: integer
+                    description: 租户ID（0=平台级）
+                    format: uint32
+                docCount:
+                    type: integer
+                    description: 文档数（读视图）
+                    format: uint32
+                createdBy:
+                    type: integer
+                    format: uint32
+                updatedBy:
+                    type: integer
+                    format: uint32
+                deletedBy:
+                    type: integer
+                    format: uint32
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+                deletedAt:
+                    type: string
+                    format: date-time
+            description: AI 知识库
         AiMessage:
             type: object
             properties:
@@ -7320,6 +7649,10 @@ components:
                 content:
                     type: string
                     description: 用户输入内容
+                knowledgeBaseId:
+                    type: integer
+                    description: 知识库ID；>0 时先检索该库并将相关片段注入 system 上下文（RAG）
+                    format: uint32
             description: 发起对话 - 请求
         ChatResponse:
             type: object
@@ -7470,6 +7803,12 @@ components:
                 secret:
                     type: string
             description: 创建访问凭证 - 回应（secret 仅本次明文返回，服务端只存 SHA-256 摘要）
+        CreateAiKnowledgeBaseRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/AiKnowledgeBase'
+            description: 创建知识库 - 请求
         CreateAiProviderRequest:
             type: object
             properties:
@@ -8631,6 +8970,20 @@ components:
                     type: string
                     description: 令牌类型（bearer）
             description: 令牌交换 - 回应
+        KnowledgeHit:
+            type: object
+            properties:
+                doc:
+                    $ref: '#/components/schemas/AiDoc'
+                chunkIndex:
+                    type: integer
+                    format: uint32
+                content:
+                    type: string
+                score:
+                    type: number
+                    format: double
+            description: 检索命中片段
         KratosStatus:
             type: object
             properties:
@@ -8719,6 +9072,26 @@ components:
                 total:
                     type: string
             description: 查询会话列表 - 回应
+        ListAiDocsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AiDoc'
+                total:
+                    type: string
+            description: 查询文档列表 - 回应
+        ListAiKnowledgeBaseResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AiKnowledgeBase'
+                total:
+                    type: string
+            description: 查询知识库列表 - 回应
         ListAiMessageResponse:
             type: object
             properties:
@@ -11071,6 +11444,26 @@ components:
                     description: 执行时间
                     format: date-time
             description: 脚本执行日志
+        SearchAiKnowledgeRequest:
+            type: object
+            properties:
+                baseId:
+                    type: integer
+                    format: uint32
+                query:
+                    type: string
+                topK:
+                    type: integer
+                    format: uint32
+            description: 检索 - 请求
+        SearchAiKnowledgeResponse:
+            type: object
+            properties:
+                hits:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/KnowledgeHit'
+            description: 检索 - 回应
         SendMessageRequest:
             type: object
             properties:
@@ -11598,6 +11991,20 @@ components:
                 allowMissing:
                     type: boolean
             description: 更新会话 - 请求
+        UpdateAiKnowledgeBaseRequest:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/AiKnowledgeBase'
+                updateMask:
+                    type: string
+                    format: field-mask
+                allowMissing:
+                    type: boolean
+            description: 更新知识库 - 请求
         UpdateAiProviderRequest:
             type: object
             properties:
@@ -12023,6 +12430,26 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新用户 - 请求
+        UploadAiDocRequest:
+            type: object
+            properties:
+                baseId:
+                    type: integer
+                    format: uint32
+                name:
+                    type: string
+                content:
+                    type: string
+            description: 上传文档 - 请求（纯文本；内容直接随请求体传输）
+        UploadAiDocResponse:
+            type: object
+            properties:
+                doc:
+                    $ref: '#/components/schemas/AiDoc'
+                chunkCount:
+                    type: integer
+                    format: uint32
+            description: 上传文档 - 回应
         UploadAvatarRequest:
             type: object
             properties:
@@ -12323,6 +12750,8 @@ tags:
          增量 token 经 SSE `ai_chat_chunk` 事件推送（见 domain proto 注释）。
     - name: AiConversationService
       description: AI 对话会话管理服务
+    - name: AiKnowledgeBaseService
+      description: AI 知识库管理服务（RAG）
     - name: AiMessageService
       description: AI 对话消息服务
     - name: AiProviderService

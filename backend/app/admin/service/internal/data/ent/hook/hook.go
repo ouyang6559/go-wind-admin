@@ -20,6 +20,18 @@ func (f AccessKeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccessKeyMutation", m)
 }
 
+// The AiChunkFunc type is an adapter to allow the use of ordinary
+// function as AiChunk mutator.
+type AiChunkFunc func(context.Context, *ent.AiChunkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AiChunkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AiChunkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AiChunkMutation", m)
+}
+
 // The AiConversationFunc type is an adapter to allow the use of ordinary
 // function as AiConversation mutator.
 type AiConversationFunc func(context.Context, *ent.AiConversationMutation) (ent.Value, error)
@@ -30,6 +42,30 @@ func (f AiConversationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AiConversationMutation", m)
+}
+
+// The AiDocFunc type is an adapter to allow the use of ordinary
+// function as AiDoc mutator.
+type AiDocFunc func(context.Context, *ent.AiDocMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AiDocFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AiDocMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AiDocMutation", m)
+}
+
+// The AiKnowledgeBaseFunc type is an adapter to allow the use of ordinary
+// function as AiKnowledgeBase mutator.
+type AiKnowledgeBaseFunc func(context.Context, *ent.AiKnowledgeBaseMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AiKnowledgeBaseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AiKnowledgeBaseMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AiKnowledgeBaseMutation", m)
 }
 
 // The AiMessageFunc type is an adapter to allow the use of ordinary

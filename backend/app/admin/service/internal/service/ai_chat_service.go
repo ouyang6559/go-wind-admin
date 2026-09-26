@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -11,10 +12,10 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 
 	"github.com/sashabaranov/go-openai"
-	"github.com/tx7do/kratos-bootstrap/bootstrap"
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/tx7do/go-utils/id"
 	"github.com/tx7do/go-utils/trans"
+	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/tx7do/kratos-transport/transport/sse"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -69,6 +70,7 @@ type AiChatService struct {
 	messageRepo      *data.AiMessageRepo
 	providerRepo     *data.AiProviderRepo
 	usageLogRepo     *data.AiUsageLogRepo
+	knowledgeRepo    *data.AiKnowledgeRepo
 
 	chatPublisher AiChatPublisher
 }
@@ -79,6 +81,7 @@ func NewAiChatService(
 	messageRepo *data.AiMessageRepo,
 	providerRepo *data.AiProviderRepo,
 	usageLogRepo *data.AiUsageLogRepo,
+	knowledgeRepo *data.AiKnowledgeRepo,
 ) *AiChatService {
 	return &AiChatService{
 		log:              ctx.NewLoggerHelper("ai_chat/service/admin-service"),
@@ -86,6 +89,7 @@ func NewAiChatService(
 		messageRepo:      messageRepo,
 		providerRepo:     providerRepo,
 		usageLogRepo:     usageLogRepo,
+		knowledgeRepo:    knowledgeRepo,
 		chatPublisher:    noopAiChatPublisher{},
 	}
 }
@@ -139,14 +143,32 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 		return nil, err
 	}
 
-	// 5. LLM 上下文：历史（升序裁剪）+ 本轮 user 消息
+	// 5. LLM 上下文：system（知识库检索注入 RAG + 提供商 system prompt）+ 历史 + 本轮
+	messages := make([]openai.ChatCompletionMessage, 0, chatContextMaxMessages+2)
+	systemParts := make([]string, 0, 2)
+	if req.GetKnowledgeBaseId() > 0 {
+		hits, searchErr := searchKnowledgeBase(ctx, s.knowledgeRepo, s.providerRepo, operator, req.GetKnowledgeBaseId(), content, ragTopK)
+		if searchErr != nil {
+			// 检索失败不阻断对话：降级为无知识库上下文
+			s.log.Errorf(ctx, "knowledge search failed, degrade to plain chat: base=%d: %v", req.GetKnowledgeBaseId(), searchErr)
+		} else if len(hits) > 0 {
+			var kb strings.Builder
+			kb.WriteString("请优先依据以下知识库片段回答用户问题，片段无关时可忽略：\n")
+			for i, hit := range hits {
+				kb.WriteString(fmt.Sprintf("[片段%d] %s\n", i+1, hit.Content))
+			}
+			systemParts = append(systemParts, kb.String())
+		}
+	}
+	if provider.SystemPrompt != nil && *provider.SystemPrompt != "" {
+		systemParts = append(systemParts, *provider.SystemPrompt)
+	}
+	if len(systemParts) > 0 {
+		messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleSystem, Content: strings.Join(systemParts, "\n\n")})
+	}
 	history, err := s.messageRepo.ListRecentByConversation(ctx, conversation.ID, chatContextMaxMessages-1)
 	if err != nil {
 		return nil, err
-	}
-	messages := make([]openai.ChatCompletionMessage, 0, len(history)+2)
-	if provider.SystemPrompt != nil && *provider.SystemPrompt != "" {
-		messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleSystem, Content: *provider.SystemPrompt})
 	}
 	for _, m := range history {
 		if m.Role == nil {
@@ -160,7 +182,7 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 	messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: content})
 
 	// 6. 客户端与流
-	client, err := s.newClient(ctx, provider)
+	client, err := newOpenAIClientForProvider(ctx, provider)
 	if err != nil {
 		return nil, err
 	}
@@ -295,11 +317,11 @@ func (s *AiChatService) resolveConversation(ctx context.Context, operator *authe
 
 	title := truncateRunes(content, conversationTitleMaxRunes)
 	created, err := s.conversationRepo.Create(ctx, &aiV1.AiConversation{
-		Title:     &title,
+		Title:      &title,
 		ProviderId: &provider.ID,
-		UserId:    &operator.UserId,
-		TenantId:  trans.Ptr(operator.GetTenantId()),
-		CreatedBy: &operator.UserId,
+		UserId:     &operator.UserId,
+		TenantId:   trans.Ptr(operator.GetTenantId()),
+		CreatedBy:  &operator.UserId,
 	})
 	if err != nil {
 		return nil, err
@@ -334,8 +356,9 @@ func (s *AiChatService) checkTokenQuota(ctx context.Context, operator *authentic
 	return nil
 }
 
-// newClient 从 provider 表行构造客户端（api_key 密文就地解密，不出 service 层）。
-func (s *AiChatService) newClient(ctx context.Context, provider *ent.AiProvider) (*openai.Client, error) {
+// newOpenAIClientForProvider 从 provider 表行构造客户端（api_key 密文就地解密，
+// 不出 service 层）；chat 与 knowledge（RAG 向量化）共用。
+func newOpenAIClientForProvider(ctx context.Context, provider *ent.AiProvider) (*openai.Client, error) {
 	cfg := &pkgAi.ClientConfig{
 		ModelType:      modelTypeToProtoInt(provider.ModelType),
 		ModelName:      ptrStrOr(provider.ModelName, ""),
@@ -354,7 +377,7 @@ func (s *AiChatService) newClient(ctx context.Context, provider *ent.AiProvider)
 		}
 		plain, err := appCrypto.DecryptIfNeeded(encrypted)
 		if err != nil {
-			s.log.Errorf(ctx, "decrypt ai provider api key failed: provider=%d: %v", provider.ID, err)
+			bLogger.GetLogger().Error(ctx, fmt.Sprintf("decrypt ai provider api key failed: provider=%d: %v", provider.ID, err))
 			return nil, adminV1.ErrorInternalServerError("decrypt api key failed")
 		}
 		apiKey = plain
@@ -362,7 +385,7 @@ func (s *AiChatService) newClient(ctx context.Context, provider *ent.AiProvider)
 
 	client, err := pkgAi.NewClient(cfg, apiKey)
 	if err != nil {
-		s.log.Errorf(ctx, "create ai client failed: provider=%d: %v", provider.ID, err)
+		bLogger.GetLogger().Error(ctx, fmt.Sprintf("create ai client failed: provider=%d: %v", provider.ID, err))
 		return nil, adminV1.ErrorInternalServerError("create ai client failed")
 	}
 	return client, nil
