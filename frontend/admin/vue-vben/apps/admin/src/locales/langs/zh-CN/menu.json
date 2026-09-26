@@ -68,5 +68,10 @@
     "internalMessage": "消息管理",
     "internalMessageCategory": "消息分类",
     "inbox": "收件箱"
+  },
+  "ai": {
+    "moduleName": "AI 助手",
+    "chat": "AI 助手",
+    "providers": "AI 提供商"
   }
 }

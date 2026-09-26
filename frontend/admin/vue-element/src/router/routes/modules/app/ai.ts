@@ -1,0 +1,48 @@
+import type { RouteRecordRaw } from "vue-router";
+
+import { Layout } from "@/layouts";
+
+/**
+ * AI 域路由：对话助手（登录可用）+ 模型提供商管理（平台管理员）。
+ * 与 react 基准同构：providers 页挂 sys:platform_admin，chat 页不加 authority。
+ */
+const ai: RouteRecordRaw[] = [
+  {
+    path: "/ai",
+    name: "AiAssistant",
+    redirect: "/ai/chat",
+    component: Layout,
+    meta: {
+      order: 2007,
+      icon: "lucide:sparkles",
+      title: "routes.ai.moduleName",
+      keepAlive: true,
+    },
+    children: [
+      {
+        path: "chat",
+        name: "AiChat",
+        meta: {
+          order: 1,
+          icon: "lucide:message-circle",
+          title: "routes.ai.chat",
+          keepAlive: true,
+        },
+        component: () => import("@/pages/app/ai/chat/index.vue"),
+      },
+      {
+        path: "providers",
+        name: "AiProviderManagement",
+        meta: {
+          order: 2,
+          icon: "lucide:cpu",
+          title: "routes.ai.providers",
+          authority: ["sys:platform_admin"],
+        },
+        component: () => import("@/pages/app/ai/provider/index.vue"),
+      },
+    ],
+  },
+];
+
+export default ai;

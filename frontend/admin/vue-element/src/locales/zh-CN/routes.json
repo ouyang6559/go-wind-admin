@@ -32,6 +32,11 @@
     "policyEvaluationLog": "策略评估日志",
     "redisCacheMonitor": "Redis缓存监控"
   },
+  "ai": {
+    "moduleName": "AI 助手",
+    "chat": "AI 助手",
+    "providers": "AI 提供商"
+  },
   "system": {
     "moduleName": "系统管理",
     "dict": "字典管理",

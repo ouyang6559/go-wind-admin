@@ -32,6 +32,11 @@
     "policyEvaluationLog": "Policy Evaluation Logs",
     "redisCacheMonitor": "Redis Cache Monitor"
   },
+  "ai": {
+    "moduleName": "AI Assistant",
+    "chat": "AI Assistant",
+    "providers": "AI Providers"
+  },
   "system": {
     "moduleName": "System Management",
     "dict": "Dictionary Management",

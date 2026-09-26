@@ -68,5 +68,10 @@
     "internalMessage": "Message Management",
     "internalMessageCategory": "Message Categories",
     "inbox": "Inbox"
+  },
+  "ai": {
+    "moduleName": "AI Assistant",
+    "chat": "AI Assistant",
+    "providers": "AI Providers"
   }
 }

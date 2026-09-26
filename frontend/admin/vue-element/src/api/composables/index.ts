@@ -8,6 +8,8 @@ export * from "./shared";
 
 // 认证相关
 export * from "./auth";
+export * from "./ai-provider";
+export * from "./ai-chat";
 export * from "./access_key";
 
 // MFA 相关

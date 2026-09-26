@@ -3,6 +3,10 @@
  * 导出所有业务模块的 hooks 及其枚举工具函数
  */
 
+// AI 模块
+export * from './ai-chat';
+export * from './ai-provider';
+
 // 管理门户相关
 export * from './admin-portal';
 
