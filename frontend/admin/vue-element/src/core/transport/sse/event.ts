@@ -11,8 +11,7 @@ export const SSE_EVENT = {
    *
    * data 为 `InternalMessageRecipient` 的 protojson：camelCase 键（`messageId` /
    * `recipientUserId` / `createdAt`），`status` 是枚举名字符串（`RECEIVED` / `READ`），
-   * 与 REST 收件箱接口返回的形状一致。取值不匹配时 handleSseNotification 会在
-   * `if (!data.messageId) return` 处静默退出。
+   * 与 REST 收件箱接口返回的形状一致。
    */
   Notification: "notification",
 
