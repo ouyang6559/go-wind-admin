@@ -265,6 +265,10 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		},
 	)
 
+	// 审计日报 AI 摘要：聚合审计 + AI 摘要（复用脚本 ai 模块的 ChatForScript）+ 站内信投递内核。
+	// 依赖 scriptRuntime 与 internalMessageService，故置二者之后。
+	auditDigestService := service.NewAiDigestService(ctx, operationAuditLogRepo, internalMessageService, internalMessageRepo, scriptRuntime, entClient)
+
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
 	notificationRuleService := service.NewNotificationRuleService(ctx, notificationRuleRepo, notificationChannelRepo, notificationService)
 	accessKeyService := service.NewAccessKeyService(ctx, accessKeyRepo, authenticator, loginRateLimiter)
@@ -313,7 +317,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, notificationService, scriptRuntime, aiKnowledgeService)
+	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, notificationService, scriptRuntime, aiKnowledgeService, auditDigestService)
 	if err != nil {
 		rollback()
 		return nil, nil, err

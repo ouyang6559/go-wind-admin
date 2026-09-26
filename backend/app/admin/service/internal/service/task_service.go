@@ -389,6 +389,18 @@ func (s *TaskService) startAllTask(ctx context.Context) (int32, error) {
 		} else {
 			s.log.Infof(ctx, "通知台账清扫定时任务已注册（cron=%s）", task.NotificationDeliverySweepCronSpec)
 		}
+
+		// 审计日报 AI 摘要：昨日操作审计统计 → 默认模型摘要 → 站内信投递平台用户。
+		// handler 属 AI 域（AiDigestService.AsyncAiAuditDigest），调度项在此注册（同上理由）。
+		if _, err := s.taskScheduler.NewPeriodicTask(
+			task.AiAuditDigestCronSpec,
+			task.AiAuditDigestTaskType,
+			&task.AiAuditDigestTaskData{},
+		); err != nil {
+			s.log.Errorf(ctx, "注册审计日报 AI 摘要定时任务失败: %s", err.Error())
+		} else {
+			s.log.Infof(ctx, "审计日报 AI 摘要定时任务已注册（cron=%s）", task.AiAuditDigestCronSpec)
+		}
 	}
 
 	return count, nil

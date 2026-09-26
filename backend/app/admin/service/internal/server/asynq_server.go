@@ -17,7 +17,7 @@ import (
 )
 
 // NewAsynqServer creates a new asynq server.
-func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService) (*asynqServer.Server, error) {
+func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService, aiDigestService *service.AiDigestService) (*asynqServer.Server, error) {
 	cfg := ctx.GetConfig()
 
 	if cfg == nil || cfg.Server == nil || cfg.Server.Asynq == nil {
@@ -75,6 +75,14 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 	// 场景：管理员更换知识库 embedding 模型/provider 后对既有切片全量重算向量。
 	if aiKnowledgeService != nil {
 		if err = asynqServer.RegisterSubscriber(srv, task.AiDocReindexTaskType, aiKnowledgeService.AsyncAiDocReindex); err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
+	// 审计日报 AI 摘要 handler（系统级常驻 cron，每日 08:00）。
+	if aiDigestService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.AiAuditDigestTaskType, aiDigestService.AsyncAiAuditDigest); err != nil {
 			log.Error(err)
 			return nil, err
 		}
