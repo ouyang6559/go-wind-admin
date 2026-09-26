@@ -52,5 +52,7 @@
   "scripts": "Scripts",
   "configs": "Config Management",
   "forgot-password": "Forgot Password",
-  "accessKeys": "OpenAPI Credentials"
+  "accessKeys": "OpenAPI Credentials",
+  "ai": "AI Assistant",
+  "ai-providers": "AI Providers"
 }

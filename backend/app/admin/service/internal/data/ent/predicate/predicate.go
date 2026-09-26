@@ -9,6 +9,18 @@ import (
 // AccessKey is the predicate function for accesskey builders.
 type AccessKey func(*sql.Selector)
 
+// AiConversation is the predicate function for aiconversation builders.
+type AiConversation func(*sql.Selector)
+
+// AiMessage is the predicate function for aimessage builders.
+type AiMessage func(*sql.Selector)
+
+// AiProvider is the predicate function for aiprovider builders.
+type AiProvider func(*sql.Selector)
+
+// AiUsageLog is the predicate function for aiusagelog builders.
+type AiUsageLog func(*sql.Selector)
+
 // Api is the predicate function for api builders.
 type Api func(*sql.Selector)
 

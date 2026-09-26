@@ -1,0 +1,184 @@
+package data
+
+import (
+	"context"
+	"time"
+
+	"github.com/tx7do/kratos-bootstrap/bootstrap"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
+
+	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	entCrud "github.com/tx7do/go-crud/entgo"
+
+	"github.com/tx7do/go-utils/copierutil"
+	"github.com/tx7do/go-utils/mapper"
+
+	appViewer "go-wind-admin/pkg/entgo/viewer"
+
+	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
+	"go-wind-admin/app/admin/service/internal/data/ent/planquota"
+	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
+	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
+
+	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
+)
+
+type AiUsageLogRepo struct {
+	entClient *entCrud.EntClient[*ent.Client]
+	log       *bLogger.Helper
+
+	mapper *mapper.CopierMapper[aiV1.AiUsageLog, ent.AiUsageLog]
+
+	repository *entCrud.Repository[
+		ent.AiUsageLogQuery, ent.AiUsageLogSelect,
+		ent.AiUsageLogCreate, ent.AiUsageLogCreateBulk,
+		ent.AiUsageLogUpdate, ent.AiUsageLogUpdateOne,
+		ent.AiUsageLogDelete,
+		predicate.AiUsageLog,
+		aiV1.AiUsageLog, ent.AiUsageLog,
+	]
+}
+
+func NewAiUsageLogRepo(ctx *bootstrap.Context, entClient *entCrud.EntClient[*ent.Client]) *AiUsageLogRepo {
+	repo := &AiUsageLogRepo{
+		log:       ctx.NewLoggerHelper("ai_usage_log/repo/admin-service"),
+		entClient: entClient,
+		mapper:    mapper.NewCopierMapper[aiV1.AiUsageLog, ent.AiUsageLog](),
+	}
+
+	repo.init()
+
+	return repo
+}
+
+func (r *AiUsageLogRepo) init() {
+	r.repository = entCrud.NewRepository[
+		ent.AiUsageLogQuery, ent.AiUsageLogSelect,
+		ent.AiUsageLogCreate, ent.AiUsageLogCreateBulk,
+		ent.AiUsageLogUpdate, ent.AiUsageLogUpdateOne,
+		ent.AiUsageLogDelete,
+		predicate.AiUsageLog,
+		aiV1.AiUsageLog, ent.AiUsageLog,
+	](r.mapper)
+
+	r.mapper.AppendConverters(copierutil.NewTimeStringConverterPair())
+	r.mapper.AppendConverters(copierutil.NewTimeTimestamppbConverterPair())
+}
+
+func (r *AiUsageLogRepo) Count(ctx context.Context, req *paginationV1.PagingRequest) (*aiV1.CountAiUsageLogResponse, error) {
+	builder := r.entClient.Client().AiUsageLog.Query()
+
+	whereSelectors, _, _ := r.repository.BuildListSelectorWithPaging(builder, req)
+	if len(whereSelectors) != 0 {
+		builder.Modify(whereSelectors...)
+	}
+
+	count, err := builder.Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query ai usage log count failed: %s", err.Error())
+		return nil, aiV1.ErrorInternalServerError("query ai usage log count failed")
+	}
+
+	return &aiV1.CountAiUsageLogResponse{Count: uint64(count)}, nil
+}
+
+func (r *AiUsageLogRepo) List(ctx context.Context, req *paginationV1.PagingRequest) (*aiV1.ListAiUsageLogResponse, error) {
+	if req == nil {
+		return nil, aiV1.ErrorBadRequest("invalid parameter")
+	}
+
+	builder := r.entClient.Client().AiUsageLog.Query()
+
+	ret, err := r.repository.ListWithPaging(ctx, builder, builder.Clone(), req)
+	if err != nil {
+		return nil, err
+	}
+	if ret == nil {
+		return &aiV1.ListAiUsageLogResponse{Total: 0, Items: nil}, nil
+	}
+
+	return &aiV1.ListAiUsageLogResponse{Total: ret.Total, Items: ret.Items}, nil
+}
+
+// Create 记一笔成功调用的用量流水（只增不改）。
+func (r *AiUsageLogRepo) Create(ctx context.Context, data *aiV1.AiUsageLog) error {
+	if data == nil {
+		return aiV1.ErrorBadRequest("invalid parameter")
+	}
+
+	builder := r.entClient.Client().AiUsageLog.Create().
+		SetNillableProviderID(data.ProviderId).
+		SetNillableConversationID(data.ConversationId).
+		SetNillableUserID(data.UserId).
+		SetNillableTenantID(data.TenantId).
+		SetNillableModelName(data.ModelName).
+		SetNillablePromptTokens(data.PromptTokens).
+		SetNillableCompletionTokens(data.CompletionTokens).
+		SetNillableTotalTokens(data.TotalTokens).
+		SetNillableDurationMs(data.DurationMs).
+		SetCreatedAt(time.Now())
+
+	if err := builder.Exec(ctx); err != nil {
+		r.log.Errorf(ctx, "insert ai usage log failed: %s", err.Error())
+		return aiV1.ErrorInternalServerError("insert ai usage log failed")
+	}
+
+	return nil
+}
+
+// SumTokensByTenantSince 统计租户自某时刻起消耗的总 token 数（配额检查用）。
+func (r *AiUsageLogRepo) SumTokensByTenantSince(ctx context.Context, tenantId uint32, since time.Time) (uint64, error) {
+	sum := uint64(0)
+	var rows []struct {
+		Total uint64 `sql:"total"`
+	}
+	err := r.entClient.Client().AiUsageLog.Query().
+		Where(
+			aiusagelog.TenantIDEQ(tenantId),
+			aiusagelog.CreatedAtGTE(since),
+		).
+		Aggregate(ent.As(ent.Sum(aiusagelog.FieldTotalTokens), "total")).
+		Scan(ctx, &rows)
+	if err != nil {
+		r.log.Errorf(ctx, "sum ai usage tokens failed: %s", err.Error())
+		return 0, aiV1.ErrorInternalServerError("sum ai usage tokens failed")
+	}
+	if len(rows) > 0 {
+		sum = rows[0].Total
+	}
+	return sum, nil
+}
+
+// FetchTenantTokenQuotaLimit 读租户套餐上的 AI_TOKENS 配额上限。
+// 返回 (上限, 是否配置, 错误)：未配置=false 时调用方视为不限量（配额缺省语义与
+// 其他维度一致——没配的维度不设限）。
+func (r *AiUsageLogRepo) FetchTenantTokenQuotaLimit(ctx context.Context, tenantId uint32) (uint64, bool, error) {
+	if tenantId == 0 {
+		return 0, false, nil
+	}
+
+	// 系统查看器绕租户谓词读套餐链（与 tenant_usage_repo.GetUsage 同型）。
+	sysCtx := appViewer.NewSystemViewerContext(ctx)
+
+	t, err := r.entClient.Client().Tenant.Query().
+		Where(tenant.IDEQ(tenantId)).
+		WithPlan(func(q *ent.PlanQuery) { q.WithQuotas() }).
+		Only(sysCtx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return 0, false, nil
+		}
+		r.log.Errorf(ctx, "fetch tenant plan for ai quota failed: %s", err.Error())
+		return 0, false, aiV1.ErrorInternalServerError("fetch tenant plan failed")
+	}
+	if t.Edges.Plan == nil {
+		return 0, false, nil
+	}
+	for _, q := range t.Edges.Plan.Edges.Quotas {
+		if q.QuotaType != nil && *q.QuotaType == planquota.QuotaTypeAiTokens && q.QuotaValue != nil {
+			return *q.QuotaValue, true, nil
+		}
+	}
+	return 0, false, nil
+}

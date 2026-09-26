@@ -630,6 +630,8 @@ github.com/rs/xid v1.6.0/go.mod h1:7XoLgs4eV+QndskICGsho+ADou8ySMSjJKDIan90Nz0=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 h1:1EYB5IzjZawrrnELUi78f9fPu57HuXjmddZPjrls/28=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
+github.com/sashabaranov/go-openai v1.41.2 h1:vfPRBZNMpnqu8ELsclWcAvF19lDNgh1t6TVfFFOPiSM=
+github.com/sashabaranov/go-openai v1.41.2/go.mod h1:lj5b/K+zjTSFxVLijLSTDZuP7adOgerWeFyZLUhAKRg=
 github.com/segmentio/asm v1.2.1 h1:DTNbBqs57ioxAD4PrArqftgypG4/qNpXoJx8TVXxPR0=
 github.com/segmentio/asm v1.2.1/go.mod h1:BqMnlJP91P8d+4ibuonYZw9mfnzI9HfxselHZr5aAcs=
 github.com/segmentio/ksuid v1.0.4 h1:sBo2BdShXjmcugAMwjugoGUdUV0pcxY5mW4xKRn3v4c=
@@ -735,6 +737,8 @@ github.com/tx7do/go-utils/password v0.0.2 h1:9zQhPgLefoZQjc8VCevY11rZAVzXCBuXBwf
 github.com/tx7do/go-utils/password v0.0.2/go.mod h1:w5i/vuy8QYtqQGXkweltzjrvJxtUH7rEBzvwj59Lx8o=
 github.com/tx7do/go-wind v0.0.2 h1:kuI2QpwGacfROQpugPFWIcrtztv7qwFwQ4ts+LTsq2k=
 github.com/tx7do/go-wind v0.0.2/go.mod h1:BgeqjCLtGfTlT709176kd2KuLq7I1Am9tqQBrzYssc0=
+github.com/tx7do/go-wind-plugins/ai/openai v0.0.1 h1:/oMoMWswDWk1t8kTZWVsGrX6zHxmWAySvPBILQuHfAs=
+github.com/tx7do/go-wind-plugins/ai/openai v0.0.1/go.mod h1:djP7m6jM+Y7tPLArnr7oytwWnTTZoAub2vDOaPOJN1Q=
 github.com/tx7do/go-wind-plugins/encoding v0.0.1 h1:JAFl2LU5/6VBE8WgZvJjEaAD4BDhstS2nhuUC9GrzM4=
 github.com/tx7do/go-wind-plugins/encoding v0.0.1/go.mod h1:kD3i5H3DaENxuz3eAYvOc6fZbTfUy7h+u5XqOzVWdIE=
 github.com/tx7do/go-wind-plugins/encoding/json v0.0.1 h1:9TBvf41xmxtvIT5oyX0wLYWfJziSMkq1uQ25mXTMby8=

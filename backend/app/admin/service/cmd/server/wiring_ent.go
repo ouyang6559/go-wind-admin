@@ -151,6 +151,12 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	notificationRuleRepo := data.NewNotificationRuleRepo(ctx, entClient)
 	accessKeyRepo := data.NewAccessKeyRepo(ctx, entClient)
 
+	// AI（提供商 / 会话 / 消息 / 用量流水）
+	aiProviderRepo := data.NewAiProviderRepo(ctx, entClient)
+	aiConversationRepo := data.NewAiConversationRepo(ctx, entClient)
+	aiMessageRepo := data.NewAiMessageRepo(ctx, entClient)
+	aiUsageLogRepo := data.NewAiUsageLogRepo(ctx, entClient)
+
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
 
 	tenantAccessChecker := data.NewTenantAccessCheckerImpl(ctx, entClient)
@@ -263,6 +269,13 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	accessKeyService := service.NewAccessKeyService(ctx, accessKeyRepo, authenticator, loginRateLimiter)
 	configService := service.NewConfigService(ctx, configRepo)
 
+	// AI：CRUD 四件套 + 对话主链路（chat 持 publisher 占位，SSE 启动后注入真身）
+	aiProviderService := service.NewAiProviderService(ctx, aiProviderRepo)
+	aiConversationService := service.NewAiConversationService(ctx, aiConversationRepo)
+	aiMessageService := service.NewAiMessageService(ctx, aiMessageRepo)
+	aiUsageLogService := service.NewAiUsageLogService(ctx, aiUsageLogRepo)
+	aiChatService := service.NewAiChatService(ctx, aiConversationRepo, aiMessageRepo, aiProviderRepo, aiUsageLogRepo)
+
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 
 	restMiddlewares := server.NewRestMiddleware(ctx, accessTokenChecker, tenantAccessChecker, authz,
@@ -286,6 +299,11 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		notificationRuleService,
 		accessKeyService,
 		configService,
+		aiProviderService,
+		aiConversationService,
+		aiMessageService,
+		aiUsageLogService,
+		aiChatService,
 	)
 	if err != nil {
 		rollback()
@@ -298,7 +316,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	sseServer := server.NewSseServer(ctx, internalMessageService)
+	sseServer := server.NewSseServer(ctx, internalMessageService, aiChatService)
 
 	return newApp(ctx, restServer, asynqServer, sseServer), rollback, nil
 }

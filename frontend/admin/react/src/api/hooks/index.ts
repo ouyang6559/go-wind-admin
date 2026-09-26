@@ -74,3 +74,9 @@ export * from './script';
 
 // 脚本执行日志
 export * from './script-log';
+
+// AI 提供商
+export * from './ai-provider';
+
+// AI 对话
+export * from './ai-chat';

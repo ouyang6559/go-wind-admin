@@ -37,6 +37,7 @@ func (PlanQuota) Fields() []ent.Field {
 				"UserLimit", "USER_LIMIT",
 				"Storage", "STORAGE",
 				"ApiCall", "API_CALL",
+				"AiTokens", "AI_TOKENS",
 			).
 			Optional().
 			Nillable(),

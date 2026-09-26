@@ -175,6 +175,11 @@ func NewRestServer(
 	notificationRuleService *service.NotificationRuleService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
+	aiProviderService *service.AiProviderService,
+	aiConversationService *service.AiConversationService,
+	aiMessageService *service.AiMessageService,
+	aiUsageLogService *service.AiUsageLogService,
+	aiChatService *service.AiChatService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
 
@@ -254,6 +259,11 @@ func NewRestServer(
 	adminV1.RegisterNotificationRuleServiceHTTPServer(srv, notificationRuleService)
 	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
 	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
+	adminV1.RegisterAiProviderServiceHTTPServer(srv, aiProviderService)
+	adminV1.RegisterAiConversationServiceHTTPServer(srv, aiConversationService)
+	adminV1.RegisterAiMessageServiceHTTPServer(srv, aiMessageService)
+	adminV1.RegisterAiUsageLogServiceHTTPServer(srv, aiUsageLogService)
+	adminV1.RegisterAiChatServiceHTTPServer(srv, aiChatService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(

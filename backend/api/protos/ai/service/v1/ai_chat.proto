@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package ai.service.v1;
+
+import "gnostic/openapi/v3/annotations.proto";
+
+import "ai/service/v1/ai_conversation.proto";
+import "ai/service/v1/ai_message.proto";
+
+// AI 对话服务
+//
+// 流式语义：Chat 是普通 POST（body 为扁平请求体，**不包 data**——与站内信 send 同型），
+// 同步返回完整回复；生成过程中的增量 token 通过 SSE 网关（:7789）以
+// `ai_chat_chunk` 事件推送给发起用户，事件 data 为 ChatChunkEvent 的 protojson。
+// 前端先累积 chunk 做流式渲染，POST 响应到达后以响应中的完整消息为准。
+service AiChatService {
+  // 发起一轮对话
+  rpc Chat (ChatRequest) returns (ChatResponse) {}
+}
+
+// 发起对话 - 请求
+message ChatRequest {
+  optional uint32 conversation_id = 1 [
+    json_name = "conversationId",
+    (gnostic.openapi.v3.property) = {description: "会话ID；0 表示新建会话"}
+  ]; // 会话ID，0=新建
+
+  optional uint32 provider_id = 2 [
+    json_name = "providerId",
+    (gnostic.openapi.v3.property) = {description: "提供商ID；0 表示使用默认提供商"}
+  ]; // 提供商ID，0=默认
+
+  optional string content = 3 [
+    json_name = "content",
+    (gnostic.openapi.v3.property) = {description: "用户输入内容"}
+  ]; // 用户输入内容
+}
+
+// 发起对话 - 回应
+message ChatResponse {
+  // 会话（新建时返回新建的会话）
+  AiConversation conversation = 1;
+
+  // 模型回复消息（含 token 用量与模型名）
+  AiMessage message = 2;
+}
+
+// SSE `ai_chat_chunk` 事件 data 形状（protojson，camelCase 键）。
+//
+// 仅在服务层用于构造事件载荷，不挂 HTTP 路由。
+message ChatChunkEvent {
+  uint32 conversation_id = 1 [json_name = "conversationId"]; // 所属会话
+  uint32 seq = 2;                                            // 片段序号（会话内单调递增，从 0 开始）
+  string delta = 3;                                          // 增量文本片段
+}

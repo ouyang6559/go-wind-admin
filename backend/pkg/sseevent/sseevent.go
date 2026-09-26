@@ -25,3 +25,11 @@ package sseevent
 // 生成的 pb.go 带 `json:"message_id,omitempty"` 一类蛇形 tag，所以键名变蛇形、
 // status 变数字、时间戳变成 {seconds,nanos} 对象。前端读 messageId/createdAt 全取到 undefined。
 const Notification = "notification"
+
+// AIChatChunk AI 对话流式片段推送。
+//
+// data: 为 ai.service.v1.ChatChunkEvent 的 protojson（camelCase 键：
+// conversationId / seq / delta）。一次对话会产生多个 chunk 帧，前端按
+// conversationId 归组、按 seq 顺序累积渲染；POST /admin/v1/ai/chat/completions
+// 的同步响应携带完整回复，以响应为准校正累积文本（chunk 尽力而为，缓冲满即丢帧）。
+const AIChatChunk = "ai_chat_chunk"

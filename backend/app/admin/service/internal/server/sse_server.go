@@ -13,6 +13,7 @@ import (
 func NewSseServer(
 	ctx *bootstrap.Context,
 	internalMessageService *service.InternalMessageService,
+	aiChatService *service.AiChatService,
 ) *sseServer.Server {
 	cfg := ctx.GetConfig()
 
@@ -26,6 +27,11 @@ func NewSseServer(
 	)
 
 	internalMessageService.RegisterInternalMessagePublisher(srv)
+
+	// 同一个 sse.Server 实例同时充当 AI 对话 chunk 的发布者（AiChatPublisher 接口）。
+	if aiChatService != nil {
+		aiChatService.RegisterAiChatPublisher(srv)
+	}
 
 	//srv.CreateStream("test")
 

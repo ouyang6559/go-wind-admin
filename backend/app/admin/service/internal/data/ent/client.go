@@ -12,6 +12,10 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/migrate"
 
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiconversation"
+	"go-wind-admin/app/admin/service/internal/data/ent/aimessage"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiprovider"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/apiauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/dataaccessauditlog"
@@ -76,6 +80,14 @@ type Client struct {
 	Schema *migrate.Schema
 	// AccessKey is the client for interacting with the AccessKey builders.
 	AccessKey *AccessKeyClient
+	// AiConversation is the client for interacting with the AiConversation builders.
+	AiConversation *AiConversationClient
+	// AiMessage is the client for interacting with the AiMessage builders.
+	AiMessage *AiMessageClient
+	// AiProvider is the client for interacting with the AiProvider builders.
+	AiProvider *AiProviderClient
+	// AiUsageLog is the client for interacting with the AiUsageLog builders.
+	AiUsageLog *AiUsageLogClient
 	// Api is the client for interacting with the Api builders.
 	Api *APIClient
 	// ApiAuditLog is the client for interacting with the ApiAuditLog builders.
@@ -188,6 +200,10 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.AccessKey = NewAccessKeyClient(c.config)
+	c.AiConversation = NewAiConversationClient(c.config)
+	c.AiMessage = NewAiMessageClient(c.config)
+	c.AiProvider = NewAiProviderClient(c.config)
+	c.AiUsageLog = NewAiUsageLogClient(c.config)
 	c.Api = NewAPIClient(c.config)
 	c.ApiAuditLog = NewApiAuditLogClient(c.config)
 	c.DataAccessAuditLog = NewDataAccessAuditLogClient(c.config)
@@ -331,6 +347,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:                      ctx,
 		config:                   cfg,
 		AccessKey:                NewAccessKeyClient(cfg),
+		AiConversation:           NewAiConversationClient(cfg),
+		AiMessage:                NewAiMessageClient(cfg),
+		AiProvider:               NewAiProviderClient(cfg),
+		AiUsageLog:               NewAiUsageLogClient(cfg),
 		Api:                      NewAPIClient(cfg),
 		ApiAuditLog:              NewApiAuditLogClient(cfg),
 		DataAccessAuditLog:       NewDataAccessAuditLogClient(cfg),
@@ -401,6 +421,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:                      ctx,
 		config:                   cfg,
 		AccessKey:                NewAccessKeyClient(cfg),
+		AiConversation:           NewAiConversationClient(cfg),
+		AiMessage:                NewAiMessageClient(cfg),
+		AiProvider:               NewAiProviderClient(cfg),
+		AiUsageLog:               NewAiUsageLogClient(cfg),
 		Api:                      NewAPIClient(cfg),
 		ApiAuditLog:              NewApiAuditLogClient(cfg),
 		DataAccessAuditLog:       NewDataAccessAuditLogClient(cfg),
@@ -480,18 +504,18 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.AccessKey, c.Api, c.ApiAuditLog, c.DataAccessAuditLog, c.DictEntry,
-		c.DictEntryI18n, c.DictType, c.File, c.InternalMessage,
-		c.InternalMessageCategory, c.InternalMessageRecipient, c.Language,
-		c.LoginAuditLog, c.LoginPolicy, c.Membership, c.MembershipOrgUnit,
-		c.MembershipPosition, c.MembershipRole, c.Menu, c.NotificationChannel,
-		c.NotificationDelivery, c.NotificationRule, c.OperationAuditLog, c.OrgUnit,
-		c.Permission, c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup,
-		c.PermissionMenu, c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota,
-		c.PolicyEvaluationLog, c.Position, c.Role, c.RoleFieldPermission,
-		c.RoleMetadata, c.RoleOrgUnit, c.RolePermission, c.Script, c.ScriptLog,
-		c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor,
-		c.UserOrgUnit, c.UserPosition, c.UserRole,
+		c.AccessKey, c.AiConversation, c.AiMessage, c.AiProvider, c.AiUsageLog, c.Api,
+		c.ApiAuditLog, c.DataAccessAuditLog, c.DictEntry, c.DictEntryI18n, c.DictType,
+		c.File, c.InternalMessage, c.InternalMessageCategory,
+		c.InternalMessageRecipient, c.Language, c.LoginAuditLog, c.LoginPolicy,
+		c.Membership, c.MembershipOrgUnit, c.MembershipPosition, c.MembershipRole,
+		c.Menu, c.NotificationChannel, c.NotificationDelivery, c.NotificationRule,
+		c.OperationAuditLog, c.OrgUnit, c.Permission, c.PermissionApi,
+		c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy,
+		c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog, c.Position, c.Role,
+		c.RoleFieldPermission, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission,
+		c.Script, c.ScriptLog, c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential,
+		c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -501,18 +525,18 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.AccessKey, c.Api, c.ApiAuditLog, c.DataAccessAuditLog, c.DictEntry,
-		c.DictEntryI18n, c.DictType, c.File, c.InternalMessage,
-		c.InternalMessageCategory, c.InternalMessageRecipient, c.Language,
-		c.LoginAuditLog, c.LoginPolicy, c.Membership, c.MembershipOrgUnit,
-		c.MembershipPosition, c.MembershipRole, c.Menu, c.NotificationChannel,
-		c.NotificationDelivery, c.NotificationRule, c.OperationAuditLog, c.OrgUnit,
-		c.Permission, c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup,
-		c.PermissionMenu, c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota,
-		c.PolicyEvaluationLog, c.Position, c.Role, c.RoleFieldPermission,
-		c.RoleMetadata, c.RoleOrgUnit, c.RolePermission, c.Script, c.ScriptLog,
-		c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor,
-		c.UserOrgUnit, c.UserPosition, c.UserRole,
+		c.AccessKey, c.AiConversation, c.AiMessage, c.AiProvider, c.AiUsageLog, c.Api,
+		c.ApiAuditLog, c.DataAccessAuditLog, c.DictEntry, c.DictEntryI18n, c.DictType,
+		c.File, c.InternalMessage, c.InternalMessageCategory,
+		c.InternalMessageRecipient, c.Language, c.LoginAuditLog, c.LoginPolicy,
+		c.Membership, c.MembershipOrgUnit, c.MembershipPosition, c.MembershipRole,
+		c.Menu, c.NotificationChannel, c.NotificationDelivery, c.NotificationRule,
+		c.OperationAuditLog, c.OrgUnit, c.Permission, c.PermissionApi,
+		c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy,
+		c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog, c.Position, c.Role,
+		c.RoleFieldPermission, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission,
+		c.Script, c.ScriptLog, c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential,
+		c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -523,6 +547,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *AccessKeyMutation:
 		return c.AccessKey.mutate(ctx, m)
+	case *AiConversationMutation:
+		return c.AiConversation.mutate(ctx, m)
+	case *AiMessageMutation:
+		return c.AiMessage.mutate(ctx, m)
+	case *AiProviderMutation:
+		return c.AiProvider.mutate(ctx, m)
+	case *AiUsageLogMutation:
+		return c.AiUsageLog.mutate(ctx, m)
 	case *APIMutation:
 		return c.Api.mutate(ctx, m)
 	case *ApiAuditLogMutation:
@@ -759,6 +791,573 @@ func (c *AccessKeyClient) mutate(ctx context.Context, m *AccessKeyMutation) (Val
 		return (&AccessKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AccessKey mutation op: %q", m.Op())
+	}
+}
+
+// AiConversationClient is a client for the AiConversation schema.
+type AiConversationClient struct {
+	config
+}
+
+// NewAiConversationClient returns a client for the AiConversation from the given config.
+func NewAiConversationClient(c config) *AiConversationClient {
+	return &AiConversationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `aiconversation.Hooks(f(g(h())))`.
+func (c *AiConversationClient) Use(hooks ...Hook) {
+	c.hooks.AiConversation = append(c.hooks.AiConversation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `aiconversation.Intercept(f(g(h())))`.
+func (c *AiConversationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AiConversation = append(c.inters.AiConversation, interceptors...)
+}
+
+// Create returns a builder for creating a AiConversation entity.
+func (c *AiConversationClient) Create() *AiConversationCreate {
+	mutation := newAiConversationMutation(c.config, OpCreate)
+	return &AiConversationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AiConversation entities.
+func (c *AiConversationClient) CreateBulk(builders ...*AiConversationCreate) *AiConversationCreateBulk {
+	return &AiConversationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AiConversationClient) MapCreateBulk(slice any, setFunc func(*AiConversationCreate, int)) *AiConversationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AiConversationCreateBulk{err: fmt.Errorf("calling to AiConversationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AiConversationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AiConversationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AiConversation.
+func (c *AiConversationClient) Update() *AiConversationUpdate {
+	mutation := newAiConversationMutation(c.config, OpUpdate)
+	return &AiConversationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AiConversationClient) UpdateOne(_m *AiConversation) *AiConversationUpdateOne {
+	mutation := newAiConversationMutation(c.config, OpUpdateOne, withAiConversation(_m))
+	return &AiConversationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AiConversationClient) UpdateOneID(id uint32) *AiConversationUpdateOne {
+	mutation := newAiConversationMutation(c.config, OpUpdateOne, withAiConversationID(id))
+	return &AiConversationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AiConversation.
+func (c *AiConversationClient) Delete() *AiConversationDelete {
+	mutation := newAiConversationMutation(c.config, OpDelete)
+	return &AiConversationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AiConversationClient) DeleteOne(_m *AiConversation) *AiConversationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AiConversationClient) DeleteOneID(id uint32) *AiConversationDeleteOne {
+	builder := c.Delete().Where(aiconversation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AiConversationDeleteOne{builder}
+}
+
+// Query returns a query builder for AiConversation.
+func (c *AiConversationClient) Query() *AiConversationQuery {
+	return &AiConversationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAiConversation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AiConversation entity by its id.
+func (c *AiConversationClient) Get(ctx context.Context, id uint32) (*AiConversation, error) {
+	return c.Query().Where(aiconversation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AiConversationClient) GetX(ctx context.Context, id uint32) *AiConversation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMessages queries the messages edge of a AiConversation.
+func (c *AiConversationClient) QueryMessages(_m *AiConversation) *AiMessageQuery {
+	query := (&AiMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(aiconversation.Table, aiconversation.FieldID, id),
+			sqlgraph.To(aimessage.Table, aimessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, aiconversation.MessagesTable, aiconversation.MessagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AiConversationClient) Hooks() []Hook {
+	hooks := c.hooks.AiConversation
+	return append(hooks[:len(hooks):len(hooks)], aiconversation.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *AiConversationClient) Interceptors() []Interceptor {
+	return c.inters.AiConversation
+}
+
+func (c *AiConversationClient) mutate(ctx context.Context, m *AiConversationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AiConversationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AiConversationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AiConversationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AiConversationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AiConversation mutation op: %q", m.Op())
+	}
+}
+
+// AiMessageClient is a client for the AiMessage schema.
+type AiMessageClient struct {
+	config
+}
+
+// NewAiMessageClient returns a client for the AiMessage from the given config.
+func NewAiMessageClient(c config) *AiMessageClient {
+	return &AiMessageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `aimessage.Hooks(f(g(h())))`.
+func (c *AiMessageClient) Use(hooks ...Hook) {
+	c.hooks.AiMessage = append(c.hooks.AiMessage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `aimessage.Intercept(f(g(h())))`.
+func (c *AiMessageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AiMessage = append(c.inters.AiMessage, interceptors...)
+}
+
+// Create returns a builder for creating a AiMessage entity.
+func (c *AiMessageClient) Create() *AiMessageCreate {
+	mutation := newAiMessageMutation(c.config, OpCreate)
+	return &AiMessageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AiMessage entities.
+func (c *AiMessageClient) CreateBulk(builders ...*AiMessageCreate) *AiMessageCreateBulk {
+	return &AiMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AiMessageClient) MapCreateBulk(slice any, setFunc func(*AiMessageCreate, int)) *AiMessageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AiMessageCreateBulk{err: fmt.Errorf("calling to AiMessageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AiMessageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AiMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AiMessage.
+func (c *AiMessageClient) Update() *AiMessageUpdate {
+	mutation := newAiMessageMutation(c.config, OpUpdate)
+	return &AiMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AiMessageClient) UpdateOne(_m *AiMessage) *AiMessageUpdateOne {
+	mutation := newAiMessageMutation(c.config, OpUpdateOne, withAiMessage(_m))
+	return &AiMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AiMessageClient) UpdateOneID(id uint32) *AiMessageUpdateOne {
+	mutation := newAiMessageMutation(c.config, OpUpdateOne, withAiMessageID(id))
+	return &AiMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AiMessage.
+func (c *AiMessageClient) Delete() *AiMessageDelete {
+	mutation := newAiMessageMutation(c.config, OpDelete)
+	return &AiMessageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AiMessageClient) DeleteOne(_m *AiMessage) *AiMessageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AiMessageClient) DeleteOneID(id uint32) *AiMessageDeleteOne {
+	builder := c.Delete().Where(aimessage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AiMessageDeleteOne{builder}
+}
+
+// Query returns a query builder for AiMessage.
+func (c *AiMessageClient) Query() *AiMessageQuery {
+	return &AiMessageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAiMessage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AiMessage entity by its id.
+func (c *AiMessageClient) Get(ctx context.Context, id uint32) (*AiMessage, error) {
+	return c.Query().Where(aimessage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AiMessageClient) GetX(ctx context.Context, id uint32) *AiMessage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryConversation queries the conversation edge of a AiMessage.
+func (c *AiMessageClient) QueryConversation(_m *AiMessage) *AiConversationQuery {
+	query := (&AiConversationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(aimessage.Table, aimessage.FieldID, id),
+			sqlgraph.To(aiconversation.Table, aiconversation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, aimessage.ConversationTable, aimessage.ConversationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AiMessageClient) Hooks() []Hook {
+	hooks := c.hooks.AiMessage
+	return append(hooks[:len(hooks):len(hooks)], aimessage.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *AiMessageClient) Interceptors() []Interceptor {
+	return c.inters.AiMessage
+}
+
+func (c *AiMessageClient) mutate(ctx context.Context, m *AiMessageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AiMessageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AiMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AiMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AiMessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AiMessage mutation op: %q", m.Op())
+	}
+}
+
+// AiProviderClient is a client for the AiProvider schema.
+type AiProviderClient struct {
+	config
+}
+
+// NewAiProviderClient returns a client for the AiProvider from the given config.
+func NewAiProviderClient(c config) *AiProviderClient {
+	return &AiProviderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `aiprovider.Hooks(f(g(h())))`.
+func (c *AiProviderClient) Use(hooks ...Hook) {
+	c.hooks.AiProvider = append(c.hooks.AiProvider, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `aiprovider.Intercept(f(g(h())))`.
+func (c *AiProviderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AiProvider = append(c.inters.AiProvider, interceptors...)
+}
+
+// Create returns a builder for creating a AiProvider entity.
+func (c *AiProviderClient) Create() *AiProviderCreate {
+	mutation := newAiProviderMutation(c.config, OpCreate)
+	return &AiProviderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AiProvider entities.
+func (c *AiProviderClient) CreateBulk(builders ...*AiProviderCreate) *AiProviderCreateBulk {
+	return &AiProviderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AiProviderClient) MapCreateBulk(slice any, setFunc func(*AiProviderCreate, int)) *AiProviderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AiProviderCreateBulk{err: fmt.Errorf("calling to AiProviderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AiProviderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AiProviderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AiProvider.
+func (c *AiProviderClient) Update() *AiProviderUpdate {
+	mutation := newAiProviderMutation(c.config, OpUpdate)
+	return &AiProviderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AiProviderClient) UpdateOne(_m *AiProvider) *AiProviderUpdateOne {
+	mutation := newAiProviderMutation(c.config, OpUpdateOne, withAiProvider(_m))
+	return &AiProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AiProviderClient) UpdateOneID(id uint32) *AiProviderUpdateOne {
+	mutation := newAiProviderMutation(c.config, OpUpdateOne, withAiProviderID(id))
+	return &AiProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AiProvider.
+func (c *AiProviderClient) Delete() *AiProviderDelete {
+	mutation := newAiProviderMutation(c.config, OpDelete)
+	return &AiProviderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AiProviderClient) DeleteOne(_m *AiProvider) *AiProviderDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AiProviderClient) DeleteOneID(id uint32) *AiProviderDeleteOne {
+	builder := c.Delete().Where(aiprovider.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AiProviderDeleteOne{builder}
+}
+
+// Query returns a query builder for AiProvider.
+func (c *AiProviderClient) Query() *AiProviderQuery {
+	return &AiProviderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAiProvider},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AiProvider entity by its id.
+func (c *AiProviderClient) Get(ctx context.Context, id uint32) (*AiProvider, error) {
+	return c.Query().Where(aiprovider.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AiProviderClient) GetX(ctx context.Context, id uint32) *AiProvider {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AiProviderClient) Hooks() []Hook {
+	return c.hooks.AiProvider
+}
+
+// Interceptors returns the client interceptors.
+func (c *AiProviderClient) Interceptors() []Interceptor {
+	return c.inters.AiProvider
+}
+
+func (c *AiProviderClient) mutate(ctx context.Context, m *AiProviderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AiProviderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AiProviderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AiProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AiProviderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AiProvider mutation op: %q", m.Op())
+	}
+}
+
+// AiUsageLogClient is a client for the AiUsageLog schema.
+type AiUsageLogClient struct {
+	config
+}
+
+// NewAiUsageLogClient returns a client for the AiUsageLog from the given config.
+func NewAiUsageLogClient(c config) *AiUsageLogClient {
+	return &AiUsageLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `aiusagelog.Hooks(f(g(h())))`.
+func (c *AiUsageLogClient) Use(hooks ...Hook) {
+	c.hooks.AiUsageLog = append(c.hooks.AiUsageLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `aiusagelog.Intercept(f(g(h())))`.
+func (c *AiUsageLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AiUsageLog = append(c.inters.AiUsageLog, interceptors...)
+}
+
+// Create returns a builder for creating a AiUsageLog entity.
+func (c *AiUsageLogClient) Create() *AiUsageLogCreate {
+	mutation := newAiUsageLogMutation(c.config, OpCreate)
+	return &AiUsageLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AiUsageLog entities.
+func (c *AiUsageLogClient) CreateBulk(builders ...*AiUsageLogCreate) *AiUsageLogCreateBulk {
+	return &AiUsageLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AiUsageLogClient) MapCreateBulk(slice any, setFunc func(*AiUsageLogCreate, int)) *AiUsageLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AiUsageLogCreateBulk{err: fmt.Errorf("calling to AiUsageLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AiUsageLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AiUsageLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AiUsageLog.
+func (c *AiUsageLogClient) Update() *AiUsageLogUpdate {
+	mutation := newAiUsageLogMutation(c.config, OpUpdate)
+	return &AiUsageLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AiUsageLogClient) UpdateOne(_m *AiUsageLog) *AiUsageLogUpdateOne {
+	mutation := newAiUsageLogMutation(c.config, OpUpdateOne, withAiUsageLog(_m))
+	return &AiUsageLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AiUsageLogClient) UpdateOneID(id uint32) *AiUsageLogUpdateOne {
+	mutation := newAiUsageLogMutation(c.config, OpUpdateOne, withAiUsageLogID(id))
+	return &AiUsageLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AiUsageLog.
+func (c *AiUsageLogClient) Delete() *AiUsageLogDelete {
+	mutation := newAiUsageLogMutation(c.config, OpDelete)
+	return &AiUsageLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AiUsageLogClient) DeleteOne(_m *AiUsageLog) *AiUsageLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AiUsageLogClient) DeleteOneID(id uint32) *AiUsageLogDeleteOne {
+	builder := c.Delete().Where(aiusagelog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AiUsageLogDeleteOne{builder}
+}
+
+// Query returns a query builder for AiUsageLog.
+func (c *AiUsageLogClient) Query() *AiUsageLogQuery {
+	return &AiUsageLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAiUsageLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AiUsageLog entity by its id.
+func (c *AiUsageLogClient) Get(ctx context.Context, id uint32) (*AiUsageLog, error) {
+	return c.Query().Where(aiusagelog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AiUsageLogClient) GetX(ctx context.Context, id uint32) *AiUsageLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AiUsageLogClient) Hooks() []Hook {
+	hooks := c.hooks.AiUsageLog
+	return append(hooks[:len(hooks):len(hooks)], aiusagelog.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *AiUsageLogClient) Interceptors() []Interceptor {
+	return c.inters.AiUsageLog
+}
+
+func (c *AiUsageLogClient) mutate(ctx context.Context, m *AiUsageLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AiUsageLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AiUsageLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AiUsageLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AiUsageLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AiUsageLog mutation op: %q", m.Op())
 	}
 }
 
@@ -7703,25 +8302,25 @@ func (c *UserRoleClient) mutate(ctx context.Context, m *UserRoleMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AccessKey, Api, ApiAuditLog, DataAccessAuditLog, DictEntry, DictEntryI18n,
-		DictType, File, InternalMessage, InternalMessageCategory,
-		InternalMessageRecipient, Language, LoginAuditLog, LoginPolicy, Membership,
-		MembershipOrgUnit, MembershipPosition, MembershipRole, Menu,
-		NotificationChannel, NotificationDelivery, NotificationRule, OperationAuditLog,
-		OrgUnit, Permission, PermissionApi, PermissionAuditLog, PermissionGroup,
-		PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
+		AccessKey, AiConversation, AiMessage, AiProvider, AiUsageLog, Api, ApiAuditLog,
+		DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File, InternalMessage,
+		InternalMessageCategory, InternalMessageRecipient, Language, LoginAuditLog,
+		LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition, MembershipRole,
+		Menu, NotificationChannel, NotificationDelivery, NotificationRule,
+		OperationAuditLog, OrgUnit, Permission, PermissionApi, PermissionAuditLog,
+		PermissionGroup, PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
 		PolicyEvaluationLog, Position, Role, RoleFieldPermission, RoleMetadata,
 		RoleOrgUnit, RolePermission, Script, ScriptLog, SysConfig, Task, Tenant, User,
 		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
 	}
 	inters struct {
-		AccessKey, Api, ApiAuditLog, DataAccessAuditLog, DictEntry, DictEntryI18n,
-		DictType, File, InternalMessage, InternalMessageCategory,
-		InternalMessageRecipient, Language, LoginAuditLog, LoginPolicy, Membership,
-		MembershipOrgUnit, MembershipPosition, MembershipRole, Menu,
-		NotificationChannel, NotificationDelivery, NotificationRule, OperationAuditLog,
-		OrgUnit, Permission, PermissionApi, PermissionAuditLog, PermissionGroup,
-		PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
+		AccessKey, AiConversation, AiMessage, AiProvider, AiUsageLog, Api, ApiAuditLog,
+		DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File, InternalMessage,
+		InternalMessageCategory, InternalMessageRecipient, Language, LoginAuditLog,
+		LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition, MembershipRole,
+		Menu, NotificationChannel, NotificationDelivery, NotificationRule,
+		OperationAuditLog, OrgUnit, Permission, PermissionApi, PermissionAuditLog,
+		PermissionGroup, PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
 		PolicyEvaluationLog, Position, Role, RoleFieldPermission, RoleMetadata,
 		RoleOrgUnit, RolePermission, Script, ScriptLog, SysConfig, Task, Tenant, User,
 		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,

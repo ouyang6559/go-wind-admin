@@ -21,6 +21,7 @@ require (
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/pquerna/otp v1.5.0
 	github.com/redis/go-redis/v9 v9.22.0
+	github.com/sashabaranov/go-openai v1.41.2
 	github.com/stretchr/testify v1.12.1
 	github.com/tx7do/go-crud/api v0.0.7
 	github.com/tx7do/go-crud/entgo v0.0.55
@@ -41,6 +42,7 @@ require (
 	github.com/tx7do/go-utils/mapper v0.0.3
 	github.com/tx7do/go-utils/password v0.0.2
 	github.com/tx7do/go-wind v0.0.2
+	github.com/tx7do/go-wind-plugins/ai/openai v0.0.1
 	github.com/tx7do/go-wind-toolkit/protoc-gen-go-redact v0.0.0-20260831125122-5bb4931991b2
 	github.com/tx7do/kratos-authn v1.1.11
 	github.com/tx7do/kratos-authn/engine/jwt v1.1.11

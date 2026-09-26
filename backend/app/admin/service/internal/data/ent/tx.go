@@ -14,6 +14,14 @@ type Tx struct {
 	config
 	// AccessKey is the client for interacting with the AccessKey builders.
 	AccessKey *AccessKeyClient
+	// AiConversation is the client for interacting with the AiConversation builders.
+	AiConversation *AiConversationClient
+	// AiMessage is the client for interacting with the AiMessage builders.
+	AiMessage *AiMessageClient
+	// AiProvider is the client for interacting with the AiProvider builders.
+	AiProvider *AiProviderClient
+	// AiUsageLog is the client for interacting with the AiUsageLog builders.
+	AiUsageLog *AiUsageLogClient
 	// Api is the client for interacting with the Api builders.
 	Api *APIClient
 	// ApiAuditLog is the client for interacting with the ApiAuditLog builders.
@@ -246,6 +254,10 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.AccessKey = NewAccessKeyClient(tx.config)
+	tx.AiConversation = NewAiConversationClient(tx.config)
+	tx.AiMessage = NewAiMessageClient(tx.config)
+	tx.AiProvider = NewAiProviderClient(tx.config)
+	tx.AiUsageLog = NewAiUsageLogClient(tx.config)
 	tx.Api = NewAPIClient(tx.config)
 	tx.ApiAuditLog = NewApiAuditLogClient(tx.config)
 	tx.DataAccessAuditLog = NewDataAccessAuditLogClient(tx.config)

@@ -759,6 +759,858 @@ export function createAdminPortalServiceClient(
     },
   };
 }
+// AI 对话服务
+// 流式语义：本 RPC 是普通 POST（body 为扁平请求体，**不包 data**），
+// 增量 token 经 SSE `ai_chat_chunk` 事件推送（见 domain proto 注释）。
+export interface AiChatService {
+  // 发起一轮对话
+  Chat(
+    request: aiservicev1_ChatRequest,
+  ): Promise<aiservicev1_ChatResponse>;
+}
+
+export function createAiChatServiceClient(
+  transport: ClientTransport,
+): AiChatService {
+  return {
+    Chat(request) {
+      const path = `admin/v1/ai/chat/completions`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiChatService',
+        method: 'Chat',
+      }) as Promise<aiservicev1_ChatResponse>;
+    },
+  };
+}
+// 发起对话 - 请求
+export type aiservicev1_ChatRequest = {
+  content?: string;
+  conversationId?: number;
+  providerId?: number;
+};
+
+// 发起对话 - 回应
+export type aiservicev1_ChatResponse = {
+  // 会话（新建时返回新建的会话）
+  conversation: aiservicev1_AiConversation | undefined;
+  // 模型回复消息（含 token 用量与模型名）
+  message: aiservicev1_AiMessage | undefined;
+};
+
+// AI 对话会话
+export type aiservicev1_AiConversation = {
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  id?: number;
+  lastMessageAt?: wellKnownTimestamp;
+  providerId?: number;
+  tenantId?: number;
+  title?: string;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+  userId?: number;
+};
+
+// AI 对话消息
+export type aiservicev1_AiMessage = {
+  completionTokens?: number;
+  content?: string;
+  conversationId?: number;
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  durationMs?: number;
+  errorMessage?: string;
+  id?: number;
+  modelName?: string;
+  promptTokens?: number;
+  role?: aiservicev1_AiRole;
+  tenantId?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+  userId?: number;
+};
+
+// 消息角色
+export type aiservicev1_AiRole =
+  | 'AI_ROLE_UNSPECIFIED'
+  | 'ASSISTANT'
+  | 'SYSTEM'
+  | 'USER';
+// AI 对话会话管理服务
+export interface AiConversationService {
+  // 分页查询会话列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiConversationResponse>;
+  // 查询会话详情
+  Get(
+    request: aiservicev1_GetAiConversationRequest,
+  ): Promise<aiservicev1_AiConversation>;
+  // 更新会话（改标题）
+  Update(
+    request: aiservicev1_UpdateAiConversationRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除会话
+  Delete(
+    request: aiservicev1_DeleteAiConversationRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createAiConversationServiceClient(
+  transport: ClientTransport,
+): AiConversationService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/conversations`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiConversationService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiConversationResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/conversations/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.viewMask) {
+        queryParams.push(
+          `viewMask=${encodeURIComponent(request.viewMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiConversationService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiConversation>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/conversations/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiConversationService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/conversations/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiConversationService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询会话列表 - 回应
+export type aiservicev1_ListAiConversationResponse = {
+  items: aiservicev1_AiConversation[] | undefined;
+  total: number | undefined;
+};
+
+// 查询会话详情 - 请求
+export type aiservicev1_GetAiConversationRequest = {
+  id?: number;
+  viewMask?: wellKnownFieldMask;
+};
+
+// 更新会话 - 请求
+export type aiservicev1_UpdateAiConversationRequest = {
+  allowMissing?: boolean;
+  data: aiservicev1_AiConversation | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除会话 - 请求
+export type aiservicev1_DeleteAiConversationRequest = {
+  id?: number;
+};
+
+// AI 对话消息服务
+export interface AiMessageService {
+  // 分页查询消息列表（按 conversationId 过滤；ID 类字段精确匹配，不走模糊搜索）
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiMessageResponse>;
+  // 删除消息
+  Delete(
+    request: aiservicev1_DeleteAiMessageRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createAiMessageServiceClient(
+  transport: ClientTransport,
+): AiMessageService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/messages`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiMessageService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiMessageResponse>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/messages/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiMessageService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询消息列表 - 回应
+export type aiservicev1_ListAiMessageResponse = {
+  items: aiservicev1_AiMessage[] | undefined;
+  total: number | undefined;
+};
+
+// 删除消息 - 请求
+export type aiservicev1_DeleteAiMessageRequest = {
+  id?: number;
+};
+
+// AI 模型提供商管理服务
+export interface AiProviderService {
+  // 分页查询 AI 提供商列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiProviderResponse>;
+  // 查询 AI 提供商详情
+  Get(
+    request: aiservicev1_GetAiProviderRequest,
+  ): Promise<aiservicev1_AiProvider>;
+  // 创建 AI 提供商
+  Create(
+    request: aiservicev1_CreateAiProviderRequest,
+  ): Promise<wellKnownEmpty>;
+  // 更新 AI 提供商
+  Update(
+    request: aiservicev1_UpdateAiProviderRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除 AI 提供商
+  Delete(
+    request: aiservicev1_DeleteAiProviderRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createAiProviderServiceClient(
+  transport: ClientTransport,
+): AiProviderService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/providers`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiProviderService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiProviderResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/providers/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.viewMask) {
+        queryParams.push(
+          `viewMask=${encodeURIComponent(request.viewMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiProviderService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiProvider>;
+    },
+    Create(request) {
+      const path = `admin/v1/ai/providers`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiProviderService',
+        method: 'Create',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/providers/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiProviderService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/providers/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiProviderService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询 AI 提供商列表 - 回应
+export type aiservicev1_ListAiProviderResponse = {
+  items: aiservicev1_AiProvider[] | undefined;
+  total: number | undefined;
+};
+
+// AI 模型提供商（一行 = 一个可调用的模型端点配置）
+export type aiservicev1_AiProvider = {
+  apiKey?: string;
+  apiKeyHint?: string;
+  baseUrl?: string;
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  id?: number;
+  isDefault?: boolean;
+  isEnabled?: boolean;
+  localHost?: string;
+  localPort?: number;
+  modelName?: string;
+  modelType?: aiservicev1_AiProvider_ModelType;
+  name?: string;
+  organization?: string;
+  remark?: string;
+  systemPrompt?: string;
+  timeoutSeconds?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+};
+
+// 模型部署形态
+export type aiservicev1_AiProvider_ModelType =
+  | 'CLOUD'
+  | 'LOCAL'
+  | 'MODEL_TYPE_UNSPECIFIED';
+// 查询 AI 提供商详情 - 请求
+export type aiservicev1_GetAiProviderRequest = {
+  id?: number;
+  viewMask?: wellKnownFieldMask;
+};
+
+// 创建 AI 提供商 - 请求
+export type aiservicev1_CreateAiProviderRequest = {
+  data: aiservicev1_AiProvider | undefined;
+};
+
+// 更新 AI 提供商 - 请求
+export type aiservicev1_UpdateAiProviderRequest = {
+  allowMissing?: boolean;
+  data: aiservicev1_AiProvider | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除 AI 提供商 - 请求
+export type aiservicev1_DeleteAiProviderRequest = {
+  id?: number;
+};
+
+// AI 用量流水服务（配额记账事实源）
+export interface AiUsageLogService {
+  // 分页查询用量流水
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiUsageLogResponse>;
+}
+
+export function createAiUsageLogServiceClient(
+  transport: ClientTransport,
+): AiUsageLogService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/usage-logs`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiUsageLogService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiUsageLogResponse>;
+    },
+  };
+}
+// 查询用量流水列表 - 回应
+export type aiservicev1_ListAiUsageLogResponse = {
+  items: aiservicev1_AiUsageLog[] | undefined;
+  total: number | undefined;
+};
+
+// AI 调用用量流水（每次成功的模型调用一行；配额按 total_tokens 聚合）
+export type aiservicev1_AiUsageLog = {
+  completionTokens?: number;
+  conversationId?: number;
+  createdAt?: wellKnownTimestamp;
+  durationMs?: number;
+  id?: number;
+  modelName?: string;
+  promptTokens?: number;
+  providerId?: number;
+  tenantId?: number;
+  totalTokens?: number;
+  userId?: number;
+};
+
 // API资源管理服务
 export interface ApiService {
   // 查询API资源列表
@@ -7911,6 +8763,7 @@ export type identityservicev1_PlanQuota = {
 
 // 配额类型
 export type identityservicev1_PlanQuota_QuotaType =
+  | 'AI_TOKENS'
   | 'API_CALL'
   | 'PLAN_QUOTA_TYPE_UNSPECIFIED'
   | 'STORAGE'
@@ -10847,6 +11700,11 @@ export type identityservicev1_EmailVerification = {
 export class ApiClient {
   private _accessKeyService?: AccessKeyService;
   private _adminPortalService?: AdminPortalService;
+  private _aiChatService?: AiChatService;
+  private _aiConversationService?: AiConversationService;
+  private _aiMessageService?: AiMessageService;
+  private _aiProviderService?: AiProviderService;
+  private _aiUsageLogService?: AiUsageLogService;
   private _apiAuditLogService?: ApiAuditLogService;
   private _apiService?: ApiService;
   private _authenticationService?: AuthenticationService;
@@ -10900,6 +11758,26 @@ export class ApiClient {
 
   get adminPortalService(): AdminPortalService {
     return this._adminPortalService ??= createAdminPortalServiceClient(this._transport);
+  }
+
+  get aiChatService(): AiChatService {
+    return this._aiChatService ??= createAiChatServiceClient(this._transport);
+  }
+
+  get aiConversationService(): AiConversationService {
+    return this._aiConversationService ??= createAiConversationServiceClient(this._transport);
+  }
+
+  get aiMessageService(): AiMessageService {
+    return this._aiMessageService ??= createAiMessageServiceClient(this._transport);
+  }
+
+  get aiProviderService(): AiProviderService {
+    return this._aiProviderService ??= createAiProviderServiceClient(this._transport);
+  }
+
+  get aiUsageLogService(): AiUsageLogService {
+    return this._aiUsageLogService ??= createAiUsageLogServiceClient(this._transport);
   }
 
   get apiAuditLogService(): ApiAuditLogService {

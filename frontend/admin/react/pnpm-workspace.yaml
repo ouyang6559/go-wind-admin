@@ -5,4 +5,5 @@ allowBuilds:
   core-js: false
   esbuild: false
   json-editor-vue: false
+  rolldown: true
   vue-demi: false

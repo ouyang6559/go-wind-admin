@@ -135,6 +135,102 @@ func (f AccessKeyMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutat
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AccessKeyMutation", m)
 }
 
+// The AiConversationQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiConversationQueryRuleFunc func(context.Context, *ent.AiConversationQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiConversationQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiConversationQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiConversationQuery", q)
+}
+
+// The AiConversationMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiConversationMutationRuleFunc func(context.Context, *ent.AiConversationMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiConversationMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiConversationMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiConversationMutation", m)
+}
+
+// The AiMessageQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiMessageQueryRuleFunc func(context.Context, *ent.AiMessageQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiMessageQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiMessageQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiMessageQuery", q)
+}
+
+// The AiMessageMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiMessageMutationRuleFunc func(context.Context, *ent.AiMessageMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiMessageMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiMessageMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiMessageMutation", m)
+}
+
+// The AiProviderQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiProviderQueryRuleFunc func(context.Context, *ent.AiProviderQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiProviderQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiProviderQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiProviderQuery", q)
+}
+
+// The AiProviderMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiProviderMutationRuleFunc func(context.Context, *ent.AiProviderMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiProviderMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiProviderMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiProviderMutation", m)
+}
+
+// The AiUsageLogQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AiUsageLogQueryRuleFunc func(context.Context, *ent.AiUsageLogQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AiUsageLogQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AiUsageLogQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AiUsageLogQuery", q)
+}
+
+// The AiUsageLogMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AiUsageLogMutationRuleFunc func(context.Context, *ent.AiUsageLogMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AiUsageLogMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AiUsageLogMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AiUsageLogMutation", m)
+}
+
 // The ApiQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ApiQueryRuleFunc func(context.Context, *ent.APIQuery) error
@@ -1372,6 +1468,14 @@ func queryFilter(q ent.Query) (Filter, error) {
 	switch q := q.(type) {
 	case *ent.AccessKeyQuery:
 		return q.Filter(), nil
+	case *ent.AiConversationQuery:
+		return q.Filter(), nil
+	case *ent.AiMessageQuery:
+		return q.Filter(), nil
+	case *ent.AiProviderQuery:
+		return q.Filter(), nil
+	case *ent.AiUsageLogQuery:
+		return q.Filter(), nil
 	case *ent.APIQuery:
 		return q.Filter(), nil
 	case *ent.ApiAuditLogQuery:
@@ -1480,6 +1584,14 @@ func queryFilter(q ent.Query) (Filter, error) {
 func mutationFilter(m ent.Mutation) (Filter, error) {
 	switch m := m.(type) {
 	case *ent.AccessKeyMutation:
+		return m.Filter(), nil
+	case *ent.AiConversationMutation:
+		return m.Filter(), nil
+	case *ent.AiMessageMutation:
+		return m.Filter(), nil
+	case *ent.AiProviderMutation:
+		return m.Filter(), nil
+	case *ent.AiUsageLogMutation:
 		return m.Filter(), nil
 	case *ent.APIMutation:
 		return m.Filter(), nil

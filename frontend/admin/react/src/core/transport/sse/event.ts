@@ -14,4 +14,14 @@ export const SSE_EVENT = {
    * 与 REST 收件箱接口返回的形状一致。
    */
   Notification: 'notification',
+
+  /**
+   * AI 对话流式片段推送。
+   *
+   * data 为 `ChatChunkEvent` 的 protojson：camelCase 键（`conversationId` /
+   * `seq` / `delta`）。一次对话产生多个 chunk 帧，按 conversationId 归组、
+   * seq 顺序累积渲染；POST /admin/v1/ai/chat/completions 的同步响应携带
+   * 完整回复，以响应为准校正累积文本。
+   */
+  AIChatChunk: 'ai_chat_chunk',
 } as const;
