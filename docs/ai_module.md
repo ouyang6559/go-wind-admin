@@ -1,4 +1,4 @@
-# AI 模块（对话 / 提供商 / 用量配额 / 知识库 RAG）
+# AI 模块（提供商 / 流式对话 / 用量配额 / 知识库 RAG / 脚本与任务集成 / 安全洞察）
 
 > **定位**：AI 模块的参考层文档：子域划分、流式对话语义、密钥与配额机制、知识库 RAG 链路与部署要求。
 > 改 AI 相关代码（`api/protos/ai/`、`pkg/ai/`、`internal/service/ai_*.go`、三端 `ai` 页面）前先读本文。
@@ -11,7 +11,9 @@
 | 对话会话 | `sys_ai_conversations` | 归属用户（user_id），删除级联消息 |
 | 对话消息 | `sys_ai_messages` | USER/ASSISTANT/SYSTEM 三角色；ASSISTANT 行带 tokens/耗时快照 |
 | 用量流水 | `sys_ai_usage_logs` | 每次成功调用一行（只增不改），配额聚合的事实源 |
-| 知识库 | `sys_ai_knowledge_bases` / `sys_ai_docs` / `sys_ai_chunks` | RAG：文档切片 → 向量化 → 余弦检索 |
+| 知识库 | `sys_ai_knowledge_bases` / `sys_ai_docs` / `sys_ai_chunks` | RAG：文档切片 → 向量化 → 余弦检索（`embedding` 向量列不进 ent schema，走启动期 SQL 补建 + 原生 SQL 读写） |
+| 脚本集成 | — | 脚本内 `ai.chat / ai.chatWith / ai.chatWithSystem`（`pkg/scripting/api/module_ai.go`），复用提供商解析与用量记账 |
+| 定时任务 | — | `ai_doc_reindex`（向量重索引，按需）与 `ai_audit_digest`（审计日报，每日 08:00 常驻） |
 
 ## 流式对话语义
 
@@ -19,6 +21,7 @@
 - 生成过程中的增量 token 通过 SSE 网关（:7789）以 `ai_chat_chunk` 事件推送给发起用户（streamID=userId），事件 data 为 `ChatChunkEvent` 的 protojson（`conversationId`/`seq`/`delta`，camelCase）。**seq=0 时 protojson 省略零值字段**，前端不能依赖 seq 存在。
 - chunk 是尽力而为（`TryPublish` 缓冲满即丢帧），以 POST 同步响应为最终事实。
 - 流式时长由 context deadline（5 分钟）控制，不是 `http.Client.Timeout`——`pkg/ai/client.go` 显式注入无超时 client 覆盖上游默认 30s，否则长回复被腰斩。
+- 脚本 `ai` 模块与定时任务/洞察共用同一条 provider 解析 → 密钥解密 → 客户端工厂链路（`newOpenAIClientForProvider` / `ChatForScript`），不会出现第二套接入逻辑。
 
 ## 密钥与配置
 
@@ -30,6 +33,7 @@
 - `QuotaType.AI_TOKENS=4`（月度）：`chat` 前检查租户套餐配额，超限返回 400 "ai token quota exceeded for this month"；未配置该维度 = 不限量；平台用户（tenant_id=0）跳过检查。
 - **套餐模块白名单**：AI 六服务已登记进 `pkg/constants/module_mapping.go`（Module 枚举 `AI=11`），租户访问 AI 端点要求租户套餐的白名单里有 `AI` 模块行（`sys_plan_modules`），否则 403 "module not allowed"。漏登记的后果是 fail-closed 拒绝，不是放行。
 - 菜单归类：`ComponentToModule` 已加 `app/ai/` 前缀 → AI 模块。
+- **新部署注意**：`sys_plan_modules` 不会自动出现 `AI` 行——需在「套餐管理」给目标套餐手动添加 AI 模块白名单（或 SQL 直插），否则租户访问 AI 一律 403。
 
 ## 知识库 RAG
 
@@ -53,6 +57,21 @@
 3. **embedding 向量列不进 ent schema**（ent 对 pgvector 自定义类型支持受限），切片读写走原生 SQL（`entClient.DB()`）。手改表结构时注意保持列名 `embedding`。
 4. Docker 部署示例：把 `backend/scripts/deploy/` 下的 compose 里 postgres 镜像换成 `pgvector/pgvector:pg16` 即可，其余不变。
 
+## 安全与异常洞察（dashboard 卡片）
+
+三端分析页的「AI 安全与异常洞察」卡片：**规则预筛审计明细的行为模式，LLM 只生成总体评估措辞**——告警是确定性事实，不依赖模型编造；无告警时不调模型。
+
+| 信号（24h 窗口） | 严重度 | 规则 |
+|---|---|---|
+| 疑似口令尝试 | HIGH | 单账号登录失败 ≥3 次（`sys_login_audit_logs.status='FAILED'`），detail 带最近来源 IP |
+| 非常规时段操作 | MEDIUM | 本地 0-6 点（Asia/Shanghai）的操作 ≥1 次 |
+| 操作失败集中 | MEDIUM | 单用户失败操作 ≥3 次 |
+| 敏感操作 | LOW | DELETE/EXPORT/ASSIGN 明细（最多列 5 条） |
+
+**i18n 架构（重要约定）**：后端只回结构化事实（`AiInsightAlert{severity, type, facts, items}`，type=BRUTE_FORCE/NIGHT_OPS/FAILED_OPS/SENSITIVE_OPS），**不生成任何人类文案**——告警标题/明细由前端 i18n 模板按界面语言渲染（三端各自 dashboard 文案文件里的 `aiInsights.alerts.<type>` 模板）；LLM 总评按请求 `lang` 生成（提示词尾部注入语言指示）。新告警类型 = 后端加规则 + 三端加模板键，缺一方该告警在前端显示原始键。
+
+**权限**：平台用户专属（`tenant_id != 0` 一律 403）——洞察会读取全平台审计明细且把事实外发到模型端点，出域边界比普通统计接口严格。
+
 ## 三端页面
 
 | 端 | 路由 | 内容 |
@@ -65,6 +84,6 @@
 
 ## 已知边界
 
-- e2e 用 `mock_llm.py`（OpenAI 兼容 echo + bigram 词袋 embeddings）验证；真实云端模型（DeepSeek/通义）与本地 Ollama 走同一 OpenAI 兼容协议，未逐家实测。
+- e2e 与本地演示用 `mock_llm.py`（OpenAI 兼容；对话 echo、洞察请求按事实清单生成分析要点、RAG 请求引用片段、embeddings 为 bigram 词袋向量可断言检索）验证；真实云端模型（DeepSeek/通义）与本地 Ollama 走同一 OpenAI 兼容协议，未逐家实测。
 - 会话标题默认取首条消息前 30 字符；重命名接口已具备（Update conversation），react 端未出入口。
 - 图像/多模态、Function Call、agent 编排未做（eino/langchaingo 插件能力在上游已备，按需接入）。
