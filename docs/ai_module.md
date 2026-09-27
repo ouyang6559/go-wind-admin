@@ -1,4 +1,4 @@
-# AI 模块（提供商 / 流式对话 / 用量配额 / 知识库 RAG / 脚本与任务集成 / 安全洞察）
+# AI 模块（提供商 / 流式对话 / 用量配额 / 知识库 RAG / 脚本与任务集成 / 安全洞察 / 智能问数）
 
 > **定位**：AI 模块的参考层文档：子域划分、流式对话语义、密钥与配额机制、知识库 RAG 链路与部署要求。
 > 改 AI 相关代码（`api/protos/ai/`、`pkg/ai/`、`internal/service/ai_*.go`、三端 `ai` 页面）前先读本文。
@@ -57,6 +57,32 @@
 3. **embedding 向量列不进 ent schema**（ent 对 pgvector 自定义类型支持受限），切片读写走原生 SQL（`entClient.DB()`）。手改表结构时注意保持列名 `embedding`。
 4. Docker 部署示例：把 `backend/scripts/deploy/` 下的 compose 里 postgres 镜像换成 `pgvector/pgvector:pg16` 即可，其余不变。
 
+## 智能问数（NL → 只读 SQL）
+
+三端「智能问数」页：自然语言提问 → LLM 生成只读 SQL → 只读事务执行 → 结果表格 +（可选）自然语言结论。`POST /admin/v1/ai/query/ask`，响应含 `sql/columns/rows/rowCount/answer/totalTokens`。
+
+**五重安全护栏**（每轮生成的 SQL 全量过检，多轮追问不豁免）：
+
+1. **只读语句**：仅 `SELECT`/`WITH` 开头；
+2. **危险模式拒绝**：INSERT/UPDATE/DELETE/DROP/DDL/DCL、`pg_sleep`/`dblink` 等危险函数、多语句（分号）、SQL 注释（防注释截断绕过）；
+3. **表白名单**：`FROM/JOIN` 涉及的每张表逐一对照白名单（平台 10 表 / 租户 6 表，见下）；
+4. **LIMIT 钳制**：缺失补 100，超限改写；
+5. **只读事务执行**：`READ ONLY` 事务，数据库层兜底。
+
+**双白名单与租户谓词**：
+
+- 平台用户（tenant_id=0）：10 张全平台表；
+- 租户用户：6 张带 `tenant_id` 列的本租户数据表（操作审计/登录审计/AI 用量/用户/角色/收件记录），平台级表（sys_tenants/sys_plans 等）不在白名单；
+- 租户 SQL 必须包含 `tenant_id = {自身ID}` 谓词——提示词写强制规则（含具体 ID），后置正则校验**缺失即拒绝**（fail-closed）。`sanitizeSQLFor(raw, whitelist, tenantPattern)` 带参化。
+
+**拒答对抗（真实 DeepSeek 实测教训）**："登录失败记录"类措辞会触发模型安全拒答（理解成用户在查个人账号）。三层对策：①提示词声明"提问永远是对白名单表的查询，绝不拒绝"；②few-shot 示例放**真实消息序列**（user/assistant 对，约束力远强于 system 指令），租户路径的示例本身带 tenant_id 谓词；③`extractSQL` 非锚定提取（模型输出常带说明前缀/围栏，锚定 `^` 匹配不到）。
+
+**多轮追问**：请求带 `history[]`（question+sql+resultSummary，建议 ≤5 轮），作为 user/assistant 交替消息传入消解指代（"那只看 admin 的"）；追问生成的 SQL 同样过全部护栏。
+
+**结论生成**：`withAnswer=true` 时第二次调用把"问题+SQL+前 20 行结果"喂给模型生成结论（结果为空/结论失败不影响数据返回）。两次调用均记 `AI_TOKENS` 用量。
+
+**权限**：平台用户查全平台表；租户用户查本租户表（仍需套餐 `AI` 模块白名单 + AI_TOKENS 配额，与对话一致）。
+
 ## 安全与异常洞察（dashboard 卡片）
 
 三端分析页的「AI 安全与异常洞察」卡片：**规则预筛审计明细的行为模式，LLM 只生成总体评估措辞**——告警是确定性事实，不依赖模型编造；无告警时不调模型。
@@ -76,7 +102,7 @@
 
 | 端 | 路由 | 内容 |
 |---|---|---|
-| react | `/ai/chat` `/ai/providers` `/ai/knowledge` | 基准实现（流式 markdown 渲染、知识库选择器、文档上传） |
+| react | `/ai/chat` `/ai/providers` `/ai/knowledge` `/ai/query` | 基准实现（流式 markdown 渲染、知识库选择器、文档上传、对话式问数） |
 | vue-element | 同构 | ProPage + useDrawerForm |
 | vue-vben | 同构（hash 路由） | VxeGrid + useVbenDrawer |
 

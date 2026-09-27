@@ -88,5 +88,5 @@ gow 未覆盖的任务（三端 TS 生成 `make ts`、OpenAPI `make openapi`、`
 - SSE 推送架构：`docs/sse_architecture.md`（服务端配置与生命周期/流鉴权与 streamID 语义/事件生产/三端消费/部署与排障；改推送链路、加事件类型或排"收不到通知"前先读它）
 - 数据权限范围：`docs/data_scope_design.md`（角色级行数据范围：语义/聚合/接入步骤/运维边界；新表接入数据范围或改聚合规则先读它）
 - 设计语言规范：`docs/design-language.md`（三端视觉唯一权威值表，改颜色/圆角/布局尺寸先改这里再同步三端）
-- AI 模块：`docs/ai_module.md`（模型提供商/流式对话/用量配额/知识库 RAG/脚本 ai 模块/安全洞察的架构与部署要求；改 AI 相关代码、接新模型、部署 pgvector 或排租户 AI 403 前先读它）
+- AI 模块：`docs/ai_module.md`（模型提供商/流式对话/用量配额/知识库 RAG/脚本 ai 模块/安全洞察/智能问数的架构与部署要求；改 AI 相关代码、接新模型、部署 pgvector 或排租户 AI 403 前先读它）
 - 教程第 10 章：`docs/tutorial/10-ai-module.md`（AI 功能的采用者上手路径：配置三步/使用/集成）
