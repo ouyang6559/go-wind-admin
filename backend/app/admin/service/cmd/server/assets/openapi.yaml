@@ -1467,11 +1467,29 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /admin/v1/dashboard/ai-insights:
+        post:
+            tags:
+                - DashboardService
+            description: |-
+                登录审计按 status 分布
+                 AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+            operationId: DashboardService_GetAiInsights
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AiInsightsResponse'
     /admin/v1/dashboard/login-status-distribution:
         get:
             tags:
                 - DashboardService
-            description: 登录审计按 status 分布
             operationId: DashboardService_GetLoginStatusDistribution
             responses:
                 "200":
@@ -7189,6 +7207,12 @@ components:
                     type: string
                     format: date-time
             description: AI 文档
+        AiInsightsResponse:
+            type: object
+            properties:
+                summary:
+                    type: string
+            description: AI 概览解读 - 回应
         AiKnowledgeBase:
             type: object
             properties:

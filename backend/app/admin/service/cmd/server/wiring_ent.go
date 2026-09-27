@@ -221,7 +221,6 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	serverMonitorService := service.NewServerMonitorService(ctx, serverMonitorRepo)
 	notificationChannelService := service.NewNotificationChannelService(ctx, notificationChannelRepo, notificationService)
 	onlineSessionService := service.NewOnlineSessionService(ctx, authenticator)
-	dashboardService := service.NewDashboardService(ctx, dashboardRepo)
 	adminPortalService := service.NewAdminPortalService(ctx, menuRepo, roleRepo, userRepo, permissionRepo, planModuleRepo, tenantRepo)
 
 	// 站内信
@@ -264,6 +263,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 			return scriptRuntime.InvokeEntityHookVeto(hookPoint, payload)
 		},
 	)
+
+	dashboardService := service.NewDashboardService(ctx, dashboardRepo, scriptRuntime)
 
 	// 审计日报 AI 摘要：聚合审计 + AI 摘要（复用脚本 ai 模块的 ChatForScript）+ 站内信投递内核。
 	// 依赖 scriptRuntime 与 internalMessageService，故置二者之后。

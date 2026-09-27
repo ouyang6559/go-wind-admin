@@ -23,6 +23,7 @@ const (
 	DashboardService_GetOverview_FullMethodName                    = "/admin.service.v1.DashboardService/GetOverview"
 	DashboardService_GetLoginTrend_FullMethodName                  = "/admin.service.v1.DashboardService/GetLoginTrend"
 	DashboardService_GetOperationActionDistribution_FullMethodName = "/admin.service.v1.DashboardService/GetOperationActionDistribution"
+	DashboardService_GetAiInsights_FullMethodName                  = "/admin.service.v1.DashboardService/GetAiInsights"
 	DashboardService_GetLoginStatusDistribution_FullMethodName     = "/admin.service.v1.DashboardService/GetLoginStatusDistribution"
 )
 
@@ -39,6 +40,8 @@ type DashboardServiceClient interface {
 	// 操作审计按 action 分布
 	GetOperationActionDistribution(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ActionDistributionResponse, error)
 	// 登录审计按 status 分布
+	// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+	GetAiInsights(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AiInsightsResponse, error)
 	GetLoginStatusDistribution(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatusDistributionResponse, error)
 }
 
@@ -80,6 +83,16 @@ func (c *dashboardServiceClient) GetOperationActionDistribution(ctx context.Cont
 	return out, nil
 }
 
+func (c *dashboardServiceClient) GetAiInsights(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AiInsightsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AiInsightsResponse)
+	err := c.cc.Invoke(ctx, DashboardService_GetAiInsights_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *dashboardServiceClient) GetLoginStatusDistribution(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatusDistributionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StatusDistributionResponse)
@@ -103,6 +116,8 @@ type DashboardServiceServer interface {
 	// 操作审计按 action 分布
 	GetOperationActionDistribution(context.Context, *emptypb.Empty) (*ActionDistributionResponse, error)
 	// 登录审计按 status 分布
+	// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+	GetAiInsights(context.Context, *emptypb.Empty) (*AiInsightsResponse, error)
 	GetLoginStatusDistribution(context.Context, *emptypb.Empty) (*StatusDistributionResponse, error)
 	mustEmbedUnimplementedDashboardServiceServer()
 }
@@ -122,6 +137,9 @@ func (UnimplementedDashboardServiceServer) GetLoginTrend(context.Context, *GetLo
 }
 func (UnimplementedDashboardServiceServer) GetOperationActionDistribution(context.Context, *emptypb.Empty) (*ActionDistributionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOperationActionDistribution not implemented")
+}
+func (UnimplementedDashboardServiceServer) GetAiInsights(context.Context, *emptypb.Empty) (*AiInsightsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAiInsights not implemented")
 }
 func (UnimplementedDashboardServiceServer) GetLoginStatusDistribution(context.Context, *emptypb.Empty) (*StatusDistributionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLoginStatusDistribution not implemented")
@@ -201,6 +219,24 @@ func _DashboardService_GetOperationActionDistribution_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DashboardService_GetAiInsights_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DashboardServiceServer).GetAiInsights(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DashboardService_GetAiInsights_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DashboardServiceServer).GetAiInsights(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _DashboardService_GetLoginStatusDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -237,6 +273,10 @@ var DashboardService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOperationActionDistribution",
 			Handler:    _DashboardService_GetOperationActionDistribution_Handler,
+		},
+		{
+			MethodName: "GetAiInsights",
+			Handler:    _DashboardService_GetAiInsights_Handler,
 		},
 		{
 			MethodName: "GetLoginStatusDistribution",

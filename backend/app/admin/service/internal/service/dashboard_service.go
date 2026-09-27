@@ -1,6 +1,11 @@
 package service
 
 import (
+	"fmt"
+	"go-wind-admin/pkg/middleware/auth"
+	"strings"
+	"time"
+
 	"context"
 
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
@@ -20,14 +25,17 @@ type DashboardService struct {
 	log *bLogger.Helper
 
 	dashboardRepo *data.DashboardRepo
+	scriptRuntime *ScriptRuntime
 }
 
 func NewDashboardService(
 	ctx *bootstrap.Context,
 	dashboardRepo *data.DashboardRepo,
+	scriptRuntime *ScriptRuntime,
 ) *DashboardService {
 	return &DashboardService{
 		log:           ctx.NewLoggerHelper("dashboard/service/admin-service"),
+		scriptRuntime: scriptRuntime,
 		dashboardRepo: dashboardRepo,
 	}
 }
@@ -109,4 +117,86 @@ func (s *DashboardService) GetLoginStatusDistribution(ctx context.Context, _ *em
 		})
 	}
 	return &adminV1.StatusDistributionResponse{Items: items}, nil
+}
+
+// GetAiInsights AI 概览解读：把当日核心指标与近 7 天趋势喂给默认模型生成中文解读。
+// 平台用户专属：dashboard 统计是全平台视角，且解读会把数据外发到模型端点，
+// 租户用户一律拒绝（数据出域边界比普通统计接口严格）。
+func (s *DashboardService) GetAiInsights(ctx context.Context, _ *emptypb.Empty) (*adminV1.AiInsightsResponse, error) {
+	operator, err := auth.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if operator.GetTenantId() != 0 {
+		return nil, adminV1.ErrorForbidden("ai insights is platform-only")
+	}
+
+	userCount, err := s.dashboardRepo.CountActiveUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	roleCount, err := s.dashboardRepo.CountRoles(ctx)
+	if err != nil {
+		return nil, err
+	}
+	todayLoginCount, err := s.dashboardRepo.CountTodayLogins(ctx)
+	if err != nil {
+		return nil, err
+	}
+	todayOperationCount, err := s.dashboardRepo.CountTodayOperations(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	trendRows, err := s.dashboardRepo.LoginTrend(ctx, 7)
+	if err != nil {
+		return nil, err
+	}
+	actionRows, err := s.dashboardRepo.OperationActionDistribution(ctx)
+	if err != nil {
+		return nil, err
+	}
+	statusRows, err := s.dashboardRepo.LoginStatusDistribution(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var facts strings.Builder
+	facts.WriteString(fmt.Sprintf("截至 %s 的平台运营数据：\n", time.Now().Format("2006-01-02")))
+	facts.WriteString(fmt.Sprintf("- 用户总数：%d\n- 角色总数：%d\n", userCount, roleCount))
+	facts.WriteString(fmt.Sprintf("- 今日登录次数：%d\n- 今日操作次数：%d\n", todayLoginCount, todayOperationCount))
+	facts.WriteString("- 近 7 天登录趋势：")
+	for i, r := range trendRows {
+		if i > 0 {
+			facts.WriteString("，")
+		}
+		facts.WriteString(fmt.Sprintf("%s %d 次", r.Date, r.Count))
+	}
+	facts.WriteString("\n- 昨日以来操作动作分布：")
+	for i, r := range actionRows {
+		if i > 0 {
+			facts.WriteString("，")
+		}
+		facts.WriteString(fmt.Sprintf("%s %d 次", r.Action, r.Count))
+	}
+	facts.WriteString("\n- 登录状态分布：")
+	for i, r := range statusRows {
+		if i > 0 {
+			facts.WriteString("，")
+		}
+		facts.WriteString(fmt.Sprintf("%s %d 次", r.Status, r.Count))
+	}
+	facts.WriteString("\n")
+
+	summary, err := s.scriptRuntime.ChatForScript(ctx, 0,
+		"你是企业后台的运营数据分析助手。根据给出的平台运营统计数据，用中文写一段 180 字以内的解读："+
+			"先一句话概括平台活跃度，再点评登录/操作趋势与异常信号（如失败登录占比、操作集中度等），"+
+			"最后给一条可执行的运维建议。只输出正文，用 Markdown 列表或短段落。",
+		facts.String())
+	if err != nil {
+		s.log.Errorf(ctx, "dashboard ai insights failed: %v", err)
+		return nil, adminV1.ErrorInternalServerError("ai insights failed: %v", err)
+	}
+
+	return &adminV1.AiInsightsResponse{Summary: summary}, nil
 }

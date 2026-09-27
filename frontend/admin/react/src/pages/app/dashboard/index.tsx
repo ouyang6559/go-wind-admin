@@ -13,7 +13,7 @@ import {
   AuditOutlined,
 } from '@ant-design/icons';
 import { useI18n } from '@/core/i18n';
-import { SourceDonutChart, SourcePieChart, StatsCard, TrendChart } from './components';
+import { AiInsightsCard, SourceDonutChart, SourcePieChart, StatsCard, TrendChart } from './components';
 
 const Dashboard = () => {
   const { t } = useI18n('dashboard');
@@ -67,6 +67,11 @@ const Dashboard = () => {
           </Col>
         ))}
       </Row>
+
+      {/* AI 解读（按需生成，平台用户专属） */}
+      <div style={{ marginTop: 16 }}>
+        <AiInsightsCard />
+      </div>
 
       {/* 登录趋势图 */}
       <TrendChart data={trendQuery.data} />

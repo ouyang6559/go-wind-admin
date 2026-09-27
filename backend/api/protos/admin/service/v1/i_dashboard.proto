@@ -30,6 +30,14 @@ service DashboardService {
   }
 
   // 登录审计按 status 分布
+  // AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+  rpc GetAiInsights (google.protobuf.Empty) returns (AiInsightsResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/dashboard/ai-insights"
+      body: "*"
+    };
+  }
+
   rpc GetLoginStatusDistribution (google.protobuf.Empty) returns (StatusDistributionResponse) {
     option (google.api.http) = {
       get: "/admin/v1/dashboard/login-status-distribution"
@@ -78,4 +86,9 @@ message StatusDistributionResponse {
 message DistributionItem {
   string label = 1; // 枚举名
   uint32 count = 2; // 数量
+}
+
+// AI 概览解读 - 回应
+message AiInsightsResponse {
+  string summary = 1; // 解读文本（Markdown）
 }

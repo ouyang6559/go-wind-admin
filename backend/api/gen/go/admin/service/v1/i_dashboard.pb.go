@@ -379,6 +379,51 @@ func (x *DistributionItem) GetCount() uint32 {
 	return 0
 }
 
+// AI 概览解读 - 回应
+type AiInsightsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"` // 解读文本（Markdown）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AiInsightsResponse) Reset() {
+	*x = AiInsightsResponse{}
+	mi := &file_admin_service_v1_i_dashboard_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AiInsightsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AiInsightsResponse) ProtoMessage() {}
+
+func (x *AiInsightsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_service_v1_i_dashboard_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AiInsightsResponse.ProtoReflect.Descriptor instead.
+func (*AiInsightsResponse) Descriptor() ([]byte, []int) {
+	return file_admin_service_v1_i_dashboard_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AiInsightsResponse) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
 var File_admin_service_v1_i_dashboard_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_dashboard_proto_rawDesc = "" +
@@ -406,11 +451,14 @@ const file_admin_service_v1_i_dashboard_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2\".admin.service.v1.DistributionItemR\x05items\">\n" +
 	"\x10DistributionItem\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\rR\x05count2\xd5\x04\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\".\n" +
+	"\x12AiInsightsResponse\x12\x18\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary2\xd0\x05\n" +
 	"\x10DashboardService\x12x\n" +
 	"\vGetOverview\x12\x16.google.protobuf.Empty\x1a+.admin.service.v1.DashboardOverviewResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/admin/v1/dashboard/overview\x12\x86\x01\n" +
 	"\rGetLoginTrend\x12&.admin.service.v1.GetLoginTrendRequest\x1a$.admin.service.v1.LoginTrendResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/admin/v1/dashboard/login-trend\x12\xa1\x01\n" +
-	"\x1eGetOperationActionDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.ActionDistributionResponse\"9\x82\xd3\xe4\x93\x023\x121/admin/v1/dashboard/operation-action-distribution\x12\x99\x01\n" +
+	"\x1eGetOperationActionDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.ActionDistributionResponse\"9\x82\xd3\xe4\x93\x023\x121/admin/v1/dashboard/operation-action-distribution\x12y\n" +
+	"\rGetAiInsights\x12\x16.google.protobuf.Empty\x1a$.admin.service.v1.AiInsightsResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/admin/v1/dashboard/ai-insights\x12\x99\x01\n" +
 	"\x1aGetLoginStatusDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.StatusDistributionResponse\"5\x82\xd3\xe4\x93\x02/\x12-/admin/v1/dashboard/login-status-distributionB\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIDashboardProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
@@ -426,7 +474,7 @@ func file_admin_service_v1_i_dashboard_proto_rawDescGZIP() []byte {
 	return file_admin_service_v1_i_dashboard_proto_rawDescData
 }
 
-var file_admin_service_v1_i_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_admin_service_v1_i_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_admin_service_v1_i_dashboard_proto_goTypes = []any{
 	(*DashboardOverviewResponse)(nil),  // 0: admin.service.v1.DashboardOverviewResponse
 	(*GetLoginTrendRequest)(nil),       // 1: admin.service.v1.GetLoginTrendRequest
@@ -435,22 +483,25 @@ var file_admin_service_v1_i_dashboard_proto_goTypes = []any{
 	(*ActionDistributionResponse)(nil), // 4: admin.service.v1.ActionDistributionResponse
 	(*StatusDistributionResponse)(nil), // 5: admin.service.v1.StatusDistributionResponse
 	(*DistributionItem)(nil),           // 6: admin.service.v1.DistributionItem
-	(*emptypb.Empty)(nil),              // 7: google.protobuf.Empty
+	(*AiInsightsResponse)(nil),         // 7: admin.service.v1.AiInsightsResponse
+	(*emptypb.Empty)(nil),              // 8: google.protobuf.Empty
 }
 var file_admin_service_v1_i_dashboard_proto_depIdxs = []int32{
 	3, // 0: admin.service.v1.LoginTrendResponse.points:type_name -> admin.service.v1.TrendPoint
 	6, // 1: admin.service.v1.ActionDistributionResponse.items:type_name -> admin.service.v1.DistributionItem
 	6, // 2: admin.service.v1.StatusDistributionResponse.items:type_name -> admin.service.v1.DistributionItem
-	7, // 3: admin.service.v1.DashboardService.GetOverview:input_type -> google.protobuf.Empty
+	8, // 3: admin.service.v1.DashboardService.GetOverview:input_type -> google.protobuf.Empty
 	1, // 4: admin.service.v1.DashboardService.GetLoginTrend:input_type -> admin.service.v1.GetLoginTrendRequest
-	7, // 5: admin.service.v1.DashboardService.GetOperationActionDistribution:input_type -> google.protobuf.Empty
-	7, // 6: admin.service.v1.DashboardService.GetLoginStatusDistribution:input_type -> google.protobuf.Empty
-	0, // 7: admin.service.v1.DashboardService.GetOverview:output_type -> admin.service.v1.DashboardOverviewResponse
-	2, // 8: admin.service.v1.DashboardService.GetLoginTrend:output_type -> admin.service.v1.LoginTrendResponse
-	4, // 9: admin.service.v1.DashboardService.GetOperationActionDistribution:output_type -> admin.service.v1.ActionDistributionResponse
-	5, // 10: admin.service.v1.DashboardService.GetLoginStatusDistribution:output_type -> admin.service.v1.StatusDistributionResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
+	8, // 5: admin.service.v1.DashboardService.GetOperationActionDistribution:input_type -> google.protobuf.Empty
+	8, // 6: admin.service.v1.DashboardService.GetAiInsights:input_type -> google.protobuf.Empty
+	8, // 7: admin.service.v1.DashboardService.GetLoginStatusDistribution:input_type -> google.protobuf.Empty
+	0, // 8: admin.service.v1.DashboardService.GetOverview:output_type -> admin.service.v1.DashboardOverviewResponse
+	2, // 9: admin.service.v1.DashboardService.GetLoginTrend:output_type -> admin.service.v1.LoginTrendResponse
+	4, // 10: admin.service.v1.DashboardService.GetOperationActionDistribution:output_type -> admin.service.v1.ActionDistributionResponse
+	7, // 11: admin.service.v1.DashboardService.GetAiInsights:output_type -> admin.service.v1.AiInsightsResponse
+	5, // 12: admin.service.v1.DashboardService.GetLoginStatusDistribution:output_type -> admin.service.v1.StatusDistributionResponse
+	8, // [8:13] is the sub-list for method output_type
+	3, // [3:8] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -468,7 +519,7 @@ func file_admin_service_v1_i_dashboard_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_service_v1_i_dashboard_proto_rawDesc), len(file_admin_service_v1_i_dashboard_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

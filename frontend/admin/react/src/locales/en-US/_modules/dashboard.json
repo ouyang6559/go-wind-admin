@@ -61,5 +61,13 @@
     "oct": "Oct",
     "nov": "Nov",
     "dec": "Dec"
+  },
+  "aiInsights": {
+    "title": "AI Insights",
+    "generate": "Generate",
+    "regenerate": "Regenerate",
+    "thinking": "AI is analyzing the data…",
+    "empty": "Click \"Generate\" and AI will analyze today's operational data.",
+    "failed": "Failed to generate AI insights"
   }
 }

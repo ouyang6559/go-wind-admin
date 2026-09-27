@@ -3005,6 +3005,11 @@ export type StatusDistributionResponse = {
   items: DistributionItem[] | undefined;
 };
 
+// AI 概览解读 - 回应
+export type AiInsightsResponse = {
+  summary: string | undefined;
+};
+
 // 后台首页分析概览服务（只读聚合）
 export interface DashboardService {
   // 获取概览统计（用户总数 / 角色总数 / 今日登录次数 / 今日操作审计条数）
@@ -3020,6 +3025,10 @@ export interface DashboardService {
     request: wellKnownEmpty,
   ): Promise<ActionDistributionResponse>;
   // 登录审计按 status 分布
+  // AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+  GetAiInsights(
+    request: wellKnownEmpty,
+  ): Promise<AiInsightsResponse>;
   GetLoginStatusDistribution(
     request: wellKnownEmpty,
   ): Promise<StatusDistributionResponse>;
@@ -3062,6 +3071,14 @@ export function createDashboardServiceClient(
         service: 'DashboardService',
         method: 'GetOperationActionDistribution',
       }) as Promise<ActionDistributionResponse>;
+    },
+    GetAiInsights(request) {
+      const path = `admin/v1/dashboard/ai-insights`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'DashboardService',
+        method: 'GetAiInsights',
+      }) as Promise<AiInsightsResponse>;
     },
     GetLoginStatusDistribution(_request) {
       const path = `admin/v1/dashboard/login-status-distribution`;
