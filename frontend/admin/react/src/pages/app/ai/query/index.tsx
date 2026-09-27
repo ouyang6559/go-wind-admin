@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Button, Empty, Input, Table, Tag, Typography, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { SendOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useI18n } from '@/core/i18n';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 import { useAskAiQuery, type AskAiQueryParams } from '@/api/hooks/ai-query';
@@ -157,8 +159,12 @@ export default function AiQueryPage() {
                 {/* AI 结论 */}
                 {round.answer && (
                   <div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm leading-relaxed dark:bg-blue-950">
-                    <Tag color="processing">{t('answerTag')}</Tag>
-                    <span className="whitespace-pre-wrap">{round.answer}</span>
+                    <Tag color="processing" className="mb-1">
+                      {t('answerTag')}
+                    </Tag>
+                    <div className="markdown-body max-w-none overflow-x-auto [&_li]:m-0 [&_p]:mb-1 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-gray-300 [&_th]:px-2 [&_th]:py-1 [&_th]:bg-gray-100 dark:[&_td]:border-gray-600 dark:[&_th]:bg-gray-800 dark:[&_th]:border-gray-600">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{round.answer ?? ''}</ReactMarkdown>
+                    </div>
                   </div>
                 )}
               </>
