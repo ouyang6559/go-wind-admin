@@ -88,8 +88,16 @@ message DistributionItem {
   uint32 count = 2; // 数量
 }
 
+// 异常告警条目（规则预筛的确定性事实，非模型生成）
+message AiInsightAlert {
+  string severity = 1; // HIGH / MEDIUM / LOW
+  string title = 2;    // 告警标题（含关键数字）
+  string detail = 3;   // 明细与处置建议
+}
+
 // AI 概览解读 - 回应
 message AiInsightsResponse {
-  string summary = 1;          // 解读全文（Markdown，兼容保留）
-  repeated string insights = 2; // 结构化洞察要点（3~5 条，供前端图文报告渲染）
+  repeated AiInsightAlert alerts = 1; // 异常告警（无异常为空）
+  string summary = 2;                 // 总体评估（LLM 生成；无告警时为固定文案）
+  repeated string insights = 3;       // 告警要点（severity+title，兼容旧渲染）
 }

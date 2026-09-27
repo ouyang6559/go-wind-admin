@@ -63,15 +63,13 @@
     "dec": "12月"
   },
   "aiInsights": {
-    "title": "AI 数据报告",
-    "generate": "生成报告",
-    "regenerate": "重新生成",
-    "thinking": "AI 正在分析数据…",
-    "empty": "点击「生成报告」，AI 将基于当日运营数据生成图文分析报告。",
-    "failed": "AI 报告生成失败",
-    "generatedAt": "生成于 {{time}}",
-    "trend7d": "近 7 天登录趋势",
-    "failRate": "登录失败率",
-    "points": "AI 洞察"
+    "title": "安全与异常洞察",
+    "subtitle": "近 24 小时审计明细 · 行为模式挖掘",
+    "generate": "开始扫描",
+    "regenerate": "重新扫描",
+    "empty": "点击「开始扫描」，AI 将挖掘近 24 小时审计明细中的异常模式。",
+    "noAnomaly": "最近 24 小时未检测到异常行为模式。",
+    "failed": "扫描失败",
+    "assessment": "AI 总体评估"
   }
 }

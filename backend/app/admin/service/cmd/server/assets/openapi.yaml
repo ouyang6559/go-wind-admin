@@ -7207,9 +7207,23 @@ components:
                     type: string
                     format: date-time
             description: AI 文档
+        AiInsightAlert:
+            type: object
+            properties:
+                severity:
+                    type: string
+                title:
+                    type: string
+                detail:
+                    type: string
+            description: 异常告警条目（规则预筛的确定性事实，非模型生成）
         AiInsightsResponse:
             type: object
             properties:
+                alerts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AiInsightAlert'
                 summary:
                     type: string
                 insights:

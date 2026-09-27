@@ -63,15 +63,13 @@
     "dec": "Dec"
   },
   "aiInsights": {
-    "title": "AI Report",
-    "generate": "Generate",
-    "regenerate": "Regenerate",
-    "thinking": "AI is analyzing the data…",
-    "empty": "Click \"Generate\" and AI will build an illustrated report from today's data.",
-    "failed": "Failed to generate AI report",
-    "generatedAt": "Generated at {{time}}",
-    "trend7d": "7-Day Login Trend",
-    "failRate": "Login Failure Rate",
-    "points": "AI Insights"
+    "title": "Security & Anomaly Insights",
+    "subtitle": "24h audit trail · behavior pattern mining",
+    "generate": "Scan now",
+    "regenerate": "Rescan",
+    "empty": "Click \"Scan now\" to mine the last 24h of audit details for anomalies.",
+    "noAnomaly": "No anomalous behavior patterns detected in the last 24 hours.",
+    "failed": "Scan failed",
+    "assessment": "AI Assessment"
   }
 }

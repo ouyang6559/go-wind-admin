@@ -3005,8 +3005,16 @@ export type StatusDistributionResponse = {
   items: DistributionItem[] | undefined;
 };
 
+// 异常告警条目（规则预筛的确定性事实，非模型生成）
+export type AiInsightAlert = {
+  detail: string | undefined;
+  severity: string | undefined;
+  title: string | undefined;
+};
+
 // AI 概览解读 - 回应
 export type AiInsightsResponse = {
+  alerts: AiInsightAlert[] | undefined;
   insights: string[] | undefined;
   summary: string | undefined;
 };
