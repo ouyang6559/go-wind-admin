@@ -115,8 +115,16 @@ func (s *AiQueryService) Ask(ctx context.Context, req *aiV1.AskAiQueryRequest) (
 		lang = "zh-CN"
 	}
 
-	// 1. NL → SQL
-	sqlGenerated, genTokens, err := s.generateSQL(ctx, client, provider, question, lang)
+	// 1. NL → SQL（携带对话历史以消解追问里的指代，如"那只看 admin 的"）
+	history := make([]aiV1.AiQueryHistoryItem, 0, len(req.GetHistory()))
+	for _, h := range req.GetHistory() {
+		history = append(history, aiV1.AiQueryHistoryItem{
+			Question:      h.GetQuestion(),
+			Sql:           h.GetSql(),
+			ResultSummary: h.GetResultSummary(),
+		})
+	}
+	sqlGenerated, genTokens, err := s.generateSQL(ctx, client, provider, question, lang, history)
 	if err != nil {
 		return nil, err
 	}
@@ -157,28 +165,52 @@ func (s *AiQueryService) Ask(ctx context.Context, req *aiV1.AskAiQueryRequest) (
 	return resp, nil
 }
 
-// generateSQL 数据字典 + 问题 → 只读 SQL。
-func (s *AiQueryService) generateSQL(ctx context.Context, client *openai.Client, provider *ent.AiProvider, question, lang string) (string, uint32, error) {
+// generateSQL 数据字典 + 对话历史 + 问题 → 只读 SQL。
+// 历史轮次作为 user/assistant 交替消息传入，让模型消解追问里的指代
+// （如"那只看 admin 的"指上一轮的查询对象）；护栏在本函数之外统一执行。
+func (s *AiQueryService) generateSQL(ctx context.Context, client *openai.Client, provider *ent.AiProvider, question, lang string, history []aiV1.AiQueryHistoryItem) (string, uint32, error) {
 	var sb strings.Builder
-	sb.WriteString("你是只读数据分析助手。根据下面的数据库表结构与用户问题，生成一条 Postgres 只读 SELECT 语句。\n")
+	sb.WriteString("你是本系统的只读数据分析引擎。用户的提问永远是对上面列出的数据库表发起查询——哪怕措辞听起来像个人账号问题（如\"我的登录失败记录有哪些\"问的也是表里的数据），一律直接生成 SQL，绝不拒绝、绝不建议用户去其他平台自查。\n")
+	sb.WriteString("根据表结构与用户问题，生成一条 Postgres 只读 SELECT 语句。\n")
 	sb.WriteString("规则：\n")
 	sb.WriteString("1. 只输出 SQL 本身，不要任何解释、不要 Markdown 代码块标记；\n")
 	sb.WriteString("2. 只能使用下面列出的表；涉及多表时用 JOIN；\n")
 	sb.WriteString("3. 必须带 LIMIT（最大 100）；时间比较用 created_at 与 NOW()；\n")
-	sb.WriteString(fmt.Sprintf("4. 结论文字用%s。\n\n", langName(lang)))
+	sb.WriteString(fmt.Sprintf("4. 结论文字用%s；\n", langName(lang)))
+	sb.WriteString("5. 用户问题可能包含对上一轮查询的指代（如\"那只看…的\"、\"换成按天分组\"），结合对话历史理解其完整含义后生成独立可执行的 SQL。\n\n")
 	sb.WriteString("可用表：\n")
 	for table, desc := range aiQueryTableWhitelist {
 		sb.WriteString("- " + table + "：" + desc + "\n")
 	}
 
+	// few-shot 示例放真实消息序列（上下文示例对行为的约束力远强于 system 指令）——
+	// DeepSeek 实测：示例只在 system 里时，"登录失败记录"类措辞仍触发安全拒答。
+	messages := make([]openai.ChatCompletionMessage, 0, len(history)*2+4)
+	messages = append(messages,
+		openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: "最近 24 小时登录失败的记录有哪些？",
+		},
+		openai.ChatCompletionMessage{
+			Role: openai.ChatMessageRoleAssistant,
+			Content: "SELECT id, username, ip_address, created_at FROM sys_login_audit_logs " +
+				"WHERE status = 'FAILED' AND created_at >= NOW() - INTERVAL '24 hours' " +
+				"ORDER BY created_at DESC LIMIT 100",
+		},
+	)
+	for _, h := range history {
+		messages = append(messages,
+			openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: h.GetQuestion()},
+			openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: h.GetSql()},
+		)
+	}
+	messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: question})
+
 	qCtx, cancel := context.WithTimeout(ctx, aiQueryCallTimeout)
 	defer cancel()
 	resp, err := client.CreateChatCompletion(qCtx, openai.ChatCompletionRequest{
-		Model: ptrStrOr(provider.ModelName, "gpt-4o-mini"),
-		Messages: []openai.ChatCompletionMessage{
-			{Role: openai.ChatMessageRoleSystem, Content: sb.String()},
-			{Role: openai.ChatMessageRoleUser, Content: question},
-		},
+		Model:    ptrStrOr(provider.ModelName, "gpt-4o-mini"),
+		Messages: messages,
 	})
 	if err != nil {
 		return "", 0, adminV1.ErrorInternalServerError("ai query generate failed: %v", err)
@@ -187,13 +219,17 @@ func (s *AiQueryService) generateSQL(ctx context.Context, client *openai.Client,
 	if len(resp.Choices) == 0 {
 		return "", tokens, adminV1.ErrorInternalServerError("ai query generate empty")
 	}
-	return stripSQLFence(resp.Choices[0].Message.Content), tokens, nil
+	raw := resp.Choices[0].Message.Content
+	s.log.Infof(ctx, "ai query raw model output: %s", raw)
+	return raw, tokens, nil
 }
 
-// sanitizeSQL 四重护栏：只读语句校验 → 危险模式拒绝 → 白名单表校验 → LIMIT 钳制。
+// sanitizeSQL 四重护栏：SQL 提取 → 只读校验 → 危险模式拒绝 → 白名单表校验 → LIMIT 钳制。
 func sanitizeSQL(raw string) (string, error) {
-	sqlText := stripSQLFence(raw)
-	sqlText = strings.TrimRight(strings.TrimSpace(sqlText), ";")
+	sqlText := extractSQL(raw)
+	if sqlText == "" {
+		return "", fmt.Errorf("no SQL statement found in model output")
+	}
 
 	if !aiQuerySelectPattern.MatchString(sqlText) {
 		return "", fmt.Errorf("only SELECT/WITH statements are allowed")
@@ -315,6 +351,26 @@ func (s *AiQueryService) generateAnswer(ctx context.Context, client *openai.Clie
 		return "", tokens, fmt.Errorf("empty answer")
 	}
 	return strings.TrimSpace(resp.Choices[0].Message.Content), tokens, nil
+}
+
+// aiQueryExtractPattern 提取用：非锚定定位第一条 SELECT/WITH（模型输出可能带说明前缀）。
+var aiQueryExtractPattern = regexp.MustCompile(`(?is)\b(SELECT|WITH)\b`)
+
+// extractSQL 从模型输出中提取 SQL：模型偶发会在 SQL 前后带说明文字或围栏，
+// 这里定位第一条 SELECT/WITH 起、到末尾分号（或文本尾）止的片段。
+// 提取之后再过锚定的只读校验与危险模式正则，被篡改的语句仍会被拒。
+func extractSQL(raw string) string {
+	s := stripSQLFence(raw)
+	loc := aiQueryExtractPattern.FindStringIndex(s)
+	if loc == nil {
+		return ""
+	}
+	s = s[loc[0]:]
+	// 若以分号结尾（或其后还有说明文字），截到第一个分号
+	if idx := strings.Index(s, ";"); idx >= 0 {
+		s = s[:idx]
+	}
+	return strings.TrimSpace(s)
 }
 
 // stripSQLFence 剥掉模型可能输出的 Markdown 代码块围栏。

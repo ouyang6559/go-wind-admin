@@ -22,6 +22,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 对话历史一轮（多轮追问用）：只回传问答摘要，供模型消解指代（如"那只看 admin 的"）
+type AiQueryHistoryItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Question      string                 `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`                                // 历史问题
+	Sql           string                 `protobuf:"bytes,2,opt,name=sql,proto3" json:"sql,omitempty"`                                          // 该轮生成的 SQL
+	ResultSummary string                 `protobuf:"bytes,3,opt,name=result_summary,json=resultSummary,proto3" json:"result_summary,omitempty"` // 结果摘要（前几行值拼串）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AiQueryHistoryItem) Reset() {
+	*x = AiQueryHistoryItem{}
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AiQueryHistoryItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AiQueryHistoryItem) ProtoMessage() {}
+
+func (x *AiQueryHistoryItem) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AiQueryHistoryItem.ProtoReflect.Descriptor instead.
+func (*AiQueryHistoryItem) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AiQueryHistoryItem) GetQuestion() string {
+	if x != nil {
+		return x.Question
+	}
+	return ""
+}
+
+func (x *AiQueryHistoryItem) GetSql() string {
+	if x != nil {
+		return x.Sql
+	}
+	return ""
+}
+
+func (x *AiQueryHistoryItem) GetResultSummary() string {
+	if x != nil {
+		return x.ResultSummary
+	}
+	return ""
+}
+
 // 智能问数 - 请求
 type AskAiQueryRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -29,14 +90,16 @@ type AskAiQueryRequest struct {
 	// 界面语言（BCP-47），决定结论 answer 的输出语言；默认 zh-CN
 	Lang *string `protobuf:"bytes,2,opt,name=lang,proto3,oneof" json:"lang,omitempty"`
 	// 是否生成自然语言结论（二次模型调用；默认 true）
-	WithAnswer    *bool `protobuf:"varint,3,opt,name=with_answer,json=withAnswer,proto3,oneof" json:"with_answer,omitempty"`
+	WithAnswer *bool `protobuf:"varint,3,opt,name=with_answer,json=withAnswer,proto3,oneof" json:"with_answer,omitempty"`
+	// 对话历史（最近若干轮，建议 ≤5；用于消解追问里的指代，如"那只看 admin 的"）
+	History       []*AiQueryHistoryItem `protobuf:"bytes,4,rep,name=history,proto3" json:"history,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AskAiQueryRequest) Reset() {
 	*x = AskAiQueryRequest{}
-	mi := &file_ai_service_v1_ai_query_proto_msgTypes[0]
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +111,7 @@ func (x *AskAiQueryRequest) String() string {
 func (*AskAiQueryRequest) ProtoMessage() {}
 
 func (x *AskAiQueryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ai_service_v1_ai_query_proto_msgTypes[0]
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +124,7 @@ func (x *AskAiQueryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskAiQueryRequest.ProtoReflect.Descriptor instead.
 func (*AskAiQueryRequest) Descriptor() ([]byte, []int) {
-	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{0}
+	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AskAiQueryRequest) GetQuestion() string {
@@ -85,6 +148,13 @@ func (x *AskAiQueryRequest) GetWithAnswer() bool {
 	return false
 }
 
+func (x *AskAiQueryRequest) GetHistory() []*AiQueryHistoryItem {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
 // 结果行（values 与 columns 下标对应；时间/数字均已格式化为字符串）
 type AiQueryRow struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -95,7 +165,7 @@ type AiQueryRow struct {
 
 func (x *AiQueryRow) Reset() {
 	*x = AiQueryRow{}
-	mi := &file_ai_service_v1_ai_query_proto_msgTypes[1]
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -107,7 +177,7 @@ func (x *AiQueryRow) String() string {
 func (*AiQueryRow) ProtoMessage() {}
 
 func (x *AiQueryRow) ProtoReflect() protoreflect.Message {
-	mi := &file_ai_service_v1_ai_query_proto_msgTypes[1]
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -120,7 +190,7 @@ func (x *AiQueryRow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AiQueryRow.ProtoReflect.Descriptor instead.
 func (*AiQueryRow) Descriptor() ([]byte, []int) {
-	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{1}
+	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AiQueryRow) GetValues() []string {
@@ -151,7 +221,7 @@ type AskAiQueryResponse struct {
 
 func (x *AskAiQueryResponse) Reset() {
 	*x = AskAiQueryResponse{}
-	mi := &file_ai_service_v1_ai_query_proto_msgTypes[2]
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +233,7 @@ func (x *AskAiQueryResponse) String() string {
 func (*AskAiQueryResponse) ProtoMessage() {}
 
 func (x *AskAiQueryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ai_service_v1_ai_query_proto_msgTypes[2]
+	mi := &file_ai_service_v1_ai_query_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +246,7 @@ func (x *AskAiQueryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskAiQueryResponse.ProtoReflect.Descriptor instead.
 func (*AskAiQueryResponse) Descriptor() ([]byte, []int) {
-	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{2}
+	return file_ai_service_v1_ai_query_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AskAiQueryResponse) GetSql() string {
@@ -225,12 +295,17 @@ var File_ai_service_v1_ai_query_proto protoreflect.FileDescriptor
 
 const file_ai_service_v1_ai_query_proto_rawDesc = "" +
 	"\n" +
-	"\x1cai/service/v1/ai_query.proto\x12\rai.service.v1\x1a$gnostic/openapi/v3/annotations.proto\"\x87\x01\n" +
+	"\x1cai/service/v1/ai_query.proto\x12\rai.service.v1\x1a$gnostic/openapi/v3/annotations.proto\"i\n" +
+	"\x12AiQueryHistoryItem\x12\x1a\n" +
+	"\bquestion\x18\x01 \x01(\tR\bquestion\x12\x10\n" +
+	"\x03sql\x18\x02 \x01(\tR\x03sql\x12%\n" +
+	"\x0eresult_summary\x18\x03 \x01(\tR\rresultSummary\"\xc4\x01\n" +
 	"\x11AskAiQueryRequest\x12\x1a\n" +
 	"\bquestion\x18\x01 \x01(\tR\bquestion\x12\x17\n" +
 	"\x04lang\x18\x02 \x01(\tH\x00R\x04lang\x88\x01\x01\x12$\n" +
 	"\vwith_answer\x18\x03 \x01(\bH\x01R\n" +
-	"withAnswer\x88\x01\x01B\a\n" +
+	"withAnswer\x88\x01\x01\x12;\n" +
+	"\ahistory\x18\x04 \x03(\v2!.ai.service.v1.AiQueryHistoryItemR\ahistoryB\a\n" +
 	"\x05_langB\x0e\n" +
 	"\f_with_answer\"$\n" +
 	"\n" +
@@ -260,21 +335,23 @@ func file_ai_service_v1_ai_query_proto_rawDescGZIP() []byte {
 	return file_ai_service_v1_ai_query_proto_rawDescData
 }
 
-var file_ai_service_v1_ai_query_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_ai_service_v1_ai_query_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_ai_service_v1_ai_query_proto_goTypes = []any{
-	(*AskAiQueryRequest)(nil),  // 0: ai.service.v1.AskAiQueryRequest
-	(*AiQueryRow)(nil),         // 1: ai.service.v1.AiQueryRow
-	(*AskAiQueryResponse)(nil), // 2: ai.service.v1.AskAiQueryResponse
+	(*AiQueryHistoryItem)(nil), // 0: ai.service.v1.AiQueryHistoryItem
+	(*AskAiQueryRequest)(nil),  // 1: ai.service.v1.AskAiQueryRequest
+	(*AiQueryRow)(nil),         // 2: ai.service.v1.AiQueryRow
+	(*AskAiQueryResponse)(nil), // 3: ai.service.v1.AskAiQueryResponse
 }
 var file_ai_service_v1_ai_query_proto_depIdxs = []int32{
-	1, // 0: ai.service.v1.AskAiQueryResponse.rows:type_name -> ai.service.v1.AiQueryRow
-	0, // 1: ai.service.v1.AiQueryService.Ask:input_type -> ai.service.v1.AskAiQueryRequest
-	2, // 2: ai.service.v1.AiQueryService.Ask:output_type -> ai.service.v1.AskAiQueryResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: ai.service.v1.AskAiQueryRequest.history:type_name -> ai.service.v1.AiQueryHistoryItem
+	2, // 1: ai.service.v1.AskAiQueryResponse.rows:type_name -> ai.service.v1.AiQueryRow
+	1, // 2: ai.service.v1.AiQueryService.Ask:input_type -> ai.service.v1.AskAiQueryRequest
+	3, // 3: ai.service.v1.AiQueryService.Ask:output_type -> ai.service.v1.AskAiQueryResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_ai_service_v1_ai_query_proto_init() }
@@ -282,15 +359,15 @@ func file_ai_service_v1_ai_query_proto_init() {
 	if File_ai_service_v1_ai_query_proto != nil {
 		return
 	}
-	file_ai_service_v1_ai_query_proto_msgTypes[0].OneofWrappers = []any{}
-	file_ai_service_v1_ai_query_proto_msgTypes[2].OneofWrappers = []any{}
+	file_ai_service_v1_ai_query_proto_msgTypes[1].OneofWrappers = []any{}
+	file_ai_service_v1_ai_query_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ai_service_v1_ai_query_proto_rawDesc), len(file_ai_service_v1_ai_query_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
