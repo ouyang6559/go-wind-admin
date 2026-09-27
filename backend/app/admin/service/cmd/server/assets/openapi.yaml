@@ -911,6 +911,25 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /admin/v1/ai/query/ask:
+        post:
+            tags:
+                - AiQueryService
+            description: 智能问数
+            operationId: AiQueryService_Ask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AskAiQueryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AskAiQueryResponse'
     /admin/v1/ai/usage-logs:
         get:
             tags:
@@ -7454,6 +7473,14 @@ components:
                     description: 删除时间
                     format: date-time
             description: AI 模型提供商（一行 = 一个可调用的模型端点配置）
+        AiQueryRow:
+            type: object
+            properties:
+                values:
+                    type: array
+                    items:
+                        type: string
+            description: 结果行（values 与 columns 下标对应；时间/数字均已格式化为字符串）
         AiSensitiveOpItem:
             type: object
             properties:
@@ -7691,6 +7718,46 @@ components:
                     description: 日志创建时间
                     format: date-time
             description: 接口审计日志
+        AskAiQueryRequest:
+            type: object
+            properties:
+                question:
+                    type: string
+                lang:
+                    type: string
+                    description: 界面语言（BCP-47），决定结论 answer 的输出语言；默认 zh-CN
+                withAnswer:
+                    type: boolean
+                    description: 是否生成自然语言结论（二次模型调用；默认 true）
+            description: 智能问数 - 请求
+        AskAiQueryResponse:
+            type: object
+            properties:
+                sql:
+                    type: string
+                    description: 生成的只读 SQL（原样返回，便于核对与复用）
+                columns:
+                    type: array
+                    items:
+                        type: string
+                    description: 结果列名
+                rows:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AiQueryRow'
+                    description: 结果行（上限 100 行）
+                rowCount:
+                    type: integer
+                    description: 实际返回的行数
+                    format: uint32
+                answer:
+                    type: string
+                    description: 自然语言结论（with_answer=false 或模型失败时为空）
+                totalTokens:
+                    type: integer
+                    description: 本次消耗的总 token 数（计入 AI_TOKENS 用量）
+                    format: uint32
+            description: 智能问数 - 回应
         BatchCreateLanguagesRequest:
             type: object
             properties:
@@ -12870,6 +12937,10 @@ tags:
       description: AI 对话消息服务
     - name: AiProviderService
       description: AI 模型提供商管理服务
+    - name: AiQueryService
+      description: |-
+        智能问数服务（NL → 只读 SQL → 结构化结果）
+         平台管理员专属：第一版查的是全平台数据，且 SQL 会触达原生库表。
     - name: AiUsageLogService
       description: AI 用量流水服务（配额记账事实源）
     - name: ApiAuditLogService
