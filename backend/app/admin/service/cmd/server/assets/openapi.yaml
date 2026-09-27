@@ -7212,6 +7212,10 @@ components:
             properties:
                 summary:
                     type: string
+                insights:
+                    type: array
+                    items:
+                        type: string
             description: AI 概览解读 - 回应
         AiKnowledgeBase:
             type: object

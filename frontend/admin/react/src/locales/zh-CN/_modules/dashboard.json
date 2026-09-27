@@ -63,11 +63,15 @@
     "dec": "12月"
   },
   "aiInsights": {
-    "title": "AI 解读",
-    "generate": "生成解读",
+    "title": "AI 数据报告",
+    "generate": "生成报告",
     "regenerate": "重新生成",
     "thinking": "AI 正在分析数据…",
-    "empty": "点击「生成解读」，AI 将基于当日运营数据给出一段分析。",
-    "failed": "AI 解读生成失败"
+    "empty": "点击「生成报告」，AI 将基于当日运营数据生成图文分析报告。",
+    "failed": "AI 报告生成失败",
+    "generatedAt": "生成于 {{time}}",
+    "trend7d": "近 7 天登录趋势",
+    "failRate": "登录失败率",
+    "points": "AI 洞察"
   }
 }

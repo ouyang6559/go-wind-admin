@@ -382,7 +382,8 @@ func (x *DistributionItem) GetCount() uint32 {
 // AI 概览解读 - 回应
 type AiInsightsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"` // 解读文本（Markdown）
+	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`   // 解读全文（Markdown，兼容保留）
+	Insights      []string               `protobuf:"bytes,2,rep,name=insights,proto3" json:"insights,omitempty"` // 结构化洞察要点（3~5 条，供前端图文报告渲染）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -424,6 +425,13 @@ func (x *AiInsightsResponse) GetSummary() string {
 	return ""
 }
 
+func (x *AiInsightsResponse) GetInsights() []string {
+	if x != nil {
+		return x.Insights
+	}
+	return nil
+}
+
 var File_admin_service_v1_i_dashboard_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_dashboard_proto_rawDesc = "" +
@@ -451,9 +459,10 @@ const file_admin_service_v1_i_dashboard_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2\".admin.service.v1.DistributionItemR\x05items\">\n" +
 	"\x10DistributionItem\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\rR\x05count\".\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\"J\n" +
 	"\x12AiInsightsResponse\x12\x18\n" +
-	"\asummary\x18\x01 \x01(\tR\asummary2\xd0\x05\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary\x12\x1a\n" +
+	"\binsights\x18\x02 \x03(\tR\binsights2\xd0\x05\n" +
 	"\x10DashboardService\x12x\n" +
 	"\vGetOverview\x12\x16.google.protobuf.Empty\x1a+.admin.service.v1.DashboardOverviewResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/admin/v1/dashboard/overview\x12\x86\x01\n" +
 	"\rGetLoginTrend\x12&.admin.service.v1.GetLoginTrendRequest\x1a$.admin.service.v1.LoginTrendResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/admin/v1/dashboard/login-trend\x12\xa1\x01\n" +

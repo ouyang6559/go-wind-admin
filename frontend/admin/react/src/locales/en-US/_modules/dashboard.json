@@ -63,11 +63,15 @@
     "dec": "Dec"
   },
   "aiInsights": {
-    "title": "AI Insights",
+    "title": "AI Report",
     "generate": "Generate",
     "regenerate": "Regenerate",
     "thinking": "AI is analyzing the data…",
-    "empty": "Click \"Generate\" and AI will analyze today's operational data.",
-    "failed": "Failed to generate AI insights"
+    "empty": "Click \"Generate\" and AI will build an illustrated report from today's data.",
+    "failed": "Failed to generate AI report",
+    "generatedAt": "Generated at {{time}}",
+    "trend7d": "7-Day Login Trend",
+    "failRate": "Login Failure Rate",
+    "points": "AI Insights"
   }
 }

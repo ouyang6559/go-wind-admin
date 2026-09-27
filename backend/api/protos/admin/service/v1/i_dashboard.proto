@@ -90,5 +90,6 @@ message DistributionItem {
 
 // AI 概览解读 - 回应
 message AiInsightsResponse {
-  string summary = 1; // 解读文本（Markdown）
+  string summary = 1;          // 解读全文（Markdown，兼容保留）
+  repeated string insights = 2; // 结构化洞察要点（3~5 条，供前端图文报告渲染）
 }

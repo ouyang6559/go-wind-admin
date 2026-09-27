@@ -189,14 +189,50 @@ func (s *DashboardService) GetAiInsights(ctx context.Context, _ *emptypb.Empty) 
 	facts.WriteString("\n")
 
 	summary, err := s.scriptRuntime.ChatForScript(ctx, 0,
-		"你是企业后台的运营数据分析助手。根据给出的平台运营统计数据，用中文写一段 180 字以内的解读："+
-			"先一句话概括平台活跃度，再点评登录/操作趋势与异常信号（如失败登录占比、操作集中度等），"+
-			"最后给一条可执行的运维建议。只输出正文，用 Markdown 列表或短段落。",
+		"你是企业后台的运营数据分析助手。根据给出的平台运营统计数据，输出 3~5 条洞察要点："+
+			"概括当日活跃度、点评登录趋势与失败信号、指出操作集中度，最后给一条可执行建议。"+
+			"每条一行、以 \"- \" 开头，直接给结论并引用具体数字，不要输出标题或其他内容。",
 		facts.String())
 	if err != nil {
 		s.log.Errorf(ctx, "dashboard ai insights failed: %v", err)
 		return nil, adminV1.ErrorInternalServerError("ai insights failed: %v", err)
 	}
 
-	return &adminV1.AiInsightsResponse{Summary: summary}, nil
+	return &adminV1.AiInsightsResponse{
+		Summary:  summary,
+		Insights: splitInsightPoints(summary),
+	}, nil
+}
+
+// splitInsightPoints 把模型输出的要点文本拆成结构化条目：
+// 识别 "- "/"* "/数字序号前缀；无多行时按句号拆分。最多 5 条。
+func splitInsightPoints(summary string) []string {
+	var points []string
+	for _, line := range strings.Split(summary, "\n") {
+		line = strings.TrimSpace(line)
+		line = strings.TrimPrefix(line, "- ")
+		line = strings.TrimPrefix(line, "* ")
+		line = strings.TrimPrefix(line, "• ")
+		// 去数字序号（"1. " / "1、"）
+		if idx := strings.IndexAny(line, ".、"); idx > 0 && idx <= 2 {
+			rest := strings.TrimSpace(line[idx+1:])
+			if rest != "" {
+				line = rest
+			}
+		}
+		if line != "" {
+			points = append(points, line)
+		}
+	}
+	if len(points) <= 1 && summary != "" {
+		for _, s := range strings.Split(summary, "。") {
+			if s = strings.TrimSpace(s); s != "" {
+				points = append(points, s+"。")
+			}
+		}
+	}
+	if len(points) > 5 {
+		points = points[:5]
+	}
+	return points
 }

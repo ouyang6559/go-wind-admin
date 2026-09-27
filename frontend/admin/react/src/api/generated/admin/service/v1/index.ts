@@ -3007,6 +3007,7 @@ export type StatusDistributionResponse = {
 
 // AI 概览解读 - 回应
 export type AiInsightsResponse = {
+  insights: string[] | undefined;
   summary: string | undefined;
 };
 
