@@ -36,6 +36,16 @@ export const aiRoutes: AppRouteObject[] = [
         },
       },
       {
+        name: 'ai-query',
+        path: 'query',
+        element: createLazyRoute(() => import('@/pages/app/ai/query')),
+        meta: {
+          title: 'routes:ai-query',
+          icon: 'lucide:search-code',
+          order: 2,
+        },
+      },
+      {
         name: 'ai-providers',
         path: 'providers',
         element: createLazyRoute(() => import('@/pages/app/ai/provider')),

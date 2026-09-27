@@ -1855,6 +1855,59 @@ export type aiservicev1_DeleteAiProviderRequest = {
   id?: number;
 };
 
+// 智能问数服务（NL → 只读 SQL → 结构化结果）
+// 平台管理员专属：第一版查的是全平台数据，且 SQL 会触达原生库表。
+export interface AiQueryService {
+  // 智能问数
+  Ask(
+    request: aiservicev1_AskAiQueryRequest,
+  ): Promise<aiservicev1_AskAiQueryResponse>;
+}
+
+export function createAiQueryServiceClient(
+  transport: ClientTransport,
+): AiQueryService {
+  return {
+    Ask(request) {
+      const path = `admin/v1/ai/query/ask`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiQueryService',
+        method: 'Ask',
+      }) as Promise<aiservicev1_AskAiQueryResponse>;
+    },
+  };
+}
+// 智能问数 - 请求
+export type aiservicev1_AskAiQueryRequest = {
+  // 界面语言（BCP-47），决定结论 answer 的输出语言；默认 zh-CN
+  lang?: string;
+  question: string | undefined;
+  // 是否生成自然语言结论（二次模型调用；默认 true）
+  withAnswer?: boolean;
+};
+
+// 智能问数 - 回应
+export type aiservicev1_AskAiQueryResponse = {
+  // 自然语言结论（with_answer=false 或模型失败时为空）
+  answer?: string;
+  // 结果列名
+  columns: string[] | undefined;
+  // 实际返回的行数
+  rowCount: number | undefined;
+  // 结果行（上限 100 行）
+  rows: aiservicev1_AiQueryRow[] | undefined;
+  // 生成的只读 SQL（原样返回，便于核对与复用）
+  sql: string | undefined;
+  // 本次消耗的总 token 数（计入 AI_TOKENS 用量）
+  totalTokens: number | undefined;
+};
+
+// 结果行（values 与 columns 下标对应；时间/数字均已格式化为字符串）
+export type aiservicev1_AiQueryRow = {
+  values: string[] | undefined;
+};
+
 // AI 用量流水服务（配额记账事实源）
 export interface AiUsageLogService {
   // 分页查询用量流水
@@ -12144,6 +12197,7 @@ export class ApiClient {
   private _aiKnowledgeBaseService?: AiKnowledgeBaseService;
   private _aiMessageService?: AiMessageService;
   private _aiProviderService?: AiProviderService;
+  private _aiQueryService?: AiQueryService;
   private _aiUsageLogService?: AiUsageLogService;
   private _apiAuditLogService?: ApiAuditLogService;
   private _apiService?: ApiService;
@@ -12218,6 +12272,10 @@ export class ApiClient {
 
   get aiProviderService(): AiProviderService {
     return this._aiProviderService ??= createAiProviderServiceClient(this._transport);
+  }
+
+  get aiQueryService(): AiQueryService {
+    return this._aiQueryService ??= createAiQueryServiceClient(this._transport);
   }
 
   get aiUsageLogService(): AiUsageLogService {

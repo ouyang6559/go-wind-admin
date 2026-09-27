@@ -83,3 +83,6 @@ export * from './ai-chat';
 
 // AI 知识库
 export * from './ai-knowledge';
+
+// 智能问数
+export * from './ai-query';

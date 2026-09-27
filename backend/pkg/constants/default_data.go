@@ -107,7 +107,7 @@ var DefaultPermissions = []*permissionV1.Permission{
 			50, 51, 52, 53, 54, 55, 56, 57,
 			60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
 			72, 73, 74,
-			80, 81, 82,
+			80, 81, 82, 83,
 		},
 		ApiIds: []uint32{
 			1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -1049,6 +1049,22 @@ var DefaultMenus = []*permissionV1.Menu{
 			Icon:      trans.Ptr("lucide:message-circle"),
 			Order:     trans.Ptr(int32(1)),
 			KeepAlive: trans.Ptr(true),
+		},
+	},
+	{
+		// 智能问数：NL→只读 SQL，平台管理员专属（SQL 直触全平台原生表）
+		Id:        trans.Ptr(uint32(83)),
+		ParentId:  trans.Ptr(uint32(80)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("AiQuery"),
+		Path:      trans.Ptr("query"),
+		Component: trans.Ptr("app/ai/query/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.ai.query"),
+			Icon:      trans.Ptr("lucide:search-code"),
+			Order:     trans.Ptr(int32(3)),
+			Authority: []string{"sys:platform_admin"},
 		},
 	},
 	{
