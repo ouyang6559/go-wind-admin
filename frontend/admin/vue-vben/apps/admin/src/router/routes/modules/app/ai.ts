@@ -49,7 +49,6 @@ const ai: RouteRecordRaw[] = [
           order: 2,
           icon: 'lucide:search-code',
           title: $t('menu.ai.query'),
-          authority: ['sys:platform_admin'],
         },
         component: () => import('#/views/app/ai/query/index.vue'),
       },

@@ -1,6 +1,10 @@
 package service
 
 import (
+	"strings"
+
+	"fmt"
+
 	"context"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -215,6 +219,9 @@ func (s *ApiService) syncWithOpenAPI(ctx context.Context) error {
 				if bm, ok := constants.ServiceTagToBusinessModule[module]; ok {
 					businessModule = bm
 				}
+			}
+			if strings.Contains(path, "ai/query") {
+				fmt.Printf("[sync-debug] path=%s module=%q businessModule=%v\n", path, module, businessModule)
 			}
 
 			count++

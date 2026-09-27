@@ -1064,7 +1064,6 @@ var DefaultMenus = []*permissionV1.Menu{
 			Title:     trans.Ptr("menu.ai.query"),
 			Icon:      trans.Ptr("lucide:search-code"),
 			Order:     trans.Ptr(int32(3)),
-			Authority: []string{"sys:platform_admin"},
 		},
 	},
 	{
