@@ -28,8 +28,8 @@ const OperationDashboardServiceGetOverview = "/admin.service.v1.DashboardService
 
 type DashboardServiceHTTPServer interface {
 	// GetAiInsights 登录审计按 status 分布
-	// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
-	GetAiInsights(context.Context, *emptypb.Empty) (*AiInsightsResponse, error)
+	// AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
+	GetAiInsights(context.Context, *AiInsightsRequest) (*AiInsightsResponse, error)
 	GetLoginStatusDistribution(context.Context, *emptypb.Empty) (*StatusDistributionResponse, error)
 	// GetLoginTrend 获取近 N 天每日登录次数趋势
 	GetLoginTrend(context.Context, *GetLoginTrendRequest) (*LoginTrendResponse, error)
@@ -107,7 +107,7 @@ func _DashboardService_GetOperationActionDistribution0_HTTP_Handler(srv Dashboar
 
 func _DashboardService_GetAiInsights0_HTTP_Handler(srv DashboardServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in emptypb.Empty
+		var in AiInsightsRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func _DashboardService_GetAiInsights0_HTTP_Handler(srv DashboardServiceHTTPServe
 		}
 		http.SetOperation(ctx, OperationDashboardServiceGetAiInsights)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.GetAiInsights(ctx, req.(*emptypb.Empty))
+			return srv.GetAiInsights(ctx, req.(*AiInsightsRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -148,8 +148,8 @@ func _DashboardService_GetLoginStatusDistribution0_HTTP_Handler(srv DashboardSer
 
 type DashboardServiceHTTPClient interface {
 	// GetAiInsights 登录审计按 status 分布
-	// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
-	GetAiInsights(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *AiInsightsResponse, err error)
+	// AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
+	GetAiInsights(ctx context.Context, req *AiInsightsRequest, opts ...http.CallOption) (rsp *AiInsightsResponse, err error)
 	GetLoginStatusDistribution(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *StatusDistributionResponse, err error)
 	// GetLoginTrend 获取近 N 天每日登录次数趋势
 	GetLoginTrend(ctx context.Context, req *GetLoginTrendRequest, opts ...http.CallOption) (rsp *LoginTrendResponse, err error)
@@ -168,8 +168,8 @@ func NewDashboardServiceHTTPClient(client *http.Client) DashboardServiceHTTPClie
 }
 
 // GetAiInsights 登录审计按 status 分布
-// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
-func (c *DashboardServiceHTTPClientImpl) GetAiInsights(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*AiInsightsResponse, error) {
+// AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
+func (c *DashboardServiceHTTPClientImpl) GetAiInsights(ctx context.Context, in *AiInsightsRequest, opts ...http.CallOption) (*AiInsightsResponse, error) {
 	var out AiInsightsResponse
 	pattern := "/admin/v1/dashboard/ai-insights"
 	path := binding.EncodeURL(pattern, in, false)

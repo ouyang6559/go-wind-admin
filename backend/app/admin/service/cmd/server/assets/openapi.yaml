@@ -1473,11 +1473,13 @@ paths:
                 - DashboardService
             description: |-
                 登录审计按 status 分布
-                 AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+                 AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
             operationId: DashboardService_GetAiInsights
             requestBody:
                 content:
-                    application/json: {}
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AiInsightsRequest'
                 required: true
             responses:
                 "200":
@@ -7212,11 +7214,30 @@ components:
             properties:
                 severity:
                     type: string
-                title:
+                type:
                     type: string
-                detail:
+                facts:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 插值参数（i18n 模板变量）：username / count / total / ip 等，键随 type 而定
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AiSensitiveOpItem'
+                    description: SENSITIVE_OPS 专用的明细行（username + action + 资源与时间由前端格式化）
+            description: |-
+                异常告警条目：规则预筛的确定性结构化事实，**不含人类文案**——
+                 文案由前端按 type 选 i18n 模板并以 facts 插值渲染，保证多语言界面一致
+        AiInsightsRequest:
+            type: object
+            properties:
+                lang:
                     type: string
-            description: 异常告警条目（规则预筛的确定性事实，非模型生成）
+                    description: |-
+                        界面语言（BCP-47，如 zh-CN / en-US），决定 LLM 总评的输出语言；
+                         告警本身只回传结构化事实，文案由前端 i18n 模板渲染
+            description: AI 概览解读 - 请求
         AiInsightsResponse:
             type: object
             properties:
@@ -7226,10 +7247,6 @@ components:
                         $ref: '#/components/schemas/AiInsightAlert'
                 summary:
                     type: string
-                insights:
-                    type: array
-                    items:
-                        type: string
             description: AI 概览解读 - 回应
         AiKnowledgeBase:
             type: object
@@ -7437,6 +7454,18 @@ components:
                     description: 删除时间
                     format: date-time
             description: AI 模型提供商（一行 = 一个可调用的模型端点配置）
+        AiSensitiveOpItem:
+            type: object
+            properties:
+                username:
+                    type: string
+                action:
+                    type: string
+                resourceType:
+                    type: string
+                createdAt:
+                    type: string
+            description: 敏感操作明细项
         AiUsageLog:
             type: object
             properties:

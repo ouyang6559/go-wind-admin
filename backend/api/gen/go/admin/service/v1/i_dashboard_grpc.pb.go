@@ -40,8 +40,8 @@ type DashboardServiceClient interface {
 	// 操作审计按 action 分布
 	GetOperationActionDistribution(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ActionDistributionResponse, error)
 	// 登录审计按 status 分布
-	// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
-	GetAiInsights(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AiInsightsResponse, error)
+	// AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
+	GetAiInsights(ctx context.Context, in *AiInsightsRequest, opts ...grpc.CallOption) (*AiInsightsResponse, error)
 	GetLoginStatusDistribution(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatusDistributionResponse, error)
 }
 
@@ -83,7 +83,7 @@ func (c *dashboardServiceClient) GetOperationActionDistribution(ctx context.Cont
 	return out, nil
 }
 
-func (c *dashboardServiceClient) GetAiInsights(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AiInsightsResponse, error) {
+func (c *dashboardServiceClient) GetAiInsights(ctx context.Context, in *AiInsightsRequest, opts ...grpc.CallOption) (*AiInsightsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AiInsightsResponse)
 	err := c.cc.Invoke(ctx, DashboardService_GetAiInsights_FullMethodName, in, out, cOpts...)
@@ -116,8 +116,8 @@ type DashboardServiceServer interface {
 	// 操作审计按 action 分布
 	GetOperationActionDistribution(context.Context, *emptypb.Empty) (*ActionDistributionResponse, error)
 	// 登录审计按 status 分布
-	// AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
-	GetAiInsights(context.Context, *emptypb.Empty) (*AiInsightsResponse, error)
+	// AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
+	GetAiInsights(context.Context, *AiInsightsRequest) (*AiInsightsResponse, error)
 	GetLoginStatusDistribution(context.Context, *emptypb.Empty) (*StatusDistributionResponse, error)
 	mustEmbedUnimplementedDashboardServiceServer()
 }
@@ -138,7 +138,7 @@ func (UnimplementedDashboardServiceServer) GetLoginTrend(context.Context, *GetLo
 func (UnimplementedDashboardServiceServer) GetOperationActionDistribution(context.Context, *emptypb.Empty) (*ActionDistributionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOperationActionDistribution not implemented")
 }
-func (UnimplementedDashboardServiceServer) GetAiInsights(context.Context, *emptypb.Empty) (*AiInsightsResponse, error) {
+func (UnimplementedDashboardServiceServer) GetAiInsights(context.Context, *AiInsightsRequest) (*AiInsightsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAiInsights not implemented")
 }
 func (UnimplementedDashboardServiceServer) GetLoginStatusDistribution(context.Context, *emptypb.Empty) (*StatusDistributionResponse, error) {
@@ -220,7 +220,7 @@ func _DashboardService_GetOperationActionDistribution_Handler(srv interface{}, c
 }
 
 func _DashboardService_GetAiInsights_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(AiInsightsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func _DashboardService_GetAiInsights_Handler(srv interface{}, ctx context.Contex
 		FullMethod: DashboardService_GetAiInsights_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DashboardServiceServer).GetAiInsights(ctx, req.(*emptypb.Empty))
+		return srv.(DashboardServiceServer).GetAiInsights(ctx, req.(*AiInsightsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -4,7 +4,7 @@ import { RobotOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { useI18n } from '@/core/i18n';
-import type { AiInsightAlert } from '@/api/generated/admin/service/v1';
+import type { AiInsightAlert, AiSensitiveOpItem } from '@/api/generated/admin/service/v1';
 
 /** 严重度 → 左边条/标签色（语义一致：红=高、橙=中、蓝=低）。 */
 const SEVERITY_STYLE: Record<string, { bar: string; tagColor: string }> = {
@@ -13,20 +13,29 @@ const SEVERITY_STYLE: Record<string, { bar: string; tagColor: string }> = {
   LOW: { bar: 'bg-blue-500', tagColor: 'blue' },
 };
 
+/** 告警 type → i18n title/detail 模板键（文案在 dashboard.json，后端只回结构化事实）。 */
+const ALERT_I18N_KEY: Record<string, { title: string; detail?: string }> = {
+  BRUTE_FORCE: { title: 'alerts.bruteForce.title', detail: 'alerts.bruteForce.detail' },
+  NIGHT_OPS: { title: 'alerts.nightOps.title', detail: 'alerts.nightOps.detail' },
+  FAILED_OPS: { title: 'alerts.failedOps.title', detail: 'alerts.failedOps.detail' },
+  SENSITIVE_OPS: { title: 'alerts.sensitiveOps.title' },
+};
+
 /**
  * 安全与异常洞察卡片（dashboard）：
- * 规则预筛审计明细里的行为模式（深夜操作 / 操作失败集中 / 疑似口令尝试 / 敏感操作）
- * 生成结构化告警（确定性事实），LLM 仅生成总体评估措辞。
+ * 后端规则预筛审计明细里的行为模式（疑似口令尝试 / 深夜操作 / 失败集中 / 敏感操作），
+ * 只回传结构化事实（severity + type + facts）；文案由前端 i18n 模板按界面语言渲染，
+ * LLM 总评按请求 lang 生成——保证中英文界面内容一致。
  * 平台用户专属（后端对租户返回 403——明细日志为全平台数据且会外发到模型端点）。
  */
 const AiInsightsCard = () => {
-  const { t } = useI18n('dashboard');
+  const { t, i18n } = useI18n('dashboard');
   const { message } = App.useApp();
   const [alerts, setAlerts] = useState<AiInsightAlert[] | null>(null);
   const [summary, setSummary] = useState('');
 
   const insightsMutation = useMutation({
-    mutationFn: () => apiClient.dashboardService.GetAiInsights({}),
+    mutationFn: () => apiClient.dashboardService.GetAiInsights({ lang: i18n.language }),
     onSuccess: (resp) => {
       setAlerts(resp.alerts ?? []);
       setSummary(resp.summary ?? '');
@@ -36,6 +45,12 @@ const AiInsightsCard = () => {
       message.error(error.message || t('aiInsights.failed'));
     },
   });
+
+  const renderAlertText = (alert: AiInsightAlert, kind: 'title' | 'detail') => {
+    const keys = ALERT_I18N_KEY[alert.type ?? ''];
+    if (!keys || !keys[kind]) return alert.facts?.detail ?? '';
+    return t(`aiInsights.${keys[kind]}`, alert.facts ?? {});
+  };
 
   return (
     <div
@@ -86,7 +101,7 @@ const AiInsightsCard = () => {
         <Typography.Text type="secondary">{t('aiInsights.noAnomaly')}</Typography.Text>
       ) : (
         <>
-          {/* 告警条目：严重度左边条 + 标签 + 标题 + 明细 */}
+          {/* 告警条目：severity 左边条 + Tag + i18n 模板标题/明细 */}
           <div className="relative space-y-3">
             {alerts.map((alert, i) => {
               const style = SEVERITY_STYLE[alert.severity ?? ''] ?? SEVERITY_STYLE.LOW!;
@@ -102,19 +117,34 @@ const AiInsightsCard = () => {
                         {alert.severity}
                       </Tag>
                       <span className="text-sm font-medium text-[color:var(--ant-color-text)]">
-                        {alert.title}
+                        {renderAlertText(alert, 'title')}
                       </span>
                     </div>
-                    <div className="text-xs leading-relaxed text-[color:var(--ant-color-text-secondary)]">
-                      {alert.detail}
-                    </div>
+                    {ALERT_I18N_KEY[alert.type ?? '']?.detail && (
+                      <div className="text-xs leading-relaxed text-[color:var(--ant-color-text-secondary)]">
+                        {renderAlertText(alert, 'detail')}
+                      </div>
+                    )}
+                    {/* SENSITIVE_OPS 明细行（数据本身：用户/动作/资源/时间） */}
+                    {(alert.items ?? []).length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {(alert.items ?? []).map((item: AiSensitiveOpItem, j: number) => (
+                          <div
+                            key={j}
+                            className="text-xs text-[color:var(--ant-color-text-secondary)]"
+                          >
+                            {item.createdAt} · {item.username} · {item.action} · {item.resourceType}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* LLM 总体评估（告警为确定性事实，此处仅为措辞归纳） */}
+          {/* LLM 总体评估（按界面语言生成；告警为确定性事实，此处仅为措辞归纳） */}
           {summary && (
             <div className="mt-3 border-t border-solid border-white/8 pt-3">
               <Typography.Text type="secondary" className="!text-xs">

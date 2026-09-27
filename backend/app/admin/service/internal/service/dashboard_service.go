@@ -124,14 +124,22 @@ const (
 	userFailedAlertMin   = 3 // 单用户失败操作条数下限
 	loginFailAlertMin    = 3 // 单账号登录失败次数下限（疑似口令尝试）
 	sensitiveOpsAlertMin = 1 // 敏感操作（DELETE/EXPORT/ASSIGN）条数下限
-	sensitiveDetailMax   = 5 // 告警明细里最多列出的敏感操作条数
+	sensitiveDetailMax   = 5 // 响应里最多携带的敏感操作明细条数
 )
 
-// GetAiInsights 安全与异常洞察：挖掘近 24h 审计明细里的行为模式
-// （深夜操作 / 操作失败集中 / 疑似口令尝试 / 敏感操作），规则预筛出结构化告警，
-// LLM 仅对告警清单生成总体评估措辞——告警本身是确定性事实，不依赖模型编造。
+// 告警类型常量（前端 i18n 模板的 type 键，告警本身零文案）。
+const (
+	aiAlertBruteForce   = "BRUTE_FORCE"
+	aiAlertNightOps     = "NIGHT_OPS"
+	aiAlertFailedOps    = "FAILED_OPS"
+	aiAlertSensitiveOps = "SENSITIVE_OPS"
+)
+
+// GetAiInsights 安全与异常洞察：规则预筛审计明细里的行为模式，
+// 返回结构化告警事实（severity + type + facts），**不含任何人类文案**——
+// 文案由前端 i18n 模板按界面语言渲染；LLM 总体评估按请求语言生成。
 // 平台用户专属：明细日志为全平台数据，且会外发到模型端点。
-func (s *DashboardService) GetAiInsights(ctx context.Context, _ *emptypb.Empty) (*adminV1.AiInsightsResponse, error) {
+func (s *DashboardService) GetAiInsights(ctx context.Context, req *adminV1.AiInsightsRequest) (*adminV1.AiInsightsResponse, error) {
 	operator, err := auth.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -141,18 +149,25 @@ func (s *DashboardService) GetAiInsights(ctx context.Context, _ *emptypb.Empty) 
 	}
 
 	var alerts []*adminV1.AiInsightAlert
-	addAlert := func(severity, title, detail string) {
-		alerts = append(alerts, &adminV1.AiInsightAlert{Severity: severity, Title: title, Detail: detail})
+	addAlert := func(severity, alertType string, facts map[string]string) {
+		alerts = append(alerts, &adminV1.AiInsightAlert{
+			Severity: severity,
+			Type:     alertType,
+			Facts:    facts,
+		})
 	}
 
-	// 1. 疑似口令尝试：登录连续失败
+	// 1. 疑似口令尝试
 	failAccounts, err := s.dashboardRepo.LoginFailAccounts(ctx, loginFailAlertMin)
 	if err != nil {
 		return nil, err
 	}
 	for _, acc := range failAccounts {
-		addAlert("HIGH", fmt.Sprintf("疑似口令尝试：账号 %s 24h 内登录失败 %d 次", acc.Username, acc.Fails),
-			fmt.Sprintf("最近一次失败来源 IP：%s。建议确认是否本人操作，必要时重置口令并临时封禁来源。", acc.LastIP))
+		addAlert("HIGH", aiAlertBruteForce, map[string]string{
+			"username": acc.Username,
+			"count":    fmt.Sprintf("%d", acc.Fails),
+			"ip":       acc.LastIP,
+		})
 	}
 
 	// 2. 用户行为模式
@@ -162,47 +177,66 @@ func (s *DashboardService) GetAiInsights(ctx context.Context, _ *emptypb.Empty) 
 	}
 	for _, b := range behaviors {
 		if b.Night >= nightOpsAlertMin {
-			addAlert("MEDIUM", fmt.Sprintf("非常规时段操作：账号 %s 在本地 0-6 点执行了 %d 次操作", b.Username, b.Night),
-				"深夜时段的操作偏离常规作息，若非计划内变更/运维窗口，建议与该账号持有人核实。")
+			addAlert("MEDIUM", aiAlertNightOps, map[string]string{
+				"username": b.Username,
+				"count":    fmt.Sprintf("%d", b.Night),
+			})
 		}
 		if b.Failed >= userFailedAlertMin {
-			addAlert("MEDIUM", fmt.Sprintf("操作失败集中：账号 %s 24h 内失败操作 %d 次（共 %d 次）", b.Username, b.Failed, b.Total),
-				"连续失败可能意味着权限不足或越权尝试，建议在操作日志中核对失败资源与原因。")
+			addAlert("MEDIUM", aiAlertFailedOps, map[string]string{
+				"username": b.Username,
+				"count":    fmt.Sprintf("%d", b.Failed),
+				"total":    fmt.Sprintf("%d", b.Total),
+			})
 		}
 	}
 
-	// 3. 敏感操作（DELETE/EXPORT/ASSIGN）
+	// 3. 敏感操作明细
 	sensitiveOps, err := s.dashboardRepo.SensitiveOps24h(ctx, sensitiveDetailMax)
 	if err != nil {
 		return nil, err
 	}
 	if len(sensitiveOps) >= sensitiveOpsAlertMin {
-		var sb strings.Builder
-		sb.WriteString("最近 24 小时的敏感操作：")
-		for i, op := range sensitiveOps {
-			if i > 0 {
-				sb.WriteString("；")
-			}
-			sb.WriteString(fmt.Sprintf("%s 于 %s 执行 %s（%s）",
-				op.Username, op.CreatedAt.Format("01-02 15:04"), op.Action, op.ResourceType))
+		facts := map[string]string{"count": fmt.Sprintf("%d", len(sensitiveOps))}
+		alert := &adminV1.AiInsightAlert{
+			Severity: "LOW",
+			Type:     aiAlertSensitiveOps,
+			Facts:    facts,
 		}
-		if len(sensitiveOps) >= sensitiveDetailMax {
-			sb.WriteString("……")
+		for _, op := range sensitiveOps {
+			alert.Items = append(alert.Items, &adminV1.AiSensitiveOpItem{
+				Username:     op.Username,
+				Action:       op.Action,
+				ResourceType: op.ResourceType,
+				CreatedAt:    op.CreatedAt.Format("01-02 15:04"),
+			})
 		}
-		addAlert("LOW", fmt.Sprintf("存在 %d 条敏感操作（删除/导出/授权变更）", len(sensitiveOps)), sb.String())
+		alerts = append(alerts, alert)
 	}
 
-	// 4. 总体评估：有告警时才调 LLM（无告警直接给确定性结论，不浪费调用也不编造）
-	summary := "最近 24 小时未检测到异常行为模式。"
+	// 4. 总体评估：有告警才调 LLM，并按请求语言输出；失败不阻断告警返回
+	summary := ""
 	if len(alerts) > 0 {
+		lang := req.GetLang()
+		if lang == "" {
+			lang = "zh-CN"
+		}
 		var alertFacts strings.Builder
 		for _, a := range alerts {
-			alertFacts.WriteString("- [" + a.Severity + "] " + a.Title + "\n")
+			alertFacts.WriteString("- [" + a.Severity + "] " + a.Type)
+			for k, v := range a.Facts {
+				alertFacts.WriteString(fmt.Sprintf(" %s=%s", k, v))
+			}
+			alertFacts.WriteString("\n")
+		}
+		langLine := "用中文输出。"
+		if strings.HasPrefix(lang, "en") {
+			langLine = "Respond in English."
 		}
 		assessment, err := s.scriptRuntime.ChatForScript(ctx, 0,
 			"你是企业后台的安全运营助手。以下是从审计日志规则筛出的异常信号清单，"+
-				"用中文写一段 100 字以内的总体风险评估：概括风险等级与最需要优先处置的一项，"+
-				"语气克制、只基于给定信号，不要编造未提及的信息。",
+				"写一段 100 字以内的总体风险评估：概括风险等级与最需要优先处置的一项，"+
+				"语气克制、只基于给定信号，不要编造未提及的信息。"+langLine,
 			alertFacts.String())
 		if err != nil {
 			// LLM 不可用不阻断告警：告警本身是确定性事实
@@ -213,19 +247,9 @@ func (s *DashboardService) GetAiInsights(ctx context.Context, _ *emptypb.Empty) 
 	}
 
 	return &adminV1.AiInsightsResponse{
-		Summary:  summary,
-		Insights: alertsToPoints(alerts),
-		Alerts:   alerts,
+		Alerts:  alerts,
+		Summary: summary,
 	}, nil
-}
-
-// alertsToPoints 告警 → 前端要点列表（severity 前缀便于兼容旧渲染）。
-func alertsToPoints(alerts []*adminV1.AiInsightAlert) []string {
-	points := make([]string, 0, len(alerts))
-	for _, a := range alerts {
-		points = append(points, a.Title)
-	}
-	return points
 }
 
 // splitInsightPoints 把模型输出的要点文本拆成结构化条目：

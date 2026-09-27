@@ -3005,17 +3005,35 @@ export type StatusDistributionResponse = {
   items: DistributionItem[] | undefined;
 };
 
-// 异常告警条目（规则预筛的确定性事实，非模型生成）
+// AI 概览解读 - 请求
+export type AiInsightsRequest = {
+  // 界面语言（BCP-47，如 zh-CN / en-US），决定 LLM 总评的输出语言；
+  // 告警本身只回传结构化事实，文案由前端 i18n 模板渲染
+  lang?: string;
+};
+
+// 异常告警条目：规则预筛的确定性结构化事实，**不含人类文案**——
+// 文案由前端按 type 选 i18n 模板并以 facts 插值渲染，保证多语言界面一致
 export type AiInsightAlert = {
-  detail: string | undefined;
+  // 插值参数（i18n 模板变量）：username / count / total / ip 等，键随 type 而定
+  facts: { [key: string]: string } | undefined;
+  // SENSITIVE_OPS 专用的明细行（username + action + 资源与时间由前端格式化）
+  items: AiSensitiveOpItem[] | undefined;
   severity: string | undefined;
-  title: string | undefined;
+  type: string | undefined;
+};
+
+// 敏感操作明细项
+export type AiSensitiveOpItem = {
+  action: string | undefined;
+  createdAt: string | undefined;
+  resourceType: string | undefined;
+  username: string | undefined;
 };
 
 // AI 概览解读 - 回应
 export type AiInsightsResponse = {
   alerts: AiInsightAlert[] | undefined;
-  insights: string[] | undefined;
   summary: string | undefined;
 };
 
@@ -3034,9 +3052,9 @@ export interface DashboardService {
     request: wellKnownEmpty,
   ): Promise<ActionDistributionResponse>;
   // 登录审计按 status 分布
-  // AI 概览解读：当日指标喂给默认模型生成中文解读（平台用户专属——数据会外发到模型端点）
+  // AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
   GetAiInsights(
-    request: wellKnownEmpty,
+    request: AiInsightsRequest,
   ): Promise<AiInsightsResponse>;
   GetLoginStatusDistribution(
     request: wellKnownEmpty,
