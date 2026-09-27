@@ -73,6 +73,7 @@
     "moduleName": "AI 助手",
     "chat": "AI 助手",
     "providers": "AI 提供商",
-    "knowledge": "知识库"
+    "knowledge": "知识库",
+    "query": "智能问数"
   }
 }

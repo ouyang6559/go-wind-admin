@@ -974,5 +974,20 @@
     "nightOpsTitle": "非常规时段操作：账号 {username} 在本地 0-6 点执行了 {count} 次操作",
     "failedOpsTitle": "操作失败集中：账号 {username} 24h 内失败操作 {count} 次（共 {total} 次）",
     "sensitiveOpsTitle": "存在 {count} 条敏感操作（删除/导出/授权变更）"
+  },
+  "aiQuery": {
+    "title": "智能问数",
+    "ask": "提问",
+    "inputPlaceholder": "用自然语言提问，例如：最近 24 小时登录失败最多的账号是哪个？",
+    "emptyDesc": "用自然语言查询平台数据，AI 生成只读 SQL 并返回结果（平台管理员专属）",
+    "thinking": "正在生成 SQL 并查询…",
+    "generatedSql": "生成的 SQL（只读）",
+    "noRows": "查询没有返回数据。",
+    "answerTag": "结论",
+    "failed": "查询失败",
+    "sample1": "系统里有多少个用户？",
+    "sample2": "最近 24 小时登录失败最多的账号是哪个？",
+    "sample3": "统计每个角色的用户数量",
+    "lang": "zh-CN"
   }
 }

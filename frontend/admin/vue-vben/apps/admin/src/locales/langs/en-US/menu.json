@@ -73,6 +73,7 @@
     "moduleName": "AI Assistant",
     "chat": "AI Assistant",
     "providers": "AI Providers",
-    "knowledge": "Knowledge Bases"
+    "knowledge": "Knowledge Bases",
+    "query": "AI Query"
   }
 }
