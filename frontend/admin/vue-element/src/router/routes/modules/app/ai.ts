@@ -53,6 +53,16 @@ const ai: RouteRecordRaw[] = [
         component: () => import("@/pages/app/ai/query/index.vue"),
       },
       {
+        path: "usage",
+        name: "AiUsage",
+        meta: {
+          order: 4,
+          icon: "lucide:bar-chart-3",
+          title: "routes.ai.usage",
+        },
+        component: () => import("@/pages/app/ai/usage/index.vue"),
+      },
+      {
         path: "providers",
         name: "AiProviderManagement",
         meta: {

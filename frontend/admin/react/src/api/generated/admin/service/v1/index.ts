@@ -1923,6 +1923,10 @@ export interface AiUsageLogService {
   List(
     request: pagination_PagingRequest,
   ): Promise<aiservicev1_ListAiUsageLogResponse>;
+  // 当月用量汇总（tokens/调用量/配额上限）
+  GetUsageSummary(
+    request: wellKnownEmpty,
+  ): Promise<aiservicev1_UsageSummaryResponse>;
 }
 
 export function createAiUsageLogServiceClient(
@@ -2044,6 +2048,14 @@ export function createAiUsageLogServiceClient(
         method: 'List',
       }) as Promise<aiservicev1_ListAiUsageLogResponse>;
     },
+    GetUsageSummary(_request) {
+      const path = `admin/v1/ai/usage-summary`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AiUsageLogService',
+        method: 'GetUsageSummary',
+      }) as Promise<aiservicev1_UsageSummaryResponse>;
+    },
   };
 }
 // 查询用量流水列表 - 回应
@@ -2065,6 +2077,14 @@ export type aiservicev1_AiUsageLog = {
   tenantId?: number;
   totalTokens?: number;
   userId?: number;
+};
+
+// 当月用量汇总 - 回应
+export type aiservicev1_UsageSummaryResponse = {
+  monthCalls: number | undefined;
+  monthTokens: number | undefined;
+  quotaConfigured: boolean | undefined;
+  quotaLimit: number | undefined;
 };
 
 // API资源管理服务

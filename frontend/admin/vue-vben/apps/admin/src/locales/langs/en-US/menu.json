@@ -74,6 +74,7 @@
     "chat": "AI Assistant",
     "providers": "AI Providers",
     "knowledge": "Knowledge Bases",
-    "query": "AI Query"
+    "query": "AI Query",
+    "usage": "Usage"
   }
 }

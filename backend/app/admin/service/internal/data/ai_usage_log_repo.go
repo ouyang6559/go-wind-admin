@@ -182,3 +182,31 @@ func (r *AiUsageLogRepo) FetchTenantTokenQuotaLimit(ctx context.Context, tenantI
 	}
 	return 0, false, nil
 }
+
+// MonthStats 聚合本月（自 monthStart 起）的用量：tokens 总和与调用次数。
+// tenantId=0 时统计平台侧记录（tenant_id=0 的行）。
+func (r *AiUsageLogRepo) MonthStats(ctx context.Context, tenantId uint32, monthStart time.Time) (uint64, uint64, error) {
+	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	var rows []struct {
+		Total uint64 `sql:"total"`
+		Cnt   uint64 `sql:"cnt"`
+	}
+	err := r.entClient.Client().AiUsageLog.Query().
+		Where(
+			aiusagelog.TenantIDEQ(tenantId),
+			aiusagelog.CreatedAtGTE(monthStart),
+		).
+		Aggregate(
+			ent.As(ent.Sum(aiusagelog.FieldTotalTokens), "total"),
+			ent.As(ent.Count(), "cnt"),
+		).
+		Scan(sysCtx, &rows)
+	if err != nil {
+		r.log.Errorf(ctx, "month stats failed: %s", err.Error())
+		return 0, 0, aiV1.ErrorInternalServerError("month stats failed")
+	}
+	if len(rows) > 0 {
+		return rows[0].Total, rows[0].Cnt, nil
+	}
+	return 0, 0, nil
+}

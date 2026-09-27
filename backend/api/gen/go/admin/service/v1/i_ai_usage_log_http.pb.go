@@ -12,6 +12,7 @@ import (
 	binding "github.com/go-kratos/kratos/v2/transport/http/binding"
 	v1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	v11 "go-wind-admin/api/gen/go/ai/service/v1"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -21,9 +22,12 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationAiUsageLogServiceGetUsageSummary = "/admin.service.v1.AiUsageLogService/GetUsageSummary"
 const OperationAiUsageLogServiceList = "/admin.service.v1.AiUsageLogService/List"
 
 type AiUsageLogServiceHTTPServer interface {
+	// GetUsageSummary 当月用量汇总（tokens/调用量/配额上限）
+	GetUsageSummary(context.Context, *emptypb.Empty) (*v11.UsageSummaryResponse, error)
 	// List 分页查询用量流水
 	List(context.Context, *v1.PagingRequest) (*v11.ListAiUsageLogResponse, error)
 }
@@ -31,6 +35,7 @@ type AiUsageLogServiceHTTPServer interface {
 func RegisterAiUsageLogServiceHTTPServer(s *http.Server, srv AiUsageLogServiceHTTPServer) {
 	r := s.Route("/")
 	r.GET("/admin/v1/ai/usage-logs", _AiUsageLogService_List5_HTTP_Handler(srv))
+	r.GET("/admin/v1/ai/usage-summary", _AiUsageLogService_GetUsageSummary0_HTTP_Handler(srv))
 }
 
 func _AiUsageLogService_List5_HTTP_Handler(srv AiUsageLogServiceHTTPServer) func(ctx http.Context) error {
@@ -52,7 +57,28 @@ func _AiUsageLogService_List5_HTTP_Handler(srv AiUsageLogServiceHTTPServer) func
 	}
 }
 
+func _AiUsageLogService_GetUsageSummary0_HTTP_Handler(srv AiUsageLogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAiUsageLogServiceGetUsageSummary)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetUsageSummary(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v11.UsageSummaryResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AiUsageLogServiceHTTPClient interface {
+	// GetUsageSummary 当月用量汇总（tokens/调用量/配额上限）
+	GetUsageSummary(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *v11.UsageSummaryResponse, err error)
 	// List 分页查询用量流水
 	List(ctx context.Context, req *v1.PagingRequest, opts ...http.CallOption) (rsp *v11.ListAiUsageLogResponse, err error)
 }
@@ -63,6 +89,20 @@ type AiUsageLogServiceHTTPClientImpl struct {
 
 func NewAiUsageLogServiceHTTPClient(client *http.Client) AiUsageLogServiceHTTPClient {
 	return &AiUsageLogServiceHTTPClientImpl{client}
+}
+
+// GetUsageSummary 当月用量汇总（tokens/调用量/配额上限）
+func (c *AiUsageLogServiceHTTPClientImpl) GetUsageSummary(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*v11.UsageSummaryResponse, error) {
+	var out v11.UsageSummaryResponse
+	pattern := "/admin/v1/ai/usage-summary"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAiUsageLogServiceGetUsageSummary))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // List 分页查询用量流水

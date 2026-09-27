@@ -56,5 +56,6 @@
   "ai": "AI Assistant",
   "ai-providers": "AI Providers",
   "ai-knowledge": "Knowledge Bases",
-  "ai-query": "AI Query"
+  "ai-query": "AI Query",
+  "ai-usage": "Usage"
 }

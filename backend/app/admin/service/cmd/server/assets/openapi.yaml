@@ -1008,6 +1008,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListAiUsageLogResponse'
+    /admin/v1/ai/usage-summary:
+        get:
+            tags:
+                - AiUsageLogService
+            description: 当月用量汇总（tokens/调用量/配额上限）
+            operationId: AiUsageLogService_GetUsageSummary
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UsageSummaryResponse'
     /admin/v1/api-audit-logs:
         get:
             tags:
@@ -12692,6 +12705,20 @@ components:
                 publicUrl:
                     type: string
                     description: 签名公开访问 URL
+        UsageSummaryResponse:
+            type: object
+            properties:
+                monthTokens:
+                    type: integer
+                    format: uint32
+                monthCalls:
+                    type: integer
+                    format: uint32
+                quotaConfigured:
+                    type: boolean
+                quotaLimit:
+                    type: string
+            description: 当月用量汇总 - 回应
         User:
             type: object
             properties:

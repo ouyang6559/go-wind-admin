@@ -448,3 +448,113 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = CountAiUsageLogResponseValidationError{}
+
+// Validate checks the field values on UsageSummaryResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UsageSummaryResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UsageSummaryResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UsageSummaryResponseMultiError, or nil if none found.
+func (m *UsageSummaryResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UsageSummaryResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for MonthTokens
+
+	// no validation rules for MonthCalls
+
+	// no validation rules for QuotaConfigured
+
+	// no validation rules for QuotaLimit
+
+	if len(errors) > 0 {
+		return UsageSummaryResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UsageSummaryResponseMultiError is an error wrapping multiple validation
+// errors returned by UsageSummaryResponse.ValidateAll() if the designated
+// constraints aren't met.
+type UsageSummaryResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UsageSummaryResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UsageSummaryResponseMultiError) AllErrors() []error { return m }
+
+// UsageSummaryResponseValidationError is the validation error returned by
+// UsageSummaryResponse.Validate if the designated constraints aren't met.
+type UsageSummaryResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UsageSummaryResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UsageSummaryResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UsageSummaryResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UsageSummaryResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UsageSummaryResponseValidationError) ErrorName() string {
+	return "UsageSummaryResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UsageSummaryResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUsageSummaryResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UsageSummaryResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UsageSummaryResponseValidationError{}

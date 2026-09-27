@@ -46,6 +46,16 @@ export const aiRoutes: AppRouteObject[] = [
         },
       },
       {
+        name: 'ai-usage',
+        path: 'usage',
+        element: createLazyRoute(() => import('@/pages/app/ai/usage')),
+        meta: {
+          title: 'routes:ai-usage',
+          icon: 'lucide:bar-chart-3',
+          order: 4,
+        },
+      },
+      {
         name: 'ai-providers',
         path: 'providers',
         element: createLazyRoute(() => import('@/pages/app/ai/provider')),

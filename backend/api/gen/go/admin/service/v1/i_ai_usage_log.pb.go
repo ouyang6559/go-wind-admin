@@ -12,6 +12,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -27,20 +28,25 @@ var File_admin_service_v1_i_ai_usage_log_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_ai_usage_log_proto_rawDesc = "" +
 	"\n" +
-	"%admin/service/v1/i_ai_usage_log.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a ai/service/v1/ai_usage_log.proto2~\n" +
+	"%admin/service/v1/i_ai_usage_log.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a ai/service/v1/ai_usage_log.proto2\xf2\x01\n" +
 	"\x11AiUsageLogService\x12i\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a%.ai.service.v1.ListAiUsageLogResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/admin/v1/ai/usage-logsB\xbd\x01\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a%.ai.service.v1.ListAiUsageLogResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/admin/v1/ai/usage-logs\x12r\n" +
+	"\x0fGetUsageSummary\x12\x16.google.protobuf.Empty\x1a#.ai.service.v1.UsageSummaryResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/admin/v1/ai/usage-summaryB\xbd\x01\n" +
 	"\x14com.admin.service.v1B\x10IAiUsageLogProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_ai_usage_log_proto_goTypes = []any{
 	(*v1.PagingRequest)(nil),           // 0: pagination.PagingRequest
-	(*v11.ListAiUsageLogResponse)(nil), // 1: ai.service.v1.ListAiUsageLogResponse
+	(*emptypb.Empty)(nil),              // 1: google.protobuf.Empty
+	(*v11.ListAiUsageLogResponse)(nil), // 2: ai.service.v1.ListAiUsageLogResponse
+	(*v11.UsageSummaryResponse)(nil),   // 3: ai.service.v1.UsageSummaryResponse
 }
 var file_admin_service_v1_i_ai_usage_log_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.AiUsageLogService.List:input_type -> pagination.PagingRequest
-	1, // 1: admin.service.v1.AiUsageLogService.List:output_type -> ai.service.v1.ListAiUsageLogResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	1, // 1: admin.service.v1.AiUsageLogService.GetUsageSummary:input_type -> google.protobuf.Empty
+	2, // 2: admin.service.v1.AiUsageLogService.List:output_type -> ai.service.v1.ListAiUsageLogResponse
+	3, // 3: admin.service.v1.AiUsageLogService.GetUsageSummary:output_type -> ai.service.v1.UsageSummaryResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

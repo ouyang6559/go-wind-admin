@@ -989,5 +989,16 @@
     "sample2": "最近 24 小时登录失败最多的账号是哪个？",
     "sample3": "统计每个角色的用户数量",
     "lang": "zh-CN"
+  },
+  "aiUsage": {
+    "monthTokens": "本月已用 tokens",
+    "monthCalls": "本月调用次数",
+    "quota": "配额用量",
+    "model": "模型",
+    "promptTokens": "输入 tokens",
+    "completionTokens": "输出 tokens",
+    "totalTokens": "总 tokens",
+    "duration": "耗时",
+    "time": "调用时间"
   }
 }

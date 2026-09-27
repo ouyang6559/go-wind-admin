@@ -246,6 +246,75 @@ func (x *CountAiUsageLogResponse) GetCount() uint64 {
 	return 0
 }
 
+// 当月用量汇总 - 回应
+type UsageSummaryResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MonthTokens     uint32                 `protobuf:"varint,1,opt,name=month_tokens,json=monthTokens,proto3" json:"month_tokens,omitempty"`             // 本月已用 tokens（当前视角：租户用户为本租户，平台用户为 tenant_id=0 记录）
+	MonthCalls      uint32                 `protobuf:"varint,2,opt,name=month_calls,json=monthCalls,proto3" json:"month_calls,omitempty"`                // 本月调用次数
+	QuotaConfigured bool                   `protobuf:"varint,3,opt,name=quota_configured,json=quotaConfigured,proto3" json:"quota_configured,omitempty"` // 套餐是否配置了 AI_TOKENS 配额（平台用户恒 false=不限量）
+	QuotaLimit      uint64                 `protobuf:"varint,4,opt,name=quota_limit,json=quotaLimit,proto3" json:"quota_limit,omitempty"`                // 配额上限（未配置为 0）
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UsageSummaryResponse) Reset() {
+	*x = UsageSummaryResponse{}
+	mi := &file_ai_service_v1_ai_usage_log_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UsageSummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UsageSummaryResponse) ProtoMessage() {}
+
+func (x *UsageSummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_usage_log_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UsageSummaryResponse.ProtoReflect.Descriptor instead.
+func (*UsageSummaryResponse) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_usage_log_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UsageSummaryResponse) GetMonthTokens() uint32 {
+	if x != nil {
+		return x.MonthTokens
+	}
+	return 0
+}
+
+func (x *UsageSummaryResponse) GetMonthCalls() uint32 {
+	if x != nil {
+		return x.MonthCalls
+	}
+	return 0
+}
+
+func (x *UsageSummaryResponse) GetQuotaConfigured() bool {
+	if x != nil {
+		return x.QuotaConfigured
+	}
+	return false
+}
+
+func (x *UsageSummaryResponse) GetQuotaLimit() uint64 {
+	if x != nil {
+		return x.QuotaLimit
+	}
+	return 0
+}
+
 var File_ai_service_v1_ai_usage_log_proto protoreflect.FileDescriptor
 
 const file_ai_service_v1_ai_usage_log_proto_rawDesc = "" +
@@ -287,7 +356,14 @@ const file_ai_service_v1_ai_usage_log_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2\x19.ai.service.v1.AiUsageLogR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x04R\x05total\"/\n" +
 	"\x17CountAiUsageLogResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x04R\x05count2\xad\x01\n" +
+	"\x05count\x18\x01 \x01(\x04R\x05count\"\xa6\x01\n" +
+	"\x14UsageSummaryResponse\x12!\n" +
+	"\fmonth_tokens\x18\x01 \x01(\rR\vmonthTokens\x12\x1f\n" +
+	"\vmonth_calls\x18\x02 \x01(\rR\n" +
+	"monthCalls\x12)\n" +
+	"\x10quota_configured\x18\x03 \x01(\bR\x0fquotaConfigured\x12\x1f\n" +
+	"\vquota_limit\x18\x04 \x01(\x04R\n" +
+	"quotaLimit2\xad\x01\n" +
 	"\x11AiUsageLogService\x12J\n" +
 	"\x04List\x12\x19.pagination.PagingRequest\x1a%.ai.service.v1.ListAiUsageLogResponse\"\x00\x12L\n" +
 	"\x05Count\x12\x19.pagination.PagingRequest\x1a&.ai.service.v1.CountAiUsageLogResponse\"\x00B\xa7\x01\n" +
@@ -305,19 +381,20 @@ func file_ai_service_v1_ai_usage_log_proto_rawDescGZIP() []byte {
 	return file_ai_service_v1_ai_usage_log_proto_rawDescData
 }
 
-var file_ai_service_v1_ai_usage_log_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_ai_service_v1_ai_usage_log_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_ai_service_v1_ai_usage_log_proto_goTypes = []any{
 	(*AiUsageLog)(nil),              // 0: ai.service.v1.AiUsageLog
 	(*ListAiUsageLogResponse)(nil),  // 1: ai.service.v1.ListAiUsageLogResponse
 	(*CountAiUsageLogResponse)(nil), // 2: ai.service.v1.CountAiUsageLogResponse
-	(*timestamppb.Timestamp)(nil),   // 3: google.protobuf.Timestamp
-	(*v1.PagingRequest)(nil),        // 4: pagination.PagingRequest
+	(*UsageSummaryResponse)(nil),    // 3: ai.service.v1.UsageSummaryResponse
+	(*timestamppb.Timestamp)(nil),   // 4: google.protobuf.Timestamp
+	(*v1.PagingRequest)(nil),        // 5: pagination.PagingRequest
 }
 var file_ai_service_v1_ai_usage_log_proto_depIdxs = []int32{
-	3, // 0: ai.service.v1.AiUsageLog.created_at:type_name -> google.protobuf.Timestamp
+	4, // 0: ai.service.v1.AiUsageLog.created_at:type_name -> google.protobuf.Timestamp
 	0, // 1: ai.service.v1.ListAiUsageLogResponse.items:type_name -> ai.service.v1.AiUsageLog
-	4, // 2: ai.service.v1.AiUsageLogService.List:input_type -> pagination.PagingRequest
-	4, // 3: ai.service.v1.AiUsageLogService.Count:input_type -> pagination.PagingRequest
+	5, // 2: ai.service.v1.AiUsageLogService.List:input_type -> pagination.PagingRequest
+	5, // 3: ai.service.v1.AiUsageLogService.Count:input_type -> pagination.PagingRequest
 	1, // 4: ai.service.v1.AiUsageLogService.List:output_type -> ai.service.v1.ListAiUsageLogResponse
 	2, // 5: ai.service.v1.AiUsageLogService.Count:output_type -> ai.service.v1.CountAiUsageLogResponse
 	4, // [4:6] is the sub-list for method output_type
@@ -339,7 +416,7 @@ func file_ai_service_v1_ai_usage_log_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ai_service_v1_ai_usage_log_proto_rawDesc), len(file_ai_service_v1_ai_usage_log_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

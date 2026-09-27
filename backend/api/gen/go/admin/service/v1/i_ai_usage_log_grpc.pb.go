@@ -13,6 +13,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -21,7 +22,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AiUsageLogService_List_FullMethodName = "/admin.service.v1.AiUsageLogService/List"
+	AiUsageLogService_List_FullMethodName            = "/admin.service.v1.AiUsageLogService/List"
+	AiUsageLogService_GetUsageSummary_FullMethodName = "/admin.service.v1.AiUsageLogService/GetUsageSummary"
 )
 
 // AiUsageLogServiceClient is the client API for AiUsageLogService service.
@@ -32,6 +34,8 @@ const (
 type AiUsageLogServiceClient interface {
 	// 分页查询用量流水
 	List(ctx context.Context, in *v1.PagingRequest, opts ...grpc.CallOption) (*v11.ListAiUsageLogResponse, error)
+	// 当月用量汇总（tokens/调用量/配额上限）
+	GetUsageSummary(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v11.UsageSummaryResponse, error)
 }
 
 type aiUsageLogServiceClient struct {
@@ -52,6 +56,16 @@ func (c *aiUsageLogServiceClient) List(ctx context.Context, in *v1.PagingRequest
 	return out, nil
 }
 
+func (c *aiUsageLogServiceClient) GetUsageSummary(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v11.UsageSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v11.UsageSummaryResponse)
+	err := c.cc.Invoke(ctx, AiUsageLogService_GetUsageSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AiUsageLogServiceServer is the server API for AiUsageLogService service.
 // All implementations must embed UnimplementedAiUsageLogServiceServer
 // for forward compatibility.
@@ -60,6 +74,8 @@ func (c *aiUsageLogServiceClient) List(ctx context.Context, in *v1.PagingRequest
 type AiUsageLogServiceServer interface {
 	// 分页查询用量流水
 	List(context.Context, *v1.PagingRequest) (*v11.ListAiUsageLogResponse, error)
+	// 当月用量汇总（tokens/调用量/配额上限）
+	GetUsageSummary(context.Context, *emptypb.Empty) (*v11.UsageSummaryResponse, error)
 	mustEmbedUnimplementedAiUsageLogServiceServer()
 }
 
@@ -72,6 +88,9 @@ type UnimplementedAiUsageLogServiceServer struct{}
 
 func (UnimplementedAiUsageLogServiceServer) List(context.Context, *v1.PagingRequest) (*v11.ListAiUsageLogResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedAiUsageLogServiceServer) GetUsageSummary(context.Context, *emptypb.Empty) (*v11.UsageSummaryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUsageSummary not implemented")
 }
 func (UnimplementedAiUsageLogServiceServer) mustEmbedUnimplementedAiUsageLogServiceServer() {}
 func (UnimplementedAiUsageLogServiceServer) testEmbeddedByValue()                           {}
@@ -112,6 +131,24 @@ func _AiUsageLogService_List_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AiUsageLogService_GetUsageSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AiUsageLogServiceServer).GetUsageSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AiUsageLogService_GetUsageSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AiUsageLogServiceServer).GetUsageSummary(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AiUsageLogService_ServiceDesc is the grpc.ServiceDesc for AiUsageLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -122,6 +159,10 @@ var AiUsageLogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _AiUsageLogService_List_Handler,
+		},
+		{
+			MethodName: "GetUsageSummary",
+			Handler:    _AiUsageLogService_GetUsageSummary_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

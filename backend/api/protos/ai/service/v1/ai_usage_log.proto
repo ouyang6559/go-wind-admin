@@ -83,3 +83,11 @@ message ListAiUsageLogResponse {
 message CountAiUsageLogResponse {
   uint64 count = 1; // 流水条数
 }
+
+// 当月用量汇总 - 回应
+message UsageSummaryResponse {
+  uint32 month_tokens = 1 [json_name = "monthTokens"]; // 本月已用 tokens（当前视角：租户用户为本租户，平台用户为 tenant_id=0 记录）
+  uint32 month_calls = 2 [json_name = "monthCalls"];   // 本月调用次数
+  bool quota_configured = 3 [json_name = "quotaConfigured"]; // 套餐是否配置了 AI_TOKENS 配额（平台用户恒 false=不限量）
+  uint64 quota_limit = 4 [json_name = "quotaLimit"];         // 配额上限（未配置为 0）
+}
