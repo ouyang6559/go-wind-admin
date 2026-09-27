@@ -60,7 +60,7 @@ export default function AiUsagePage() {
   ];
 
   return (
-    <ContentContainer heightMode="auto" scrollable padding="16px">
+    <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
         {/* 汇总卡 */}
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">

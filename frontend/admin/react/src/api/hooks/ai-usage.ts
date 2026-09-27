@@ -1,19 +1,15 @@
-import { useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
-import { queryClient } from '@/core';
-
-export interface AiUsageSummaryParams {
-  lang?: string;
-}
+import { PaginationQuery, queryClient } from '@/core';
 
 // useGetAiUsageSummary — 当月用量汇总（tokens/调用次数/配额上限）
 export function useGetAiUsageSummary() {
-  return useMutation({
-    mutationFn: () => apiClient.aiUsageLogService.GetUsageSummary({}),
+  return useQuery({
+    queryKey: ['aiUsageSummary'],
+    queryFn: () => apiClient.aiUsageLogService.GetUsageSummary({}),
+    staleTime: 60_000,
   });
 }
-
-import { type PaginationQuery } from '@/core';
 
 // fetchListAiUsageLogs — ProTable request 回调用
 export async function fetchListAiUsageLogs(params: PaginationQuery) {
