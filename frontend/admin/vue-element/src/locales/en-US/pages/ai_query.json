@@ -10,5 +10,8 @@
   "failed": "Query failed",
   "sample1": "How many users are in the system?",
   "sample2": "Which account had the most failed logins in the last 24h?",
-  "sample3": "Count users per role"
+  "sample3": "Count users per role",
+  "viewChart": "Chart",
+  "viewTable": "Table",
+  "rowCount": "{count} rows"
 }

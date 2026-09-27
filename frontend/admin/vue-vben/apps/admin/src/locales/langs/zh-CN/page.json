@@ -991,7 +991,10 @@
     "sample1": "系统里有多少个用户？",
     "sample2": "最近 24 小时登录失败最多的账号是哪个？",
     "sample3": "统计每个角色的用户数量",
-    "lang": "zh-CN"
+    "lang": "zh-CN",
+    "viewChart": "图表",
+    "viewTable": "表格",
+    "rowCount": "{count} 行"
   },
   "aiUsage": {
     "monthTokens": "本月已用 tokens",

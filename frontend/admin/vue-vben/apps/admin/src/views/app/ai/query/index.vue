@@ -1,11 +1,17 @@
 <script lang="ts" setup>
-import { nextTick, ref } from 'vue';
+import type { EchartsUIType } from '@vben/plugins/echarts';
+
+import { computed, nextTick, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 import { message } from 'ant-design-vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import {
+  EchartsUI,
+  useEcharts,
+} from '@vben/plugins/echarts';
 
 import { apiClient } from '#/api';
 
@@ -32,6 +38,57 @@ const rounds = ref<Round[]>([]);
 const input = ref('');
 const loading = ref(false);
 const scrollRef = ref<HTMLElement>();
+
+// ── 结果图表（确定性推断，零 LLM 参与） ───────────────────────────
+const viewMode = ref<'chart' | 'table'>('chart');
+const chartRef = ref<EchartsUIType>();
+const { renderEcharts } = useEcharts(chartRef);
+
+function numericCols(columns: string[], rows: Round['rows'] = []): number[] {
+  return columns
+    .map((_, i) => i)
+    .filter(
+      (i) =>
+        i > 0 &&
+        rows.length > 0 &&
+        rows.every((r) => {
+          const v = r.cells?.[i];
+          return v !== undefined && v !== null && v !== '' && !Number.isNaN(Number(v));
+        }),
+    );
+}
+
+const currentRound = computed(() => rounds.value[rounds.value.length - 1]);
+
+function renderChart() {
+  const r = currentRound.value;
+  if (!r) return;
+  const rows = r.rows ?? [];
+  if (viewMode.value !== 'chart') return;
+  const cols = r.columns ?? [];
+  const series = numericCols(cols, rows);
+  if (series.length === 0) return;
+  const kind = rows.length > 12 ? 'line' : 'bar';
+  renderEcharts({
+    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+    legend: { top: 0 },
+    tooltip: { trigger: 'axis' },
+    xAxis: {
+      type: 'category',
+      data: rows.map((row) => row.cells?.[0] ?? ''),
+      axisLabel: { rotate: rows.length > 6 ? 30 : 0 },
+    },
+    yAxis: { type: 'value' },
+    series: series.map((colIdx) => ({
+      name: cols[colIdx] ?? '',
+      type: kind,
+      barMaxWidth: 40,
+      data: rows.map((row) => Number(row.cells?.[colIdx] ?? 0)),
+    })),
+  });
+}
+
+watch([currentRound, viewMode], renderChart, { deep: true });
 
 function scrollToBottom() {
   nextTick(() => {
@@ -148,7 +205,7 @@ function sampleText(key: string): string {
                   <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
                   {{ $t('page.aiQuery.thinking') }}
                 </div>
-                <template v-else>
+                  <template v-else>
                   <details class="mb-3" open>
                     <summary class="cursor-pointer text-xs text-gray-400">
                       {{ $t('page.aiQuery.generatedSql') }}
@@ -159,21 +216,43 @@ function sampleText(key: string): string {
                     >
                   </details>
 
-                  <a-table
-                    v-if="round.columns && round.columns.length > 0"
-                    :columns="round.columns.map((c, i) => ({ title: c, dataIndex: String(i) }))"
-                    :data-source="(round.rows || []).map((r, ri) => ({ key: ri, cells: r.cells }))"
-                    :pagination="
-                      (round.rows?.length || 0) > 10
-                        ? { pageSize: 10, showSizeChanger: false }
-                        : false
-                    "
-                    size="small"
-                  >
-                    <template #bodyCell="{ column, record }">
-                      {{ record.cells[Number(column.dataIndex)] }}
-                    </template>
-                  </a-table>
+                  <template v-if="round.columns && round.columns.length > 0">
+                    <div
+                      class="mb-2 flex items-center justify-between"
+                    >
+                      <a-radio-group v-model:value="viewMode" size="small">
+                        <a-radio-button value="chart">
+                          {{ $t('page.aiQuery.viewChart') }}
+                        </a-radio-button>
+                        <a-radio-button value="table">
+                          {{ $t('page.aiQuery.viewTable') }}
+                        </a-radio-button>
+                      </a-radio-group>
+                      <span class="text-xs text-gray-400">
+                        {{ $t('page.aiQuery.rowCount', { count: round.rows?.length ?? 0 }) }}
+                      </span>
+                    </div>
+                    <div
+                      class="mb-2 overflow-hidden rounded-lg border border-solid border-gray-200 p-2 dark:border-gray-700"
+                    >
+                      <EchartsUI ref="chartRef" height="280px" width="100%" />
+                    </div>
+                    <a-table
+                      v-if="viewMode === 'table'"
+                      :columns="round.columns.map((c, i) => ({ title: c, dataIndex: String(i) }))"
+                      :data-source="(round.rows || []).map((r, ri) => ({ key: ri, cells: r.cells }))"
+                      :pagination="
+                        (round.rows?.length || 0) > 10
+                          ? { pageSize: 10, showSizeChanger: false }
+                          : false
+                      "
+                      size="small"
+                    >
+                      <template #bodyCell="{ column, record }">
+                        {{ record.cells[Number(column.dataIndex)] }}
+                      </template>
+                    </a-table>
+                  </template>
                   <div
                     v-if="round.sql && (round.rows?.length ?? 0) === 0"
                     class="mt-2 text-xs text-gray-400"

@@ -42,17 +42,11 @@
                 <pre class="mt-2 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100">{{ round.sql }}</pre>
               </details>
 
-              <ElTable v-if="round.columns && round.columns.length > 0" :data="tableRows(round)" size="small" border>
-                <ElTableColumn
-                  v-for="(col, ci) in round.columns"
-                  :key="col"
-                  :label="col"
-                  :prop="String(ci)"
-                  show-overflow-tooltip
-                >
-                  <template #default="{ row }">{{ row.cells[ci] }}</template>
-                </ElTableColumn>
-              </ElTable>
+              <QueryResultCard
+                v-if="round.columns && round.columns.length > 0"
+                :columns="round.columns"
+                :rows="round.rows || []"
+              />
               <div v-if="round.sql && (round.rows?.length ?? 0) === 0" class="mt-2 text-xs text-gray-400">
                 {{ t("pages.ai_query.noRows") }}
               </div>
@@ -97,6 +91,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { i18n, useI18n } from "@/core/i18n";
 import { apiClient } from "@/api/client";
+import QueryResultCard from "./query-result-card.vue";
 
 // marked 单行换行按 GFM 处理
 marked.setOptions({ gfm: true, breaks: true });
@@ -122,10 +117,6 @@ interface Round {
 const rounds = ref<Round[]>([]);
 const input = ref("");
 const loading = ref(false);
-
-function tableRows(round: Round) {
-  return (round.rows || []).map((r, i) => ({ id: i, cells: r.cells }));
-}
 
 /** 滚到底部（新轮次追加后）。 */
 function scrollToBottom() {

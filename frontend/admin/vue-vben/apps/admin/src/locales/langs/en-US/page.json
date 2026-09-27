@@ -979,7 +979,10 @@
     "sample1": "How many users are in the system?",
     "sample2": "Which account had the most failed logins in the last 24h?",
     "sample3": "Count users per role",
-    "lang": "en-US"
+    "lang": "en-US",
+    "viewChart": "Chart",
+    "viewTable": "Table",
+    "rowCount": "{count} rows"
   },
   "aiUsage": {
     "monthTokens": "Tokens this month",
