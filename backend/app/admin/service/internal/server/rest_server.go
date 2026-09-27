@@ -182,6 +182,7 @@ func NewRestServer(
 	aiKnowledgeService *service.AiKnowledgeService,
 	aiChatService *service.AiChatService,
 	aiQueryService *service.AiQueryService,
+	aiContentService *service.AiContentService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
 
@@ -267,6 +268,7 @@ func NewRestServer(
 	adminV1.RegisterAiUsageLogServiceHTTPServer(srv, aiUsageLogService)
 	adminV1.RegisterAiKnowledgeBaseServiceHTTPServer(srv, aiKnowledgeService)
 	adminV1.RegisterAiQueryServiceHTTPServer(srv, aiQueryService)
+	adminV1.RegisterAiContentServiceHTTPServer(srv, aiContentService)
 	adminV1.RegisterAiChatServiceHTTPServer(srv, aiChatService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {

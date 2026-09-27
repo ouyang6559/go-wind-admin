@@ -272,6 +272,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// 智能问数：NL→只读 SQL→结构化结果（平台管理员专属，四重护栏）
 	aiQueryService := service.NewAiQueryService(ctx, aiProviderRepo, aiUsageLogRepo, entClient)
+	aiContentService := service.NewAiContentService(ctx, aiProviderRepo, aiUsageLogRepo, entClient)
 
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
 	notificationRuleService := service.NewNotificationRuleService(ctx, notificationRuleRepo, notificationChannelRepo, notificationService)
@@ -316,6 +317,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		aiKnowledgeService,
 		aiChatService,
 		aiQueryService,
+		aiContentService,
 	)
 	if err != nil {
 		rollback()

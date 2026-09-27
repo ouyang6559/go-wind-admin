@@ -842,6 +842,59 @@ export type aiservicev1_AiRole =
   | 'ASSISTANT'
   | 'SYSTEM'
   | 'USER';
+// AI 内容生成服务（表单助手）
+export interface AiContentService {
+  // 生成内容
+  GenerateContent(
+    request: aiservicev1_GenerateContentRequest,
+  ): Promise<aiservicev1_GenerateContentResponse>;
+}
+
+export function createAiContentServiceClient(
+  transport: ClientTransport,
+): AiContentService {
+  return {
+    GenerateContent(request) {
+      const path = `admin/v1/ai/content/generate`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiContentService',
+        method: 'GenerateContent',
+      }) as Promise<aiservicev1_GenerateContentResponse>;
+    },
+  };
+}
+// 内容生成 - 请求
+export type aiservicev1_GenerateContentRequest = {
+  // 补充上下文（如已有内容的续写、字段标签等，可选）
+  context?: string;
+  // 输出语言（BCP-47，默认 zh-CN）
+  lang?: string;
+  // 期望长度（字符数提示，默认 200）
+  maxLength?: number;
+  // 场景标识
+  scene: aiservicev1_ContentScene | undefined;
+  // 主题/关键词（用户输入的生成指令）
+  topic: string | undefined;
+};
+
+// 场景标识（服务端按此选择预设提示词模板）
+export type aiservicev1_ContentScene =
+  // 公告/通知正文
+  | 'ANNOUNCEMENT'
+  | 'CONTENT_SCENE_UNSPECIFIED'
+  // 通用描述（角色/菜单/字典项/文件等实体描述）
+  | 'DESCRIPTION'
+  // 自由生成（用户自带完整提示词）
+  | 'GENERAL'
+  // 回复/反馈文案
+  | 'REPLY';
+// 内容生成 - 回应
+export type aiservicev1_GenerateContentResponse = {
+  content: string | undefined;
+  totalTokens: number | undefined;
+};
+
 // AI 对话会话管理服务
 export interface AiConversationService {
   // 分页查询会话列表
@@ -12224,6 +12277,7 @@ export class ApiClient {
   private _accessKeyService?: AccessKeyService;
   private _adminPortalService?: AdminPortalService;
   private _aiChatService?: AiChatService;
+  private _aiContentService?: AiContentService;
   private _aiConversationService?: AiConversationService;
   private _aiKnowledgeBaseService?: AiKnowledgeBaseService;
   private _aiMessageService?: AiMessageService;
@@ -12287,6 +12341,10 @@ export class ApiClient {
 
   get aiChatService(): AiChatService {
     return this._aiChatService ??= createAiChatServiceClient(this._transport);
+  }
+
+  get aiContentService(): AiContentService {
+    return this._aiContentService ??= createAiContentServiceClient(this._transport);
   }
 
   get aiConversationService(): AiConversationService {

@@ -243,6 +243,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ChatResponse'
+    /admin/v1/ai/content/generate:
+        post:
+            tags:
+                - AiContentService
+            description: 生成内容
+            operationId: AiContentService_GenerateContent
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GenerateContentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GenerateContentResponse'
     /admin/v1/ai/conversations:
         get:
             tags:
@@ -8808,6 +8827,42 @@ components:
                 imageBase64:
                     type: string
                     description: 验证码图片的Base64编码字符串，客户端可以解码并显示给用户
+        GenerateContentRequest:
+            type: object
+            properties:
+                scene:
+                    enum:
+                        - CONTENT_SCENE_UNSPECIFIED
+                        - DESCRIPTION
+                        - ANNOUNCEMENT
+                        - REPLY
+                        - GENERAL
+                    type: string
+                    description: 场景标识
+                    format: enum
+                topic:
+                    type: string
+                    description: 主题/关键词（用户输入的生成指令）
+                context:
+                    type: string
+                    description: 补充上下文（如已有内容的续写、字段标签等，可选）
+                lang:
+                    type: string
+                    description: 输出语言（BCP-47，默认 zh-CN）
+                maxLength:
+                    type: integer
+                    description: 期望长度（字符数提示，默认 200）
+                    format: uint32
+            description: 内容生成 - 请求
+        GenerateContentResponse:
+            type: object
+            properties:
+                content:
+                    type: string
+                totalTokens:
+                    type: integer
+                    format: uint32
+            description: 内容生成 - 回应
         GeoLocation:
             type: object
             properties:
@@ -12974,6 +13029,8 @@ tags:
 
          流式语义：本 RPC 是普通 POST（body 为扁平请求体，**不包 data**），
          增量 token 经 SSE `ai_chat_chunk` 事件推送（见 domain proto 注释）。
+    - name: AiContentService
+      description: AI 内容生成服务（表单助手）
     - name: AiConversationService
       description: AI 对话会话管理服务
     - name: AiKnowledgeBaseService

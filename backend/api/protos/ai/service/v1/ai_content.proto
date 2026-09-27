@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ai.service.v1;
+
+import "gnostic/openapi/v3/annotations.proto";
+
+// AI 内容生成服务：按场景预设提示词，生成表单/文案内容。
+// 复用流式对话的 provider 解析与用量记账链路。
+service AiContentService {
+  // 生成内容
+  rpc GenerateContent (GenerateContentRequest) returns (GenerateContentResponse) {}
+}
+
+// 场景标识（服务端按此选择预设提示词模板）
+enum ContentScene {
+  CONTENT_SCENE_UNSPECIFIED = 0;
+
+  // 通用描述（角色/菜单/字典项/文件等实体描述）
+  DESCRIPTION = 1;
+  // 公告/通知正文
+  ANNOUNCEMENT = 2;
+  // 回复/反馈文案
+  REPLY = 3;
+  // 自由生成（用户自带完整提示词）
+  GENERAL = 4;
+}
+
+// 内容生成 - 请求
+message GenerateContentRequest {
+  // 场景标识
+  ContentScene scene = 1;
+
+  // 主题/关键词（用户输入的生成指令）
+  string topic = 2;
+
+  // 补充上下文（如已有内容的续写、字段标签等，可选）
+  optional string context = 3 [json_name = "context"];
+
+  // 输出语言（BCP-47，默认 zh-CN）
+  optional string lang = 4 [json_name = "lang"];
+
+  // 期望长度（字符数提示，默认 200）
+  optional uint32 max_length = 5 [json_name = "maxLength"];
+}
+
+// 内容生成 - 回应
+message GenerateContentResponse {
+  string content = 1;  // 生成的文本
+  uint32 total_tokens = 2 [json_name = "totalTokens"]; // 本次消耗 tokens
+}

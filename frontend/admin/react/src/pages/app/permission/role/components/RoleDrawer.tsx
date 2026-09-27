@@ -19,6 +19,7 @@ import { fetchListPermissions } from '@/api/hooks/permission';
 import { fetchListOrgUnits } from '@/api/hooks/org-unit';
 import { PaginationQuery } from '@/core';
 import { getStatusOptions, getDataScopeOptions, buildPermissionTree, extractLeafIds, buildOrgUnitTree, getUserFieldPermissionOptions } from '../constants';
+import AiGenerateButton from '@/components/common/AiGenerateButton';
 
 interface RoleDrawerProps {
   open: boolean;
@@ -285,7 +286,18 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
 
       <ProFormTextArea
         name="description"
-        label={t('description')}
+        label={
+          <span className="inline-flex items-center gap-2">
+            {t('description')}
+            <AiGenerateButton
+              scene="DESCRIPTION"
+              size="small"
+              onGenerate={(content) => {
+                formRef.current?.setFieldValue('description', content);
+              }}
+            />
+          </span>
+        }
         placeholder={t('descriptionPlaceholder')}
         fieldProps={{ allowClear: true, rows: 2 }}
       />

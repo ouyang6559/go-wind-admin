@@ -87,3 +87,6 @@ export * from './ai-knowledge';
 // 智能问数
 export * from './ai-query';
 export * from './ai-usage';
+
+// AI 内容生成
+export * from './ai-content';

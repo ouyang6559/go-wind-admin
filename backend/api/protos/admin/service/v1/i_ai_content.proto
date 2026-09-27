@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+
+import "ai/service/v1/ai_content.proto";
+
+// AI 内容生成服务（表单助手）
+service AiContentService {
+  // 生成内容
+  rpc GenerateContent (ai.service.v1.GenerateContentRequest) returns (ai.service.v1.GenerateContentResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/ai/content/generate"
+      body: "*"
+    };
+  }
+}
