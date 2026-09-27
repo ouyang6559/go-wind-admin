@@ -1880,11 +1880,20 @@ export function createAiQueryServiceClient(
 }
 // 智能问数 - 请求
 export type aiservicev1_AskAiQueryRequest = {
+  // 对话历史（最近若干轮，建议 ≤5；用于消解追问里的指代，如"那只看 admin 的"）
+  history: aiservicev1_AiQueryHistoryItem[] | undefined;
   // 界面语言（BCP-47），决定结论 answer 的输出语言；默认 zh-CN
   lang?: string;
   question: string | undefined;
   // 是否生成自然语言结论（二次模型调用；默认 true）
   withAnswer?: boolean;
+};
+
+// 对话历史一轮（多轮追问用）：只回传问答摘要，供模型消解指代（如"那只看 admin 的"）
+export type aiservicev1_AiQueryHistoryItem = {
+  question: string | undefined;
+  resultSummary: string | undefined;
+  sql: string | undefined;
 };
 
 // 智能问数 - 回应

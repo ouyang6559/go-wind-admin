@@ -5,10 +5,17 @@ import type {
   aiservicev1_AskAiQueryResponse,
 } from '@/api/generated/admin/service/v1';
 
+export interface AskAiQueryHistoryItem {
+  question: string;
+  sql: string;
+  resultSummary: string;
+}
+
 export interface AskAiQueryParams {
   question: string;
   lang?: string;
   withAnswer?: boolean;
+  history?: AskAiQueryHistoryItem[];
 }
 
 // useAskAiQuery — 智能问数：NL → 只读 SQL → 结构化结果（+可选自然语言结论）。
@@ -22,6 +29,7 @@ export function useAskAiQuery(
         question: req.question,
         lang: req.lang ?? 'zh-CN',
         withAnswer: req.withAnswer ?? true,
+        history: req.history,
       }),
     ...options,
   });

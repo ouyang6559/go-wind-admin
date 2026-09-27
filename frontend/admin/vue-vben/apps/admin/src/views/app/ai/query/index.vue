@@ -45,6 +45,15 @@ function scrollToBottom() {
 async function handleAsk(text?: string) {
   const question = (text ?? input.value).trim();
   if (!question || loading.value) return;
+  // 携带最近 5 轮历史（问题+SQL+结果摘要），供模型消解追问里的指代
+  const history = rounds.value
+    .filter((r) => !r.loading && r.sql)
+    .slice(-5)
+    .map((r) => ({
+      question: r.question,
+      sql: r.sql || '',
+      resultSummary: (r.rows || []).slice(0, 3).map((row) => row.cells.join(' | ')).join('；'),
+    }));
   rounds.value.push({ question, loading: true });
   input.value = '';
   loading.value = true;
@@ -55,6 +64,7 @@ async function handleAsk(text?: string) {
       question,
       lang,
       withAnswer: true,
+      history,
     } as any);
     const last = rounds.value[rounds.value.length - 1];
     if (last) {

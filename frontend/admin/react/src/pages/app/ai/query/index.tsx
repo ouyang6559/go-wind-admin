@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useI18n } from '@/core/i18n';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
-import { useAskAiQuery, type AskAiQueryParams } from '@/api/hooks/ai-query';
+import { useAskAiQuery, type AskAiQueryHistoryItem, type AskAiQueryParams } from '@/api/hooks/ai-query';
 import type { aiservicev1_AiQueryRow } from '@/api/generated/admin/service/v1';
 
 type Round = {
@@ -69,7 +69,16 @@ export default function AiQueryPage() {
   const handleAsk = () => {
     const question = input.trim();
     if (!question || askMutation.isPending) return;
-    const params: AskAiQueryParams = { question, lang: i18n.language, withAnswer: true };
+    // 携带最近 5 轮历史（问题+SQL+结果摘要），供模型消解追问里的指代
+    const history: AskAiQueryHistoryItem[] = rounds
+      .filter((r) => !r.loading && r.sql)
+      .slice(-5)
+      .map((r) => ({
+        question: r.question,
+        sql: r.sql ?? '',
+        resultSummary: (r.rows ?? []).slice(0, 3).map((row) => (row.values ?? []).join(' | ')).join('；'),
+      }));
+    const params: AskAiQueryParams = { question, lang: i18n.language, withAnswer: true, history };
     setRounds((prev) => [...prev, { question, loading: true }]);
     setInput('');
     askMutation.mutate(params);
