@@ -16,5 +16,8 @@
   "streaming": "Generating…",
   "you": "Me",
   "assistant": "AI",
-  "tokensUsage": "prompt {prompt} / completion {completion} tokens"
+  "tokensUsage": "prompt {prompt} / completion {completion} tokens",
+  "rename": "Rename",
+  "renamePrompt": "Enter a new conversation title",
+  "renameSuccess": "Title updated"
 }

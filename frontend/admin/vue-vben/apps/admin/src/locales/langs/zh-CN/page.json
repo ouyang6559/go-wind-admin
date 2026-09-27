@@ -931,7 +931,10 @@
     "assistant": "AI",
     "tokensUsage": "输入 {prompt} / 输出 {completion} tokens",
     "knowledgeBase": "知识库",
-    "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段"
+    "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段",
+    "rename": "重命名",
+    "renamePrompt": "请输入新的会话标题",
+    "renameSuccess": "已更新标题"
   },
   "ai": {
     "moduleName": "AI 助手",

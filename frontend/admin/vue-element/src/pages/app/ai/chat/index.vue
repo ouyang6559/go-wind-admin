@@ -21,15 +21,14 @@
             @click="activeId = conv.id"
           >
             <span class="truncate">{{ conv.title || `#${conv.id}` }}</span>
-            <ElButton
-              type="danger"
-              text
-              size="small"
-              class="hidden group-hover:inline-flex"
-              @click.stop="confirmDelete(conv)"
-            >
-              <Icon icon="lucide:trash-2" />
-            </ElButton>
+            <span class="hidden group-hover:inline-flex">
+              <ElButton type="primary" text size="small" @click.stop="handleRename(conv)">
+                <Icon icon="lucide:pen-line" />
+              </ElButton>
+              <ElButton type="danger" text size="small" @click.stop="confirmDelete(conv)">
+                <Icon icon="lucide:trash-2" />
+              </ElButton>
+            </span>
           </div>
         </div>
       </div>
@@ -144,6 +143,7 @@ import {
   fetchListAiKnowledgeBases,
   fetchListAiMessages,
   sendAiChat,
+  updateAiConversation,
 } from "@/api/composables";
 import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from "@/api/generated/admin/service/v1";
 
@@ -283,6 +283,23 @@ async function handleSend() {
 }
 
 // ── 删除会话 ──────────────────────────────────────────────────────
+async function handleRename(conv: AiConversation) {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      t("pages.ai_chat.renamePrompt"),
+      t("pages.ai_chat.rename"),
+      { inputValue: conv.title || "" },
+    );
+    const title = (value || "").trim();
+    if (!title || title === conv.title) return;
+    await updateAiConversation(conv.id!, { title });
+    ElMessage.success(t("pages.ai_chat.renameSuccess"));
+    await loadConversations();
+  } catch {
+    // 用户取消
+  }
+}
+
 async function confirmDelete(conv: AiConversation) {
   const confirmed = await ElMessageBox.confirm(t("pages.ai_chat.deleteConversationConfirm"), t("pages.ai_chat.deleteConversation"), {
     type: "warning",

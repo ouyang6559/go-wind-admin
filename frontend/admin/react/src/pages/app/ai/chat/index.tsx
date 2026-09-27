@@ -18,6 +18,7 @@ import {
   useListAiConversations,
   useListAiMessages,
   useSendChat,
+  useUpdateAiConversation,
 } from '@/api/hooks/ai-chat';
 import { fetchListAiKnowledgeBases } from '@/api/hooks/ai-knowledge';
 import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '@/api/generated/admin/service/v1';
@@ -65,6 +66,26 @@ export default function AiChatPage() {
     () => (messagesQuery.data?.items ?? []) as aiservicev1_AiMessage[],
     [messagesQuery.data],
   );
+
+  // ── 会话重命名（内联编辑） ────────────────────────────────────────
+  const [renamingId, setRenamingId] = useState<number | undefined>(undefined);
+  const [renameText, setRenameText] = useState('');
+  const updateConvMutation = useUpdateAiConversation();
+
+  const commitRename = (conv: (typeof conversations)[number]) => {
+    const title = renameText.trim();
+    setRenamingId(undefined);
+    if (!title || title === (conv.title ?? '')) return;
+    updateConvMutation.mutate(
+      { id: conv.id!, values: { title } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['listAiConversations'] });
+        },
+        onError: (error: Error) => antdMessage.error(error.message || t('fetchFailed')),
+      },
+    );
+  };
 
   // ── 知识库选择（RAG：发送时携带 knowledgeBaseId） ─────────────────
   const [knowledgeBases, setKnowledgeBases] = useState<AiKnowledgeBase[]>([]);
@@ -179,6 +200,10 @@ export default function AiChatPage() {
                   role="button"
                   tabIndex={0}
                   onClick={() => setActiveId(conv.id)}
+                  onDoubleClick={() => {
+                    setRenamingId(conv.id!);
+                    setRenameText(conv.title ?? '');
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') setActiveId(conv.id);
                   }}
@@ -188,7 +213,28 @@ export default function AiChatPage() {
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  <span className="truncate">{conv.title || `#${conv.id}`}</span>
+                  {renamingId === conv.id ? (
+                    <Input
+                      size="small"
+                      autoFocus
+                      value={renameText}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setRenameText(e.target.value)}
+                      onPressEnter={() => commitRename(conv)}
+                      onBlur={() => commitRename(conv)}
+                    />
+                  ) : (
+                    <span
+                      className="truncate"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setRenamingId(conv.id!);
+                        setRenameText(conv.title ?? '');
+                      }}
+                    >
+                      {conv.title || `#${conv.id}`}
+                    </span>
+                  )}
                   <Popconfirm
                     title={t('deleteConversation')}
                     description={t('deleteConversationConfirm')}

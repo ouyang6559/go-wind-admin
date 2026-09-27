@@ -919,7 +919,10 @@
     "assistant": "AI",
     "tokensUsage": "prompt {prompt} / completion {completion} tokens",
     "knowledgeBase": "Knowledge base",
-    "knowledgeBasePlaceholder": "Pick one to inject relevant chunks"
+    "knowledgeBasePlaceholder": "Pick one to inject relevant chunks",
+    "rename": "Rename",
+    "renamePrompt": "Enter a new conversation title",
+    "renameSuccess": "Title updated"
   },
   "ai": {
     "moduleName": "AI Assistant",

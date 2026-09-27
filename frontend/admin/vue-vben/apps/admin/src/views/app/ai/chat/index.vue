@@ -10,7 +10,15 @@ import { Icon as Iconify } from '@iconify/vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-import { PaginationQuery, deleteAiConversation, fetchListAiConversations, fetchListAiKnowledgeBases, fetchListAiMessages, sendAiChat } from '#/api';
+import {
+    PaginationQuery,
+    deleteAiConversation,
+    fetchListAiConversations,
+    fetchListAiKnowledgeBases,
+    fetchListAiMessages,
+    sendAiChat,
+    updateAiConversation,
+  } from '#/api';
 import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '#/api/generated/admin/service/v1';
 import { globalSSEClient, SSE_EVENT } from '#/transport/sse';
 import type {
@@ -109,6 +117,22 @@ onBeforeUnmount(() => {
   globalSSEClient.off(SSE_EVENT.AIChatChunk, handleChunk);
 });
 
+// ── 会话重命名（内联编辑） ────────────────────────────────────────
+const renamingId = ref<number | undefined>(undefined);
+const renameText = ref('');
+
+function commitRename(conv: AiConversation) {
+  const title = renameText.value.trim();
+  renamingId.value = undefined;
+  if (!title || title === (conv.title ?? '')) return;
+  updateAiConversation(conv.id!, { title })
+    .then(() => loadConversations())
+    .catch((error) => {
+      console.error('rename conversation failed:', error);
+      message.error($t('page.aiChat.fetchFailed'));
+    });
+}
+
 // ── 知识库选择（RAG：发送时携带 knowledgeBaseId） ─────────────────
 const knowledgeBases = ref<AiKnowledgeBase[]>([]);
 const knowledgeBaseId = ref<number | undefined>(undefined);
@@ -201,8 +225,17 @@ function handleNewConversation() {
               ? 'bg-primary/10 text-primary'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800'"
             @click="activeId = conv.id"
+            @dblclick="renamingId = conv.id; renameText = conv.title || ''"
           >
-            <span class="truncate">{{ conv.title || `#${conv.id}` }}</span>
+            <input
+              v-if="renamingId === conv.id"
+              v-model="renameText"
+              class="w-full min-w-0 rounded border border-solid border-gray-300 bg-transparent px-1 py-0.5 text-sm dark:border-gray-600"
+              @click.stop
+              @keydown.enter.prevent="commitRename(conv)"
+              @blur="commitRename(conv)"
+            />
+            <span v-else class="truncate">{{ conv.title || `#${conv.id}` }}</span>
             <a-popconfirm
               :cancel-text="$t('ui.button.cancel')"
               :ok-text="$t('ui.button.ok')"

@@ -21,5 +21,6 @@
   "tokensUsage": "prompt {{prompt}} / completion {{completion}} tokens",
   "sseDisconnected": "Live stream offline; the full reply still returns",
   "knowledgeBase": "Knowledge base",
-  "knowledgeBasePlaceholder": "Pick one to inject relevant chunks"
+  "knowledgeBasePlaceholder": "Pick one to inject relevant chunks",
+  "rename": "Rename"
 }

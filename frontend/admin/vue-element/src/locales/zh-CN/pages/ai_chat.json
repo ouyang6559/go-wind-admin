@@ -16,5 +16,8 @@
   "streaming": "正在生成…",
   "you": "我",
   "assistant": "AI",
-  "tokensUsage": "输入 {prompt} / 输出 {completion} tokens"
+  "tokensUsage": "输入 {prompt} / 输出 {completion} tokens",
+  "rename": "重命名",
+  "renamePrompt": "请输入新的会话标题",
+  "renameSuccess": "已更新标题"
 }

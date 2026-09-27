@@ -21,5 +21,6 @@
   "tokensUsage": "输入 {{prompt}} / 输出 {{completion}} tokens",
   "sseDisconnected": "实时流未连接，回复仍会完整返回",
   "knowledgeBase": "知识库",
-  "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段"
+  "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段",
+  "rename": "重命名"
 }
