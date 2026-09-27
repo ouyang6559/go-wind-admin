@@ -1902,6 +1902,8 @@ export type aiservicev1_AskAiQueryResponse = {
   answer?: string;
   // 结果列名
   columns: string[] | undefined;
+  // 执行失败原因（SQL 语法/列不存在等；有值时 rows 为空）
+  errorMessage?: string;
   // 实际返回的行数
   rowCount: number | undefined;
   // 结果行（上限 100 行）

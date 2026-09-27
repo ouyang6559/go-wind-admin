@@ -61,4 +61,7 @@ message AskAiQueryResponse {
 
   // 本次消耗的总 token 数（计入 AI_TOKENS 用量）
   uint32 total_tokens = 6 [json_name = "totalTokens"];
+
+  // 执行失败原因（SQL 语法/列不存在等；有值时 rows 为空）
+  optional string error_message = 7 [json_name = "errorMessage"];
 }

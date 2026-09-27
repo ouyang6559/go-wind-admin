@@ -214,7 +214,9 @@ type AskAiQueryResponse struct {
 	// 自然语言结论（with_answer=false 或模型失败时为空）
 	Answer *string `protobuf:"bytes,5,opt,name=answer,proto3,oneof" json:"answer,omitempty"`
 	// 本次消耗的总 token 数（计入 AI_TOKENS 用量）
-	TotalTokens   uint32 `protobuf:"varint,6,opt,name=total_tokens,json=totalTokens,proto3" json:"total_tokens,omitempty"`
+	TotalTokens uint32 `protobuf:"varint,6,opt,name=total_tokens,json=totalTokens,proto3" json:"total_tokens,omitempty"`
+	// 执行失败原因（SQL 语法/列不存在等；有值时 rows 为空）
+	ErrorMessage  *string `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -291,6 +293,13 @@ func (x *AskAiQueryResponse) GetTotalTokens() uint32 {
 	return 0
 }
 
+func (x *AskAiQueryResponse) GetErrorMessage() string {
+	if x != nil && x.ErrorMessage != nil {
+		return *x.ErrorMessage
+	}
+	return ""
+}
+
 var File_ai_service_v1_ai_query_proto protoreflect.FileDescriptor
 
 const file_ai_service_v1_ai_query_proto_rawDesc = "" +
@@ -310,15 +319,17 @@ const file_ai_service_v1_ai_query_proto_rawDesc = "" +
 	"\f_with_answer\"$\n" +
 	"\n" +
 	"AiQueryRow\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values\"\xd7\x01\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"\x93\x02\n" +
 	"\x12AskAiQueryResponse\x12\x10\n" +
 	"\x03sql\x18\x01 \x01(\tR\x03sql\x12\x18\n" +
 	"\acolumns\x18\x02 \x03(\tR\acolumns\x12-\n" +
 	"\x04rows\x18\x03 \x03(\v2\x19.ai.service.v1.AiQueryRowR\x04rows\x12\x1b\n" +
 	"\trow_count\x18\x04 \x01(\rR\browCount\x12\x1b\n" +
 	"\x06answer\x18\x05 \x01(\tH\x00R\x06answer\x88\x01\x01\x12!\n" +
-	"\ftotal_tokens\x18\x06 \x01(\rR\vtotalTokensB\t\n" +
-	"\a_answer2^\n" +
+	"\ftotal_tokens\x18\x06 \x01(\rR\vtotalTokens\x12(\n" +
+	"\rerror_message\x18\a \x01(\tH\x01R\ferrorMessage\x88\x01\x01B\t\n" +
+	"\a_answerB\x10\n" +
+	"\x0e_error_message2^\n" +
 	"\x0eAiQueryService\x12L\n" +
 	"\x03Ask\x12 .ai.service.v1.AskAiQueryRequest\x1a!.ai.service.v1.AskAiQueryResponse\"\x00B\xa4\x01\n" +
 	"\x11com.ai.service.v1B\fAiQueryProtoP\x01Z+go-wind-admin/api/gen/go/ai/service/v1;aipb\xa2\x02\x03ASX\xaa\x02\rAi.Service.V1\xca\x02\rAi\\Service\\V1\xe2\x02\x19Ai\\Service\\V1\\GPBMetadata\xea\x02\x0fAi::Service::V1b\x06proto3"

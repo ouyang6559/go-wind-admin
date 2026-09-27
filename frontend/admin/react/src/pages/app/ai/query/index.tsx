@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Input, Table, Tag, Typography, App } from 'antd';
+import { Button, Input, Segmented, Table, Tag, Typography, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { SendOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import ReactECharts from 'echarts-for-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useI18n } from '@/core/i18n';
@@ -15,6 +16,7 @@ type Round = {
   columns?: string[];
   rows?: aiservicev1_AiQueryRow[];
   answer?: string;
+  errorMessage?: string;
   loading: boolean;
 };
 
@@ -49,6 +51,7 @@ export default function AiQueryPage() {
           columns: resp.columns ?? [],
           rows: resp.rows ?? [],
           answer: resp.answer ?? '',
+          errorMessage: resp.errorMessage ?? '',
           loading: false,
         };
         return next;
@@ -137,13 +140,17 @@ export default function AiQueryPage() {
                     )}
 
                     {round.columns && round.columns.length > 0 && (
-                      <QueryTable columns={round.columns} rows={round.rows ?? []} />
+                      <QueryResultCard columns={round.columns} rows={round.rows ?? []} />
                     )}
-                    {round.sql && (round.rows?.length ?? 0) === 0 && (
+                    {round.errorMessage ? (
+                      <Typography.Text type="danger" className="!text-xs">
+                        {round.errorMessage}
+                      </Typography.Text>
+                    ) : (round.rows?.length ?? 0) === 0 ? (
                       <Typography.Text type="secondary" className="!text-xs">
                         {t('noRows')}
                       </Typography.Text>
-                    )}
+                    ) : null}
 
                     {round.answer && (
                       <div className="mt-3 rounded-lg border border-solid border-blue-200 bg-blue-50 p-3 text-sm leading-relaxed dark:border-blue-900 dark:bg-blue-950">
@@ -189,6 +196,105 @@ export default function AiQueryPage() {
         </div>
       </div>
     </ContentContainer>
+  );
+}
+
+// ── 结果图表（确定性推断，零 LLM 参与） ─────────────────────────────
+
+type ChartKind = 'bar' | 'line' | null;
+
+/** 判断值列是否可当作数值序列（全部行都能 parseFloat 即可）。 */
+function isNumericSeries(rows: aiservicev1_AiQueryRow[], colIdx: number): boolean {
+  if (rows.length === 0) return false;
+  return rows.every((r) => {
+    const v = (r.values ?? [])[colIdx];
+    return v !== undefined && v !== null && v !== '' && !Number.isNaN(Number(v));
+  });
+}
+
+/** 推断图表类型：首列为文本分类 + 数值列 → 柱状（≤12 行）或折线（>12 行）；
+ *  其余形状（无分类列/全文本列）返回 null 表示不适合画图。 */
+function inferChart(
+  columns: string[],
+  rows: aiservicev1_AiQueryRow[],
+): { kind: ChartKind; xIndex: number; series: number[] } | null {
+  if (rows.length < 2 || columns.length < 2) return null;
+  const numericCols = columns
+    .map((_, i) => i)
+    .filter((i) => i > 0 && isNumericSeries(rows, i));
+  if (numericCols.length === 0) return null;
+  const kind: ChartKind = rows.length > 12 ? 'line' : 'bar';
+  return { kind, xIndex: 0, series: numericCols };
+}
+
+/** 查询结果图表：柱状/折线，x 轴取首列分类值。 */
+function QueryChart({
+  columns,
+  rows,
+  kind,
+}: {
+  columns: string[];
+  rows: aiservicev1_AiQueryRow[];
+  kind: ChartKind;
+}) {
+  const series = columns.map((_, i) => i).filter((i) => i > 0 && isNumericSeries(rows, i));
+  const option = {
+    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+    legend: { top: 0 },
+    tooltip: { trigger: 'axis' },
+    xAxis: {
+      type: 'category',
+      data: rows.map((r) => (r.values ?? [])[0] ?? ''),
+      axisLabel: { rotate: rows.length > 6 ? 30 : 0 },
+    },
+    yAxis: { type: 'value' },
+    series: series.map((colIdx) => ({
+      name: columns[colIdx],
+      type: kind,
+      barMaxWidth: 40,
+      data: rows.map((r) => Number((r.values ?? [])[colIdx] ?? 0)),
+    })),
+  };
+  return <ReactECharts option={option} style={{ height: 280 }} notMerge lazyUpdate />;
+}
+
+/** 查询结果卡片：图表/表格切换（数据可画图时默认图表）。 */
+function QueryResultCard({
+  columns,
+  rows,
+}: {
+  columns: string[];
+  rows: aiservicev1_AiQueryRow[];
+}) {
+  const { t } = useI18n('aiQuery');
+  const [view, setView] = useState<'chart' | 'table'>('chart');
+  const chart = inferChart(columns, rows);
+  const chartable = chart !== null;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        {chartable && (
+          <Segmented
+            size="small"
+            value={view}
+            onChange={(v) => setView(v as 'chart' | 'table')}
+            options={[
+              { label: t('viewChart'), value: 'chart' },
+              { label: t('viewTable'), value: 'table' },
+            ]}
+          />
+        )}
+        <Typography.Text type="secondary" className="!text-xs">
+          {t('rowCount', { count: rows.length })}
+        </Typography.Text>
+      </div>
+      {chartable && view === 'chart' ? (
+        <QueryChart columns={columns} rows={rows} kind={chart!.kind} />
+      ) : (
+        <QueryTable columns={columns} rows={rows} />
+      )}
+    </div>
   );
 }
 

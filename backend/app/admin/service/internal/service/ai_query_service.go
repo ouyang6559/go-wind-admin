@@ -35,9 +35,9 @@ const (
 // aiQueryTableWhitelist 平台表白名单：NL→SQL 只允许触达这些表（平台用户）。
 // 键为表名，值为给 LLM 的列说明（表名+列清单+备注一起拼进提示词当数据字典）。
 var aiQueryTableWhitelist = map[string]string{
-	"sys_users":                   "用户表：id, username(登录名), nickname(昵称), email, mobile, status(ON=启用/OFF=停用), created_at(注册时间)",
-	"sys_roles":                   "角色表：id, name(角色名), code(角色编码), status, created_at",
-	"sys_user_roles":              "用户-角色关联表：user_id, role_id",
+	"sys_users":                   "用户表：id, username(登录名), nickname(昵称), email, mobile, status(ON=启用/OFF=停用), created_at(注册时间)；用户与角色是多对多，经 sys_user_roles 关联，sys_users 表没有 role_id 列",
+	"sys_roles":                   "角色表（平台+租户两级，经 tenant_id 区分）：id, name(角色名), code(角色编码), status, created_at",
+	"sys_user_roles":              "用户-角色关联表：user_id, role_id（查每个角色的用户数：JOIN sys_user_roles ON sys_user_roles.role_id = sys_roles.id 再 JOIN sys_users ON sys_user_roles.user_id = sys_users.id）",
 	"sys_tenants":                 "租户表：id, code(租户编码), name(租户名), plan_id(套餐ID), status, created_at",
 	"sys_plans":                   "套餐表：id, name(套餐名)",
 	"sys_operation_audit_logs":    "操作审计日志：id, user_id, username, action(CREATE/UPDATE/DELETE/READ/ASSIGN/UNASSIGN/EXPORT/IMPORT/OTHER), resource_type(资源类型), resource_id, success(bool), failure_reason, created_at(操作时间)",
@@ -167,6 +167,7 @@ func (s *AiQueryService) Ask(ctx context.Context, req *aiV1.AskAiQueryRequest) (
 	if execErr != nil {
 		// 执行失败把数据库错误回给前端（便于用户改问题重试），SQL 照样返回
 		s.log.Errorf(ctx, "ai query execute failed: %v", execErr)
+		resp.ErrorMessage = trans.Ptr(execErr.Error())
 		return resp, nil
 	}
 	resp.RowCount = uint32(len(rows))
@@ -219,7 +220,8 @@ func (s *AiQueryService) generateSQL(ctx context.Context, client *openai.Client,
 			fmt.Sprintf("WHERE tenant_id = %d AND status = 'FAILED' AND created_at >= NOW() - INTERVAL '24 hours' ", tenantID) +
 			"ORDER BY created_at DESC LIMIT 100"
 	}
-	messages := make([]openai.ChatCompletionMessage, 0, len(history)*2+4)
+	messages := make([]openai.ChatCompletionMessage, 0, len(history)*2+6)
+	// few-shot 1：登录失败记录（最易触发模型拒答的措辞，用示例锚定"这是查表"）
 	messages = append(messages,
 		openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
@@ -228,6 +230,21 @@ func (s *AiQueryService) generateSQL(ctx context.Context, client *openai.Client,
 		openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleAssistant,
 			Content: exampleSQL,
+		},
+	)
+	// few-shot 2：用户-角色是多对多，统计"每个角色的用户数"必须经 sys_user_roles 关联
+	// （模型会臆造 sys_users.role_id 列——这是真实实测的高频错误，用示例锚定）
+	messages = append(messages,
+		openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: "统计每个角色的用户数量",
+		},
+		openai.ChatCompletionMessage{
+			Role: openai.ChatMessageRoleAssistant,
+			Content: "SELECT r.id AS role_id, r.name AS role_name, COUNT(ur.user_id) AS user_count " +
+				"FROM sys_roles r " +
+				"LEFT JOIN sys_user_roles ur ON ur.role_id = r.id " +
+				"GROUP BY r.id, r.name ORDER BY user_count DESC LIMIT 100",
 		},
 	)
 	for _, h := range history {
@@ -277,14 +294,24 @@ func sanitizeSQLFor(raw string, whitelist map[string]string, tenantPattern *rege
 			return "", fmt.Errorf("forbidden pattern detected")
 		}
 	}
-	// 白名单：提取 FROM/JOIN 后的表名逐一校验
+	// 白名单：提取 FROM/JOIN 后的表名逐一校验；模型偶发丢 sys_ 前缀或写单复数，
+	// 依候选序列纠正（sys_ 前缀 / 复数 s / 两者组合）
 	tablePattern := regexp.MustCompile(`(?i)\b(FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)`)
 	matches := tablePattern.FindAllStringSubmatch(sqlText, -1)
 	for _, m := range matches {
 		table := strings.ToLower(m[2])
-		if _, ok := whitelist[table]; !ok {
+		if _, ok := whitelist[table]; ok {
+			continue
+		}
+		corrected, ok := correctTableName(table, whitelist)
+		if !ok {
 			return "", fmt.Errorf("table %q is not in the whitelist", m[2])
 		}
+		// 按词边界改写（\b 视下划线为词字符，不会误伤 sys_roles 内部的 roles）
+		fixPattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(table) + `\b`)
+		sqlText = fixPattern.ReplaceAllStringFunc(sqlText, func(string) string {
+			return corrected
+		})
 	}
 	if tenantPattern != nil && !tenantPattern.MatchString(sqlText) {
 		return "", fmt.Errorf("missing mandatory tenant_id filter")
@@ -411,6 +438,15 @@ func extractSQL(raw string) string {
 	if idx := strings.Index(s, ";"); idx >= 0 {
 		s = s[:idx]
 	}
+	// 剥离行注释（LLM 爱加 -- 说明；注释里可能含被拒关键字）——
+	// 逐行删除 "--" 起的内容，字符串字面量中的 "--" 场景对分析型 SQL 可忽略
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		if idx := strings.Index(line, "--"); idx >= 0 {
+			lines[i] = line[:idx]
+		}
+	}
+	s = strings.TrimSpace(strings.Join(lines, "\n"))
 	return strings.TrimSpace(s)
 }
 
@@ -449,4 +485,23 @@ func langName(lang string) string {
 		return "English"
 	}
 	return "中文"
+}
+
+// correctTableName 表名纠正：依候选序列匹配白名单（sys_ 前缀 / 复数 s / 组合）。
+func correctTableName(table string, whitelist map[string]string) (string, bool) {
+	if _, ok := whitelist[table]; ok {
+		return table, true
+	}
+	for _, candidate := range []string{
+		"sys_" + table,
+		table + "s",
+		"sys_" + table + "s",
+		strings.TrimSuffix(table, "s"),
+		"sys_" + strings.TrimSuffix(table, "s"),
+	} {
+		if _, ok := whitelist[candidate]; ok {
+			return candidate, true
+		}
+	}
+	return "", false
 }

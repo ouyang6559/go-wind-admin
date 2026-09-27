@@ -454,6 +454,10 @@ func (m *AskAiQueryResponse) validate(all bool) error {
 		// no validation rules for Answer
 	}
 
+	if m.ErrorMessage != nil {
+		// no validation rules for ErrorMessage
+	}
+
 	if len(errors) > 0 {
 		return AskAiQueryResponseMultiError(errors)
 	}

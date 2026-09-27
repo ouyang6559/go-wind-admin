@@ -7785,6 +7785,9 @@ components:
                     type: integer
                     description: 本次消耗的总 token 数（计入 AI_TOKENS 用量）
                     format: uint32
+                errorMessage:
+                    type: string
+                    description: 执行失败原因（SQL 语法/列不存在等；有值时 rows 为空）
             description: 智能问数 - 回应
         BatchCreateLanguagesRequest:
             type: object
