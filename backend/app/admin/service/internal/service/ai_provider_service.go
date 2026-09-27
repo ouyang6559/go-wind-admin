@@ -77,15 +77,21 @@ func (s *AiProviderService) Update(ctx context.Context, req *aiV1.UpdateAiProvid
 		req.UpdateMask.Paths = append(req.UpdateMask.Paths, "updated_by")
 	}
 
-	// api_key 语义：DTO 里 key 明文非空 → 重新加密落库并刷新 hint；
-	// key 为空 → 本次请求不改 key，把 api_key/api_key_hint 摘出 mask（否则
-	// 空值会经 FilterByFieldMask 被当成"显式清空"写库，把已存的 key 抹掉）。
-	if s.sealApiKeyForUpdate(req) {
+	// api_key 语义：DTO 里 key 明文非空 → 加密落库并刷新 hint（mask 已含 api_key，照常写）；
+	// key 为空 → 本次请求不改 key，把 api_key/api_key_hint 摘出 mask 且清空 DTO
+	//（否则空值会经 FilterByFieldMask 被当成"显式清空"写库，把已存的 key 抹掉）。
+	hasNewKey := req.Data.ApiKey != nil && *req.Data.ApiKey != ""
+	if hasNewKey {
+		if err = s.sealApiKey(req.Data); err != nil {
+			return nil, err
+		}
+		req.UpdateMask.Paths = append(req.UpdateMask.Paths, "api_key_hint")
+	} else {
+		req.Data.ApiKey = nil
+		req.Data.ApiKeyHint = nil
 		if req.UpdateMask != nil {
 			req.UpdateMask.Paths = removeMaskPaths(req.UpdateMask.Paths, "api_key", "api_key_hint")
 		}
-		req.Data.ApiKey = nil
-		req.Data.ApiKeyHint = nil
 	}
 
 	if err = s.repo.Update(ctx, req); err != nil {
@@ -116,17 +122,6 @@ func (s *AiProviderService) sealApiKey(data *aiV1.AiProvider) error {
 	data.ApiKey = trans.Ptr(encrypted)
 	data.ApiKeyHint = trans.Ptr(maskApiKey(plain))
 	return nil
-}
-
-// sealApiKeyForUpdate Update 路径的 key 处理；返回 false 表示本请求不带新 key。
-func (s *AiProviderService) sealApiKeyForUpdate(req *aiV1.UpdateAiProviderRequest) bool {
-	if req == nil || req.Data == nil || req.Data.ApiKey == nil || *req.Data.ApiKey == "" {
-		return false
-	}
-	if err := s.sealApiKey(req.Data); err != nil {
-		return false
-	}
-	return true
 }
 
 // maskApiKey 脱敏：保留前 3 后 4，中间以 *** 代替；过短则整体打码。

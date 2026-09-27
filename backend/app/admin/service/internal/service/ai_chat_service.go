@@ -28,6 +28,7 @@ import (
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/aimessage"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiprovider"
 	"go-wind-admin/pkg/middleware/auth"
 )
@@ -174,8 +175,10 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 		if m.Role == nil {
 			continue
 		}
+		// ent 枚举是大写（USER/ASSISTANT/SYSTEM），OpenAI 协议要求小写 role——
+		// 真实厂商（DeepSeek 等）会 422 拒绝大写值，必须映射。
 		messages = append(messages, openai.ChatCompletionMessage{
-			Role:    string(*m.Role),
+			Role:    aiRoleToOpenAI(*m.Role),
 			Content: ptrStr(m.Content),
 		})
 	}
@@ -425,6 +428,20 @@ func (s *AiChatService) publishChunk(ctx context.Context, streamId string, conve
 		Event: []byte(sseevent.AIChatChunk),
 	}); !ok {
 		// 丢帧可容忍：同步响应携带完整回复；不刷日志避免慢客户端制造噪音。
+	}
+}
+
+// aiRoleToOpenAI ent 大写枚举 → OpenAI 小写 role。
+func aiRoleToOpenAI(role aimessage.Role) string {
+	switch role {
+	case aimessage.RoleUSER:
+		return openai.ChatMessageRoleUser
+	case aimessage.RoleASSISTANT:
+		return openai.ChatMessageRoleAssistant
+	case aimessage.RoleSYSTEM:
+		return openai.ChatMessageRoleSystem
+	default:
+		return openai.ChatMessageRoleUser
 	}
 }
 
