@@ -65,9 +65,18 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
       }
       nextTick(() => {
         useTimeoutFn(() => {
+          const el = chartRef?.value?.$el;
+          if (!el) {
+            return;
+          }
+          // v-if 切走再切回（图表/表格视图切换、折叠展开）会重挂载出全新 DOM，
+          // 旧实例仍附着在已脱离文档的节点上，setOption 画得再对也不可见——必须重建
+          if (chartInstance && chartInstance.getDom() !== el) {
+            chartInstance.dispose();
+            chartInstance = null;
+          }
           if (!chartInstance) {
-            const instance = initCharts();
-            if (!instance) return;
+            chartInstance = echarts.init(el, isDark.value ? "dark" : null);
           }
           if (clear) {
             chartInstance?.clear();

@@ -47,7 +47,10 @@
                 :columns="round.columns"
                 :rows="round.rows || []"
               />
-              <div v-if="round.sql && (round.rows?.length ?? 0) === 0" class="mt-2 text-xs text-gray-400">
+              <div v-if="round.errorMessage" class="mt-2 text-xs text-red-500">
+                {{ round.errorMessage }}
+              </div>
+              <div v-else-if="round.sql && (round.rows?.length ?? 0) === 0" class="mt-2 text-xs text-gray-400">
                 {{ t("pages.ai_query.noRows") }}
               </div>
 
@@ -111,6 +114,7 @@ interface Round {
   columns?: string[];
   rows?: { cells: string[] }[];
   answer?: string;
+  errorMessage?: string;
   loading: boolean;
 }
 
@@ -157,6 +161,7 @@ async function handleAsk() {
       last.columns = (resp.columns || []) as string[];
       last.rows = (resp.rows || []).map((r) => ({ cells: (r.values || []) as string[] }));
       last.answer = resp.answer || "";
+      last.errorMessage = resp.errorMessage || "";
       last.loading = false;
     }
     scrollToBottom();
@@ -165,6 +170,9 @@ async function handleAsk() {
     ElMessage.error(error?.message || t("pages.ai_query.failed"));
     const last = rounds.value[rounds.value.length - 1];
     if (last) last.loading = false;
+  } finally {
+    // 全局 loading 必须复位：否则首次提问后按钮永久 loading，且后续提问被入口守卫拦截
+    loading.value = false;
   }
 }
 </script>

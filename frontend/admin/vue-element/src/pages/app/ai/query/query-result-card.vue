@@ -1,15 +1,17 @@
 <template>
   <div>
     <div class="mb-2 flex items-center justify-between">
-      <ElRadioGroup v-model="viewMode" size="small">
+      <!-- 不可画图（无数值列）时隐藏切换器并直接落表格，避免空图表容器 -->
+      <ElRadioGroup v-if="chartable" v-model="viewMode" size="small">
         <ElRadioButton value="chart">{{ t("pages.ai_query.viewChart") }}</ElRadioButton>
         <ElRadioButton value="table">{{ t("pages.ai_query.viewTable") }}</ElRadioButton>
       </ElRadioGroup>
+      <span v-else />
       <span class="text-xs text-gray-400">{{ t("pages.ai_query.rowCount", { count: rows.length }) }}</span>
     </div>
 
-    <EchartsUI v-if="viewMode === 'chart'" ref="chartRef" height="280px" width="100%" />
-    <ElTable v-if="viewMode === 'table'" :data="tableRows" size="small" border>
+    <EchartsUI v-if="chartable && viewMode === 'chart'" ref="chartRef" height="280px" width="100%" />
+    <ElTable v-if="!chartable || viewMode === 'table'" :data="tableRows" size="small" border>
       <ElTableColumn
         v-for="(col, ci) in columns"
         :key="col"
