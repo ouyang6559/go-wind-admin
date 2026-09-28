@@ -10,8 +10,8 @@ import (
 )
 
 // AiChunk 知识库切片：embedding 向量列不进 ent schema——ent 对 pgvector 自定义
-// 列类型支持受限，该列由启动期手写 SQL 补加（CREATE EXTENSION vector +
-// ALTER TABLE ... ADD COLUMN IF NOT EXISTS embedding vector），读写走原生 SQL。
+// 列类型支持受限，该列由启动期手写 SQL 补建（CREATE EXTENSION vector +
+// data.EnsureVectorColumnDim 定维补建 vector(1536)），读写走原生 SQL。
 type AiChunk struct{ ent.Schema }
 
 func (AiChunk) Annotations() []schema.Annotation {

@@ -144,33 +144,66 @@ func (s *AiContentService) GenerateContent(ctx context.Context, req *aiV1.Genera
 
 // ── 语义搜索（pgvector 升级全局搜索） ────────────────────────────────
 
-const buildSearchIndexSQL = "CREATE TABLE IF NOT EXISTS sys_ai_search_index (" +
-	"id BIGSERIAL PRIMARY KEY, " +
-	"created_at TIMESTAMPTZ DEFAULT NOW(), " +
-	"item_type VARCHAR(20) NOT NULL DEFAULT 'menu', " +
-	"item_id BIGINT NOT NULL, " +
-	"title TEXT NOT NULL, " +
-	"route TEXT NOT NULL DEFAULT '', " +
-	"embedding vector)"
+// buildSearchIndexSQL 菜单语义搜索索引表。embedding 定维（见 data.AiEmbeddingDimensions）：
+// 混维向量会让 <=> 比较在查询期整体报错，定维把失败提前到写入期。
+var buildSearchIndexSQL = fmt.Sprintf(
+	"CREATE TABLE IF NOT EXISTS sys_ai_search_index ("+
+		"id BIGSERIAL PRIMARY KEY, "+
+		"created_at TIMESTAMPTZ DEFAULT NOW(), "+
+		"item_type VARCHAR(20) NOT NULL DEFAULT 'menu', "+
+		"item_id BIGINT NOT NULL, "+
+		"title TEXT NOT NULL, "+
+		"route TEXT NOT NULL DEFAULT '', "+
+		"embedding vector(%d))",
+	data.AiEmbeddingDimensions)
 
-type searchResultRow struct {
-	Title string  `sql:"title"`
-	Route string  `sql:"route"`
-	Score float64 `sql:"score"`
+// menuIndexDoc 待索引菜单：真实菜单 id + 标题 + 路由。
+// item_id 落库为菜单 id（历史版本误存过数组下标，该列此前无消费方故无影响）。
+type menuIndexDoc struct {
+	menuId uint32
+	title  string
+	route  string
 }
 
-// BuildMenuSearchIndex 向量化全部菜单标题并写入搜索索引表（先清后写）。
+// BuildMenuSearchIndex 向量化全部菜单标题并原子替换索引表里的菜单行。
+// 顺序：先离线算完全部 embedding（不持事务调外部 API），再单事务 DELETE+分批
+// 多行 INSERT——任一环节失败即回滚，旧索引原样保留，不会留下半空索引。
 func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, error) {
 	db := s.entClient.DB()
 	if _, err := db.ExecContext(ctx, buildSearchIndexSQL); err != nil {
 		return 0, fmt.Errorf("create search index table: %w", err)
 	}
+	rebuilt, err := data.EnsureVectorColumnDim(ctx, db, "sys_ai_search_index")
+	if err != nil {
+		return 0, fmt.Errorf("ensure embedding column: %w", err)
+	}
+	if rebuilt {
+		s.log.Warnf(ctx, "sys_ai_search_index.embedding 与当前 embedding 模型维度不符，已整列重建，本次全量重写菜单索引")
+	}
 	menus, err := s.menuRepo.List(ctx, paginationV1PagingNoLimit(), true)
 	if err != nil {
 		return 0, err
 	}
-	if _, err = db.ExecContext(ctx, "DELETE FROM sys_ai_search_index WHERE item_type = 'menu'"); err != nil {
-		return 0, fmt.Errorf("clear search index: %w", err)
+
+	docs := make([]menuIndexDoc, 0, len(menus.GetItems()))
+	for _, m := range menus.GetItems() {
+		if m.GetId() == 0 || m.GetPath() == "" {
+			continue
+		}
+		title := ""
+		if mt := m.GetMeta(); mt != nil {
+			title = mt.GetTitle()
+		}
+		if title == "" {
+			title = m.GetName()
+		}
+		if title == "" {
+			continue
+		}
+		docs = append(docs, menuIndexDoc{menuId: m.GetId(), title: title, route: m.GetPath()})
+	}
+	if len(docs) == 0 {
+		return 0, nil
 	}
 
 	provider, err := s.providerRepo.GetEnabledDefault(ctx)
@@ -182,61 +215,76 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 		return 0, err
 	}
 
-	var texts []string
-	var routes []string
-	for _, m := range menus.GetItems() {
-		if m.Path == nil {
-			continue
-		}
-		title := ""
-		if m.Meta != nil && m.Meta.Title != nil {
-			title = *m.Meta.Title
-		}
-		if title == "" && m.Name != nil {
-			title = *m.Name
-		}
-		if title == "" {
-			continue
-		}
-		texts = append(texts, title)
-		routes = append(routes, *m.Path)
-	}
-	if len(texts) == 0 {
-		return 0, nil
-	}
-
+	// 离线算完全部向量。响应按 OpenAI 规约携带 index（对位请求输入序号），
+	// 拒绝缺号/错号/零维：索引用于全局搜索导航，宁可整体失败也不落错位的行。
+	vectors := make([]string, len(docs))
 	embCtx, embCancel := context.WithTimeout(ctx, 60*time.Second)
 	defer embCancel()
-	var vectors []string
-	for start := 0; start < len(texts); start += 32 {
-		end := start + 32
-		if end > len(texts) {
-			end = len(texts)
+	for start := 0; start < len(docs); start += 32 {
+		end := min(start+32, len(docs))
+		batch := make([]string, 0, end-start)
+		for _, d := range docs[start:end] {
+			batch = append(batch, d.title)
 		}
 		resp, embErr := client.CreateEmbeddings(embCtx, openai.EmbeddingRequest{
 			Model: openai.EmbeddingModel("text-embedding-3-small"),
-			Input: texts[start:end],
+			Input: batch,
 		})
 		if embErr != nil {
 			return 0, fmt.Errorf("embed batch: %w", embErr)
 		}
-		for _, d := range resp.Data {
-			vectors = append(vectors, vectorToLiteral(d.Embedding))
+		for _, item := range resp.Data {
+			if item.Index < 0 || start+item.Index >= len(vectors) || len(item.Embedding) == 0 {
+				return 0, fmt.Errorf("embedding response malformed: batch=%d item=%d", start, item.Index)
+			}
+			vectors[start+item.Index] = vectorToLiteral(item.Embedding)
+		}
+	}
+	for i := range vectors {
+		if vectors[i] == "" {
+			return 0, fmt.Errorf("menu %d missing embedding response", docs[i].menuId)
 		}
 	}
 
-	inserted := uint32(0)
-	for i := range texts {
-		if _, execErr := db.ExecContext(ctx,
-			"INSERT INTO sys_ai_search_index (item_type, item_id, title, route, embedding) VALUES ('menu', $1, $2, $3, $4::vector)",
-			i, texts[i], routes[i], vectors[i],
-		); execErr != nil {
-			s.log.Errorf(ctx, "insert search index failed: %v", execErr)
-			continue
-		}
-		inserted++
+	tx, txErr := db.BeginTx(ctx, nil)
+	if txErr != nil {
+		return 0, fmt.Errorf("begin tx: %w", txErr)
 	}
-	return inserted, nil
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if _, delErr := tx.ExecContext(ctx, "DELETE FROM sys_ai_search_index WHERE item_type = 'menu'"); delErr != nil {
+		return 0, fmt.Errorf("clear search index: %w", delErr)
+	}
+
+	const rowsPerStmt = 100
+	for start := 0; start < len(docs); start += rowsPerStmt {
+		end := min(start+rowsPerStmt, len(docs))
+		var sb strings.Builder
+		var args []any
+		sb.WriteString("INSERT INTO sys_ai_search_index (item_type, item_id, title, route, embedding) VALUES ")
+		for j := start; j < end; j++ {
+			if j > start {
+				sb.WriteByte(',')
+			}
+			base := (j - start) * 5
+			_, _ = fmt.Fprintf(&sb, "($%d,$%d,$%d,$%d,$%d::vector)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, "menu", int64(docs[j].menuId), docs[j].title, docs[j].route, vectors[j])
+		}
+		if _, insErr := tx.ExecContext(ctx, sb.String(), args...); insErr != nil {
+			return 0, fmt.Errorf("insert search index rows: %w", insErr)
+		}
+	}
+
+	if cErr := tx.Commit(); cErr != nil {
+		return 0, fmt.Errorf("commit search index: %w", cErr)
+	}
+	committed = true
+	return uint32(len(docs)), nil
 }
 
 // SemanticSearch 语义搜索：向量化查询 → pgvector 余弦检索菜单索引。

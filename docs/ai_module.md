@@ -12,6 +12,7 @@
 | 对话消息 | `sys_ai_messages` | USER/ASSISTANT/SYSTEM 三角色；ASSISTANT 行带 tokens/耗时快照 |
 | 用量流水 | `sys_ai_usage_logs` | 每次成功调用一行（只增不改），配额聚合的事实源 |
 | 知识库 | `sys_ai_knowledge_bases` / `sys_ai_docs` / `sys_ai_chunks` | RAG：文档切片 → 向量化 → 余弦检索（`embedding` 向量列不进 ent schema，走启动期 SQL 补建 + 原生 SQL 读写） |
+| 菜单语义搜索 | `sys_ai_search_index` | 全局搜索的菜单向量化索引：标题 embedding 余弦检索返回 title/route；经 `RebuildSearchIndex` RPC 原子重建（见下「菜单语义搜索」节） |
 | 脚本集成 | — | 脚本内 `ai.chat / ai.chatWith / ai.chatWithSystem`（`pkg/scripting/api/module_ai.go`），复用提供商解析与用量记账 |
 | 定时任务 | — | `ai_doc_reindex`（向量重索引，按需）与 `ai_audit_digest`（审计日报，每日 08:00 常驻） |
 
@@ -41,21 +42,31 @@
 
 **文件上传**：`POST /admin/v1/ai/knowledge-bases/{baseId}/docs/file`，body 为 JSON（`fileName` + `contentBase64`，protojson 的 bytes 即 base64——kratos 无 form-data codec 的既定形态）。抽取器在 `pkg/doctext`：纯文本族直读、docx 走标准库 zip+XML 剥标签、pdf 走 `ledongthuc/pdf` 文本层（扫描件无文本层会明确报错），其余扩展名拒绝；上限 10MB。
 
-**重索引**：更换知识库 embedding 模型后，经「任务管理」创建 `ai_doc_reindex` 类型任务（payload `{"baseId":N}`，0=全部库）触发全量重算——切片文本不变只换向量，分批 32 条/次。
+**重索引**：更换知识库 embedding 模型后，经「任务管理」创建 `ai_doc_reindex` 类型任务（payload `{"baseId":N}`，0=全部库）触发全量重算——切片文本不变只换向量，分批 32 条/次。启动迁移因维度不匹配整列重建 `embedding` 后（见「部署要求」），该任务是恢复检索的唯一途径。
 
 **审计日报**：系统常驻任务 `ai_audit_digest`（每日 08:00）聚合昨日操作审计（总数/失败/用户/动作分布），经默认模型生成 150 字中文摘要，站内信投递平台侧用户；LLM 失败自动降级为纯统计文本。
 
 **部署要求（pgvector）**：
 
 1. Postgres 必须带 pgvector 扩展（0.8.x 验证可用）。官方 `postgres` 镜像不含，需用 `pgvector/pgvector` 镜像或发行版包（Debian：`apt-get install postgresql-16-pgvector`，需 PGDG 源）。
-2. 服务启动时自动执行（`AiKnowledgeRepo.MigrateVectorColumn`，幂等）：
+2. 服务启动时自动执行（`data.EnsureVectorColumnDim`，知识库 `MigrateVectorColumn` 与菜单索引重建共用，幂等）：
    ```sql
    CREATE EXTENSION IF NOT EXISTS vector;
-   ALTER TABLE sys_ai_chunks ADD COLUMN IF NOT EXISTS embedding vector;
+   ALTER TABLE sys_ai_chunks ADD COLUMN IF NOT EXISTS embedding vector(1536);
    ```
+   **embedding 列定维 1536**（`data.AiEmbeddingDimensions`，即内置请求的 `text-embedding-3-small` 输出维度）。启动迁移会读取列的已声明维度：不匹配（含历史非定维列）即**整列重建、旧向量清空**——随后知识库必须经 `ai_doc_reindex` 任务重索引、菜单搜索索引必须重调 `rebuild-index` RPC 重建，恢复前相应检索返回空。
    `CREATE EXTENSION` 需要超级用户权限；失败仅 RAG 降级（检索/入库报错），其余功能不受影响。
-3. **embedding 向量列不进 ent schema**（ent 对 pgvector 自定义类型支持受限），切片读写走原生 SQL（`entClient.DB()`）。手改表结构时注意保持列名 `embedding`。
-4. Docker 部署示例：把 `backend/scripts/deploy/` 下的 compose 里 postgres 镜像换成 `pgvector/pgvector:pg16` 即可，其余不变。
+3. **换 embedding 模型的边界**：`sys_ai_chunks` 与 `sys_ai_search_index` 的维度与 `text-embedding-3-small` 绑定。知识库配置了输出维度 ≠1536 的 embedding 模型时，向量化会在**写入期**收到维度不符报错（fail-fast，防止混维向量让 `<=>` 检索整体报错）；换模型必须同步改 `data.AiEmbeddingDimensions` 并触发全量重索引。
+4. **embedding 向量列不进 ent schema**（ent 对 pgvector 自定义类型支持受限），切片读写走原生 SQL（`entClient.DB()`）。手改表结构时注意保持列名 `embedding` 与定维。
+5. Docker 部署示例：把 `backend/scripts/deploy/` 下的 compose 里 postgres 镜像换成 `pgvector/pgvector:pg16` 即可，其余不变。
+
+## 菜单语义搜索（全局搜索）
+
+三端全局搜索框（react 端已接入，HeaderContent 内 500ms 防抖后调 `/admin/v1/ai/content/search`）背后的菜单向量化索引：`POST /admin/v1/ai/content/rebuild-index`（`RebuildSearchIndex` RPC）把全部菜单标题向量化写入 `sys_ai_search_index`，搜索时向量化查询文本做余弦检索返回 `title`/`route`。
+
+- **原子重建**：先离线算完全部 embedding，再单事务内 `DELETE`+分批多行 `INSERT`——任一环节失败整体回滚，旧索引原样保留，不会留下半空索引。`item_id` 为菜单真实 id（2026-09-28 前误存过数组下标）。
+- **定维约束**：与 `sys_ai_chunks` 相同（见「部署要求」）。定维迁移导致列重建后，菜单索引为空，须重调本 RPC 重建。
+- **V1 口径**：索引无租户列（菜单平台共享），检索也**不按调用者菜单权限过滤**——返回的是全量菜单的标题与路由；按权限裁剪是待办口径，接入时改 `SemanticSearch` 查询侧即可。
 
 ## 智能问数（NL → 只读 SQL）
 

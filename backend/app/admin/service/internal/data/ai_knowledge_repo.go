@@ -352,20 +352,20 @@ func (r *AiKnowledgeRepo) SearchChunks(ctx context.Context, tenantId, baseId uin
 
 // ── 向量列启动迁移（幂等） ─────────────────────────────────────────
 
-// MigrateVectorColumn 启动期补建 pgvector 扩展与 embedding 列。
+// MigrateVectorColumn 启动期补建 pgvector 扩展与定维 embedding 列。
 // 扩展需要超级用户；失败只记日志不阻断服务（RAG 功能降级，其余功能不受影响）。
+// 历史非定维/异维度列会被整列重建（向量清空），此时须重跑 ai_doc_reindex 任务重索引。
 func (r *AiKnowledgeRepo) MigrateVectorColumn(ctx context.Context) error {
-	db := r.entClient.DB()
-	if _, err := db.ExecContext(ctx, `CREATE EXTENSION IF NOT EXISTS vector`); err != nil {
-		r.log.Errorf(ctx, "create pgvector extension failed (rag disabled): %s", err.Error())
+	rebuilt, err := EnsureVectorColumnDim(ctx, r.entClient.DB(), "sys_ai_chunks")
+	if err != nil {
+		r.log.Errorf(ctx, "ai chunks vector column migration failed (rag disabled): %s", err.Error())
 		return err
 	}
-	if _, err := db.ExecContext(ctx,
-		`ALTER TABLE sys_ai_chunks ADD COLUMN IF NOT EXISTS embedding vector`); err != nil {
-		r.log.Errorf(ctx, "add embedding column failed: %s", err.Error())
-		return err
+	if rebuilt {
+		r.log.Warnf(ctx,
+			"sys_ai_chunks.embedding 与当前 embedding 模型维度不符，已整列重建、旧向量清空：请在任务管理创建 ai_doc_reindex 任务全量重索引")
 	}
-	r.log.Infof(ctx, "pgvector ready: sys_ai_chunks.embedding")
+	r.log.Infof(ctx, "pgvector ready: sys_ai_chunks.embedding vector(%d)", AiEmbeddingDimensions)
 	return nil
 }
 
