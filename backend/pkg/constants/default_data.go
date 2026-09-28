@@ -1061,9 +1061,9 @@ var DefaultMenus = []*permissionV1.Menu{
 		Component: trans.Ptr("app/ai/query/index.vue"),
 		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
 		Meta: &permissionV1.MenuMeta{
-			Title:     trans.Ptr("menu.ai.query"),
-			Icon:      trans.Ptr("lucide:search-code"),
-			Order:     trans.Ptr(int32(3)),
+			Title: trans.Ptr("menu.ai.query"),
+			Icon:  trans.Ptr("lucide:search-code"),
+			Order: trans.Ptr(int32(3)),
 		},
 	},
 	{
