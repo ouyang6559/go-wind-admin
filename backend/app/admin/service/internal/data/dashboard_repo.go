@@ -219,7 +219,7 @@ func (r *DashboardRepo) UserBehavior24h(ctx context.Context) ([]UserBehaviorRow,
 		        SUM(CASE WHEN action IN ('DELETE','EXPORT','ASSIGN') THEN 1 ELSE 0 END) AS sensitive,
 		        SUM(CASE WHEN EXTRACT(HOUR FROM created_at AT TIME ZONE 'Asia/Shanghai') < 6 THEN 1 ELSE 0 END) AS night
 		 FROM sys_operation_audit_logs
-		 WHERE created_at >= NOW() - INTERVAL '24 hours'
+		 WHERE created_at >= NOW() - INTERVAL '24 hours' AND user_id IS NOT NULL
 		 GROUP BY user_id
 		 ORDER BY total DESC`,
 	)
@@ -246,10 +246,10 @@ func (r *DashboardRepo) UserBehavior24h(ctx context.Context) ([]UserBehaviorRow,
 // LoginFailAccounts 24h 内登录失败次数达到阈值的账号（疑似口令尝试）。
 func (r *DashboardRepo) LoginFailAccounts(ctx context.Context, minFails int) ([]LoginFailRow, error) {
 	rows, err := r.entClient.DB().QueryContext(ctx,
-		`SELECT username, COUNT(*) AS fails, MAX(ip_address) AS last_ip
+		`SELECT COALESCE(username, ''), COUNT(*) AS fails, MAX(ip_address) AS last_ip
 		 FROM sys_login_audit_logs
 		 WHERE created_at >= NOW() - INTERVAL '24 hours' AND status = 'FAILED'
-		 GROUP BY username HAVING COUNT(*) >= $1
+		 GROUP BY COALESCE(username, '') HAVING COUNT(*) >= $1
 		 ORDER BY fails DESC`,
 		minFails,
 	)
@@ -274,7 +274,7 @@ func (r *DashboardRepo) LoginFailAccounts(ctx context.Context, minFails int) ([]
 // SensitiveOps24h 24h 内敏感操作明细（DELETE/EXPORT/ASSIGN，按时间倒序，最多 limit 条）。
 func (r *DashboardRepo) SensitiveOps24h(ctx context.Context, limit int) ([]SensitiveOpRow, error) {
 	rows, err := r.entClient.DB().QueryContext(ctx,
-		`SELECT username, action, resource_type, COALESCE(resource_id,''), created_at
+		`SELECT COALESCE(username,''), action, resource_type, COALESCE(resource_id,''), created_at
 		 FROM sys_operation_audit_logs
 		 WHERE created_at >= NOW() - INTERVAL '24 hours' AND action IN ('DELETE','EXPORT','ASSIGN')
 		 ORDER BY created_at DESC
