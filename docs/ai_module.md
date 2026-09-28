@@ -60,6 +60,8 @@
 3. **换 embedding 模型的边界**：`sys_ai_chunks` 与 `sys_ai_search_index` 的维度与 `text-embedding-3-small` 绑定。知识库配置了输出维度 ≠1536 的 embedding 模型时，向量化会在**写入期**收到维度不符报错（fail-fast，防止混维向量让 `<=>` 检索整体报错）；换模型必须同步改 `data.AiEmbeddingDimensions` 并触发全量重索引。
 4. **embedding 向量列不进 ent schema**（ent 对 pgvector 自定义类型支持受限），切片读写走原生 SQL（`entClient.DB()`）。手改表结构时注意保持列名 `embedding` 与定维。
 5. Docker 部署示例：把 `backend/scripts/deploy/` 下的 compose 里 postgres 镜像换成 `pgvector/pgvector:pg16` 即可，其余不变。
+6. **HNSW 自动门槛（2026-09-28 起，`sys_ai_chunks` 专属）**：启动迁移在定维检查后按**精确行数**（`data.CountTableRows`；不用 `pg_class.reltuples`——未 ANALYZE 前恒为 -1，会漏判）对照门槛 `data.HnswIndexRowThreshold = 10000`：越线即自动建 `CREATE INDEX ... USING hnsw (embedding vector_cosine_ops)` 并把本库 `hnsw.iterative_scan` 默认设为 `relaxed_order`（允许 planner 对带租户/知识库/文档过滤的 ANN 查询走迭代索引扫描），同时打 WARN 告警。菜单索引表不接此门槛（行数随菜单数有界，永不越线）。**越线后的语义变化**：ANN 检索变为近似召回（实测对抗性近重复数据上 top-8 尾部错位；`hnsw.ef_search` 可调）、距离序可能不严格（relaxed_order 的取舍）、写入承担索引维护代价（实测 ~3×/行，含 `ai_doc_reindex` 重索引任务）。阈值取 1 万的原因：建索引代价随表规模超线性增长（实测 1.1 万行 2.7s），越线即建是最便宜的建设时机，拖到更大表会把秒级构建拖成分钟级阻塞启动。门槛只负责建索引与放开 GUC，何时真正走索引由 planner 按选择性自主决定（实测 1/3 选择性下仍选顺序扫描）。
+7. **向量负载隔离（部署层，规模触发）**：单表到十万级行或 RAG 成为常驻负载时，建议把向量负载迁出主 OLTP 库（独立实例/读副本），属 DSN 级部署改动、无需改代码——本仓不做自动迁移，出现上述 WARN 后人工评估即可。
 
 ## 菜单语义搜索（全局搜索）
 

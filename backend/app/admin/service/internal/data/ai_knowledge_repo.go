@@ -389,11 +389,16 @@ func (r *AiKnowledgeRepo) SearchChunks(ctx context.Context, tenantId, baseId uin
 
 // ── 向量列启动迁移（幂等） ─────────────────────────────────────────
 
-// MigrateVectorColumn 启动期补建 pgvector 扩展与定维 embedding 列。
+// MigrateVectorColumn 启动期补建 pgvector 扩展、定维 embedding 列，并按表规模
+// 自动落 HNSW 门槛（见 data.EnsureHnswIndexIfLarge）。
 // 扩展需要超级用户；失败只记日志不阻断服务（RAG 功能降级，其余功能不受影响）。
 // 历史非定维/异维度列会被整列重建（向量清空），此时须重跑 ai_doc_reindex 任务重索引。
+//
+// HNSW 门槛只接 sys_ai_chunks：菜单语义搜索表行数随菜单数有界（几十行），
+// 永不越线且其查询本就无过滤形态，不接。
 func (r *AiKnowledgeRepo) MigrateVectorColumn(ctx context.Context) error {
-	rebuilt, err := EnsureVectorColumnDim(ctx, r.entClient.DB(), "sys_ai_chunks")
+	db := r.entClient.DB()
+	rebuilt, err := EnsureVectorColumnDim(ctx, db, "sys_ai_chunks")
 	if err != nil {
 		r.log.Errorf(ctx, "ai chunks vector column migration failed (rag disabled): %s", err.Error())
 		return err
@@ -401,6 +406,28 @@ func (r *AiKnowledgeRepo) MigrateVectorColumn(ctx context.Context) error {
 	if rebuilt {
 		r.log.Warnf(ctx,
 			"sys_ai_chunks.embedding 与当前 embedding 模型维度不符，已整列重建、旧向量清空：请在任务管理创建 ai_doc_reindex 任务全量重索引")
+	}
+	rows, cntErr := CountTableRows(ctx, db, "sys_ai_chunks")
+	if cntErr != nil {
+		r.log.Errorf(ctx, "ai chunks row count for hnsw gate failed: %s", cntErr.Error())
+		r.log.Infof(ctx, "pgvector ready: sys_ai_chunks.embedding vector(%d)", AiEmbeddingDimensions)
+		return nil
+	}
+	created, idxErr := EnsureHnswIndexIfLarge(ctx, db, "sys_ai_chunks", rows)
+	if idxErr != nil {
+		r.log.Errorf(ctx, "hnsw gate for sys_ai_chunks failed: %s", idxErr.Error())
+		r.log.Infof(ctx, "pgvector ready: sys_ai_chunks.embedding vector(%d)", AiEmbeddingDimensions)
+		return nil
+	}
+	if created {
+		if gErr := SetHnswIterativeScanDefault(ctx, db); gErr != nil {
+			r.log.Errorf(ctx, "set hnsw.iterative_scan default failed: %s", gErr.Error())
+		}
+		r.log.Warnf(ctx,
+			"sys_ai_chunks 行数(%d)已越过 HNSW 门槛(%d)，已自动建 HNSW cosine 索引并将本库 hnsw.iterative_scan 默认设为 relaxed_order。"+
+				"此后 ANN 检索为近似召回（top-K 可能漏配）、距离序可能不严格、写入承担索引维护代价（实测 ~3×/行）；"+
+				"建议尽快评估把向量负载迁出主库（docs/ai_module.md 部署要求）",
+			rows, HnswIndexRowThreshold)
 	}
 	r.log.Infof(ctx, "pgvector ready: sys_ai_chunks.embedding vector(%d)", AiEmbeddingDimensions)
 	return nil
