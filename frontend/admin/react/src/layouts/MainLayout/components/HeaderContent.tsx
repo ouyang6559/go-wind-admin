@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import React from 'react';
 import { Avatar, Dropdown, Badge, Tooltip, Button, Breadcrumb, Input, Popover, Empty, Spin, App as AntdApp } from 'antd';
 import type { MenuProps } from 'antd';
@@ -441,6 +441,27 @@ export const HeaderContent = ({
     </div>
   );
 
+  // ── 语义搜索状态 ──
+  const [semanticSearchOpen, setSemanticSearchOpen] = useState(false);
+  const [semanticQuery, setSemanticQuery] = useState('');
+  const [semanticResults, setSemanticResults] = useState<{title: string; route: string; score: number}[]>([]);
+  const [semanticLoading, setSemanticLoading] = useState(false);
+  const semanticTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const handleSemanticSearch = (query: string) => {
+    setSemanticQuery(query);
+    clearTimeout(semanticTimer.current);
+    if (!query.trim()) { setSemanticResults([]); return; }
+    semanticTimer.current = setTimeout(async () => {
+      setSemanticLoading(true);
+      try {
+        const resp = await apiClient.aiContentService.SemanticSearch({ query: query.trim(), limit: 8 });
+        setSemanticResults((resp.items ?? []) as any);
+      } catch { setSemanticResults([]); }
+      finally { setSemanticLoading(false); }
+    }, 500);
+  };
+
   return (
     <div
       style={{
@@ -562,17 +583,51 @@ export const HeaderContent = ({
           <Popover
             trigger="click"
             placement="bottomRight"
+            open={semanticSearchOpen}
+            onOpenChange={(v) => { setSemanticSearchOpen(v); if (!v) { setSemanticResults([]); setSemanticQuery(''); } }}
             content={
-              <div style={{ width: 320, padding: 8 }}>
+              <div style={{ width: 360, padding: 8 }}>
                 <Input.Search
                   placeholder={t('header.searchPlaceholder')}
                   size="large"
-                  onSearch={(value) => {
-                    console.log('Search:', value);
-                    // 后续可实现全局搜索逻辑
-                  }}
+                  value={semanticQuery}
+                  onChange={(e) => handleSemanticSearch(e.target.value)}
+                  onSearch={(value) => handleSemanticSearch(value)}
                   autoFocus
+                  allowClear
                 />
+                {semanticLoading && (
+                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
+                    搜索中…
+                  </div>
+                )}
+                {!semanticLoading && semanticResults.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    {semanticResults.map((item, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
+                        }}
+                        className="semantic-search-item"
+                        onClick={() => {
+                          if (item.route) { window.location.hash = '#' + item.route; setSemanticSearchOpen(false); }
+                        }}
+                      >
+                        <span style={{ fontSize: 13 }}>{item.title}</span>
+                        <span style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>
+                          {(item.score * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!semanticLoading && semanticQuery.trim() && semanticResults.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-tertiary)', fontSize: 13 }}>
+                    未找到相关页面
+                  </div>
+                )}
               </div>
             }
           >
