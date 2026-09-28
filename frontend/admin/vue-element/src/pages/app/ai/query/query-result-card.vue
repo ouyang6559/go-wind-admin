@@ -74,7 +74,8 @@ const chartable = computed(
 const chartOption = computed(() => {
   const kind = props.rows.length > 12 ? "line" : "bar";
   return {
-    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+    // echarts 6：containLabel 已废弃，等价写法为 outerBoundsMode:'same' + outerBoundsContain:'axisLabel'
+    grid: { left: 8, right: 8, top: 24, bottom: 8, outerBoundsMode: "same", outerBoundsContain: "axisLabel" },
     legend: { top: 0 },
     tooltip: { trigger: "axis" },
     xAxis: {

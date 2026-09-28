@@ -78,6 +78,10 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
           if (!chartInstance) {
             chartInstance = echarts.init(el, isDark.value ? "dark" : null);
           }
+          if (chartInstance.isDisposed()) {
+            resolve(null);
+            return;
+          }
           if (clear) {
             chartInstance?.clear();
           }
@@ -104,8 +108,9 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   useResizeObserver(chartRef as never, resizeHandler);
 
   watch(isDark, () => {
-    if (chartInstance) {
+    if (chartInstance && !chartInstance.isDisposed()) {
       chartInstance.dispose();
+      chartInstance = null;
       initCharts();
       renderEcharts(cacheOptions);
       resize();
@@ -113,8 +118,10 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   });
 
   tryOnUnmounted(() => {
-    // 销毁实例，释放资源
+    // 销毁实例，释放资源；同时置空引用，防止组件卸载后
+    // 仍在排队的延迟渲染回调触达已销毁实例（报 "has been disposed"）
     chartInstance?.dispose();
+    chartInstance = null;
   });
   return {
     renderEcharts,
