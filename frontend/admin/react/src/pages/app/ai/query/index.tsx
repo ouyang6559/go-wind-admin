@@ -87,13 +87,20 @@ export default function AiQueryPage() {
     askMutation.mutate(params);
   };
 
+  // 固定高度 + 内层消息区自滚：输入区才能常驻视口底（heightMode=auto 时容器与内容
+  // 等高，sticky bottom-0 零行程失效，输入框会被排到内容流末尾）。定式同 ai/chat。
   return (
-    <ContentContainer heightMode="auto" scrollable padding="16px">
-      <div className="mx-auto flex max-w-4xl flex-col gap-4 pb-2">
+    <ContentContainer heightMode="fixed" padding="16px">
+      <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-4 overflow-y-auto pb-2">
+        {/* 本页品牌色一律取 antd token（--ant-color- 系列），不写 Tailwind 调色板类：
+            blue-500 = #3B82F6 是 §3.2 已退役的旧主色，gray-400 = #9CA3AF 在浅底上仅 2.5:1。 */}
         {/* 标题 + 示例问题（仅首轮前展示） */}
         {rounds.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <ThunderboltOutlined className="text-5xl text-blue-500" />
+            {/* 图标取内联 style：.anticon 上的 antd 规则（color: inherit）是无层的，
+                会压过 @layer utilities 里的 Tailwind 颜色类——实测 text-[color:var(...)] 在
+                普通 div 生效、在 .anticon 上无效。 */}
+            <ThunderboltOutlined className="text-5xl" style={{ color: 'var(--ant-color-primary)' }} />
             <Typography.Title level={4} className="!mb-0">
               {t('title')}
             </Typography.Title>
@@ -113,7 +120,7 @@ export default function AiQueryPage() {
           <div key={i} className="flex flex-col gap-3">
             {/* 用户问题：右侧气泡 */}
             <div className="flex flex-row-reverse items-start gap-3">
-              <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-blue-500 px-4 py-2 text-white">
+              <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-[color:var(--ant-color-primary)] px-4 py-2 text-[color:var(--ant-color-text-light-solid)]">
                 {round.question}
               </div>
             </div>
@@ -122,15 +129,15 @@ export default function AiQueryPage() {
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1 rounded-xl border border-solid border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
                 {round.loading ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                  <div className="flex items-center gap-2 text-sm text-[color:var(--ant-color-text-secondary)]">
+                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[color:var(--ant-color-primary)]" />
                     {t('thinking')}
                   </div>
                 ) : (
                   <>
                     {round.sql && (
                       <details className="mb-3" open>
-                        <summary className="cursor-pointer text-xs text-gray-400">
+                        <summary className="cursor-pointer text-xs text-[color:var(--ant-color-text-secondary)]">
                           {t('generatedSql')}
                         </summary>
                         <pre className="mt-2 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100">
@@ -153,7 +160,7 @@ export default function AiQueryPage() {
                     ) : null}
 
                     {round.answer && (
-                      <div className="mt-3 rounded-lg border border-solid border-blue-200 bg-blue-50 p-3 text-sm leading-relaxed dark:border-blue-900 dark:bg-blue-950">
+                      <div className="mt-3 rounded-lg border border-solid border-[color:var(--ant-color-primary-border)] bg-[color:var(--ant-color-primary-bg)] p-3 text-sm leading-relaxed">
                         <Tag color="processing" className="mb-1">
                           {t('answerTag')}
                         </Tag>
@@ -171,8 +178,8 @@ export default function AiQueryPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* 输入区（吸底） */}
-      <div className="sticky bottom-0 -mx-4 -mb-4 border-t border-solid border-gray-200 bg-white/95 p-4 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
+      {/* 输入区（flex 常驻吸底，-mx-4/-mb-4 盖过容器 padding 全幅出血） */}
+      <div className="-mx-4 -mb-4 shrink-0 border-t border-solid border-gray-200 bg-white/95 p-4 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
         <div className="mx-auto flex max-w-4xl items-end gap-2">
           <Input
             value={input}
@@ -239,7 +246,9 @@ function QueryChart({
 }) {
   const series = columns.map((_, i) => i).filter((i) => i > 0 && isNumericSeries(rows, i));
   const option = {
-    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+    // echarts 6：containLabel 已废弃，不加载 LegacyGridContainLabel 时整条被忽略
+    // （Grid.js 直接 log 报错），等价写法是 outerBoundsMode/outerBoundsContain。
+    grid: { left: 8, right: 8, top: 24, bottom: 8, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
     legend: { top: 0 },
     tooltip: { trigger: 'axis' },
     xAxis: {
