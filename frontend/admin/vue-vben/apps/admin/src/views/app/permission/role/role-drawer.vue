@@ -1,5 +1,5 @@
 ﻿<script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, h, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 import { $t } from '@vben/locales';
@@ -7,6 +7,7 @@ import { $t } from '@vben/locales';
 import { notification } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
+import AiGenerateButton from '#/components/AiGenerateButton.vue';
 import { type permissionservicev1_PermissionGroup as PermissionGroup } from '#/api';
 import {
   buildPermissionTree,
@@ -131,6 +132,17 @@ const [BaseForm, baseFormApi] = useVbenForm({
         placeholder: $t('ui.placeholder.input'),
         allowClear: true,
       },
+      // AI 内容生成（表单助手）：生成结果回填 description
+      suffix: () =>
+        h(
+          'div',
+          { class: 'self-start pt-1' },
+          h(AiGenerateButton, {
+            scene: 'DESCRIPTION',
+            onGenerate: (content: string) =>
+              baseFormApi.setFieldValue('description', content),
+          }),
+        ),
     },
     {
       component: 'ApiTree',

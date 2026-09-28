@@ -7,6 +7,7 @@ import { router } from "@/router";
 import { useAccessStore } from "@/stores";
 import { isExternal } from "@/utils";
 import { i18n } from "@/core/i18n";
+import { fetchSemanticSearch } from "@/api/composables/ai-content";
 
 const t = i18n.global.t;
 
@@ -18,6 +19,8 @@ interface SearchItem {
   icon?: string;
   redirect?: string;
   params?: LocationQueryRaw;
+  /** 语义搜索命中项（区别于本地菜单关键字匹配，UI 上打 AI 标） */
+  semantic?: boolean;
 }
 
 const STORAGE_KEY = "menu_search_history";
@@ -45,6 +48,7 @@ export function useCommandPalette() {
   function open() {
     keyword.value = "";
     results.value = [];
+    semanticResults.value = [];
     activeIndex.value = -1;
     visible.value = true;
     setTimeout(() => inputRef.value?.focus(), 100);
@@ -62,10 +66,41 @@ export function useCommandPalette() {
     activeIndex.value = -1;
     if (!keyword.value.trim()) {
       results.value = [];
+      semanticResults.value = [];
+      clearTimeout(semanticTimer);
       return;
     }
     const kw = keyword.value.toLowerCase();
     results.value = menuItems.value.filter((item) => item.title.toLowerCase().includes(kw));
+    queueSemanticSearch(keyword.value.trim());
+  }
+
+  // ── 语义搜索（pgvector，500ms 防抖；尽力而为，失败只清空不打断本地搜索）──
+  let semanticTimer: ReturnType<typeof setTimeout> | undefined;
+  const semanticResults = ref<SearchItem[]>([]);
+  const semanticLoading = ref(false);
+
+  function queueSemanticSearch(query: string) {
+    clearTimeout(semanticTimer);
+    semanticTimer = setTimeout(async () => {
+      semanticLoading.value = true;
+      try {
+        const resp = await fetchSemanticSearch(query, 8);
+        semanticResults.value = (resp.items ?? [])
+          .filter((item) => item.route)
+          .map((item) => ({
+            title: item.title ?? item.route!,
+            path: item.route!,
+            semantic: true,
+          }));
+      } catch (error) {
+        // 不吞错：带出原始错误对象；语义搜索降级为仅本地结果
+        console.error("semantic search failed:", error);
+        semanticResults.value = [];
+      } finally {
+        semanticLoading.value = false;
+      }
+    }, 500);
   }
 
   function getDisplayList() {
@@ -200,12 +235,15 @@ export function useCommandPalette() {
 
   onBeforeUnmount(() => {
     document.removeEventListener("keydown", handleKeydown);
+    clearTimeout(semanticTimer);
   });
 
   return {
     visible,
     keyword,
     results,
+    semanticResults,
+    semanticLoading,
     history,
     activeIndex,
     inputRef,

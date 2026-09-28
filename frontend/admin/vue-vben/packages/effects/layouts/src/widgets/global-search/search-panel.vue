@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { MenuRecordRaw } from '@vben/types';
 
-import { nextTick, onMounted, ref, shallowRef, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { SearchX, X } from '@vben/icons';
@@ -11,6 +11,11 @@ import { VbenIcon, VbenScrollbar } from '@vben-core/shadcn-ui';
 import { isHttpUrl } from '@vben-core/shared/utils';
 
 import { onKeyStroke, useLocalStorage, useThrottleFn } from '@vueuse/core';
+
+import {
+  getSemanticSearchProvider,
+  type SemanticSearchResult,
+} from './semantic-provider';
 
 defineOptions({
   name: 'SearchPanel',
@@ -194,11 +199,62 @@ watch(
   (val) => {
     if (val) {
       handleSearch(val);
+      queueSemanticSearch(val.trim());
     } else {
       searchResults.value = [...searchHistory.value];
+      clearSemanticSearch();
     }
   },
 );
+
+// ── 语义搜索（pgvector，500ms 防抖；尽力而为，失败只清空不打断本地搜索）──
+const semanticResults = shallowRef<SemanticSearchResult[]>([]);
+const semanticLoading = ref(false);
+let semanticTimer: ReturnType<typeof setTimeout> | undefined;
+
+function clearSemanticSearch() {
+  clearTimeout(semanticTimer);
+  semanticResults.value = [];
+  semanticLoading.value = false;
+}
+
+function queueSemanticSearch(query: string) {
+  clearTimeout(semanticTimer);
+  const provider = getSemanticSearchProvider();
+  if (!provider || !query) {
+    semanticResults.value = [];
+    return;
+  }
+  semanticTimer = setTimeout(async () => {
+    semanticLoading.value = true;
+    try {
+      const items = await provider(query);
+      semanticResults.value = items.filter((item) => item.route);
+    } catch (error) {
+      // 不吞错：带出原始错误对象；语义搜索降级为仅本地结果
+      console.error('semantic search failed:', error);
+      semanticResults.value = [];
+    } finally {
+      semanticLoading.value = false;
+    }
+  }, 500);
+}
+
+async function goSemantic(item: SemanticSearchResult) {
+  searchResults.value = [];
+  clearSemanticSearch();
+  handleClose();
+  await nextTick();
+  if (isHttpUrl(item.route)) {
+    window.open(item.route, '_blank');
+  } else {
+    router.push({ path: item.route, replace: true });
+  }
+}
+
+onUnmounted(() => {
+  clearTimeout(semanticTimer);
+});
 
 onMounted(() => {
   searchItems.value = mapTree(props.menus, (item) => {
@@ -223,9 +279,14 @@ onMounted(() => {
 <template>
   <VbenScrollbar>
     <div class="!flex h-full justify-center px-2 sm:max-h-[450px]">
-      <!-- 无搜索结果 -->
+      <!-- 无搜索结果（语义搜索进行中/已有命中时不显示，避免误报） -->
       <div
-        v-if="keyword && searchResults.length === 0"
+        v-if="
+          keyword &&
+          searchResults.length === 0 &&
+          !semanticLoading &&
+          semanticResults.length === 0
+        "
         class="text-muted-foreground text-center"
       >
         <SearchX class="mx-auto mt-4 size-12" />
@@ -280,6 +341,33 @@ onMounted(() => {
           >
             <X class="size-4" />
           </div>
+        </li>
+      </ul>
+
+      <!-- 语义搜索结果（应用注册了 provider 才会产出；点击跳转，不参与键盘导航） -->
+      <ul
+        v-show="keyword && (semanticResults.length > 0 || semanticLoading)"
+        class="w-full"
+      >
+        <li class="text-muted-foreground mb-2 text-xs">
+          {{ $t('ui.widgets.search.semanticTitle') }}
+        </li>
+        <li
+          v-if="semanticResults.length === 0 && semanticLoading"
+          class="text-muted-foreground py-2 text-center text-xs"
+        >
+          {{ $t('ui.widgets.search.semanticSearching') }}
+        </li>
+        <li
+          v-for="item in semanticResults"
+          :key="item.route"
+          class="bg-accent flex-center group mb-3 w-full cursor-pointer rounded-lg px-4 py-4"
+          @click="goSemantic(item)"
+        >
+          <span class="flex-1">{{ item.title }}</span>
+          <span class="text-muted-foreground hidden text-xs sm:block">
+            {{ item.route }}
+          </span>
         </li>
       </ul>
     </div>

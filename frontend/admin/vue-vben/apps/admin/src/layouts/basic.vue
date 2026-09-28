@@ -10,6 +10,7 @@ import {
   BasicLayout,
   LockScreen,
   Notification,
+  registerSemanticSearchProvider,
   UserDropdown,
 } from '@vben/layouts';
 import { preferences } from '@vben/preferences';
@@ -20,6 +21,7 @@ import { notification } from 'ant-design-vue';
 
 import {
   fetchListUserInbox,
+  fetchSemanticSearch,
   PaginationQuery,
   useMarkNotificationAsRead,
 } from '#/api';
@@ -29,6 +31,16 @@ import { router } from '#/router';
 import { useAuthStore } from '#/stores';
 import { globalSSEClient, SSE_EVENT } from '#/transport/sse';
 import LoginForm from '#/views/_core/authentication/login.vue';
+
+// 语义搜索（pgvector 菜单索引）接入全局搜索面板；框架层经注册表解耦，不直接依赖本应用 API
+registerSemanticSearchProvider(async (query) => {
+  const resp = await fetchSemanticSearch(query, 8);
+  return (resp.items ?? []).map((item) => ({
+    route: item.route ?? '',
+    score: item.score,
+    title: item.title ?? '',
+  }));
+});
 
 const userStore = useUserStore();
 const authStore = useAuthStore();

@@ -7,6 +7,7 @@
 export * from './ai-chat';
 export * from './ai-knowledge';
 export * from './ai-provider';
+export * from './ai-content';
 
 // 管理门户相关
 export * from './admin-portal';

@@ -154,6 +154,8 @@
     "openSearch": "Open search panel",
     "close": "Close",
     "noHistory": "No search history",
+    "semanticBadge": "AI",
+    "searching": "Searching…",
     "switch": "Switch",
     "select": "Select"
   },

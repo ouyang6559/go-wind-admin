@@ -1006,5 +1006,11 @@
     "totalTokens": "总 tokens",
     "duration": "耗时",
     "time": "调用时间"
+  },
+  "aiContent": {
+    "button": "AI 生成",
+    "generateNow": "生成",
+    "topicPlaceholder": "输入主题或关键词",
+    "failed": "AI 生成失败"
   }
 }

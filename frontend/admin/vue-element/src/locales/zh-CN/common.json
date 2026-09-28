@@ -154,6 +154,8 @@
     "openSearch": "打开搜索面板",
     "close": "关闭",
     "noHistory": "没有搜索历史",
+    "semanticBadge": "AI",
+    "searching": "正在搜索…",
     "switch": "切换",
     "select": "选择"
   },

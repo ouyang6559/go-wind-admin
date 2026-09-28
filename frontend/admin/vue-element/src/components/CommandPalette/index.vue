@@ -51,8 +51,17 @@
         </el-input>
 
         <div class="command-palette-results">
-          <div v-if="displayList.length === 0" class="command-palette-empty">
+          <div
+            v-if="displayList.length === 0 && !isSemanticSearching"
+            class="command-palette-empty"
+          >
             {{ $t("common.commandPalette.noHistory") }}
+          </div>
+          <div
+            v-else-if="displayList.length === 0 && isSemanticSearching"
+            class="command-palette-empty"
+          >
+            {{ $t("common.commandPalette.searching") }}
           </div>
 
           <ul v-else class="command-palette-list">
@@ -63,7 +72,12 @@
               @mouseenter="activeIndex = idx"
               @click="onGo(item)"
             >
-              <div class="command-palette-item__title">{{ item.title }}</div>
+              <div class="command-palette-item__title">
+                {{ item.title }}
+                <span v-if="item.semantic" class="command-palette-item__ai-badge">
+                  {{ $t("common.commandPalette.semanticBadge") }}
+                </span>
+              </div>
               <div class="command-palette-item__path">{{ item.path }}</div>
             </li>
           </ul>
@@ -98,6 +112,8 @@ const {
   visible,
   keyword,
   results,
+  semanticResults,
+  semanticLoading,
   history,
   activeIndex,
   inputRef,
@@ -109,7 +125,17 @@ const {
   onGo,
 } = useCommandPalette();
 
-const displayList = computed(() => (results.value.length ? results.value : history.value));
+const displayList = computed(() => {
+  if (keyword.value.trim()) {
+    return [...results.value, ...semanticResults.value];
+  }
+  return history.value;
+});
+
+// 关键词非空且菜单/语义都还没有结果时，展示"搜索中"而不是误导性的"没有历史"
+const isSemanticSearching = computed(
+  () => keyword.value.trim().length > 0 && semanticLoading.value,
+);
 
 const handleInputKeydown: (evt: KeyboardEvent | Event) => any = (evt) => {
   if (!(evt instanceof KeyboardEvent)) return;
@@ -259,6 +285,18 @@ const handleInputKeydown: (evt: KeyboardEvent | Event) => any = (evt) => {
 .command-palette-item__title {
   font-size: 14px;
   color: var(--el-text-color-primary);
+}
+
+.command-palette-item__ai-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
 }
 
 .command-palette-item__path {

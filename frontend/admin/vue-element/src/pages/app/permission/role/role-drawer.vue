@@ -71,7 +71,16 @@
         <div v-else class="org-unit-empty">{{ $t("pages.role.noOrgUnitData") }}</div>
       </ElFormItem>
 
-      <ElFormItem :label="$t('common.table.description')" prop="description">
+      <ElFormItem prop="description">
+        <template #label>
+          <span class="inline-flex items-center">
+            {{ $t("common.table.description") }}
+            <AiGenerateButton
+              scene="DESCRIPTION"
+              @generate="(content: string) => (formData.description = content)"
+            />
+          </span>
+        </template>
         <ElInput
           v-model="formData.description"
           type="textarea"
@@ -133,6 +142,7 @@ import { ElMessage } from "element-plus";
 import type { TreeInstance } from "element-plus";
 
 import ProModal from "@/components/Pro/ProModal/index.vue";
+import AiGenerateButton from "@/components/AiGenerateButton/index.vue";
 
 import {
   useCreateRole,

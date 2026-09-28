@@ -994,5 +994,11 @@
     "totalTokens": "Total tokens",
     "duration": "Duration",
     "time": "Call time"
+  },
+  "aiContent": {
+    "button": "AI Generate",
+    "generateNow": "Generate",
+    "topicPlaceholder": "Enter topic or keywords",
+    "failed": "AI generation failed"
   }
 }
