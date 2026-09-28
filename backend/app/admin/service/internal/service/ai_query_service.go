@@ -17,9 +17,15 @@ import (
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
+	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/user"
+	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/task"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ── 智能问数安全边界 ────────────────────────────────────────────────
@@ -82,9 +88,11 @@ type AiQueryService struct {
 	adminV1.AiQueryServiceHTTPServer
 	log *bLogger.Helper
 
-	providerRepo *data.AiProviderRepo
-	usageRepo    *data.AiUsageLogRepo
-	entClient    *entCrud.EntClient[*ent.Client]
+	providerRepo     *data.AiProviderRepo
+	usageRepo        *data.AiUsageLogRepo
+	entClient        *entCrud.EntClient[*ent.Client]
+	internalMessages *InternalMessageService
+	internalMsgRepo  *data.InternalMessageRepo
 }
 
 func NewAiQueryService(
@@ -92,12 +100,16 @@ func NewAiQueryService(
 	providerRepo *data.AiProviderRepo,
 	usageRepo *data.AiUsageLogRepo,
 	entClient *entCrud.EntClient[*ent.Client],
+	internalMessages *InternalMessageService,
+	internalMsgRepo *data.InternalMessageRepo,
 ) *AiQueryService {
 	return &AiQueryService{
-		log:          ctx.NewLoggerHelper("ai_query/service/admin-service"),
-		providerRepo: providerRepo,
-		usageRepo:    usageRepo,
-		entClient:    entClient,
+		log:              ctx.NewLoggerHelper("ai_query/service/admin-service"),
+		providerRepo:     providerRepo,
+		usageRepo:        usageRepo,
+		entClient:        entClient,
+		internalMessages: internalMessages,
+		internalMsgRepo:  internalMsgRepo,
 	}
 }
 
@@ -504,4 +516,97 @@ func correctTableName(table string, whitelist map[string]string) (string, bool) 
 		}
 	}
 	return "", false
+}
+
+// ── 定时问数（ai_query_run） ────────────────────────────────────────
+
+// RunScheduledQuery 执行一次问数并返回格式化的文本结果（平台白名单）。
+func (s *AiQueryService) RunScheduledQuery(ctx context.Context, question, lang string) (string, error) {
+	provider, err := s.providerRepo.GetEnabledDefault(ctx)
+	if err != nil {
+		return "", err
+	}
+	client, err := newOpenAIClientForProvider(ctx, provider)
+	if err != nil {
+		return "", err
+	}
+
+	var history []aiV1.AiQueryHistoryItem
+	sqlText, _, err := s.generateSQL(ctx, client, provider, question, lang, history, aiQueryTableWhitelist, 0)
+	if err != nil {
+		return "", err
+	}
+	cleaned, err := sanitizeSQLFor(sqlText, aiQueryTableWhitelist, nil)
+	if err != nil {
+		return "", err
+	}
+	_, rows, execErr := s.executeReadOnly(ctx, cleaned)
+	if execErr != nil {
+		return "", fmt.Errorf("execute: %w", execErr)
+	}
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("问题：%s\n", question))
+	sb.WriteString(fmt.Sprintf("SQL：%s\n", cleaned))
+	if len(rows) == 0 {
+		sb.WriteString("结果：无匹配数据")
+	} else {
+		sb.WriteString(fmt.Sprintf("结果（%d 行）：\n", len(rows)))
+		for _, r := range rows {
+			sb.WriteString("  " + strings.Join(r.Values, " | ") + "\n")
+		}
+	}
+	return sb.String(), nil
+}
+
+// AsyncAiQueryRun 定时问数任务 handler：执行问题 → 站内信推送结果给任务创建人。
+func (s *AiQueryService) AsyncAiQueryRun(taskType string, data *task.AiQueryRunTaskData) error {
+	ctx := appViewer.NewSystemViewerContext(context.Background())
+	question := data.Question
+	if question == "" {
+		return fmt.Errorf("question is required")
+	}
+
+	result, err := s.RunScheduledQuery(ctx, question, "zh-CN")
+	if err != nil {
+		return err
+	}
+
+	title := "AI 问数结果：" + question
+	if err = s.pushInternalMessage(ctx, title, result); err != nil {
+		s.log.Errorf(ctx, "ai query run: push result failed: %v", err)
+	}
+	return nil
+}
+
+// pushInternalMessage 创建站内信并投递给平台侧用户。
+func (s *AiQueryService) pushInternalMessage(ctx context.Context, title, content string) error {
+	now := time.Now()
+	msg, err := s.internalMsgRepo.Create(ctx, &internalMessageV1.CreateInternalMessageRequest{
+		Data: &internalMessageV1.InternalMessage{
+			Title:     &title,
+			Content:   &content,
+			Status:    trans.Ptr(internalMessageV1.InternalMessage_PUBLISHED),
+			Type:      trans.Ptr(internalMessageV1.InternalMessage_NOTIFICATION),
+			CreatedBy: trans.Ptr(uint32(0)),
+			CreatedAt: timestamppb.New(now),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	// 投递给平台侧（tenant_id=0）用户
+	users, err := s.entClient.Client().User.Query().
+		Where(user.TenantIDEQ(0), user.DeletedAtIsNil()).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, u := range users {
+		if err = s.internalMessages.sendNotification(ctx, msg.GetId(), u.ID, 0, &now, title, content); err != nil {
+			s.log.Errorf(ctx, "push to user %d failed: %v", u.ID, err)
+		}
+	}
+	return nil
 }

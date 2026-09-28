@@ -270,8 +270,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 依赖 scriptRuntime 与 internalMessageService，故置二者之后。
 	auditDigestService := service.NewAiDigestService(ctx, operationAuditLogRepo, internalMessageService, internalMessageRepo, scriptRuntime, entClient)
 
-	// 智能问数：NL→只读 SQL→结构化结果（平台管理员专属，四重护栏）
-	aiQueryService := service.NewAiQueryService(ctx, aiProviderRepo, aiUsageLogRepo, entClient)
+	// 智能问数：NL→只读 SQL→结构化结果（四重护栏）+ 定时问数任务
+	aiQueryService := service.NewAiQueryService(ctx, aiProviderRepo, aiUsageLogRepo, entClient, internalMessageService, internalMessageRepo)
 	aiContentService := service.NewAiContentService(ctx, aiProviderRepo, aiUsageLogRepo, menuRepo, entClient)
 
 	// ── register:service ── 新模块服务在此行后注册(make register 工具锚点,勿删)
