@@ -18,6 +18,7 @@ import (
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
+	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/middleware/auth"
@@ -165,28 +166,12 @@ type menuIndexDoc struct {
 	route  string
 }
 
-// BuildMenuSearchIndex 向量化全部菜单标题并原子替换索引表里的菜单行。
-// 顺序：先离线算完全部 embedding（不持事务调外部 API），再单事务 DELETE+分批
-// 多行 INSERT——任一环节失败即回滚，旧索引原样保留，不会留下半空索引。
-func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, error) {
-	db := s.entClient.DB()
-	if _, err := db.ExecContext(ctx, buildSearchIndexSQL); err != nil {
-		return 0, fmt.Errorf("create search index table: %w", err)
-	}
-	rebuilt, err := data.EnsureVectorColumnDim(ctx, db, "sys_ai_search_index")
-	if err != nil {
-		return 0, fmt.Errorf("ensure embedding column: %w", err)
-	}
-	if rebuilt {
-		s.log.Warnf(ctx, "sys_ai_search_index.embedding 与当前 embedding 模型维度不符，已整列重建，本次全量重写菜单索引")
-	}
-	menus, err := s.menuRepo.List(ctx, paginationV1PagingNoLimit(), true)
-	if err != nil {
-		return 0, err
-	}
-
-	docs := make([]menuIndexDoc, 0, len(menus.GetItems()))
-	for _, m := range menus.GetItems() {
+// collectMenuIndexDocs 从菜单列表收集可索引文档：跳过无 id / 无 path /
+// 无标题的菜单；标题取 meta.title，为空回退 name（与全局搜索原始行为一致）。
+// 输出与输入顺序一致，item_id 落真实菜单 id。
+func collectMenuIndexDocs(items []*permissionV1.Menu) []menuIndexDoc {
+	docs := make([]menuIndexDoc, 0, len(items))
+	for _, m := range items {
 		if m.GetId() == 0 || m.GetPath() == "" {
 			continue
 		}
@@ -202,6 +187,47 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 		}
 		docs = append(docs, menuIndexDoc{menuId: m.GetId(), title: title, route: m.GetPath()})
 	}
+	return docs
+}
+
+// placeEmbeddingBatch 把一批 embedding 响应按其 index（对位请求输入序号）
+// 写入 vectors 的 [batchStart, batchStart+len) 段：拒绝越界 index 与零维向量。
+// 语义检索索引用于全局搜索导航，宁可整体失败也不落错位的行。
+func placeEmbeddingBatch(batchStart int, data []openai.Embedding, vectors []string) error {
+	for _, item := range data {
+		if item.Index < 0 || batchStart+item.Index >= len(vectors) || len(item.Embedding) == 0 {
+			return fmt.Errorf("embedding response malformed: batch=%d item=%d", batchStart, item.Index)
+		}
+		vectors[batchStart+item.Index] = vectorToLiteral(item.Embedding)
+	}
+	return nil
+}
+
+// BuildMenuSearchIndex 向量化全部菜单标题并原子替换索引表里的菜单行。
+// 顺序：先离线算完全部 embedding（不持事务调外部 API），再单事务 DELETE+分批
+// 多行 INSERT——任一环节失败即回滚，旧索引原样保留，不会留下半空索引。
+func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, error) {
+	db := s.entClient.DB()
+	if _, err := db.ExecContext(ctx, buildSearchIndexSQL); err != nil {
+		return 0, fmt.Errorf("create search index table: %w", err)
+	}
+	rebuilt, err := data.EnsureVectorColumnDim(ctx, db, "sys_ai_search_index")
+	if err != nil {
+		return 0, fmt.Errorf("ensure embedding column: %w", err)
+	}
+	if rebuilt {
+		s.log.Warnf(ctx, "sys_ai_search_index.embedding 与当前 embedding 模型维度不符，已整列重建，本次全量重写菜单索引")
+	}
+	operator, oErr := auth.FromContext(ctx)
+	if oErr != nil {
+		return 0, oErr
+	}
+	menus, err := s.menuRepo.List(ctx, paginationV1PagingNoLimit(), true)
+	if err != nil {
+		return 0, err
+	}
+
+	docs := collectMenuIndexDocs(menus.GetItems())
 	if len(docs) == 0 {
 		return 0, nil
 	}
@@ -216,7 +242,8 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 	}
 
 	// 离线算完全部向量。响应按 OpenAI 规约携带 index（对位请求输入序号），
-	// 拒绝缺号/错号/零维：索引用于全局搜索导航，宁可整体失败也不落错位的行。
+	// 对位与完整性校验在 placeEmbeddingBatch：缺号/错号/零维整体失败。
+	// 向量化消耗与 chat 同口径记入用量流水（记量失败不阻断，仅记日志）。
 	vectors := make([]string, len(docs))
 	embCtx, embCancel := context.WithTimeout(ctx, 60*time.Second)
 	defer embCancel()
@@ -233,11 +260,22 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 		if embErr != nil {
 			return 0, fmt.Errorf("embed batch: %w", embErr)
 		}
-		for _, item := range resp.Data {
-			if item.Index < 0 || start+item.Index >= len(vectors) || len(item.Embedding) == 0 {
-				return 0, fmt.Errorf("embedding response malformed: batch=%d item=%d", start, item.Index)
+		if placeErr := placeEmbeddingBatch(start, resp.Data, vectors); placeErr != nil {
+			return 0, placeErr
+		}
+		if s.usageRepo != nil {
+			modelName := "text-embedding-3-small"
+			promptTokens := uint32(resp.Usage.PromptTokens)
+			totalTokens := uint32(resp.Usage.TotalTokens)
+			if uerr := s.usageRepo.Create(ctx, &aiV1.AiUsageLog{
+				UserId:       trans.Ptr(operator.UserId),
+				TenantId:     trans.Ptr(operator.GetTenantId()),
+				ModelName:    &modelName,
+				PromptTokens: &promptTokens,
+				TotalTokens:  &totalTokens,
+			}); uerr != nil {
+				s.log.Errorf(ctx, "record embedding usage failed: %v", uerr)
 			}
-			vectors[start+item.Index] = vectorToLiteral(item.Embedding)
 		}
 	}
 	for i := range vectors {
@@ -288,7 +326,12 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 }
 
 // SemanticSearch 语义搜索：向量化查询 → pgvector 余弦检索菜单索引。
+// 查询向量化消耗与 chat 同口径记入用量流水（记量失败不阻断，仅记日志）。
 func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.SemanticSearchRequest) (*aiV1.SemanticSearchResponse, error) {
+	operator, oErr := auth.FromContext(ctx)
+	if oErr != nil {
+		return nil, oErr
+	}
 	query := strings.TrimSpace(req.GetQuery())
 	if query == "" {
 		return &aiV1.SemanticSearchResponse{}, nil
@@ -316,7 +359,25 @@ func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.Semanti
 	if embErr != nil {
 		return nil, adminV1.ErrorInternalServerError("embed query failed: %v", embErr)
 	}
+	if len(embResp.Data) == 0 || len(embResp.Data[0].Embedding) == 0 {
+		return nil, adminV1.ErrorInternalServerError("embed query returned empty embedding")
+	}
 	queryVec := vectorToLiteral(embResp.Data[0].Embedding)
+
+	if s.usageRepo != nil {
+		modelName := "text-embedding-3-small"
+		promptTokens := uint32(embResp.Usage.PromptTokens)
+		totalTokens := uint32(embResp.Usage.TotalTokens)
+		if uerr := s.usageRepo.Create(ctx, &aiV1.AiUsageLog{
+			UserId:       trans.Ptr(operator.UserId),
+			TenantId:     trans.Ptr(operator.GetTenantId()),
+			ModelName:    &modelName,
+			PromptTokens: &promptTokens,
+			TotalTokens:  &totalTokens,
+		}); uerr != nil {
+			s.log.Errorf(ctx, "record embedding usage failed: %v", uerr)
+		}
+	}
 
 	db := s.entClient.DB()
 	rows, dbErr := db.QueryContext(ctx,

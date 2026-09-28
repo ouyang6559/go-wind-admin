@@ -284,7 +284,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	aiConversationService := service.NewAiConversationService(ctx, aiConversationRepo)
 	aiMessageService := service.NewAiMessageService(ctx, aiMessageRepo)
 	aiUsageLogService := service.NewAiUsageLogService(ctx, aiUsageLogRepo)
-	aiKnowledgeService := service.NewAiKnowledgeService(ctx, aiKnowledgeRepo, aiProviderRepo)
+	aiKnowledgeService := service.NewAiKnowledgeService(ctx, aiKnowledgeRepo, aiProviderRepo, aiUsageLogRepo)
 	aiChatService := service.NewAiChatService(ctx, aiConversationRepo, aiMessageRepo, aiProviderRepo, aiUsageLogRepo, aiKnowledgeRepo)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════

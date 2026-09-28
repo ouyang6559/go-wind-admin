@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -289,23 +291,58 @@ func (r *AiKnowledgeRepo) ToDocDTO(entity *ent.AiDoc) *aiV1.AiDoc {
 
 // ── 切片（原生 SQL：pgvector 列不在 ent schema 内） ─────────────────
 
-// InsertChunks 批量写入切片与向量。vecLiteral 为 pgvector 字面量 '[0.1,0.2,...]'。
+// InsertChunks 批量写入切片与向量：整文档单事务、分批多行 INSERT——
+// 任一片失败全文档回滚，不再留半截切片（文档行随后由调用方标 FAILED）。
+// vecLiteral 为 pgvector 字面量 '[0.1,0.2,...]'；列定维 1536 由
+// EnsureVectorColumnDim 保证，异维向量在此 fail-fast。
 func (r *AiKnowledgeRepo) InsertChunks(ctx context.Context, tenantId uint32, docId uint32, chunks []string, vectors []string) error {
 	if len(chunks) != len(vectors) {
 		return aiV1.ErrorInternalServerError("chunk/vector length mismatch")
 	}
+	if len(chunks) == 0 {
+		return nil
+	}
 	db := r.entClient.DB()
-	for i, content := range chunks {
-		_, err := db.ExecContext(ctx,
-			`INSERT INTO sys_ai_chunks (created_at, tenant_id, doc_id, content, chunk_index, embedding)
-			 VALUES (NOW(), $1, $2, $3, $4, $5::vector)`,
-			tenantId, docId, content, uint32(i), vectors[i],
-		)
-		if err != nil {
-			r.log.Errorf(ctx, "insert ai chunk failed: index=%d: %s", i, err.Error())
+	tx, txErr := db.BeginTx(ctx, nil)
+	if txErr != nil {
+		r.log.Errorf(ctx, "begin tx for ai chunks failed: %s", txErr.Error())
+		return aiV1.ErrorInternalServerError("insert ai chunk failed")
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	const rowsPerStmt = 100
+	for start := 0; start < len(chunks); start += rowsPerStmt {
+		end := start + rowsPerStmt
+		if end > len(chunks) {
+			end = len(chunks)
+		}
+		var sb strings.Builder
+		var args []any
+		sb.WriteString("INSERT INTO sys_ai_chunks (created_at, tenant_id, doc_id, content, chunk_index, embedding) VALUES ")
+		for j := start; j < end; j++ {
+			if j > start {
+				sb.WriteByte(',')
+			}
+			base := (j - start) * 5
+			_, _ = fmt.Fprintf(&sb, "(NOW(),$%d,$%d,$%d,$%d,$%d::vector)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, tenantId, docId, chunks[j], uint32(j), vectors[j])
+		}
+		if _, execErr := tx.ExecContext(ctx, sb.String(), args...); execErr != nil {
+			r.log.Errorf(ctx, "insert ai chunks batch failed: %s", execErr.Error())
 			return aiV1.ErrorInternalServerError("insert ai chunk failed")
 		}
 	}
+
+	if cErr := tx.Commit(); cErr != nil {
+		r.log.Errorf(ctx, "commit ai chunks failed: %s", cErr.Error())
+		return aiV1.ErrorInternalServerError("insert ai chunk failed")
+	}
+	committed = true
 	return nil
 }
 

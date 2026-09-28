@@ -41,18 +41,21 @@ type AiKnowledgeService struct {
 	log  *bLogger.Helper
 	repo *data.AiKnowledgeRepo
 
-	providerRepo *data.AiProviderRepo
+	providerRepo  *data.AiProviderRepo
+	usageLogRepo  *data.AiUsageLogRepo
 }
 
 func NewAiKnowledgeService(
 	ctx *bootstrap.Context,
 	repo *data.AiKnowledgeRepo,
 	providerRepo *data.AiProviderRepo,
+	usageLogRepo *data.AiUsageLogRepo,
 ) *AiKnowledgeService {
 	s := &AiKnowledgeService{
 		log:          ctx.NewLoggerHelper("ai_knowledge/service/admin-service"),
 		repo:         repo,
 		providerRepo: providerRepo,
+		usageLogRepo: usageLogRepo,
 	}
 
 	// 启动期补建 pgvector 扩展与 embedding 列（幂等；失败只降级 RAG，不阻断服务）
@@ -208,8 +211,8 @@ func (s *AiKnowledgeService) ingestDoc(ctx context.Context, operator *authentica
 		return nil, err
 	}
 
-	// 3. 向量化（逐批：一次请求全部切片，OpenAI 兼容 /v1/embeddings）
-	vectors, err := embedTextsForBase(ctx, s.providerRepo, base, chunks)
+	// 3. 向量化（逐批：一次请求全部切片，OpenAI 兼容 /v1/embeddings；消耗记入用量流水）
+	vectors, err := embedTextsForBase(ctx, s.providerRepo, s.usageLogRepo, s.log, operator.UserId, operator.GetTenantId(), base, chunks)
 	if err != nil {
 		errMsg := err.Error()
 		_ = s.repo.UpdateDocStatus(ctx, doc.ID, "FAILED", uint32(0), errMsg)
@@ -288,19 +291,20 @@ func (s *AiKnowledgeService) Search(ctx context.Context, req *aiV1.SearchAiKnowl
 
 // searchBase 向量化 query 并检索知识库（service 包装，供 Search RPC）。
 func (s *AiKnowledgeService) searchBase(ctx context.Context, operator *authenticationV1.UserTokenPayload, baseId uint32, query string, topK int) ([]*data.ChunkHit, error) {
-	return searchKnowledgeBase(ctx, s.repo, s.providerRepo, operator, baseId, query, topK)
+	return searchKnowledgeBase(ctx, s.repo, s.providerRepo, s.usageLogRepo, s.log, operator, baseId, query, topK)
 }
 
 // searchKnowledgeBase 包级检索：向量化 query 并按余弦相似度取 topK 片段。
 // tenantId=0（平台用户）可检索任意库，租户用户经 SQL 的 tenant 过滤兜底；
-// chat 主链路（RAG 注入）与本 service 共用。
-func searchKnowledgeBase(ctx context.Context, knowledgeRepo *data.AiKnowledgeRepo, providerRepo *data.AiProviderRepo, operator *authenticationV1.UserTokenPayload, baseId uint32, query string, topK int) ([]*data.ChunkHit, error) {
+// chat 主链路（RAG 注入）与本 service 共用。向量化消耗与 chat 同口径记入
+// 用量流水（usageLogRepo），配额体系对 embedding 消耗可见。
+func searchKnowledgeBase(ctx context.Context, knowledgeRepo *data.AiKnowledgeRepo, providerRepo *data.AiProviderRepo, usageLogRepo *data.AiUsageLogRepo, log *bLogger.Helper, operator *authenticationV1.UserTokenPayload, baseId uint32, query string, topK int) ([]*data.ChunkHit, error) {
 	base, err := knowledgeRepo.GetEntityByID(ctx, baseId)
 	if err != nil {
 		return nil, err
 	}
 
-	vecLiteral, err := embedOneForBase(ctx, providerRepo, base, query)
+	vecLiteral, err := embedOneForBase(ctx, providerRepo, usageLogRepo, log, operator.UserId, operator.GetTenantId(), base, query)
 	if err != nil {
 		return nil, adminV1.ErrorInternalServerError("embed query failed: %v", err)
 	}
@@ -312,8 +316,8 @@ func searchKnowledgeBase(ctx context.Context, knowledgeRepo *data.AiKnowledgeRep
 // ── 向量化 ─────────────────────────────────────────────────────────
 
 // embedOneForBase 单文本向量化，返回 pgvector 字面量（包级，供检索与 chat 复用）。
-func embedOneForBase(ctx context.Context, providerRepo *data.AiProviderRepo, base *ent.AiKnowledgeBase, text string) (string, error) {
-	vectors, err := embedTextsForBase(ctx, providerRepo, base, []string{text})
+func embedOneForBase(ctx context.Context, providerRepo *data.AiProviderRepo, usageLogRepo *data.AiUsageLogRepo, log *bLogger.Helper, userId, tenantId uint32, base *ent.AiKnowledgeBase, text string) (string, error) {
+	vectors, err := embedTextsForBase(ctx, providerRepo, usageLogRepo, log, userId, tenantId, base, []string{text})
 	if err != nil {
 		return "", err
 	}
@@ -321,7 +325,9 @@ func embedOneForBase(ctx context.Context, providerRepo *data.AiProviderRepo, bas
 }
 
 // embedTextsForBase 批量向量化，返回与 texts 对齐的 pgvector 字面量数组。
-func embedTextsForBase(ctx context.Context, providerRepo *data.AiProviderRepo, base *ent.AiKnowledgeBase, texts []string) ([]string, error) {
+// userId/tenantId 为消耗归属（重索引等无操作者场景按知识库租户归属、userId=0）。
+// embedding 消耗与 chat 同口径记入用量流水；记量失败不阻断向量化，仅记日志。
+func embedTextsForBase(ctx context.Context, providerRepo *data.AiProviderRepo, usageLogRepo *data.AiUsageLogRepo, log *bLogger.Helper, userId, tenantId uint32, base *ent.AiKnowledgeBase, texts []string) ([]string, error) {
 	provider, err := providerRepo.GetEntityByID(ctx, derefUint32(base.ProviderID))
 	if err != nil {
 		return nil, err
@@ -341,6 +347,21 @@ func embedTextsForBase(ctx context.Context, providerRepo *data.AiProviderRepo, b
 	}
 	if len(resp.Data) != len(texts) {
 		return nil, fmt.Errorf("embedding count mismatch: got %d want %d", len(resp.Data), len(texts))
+	}
+
+	if usageLogRepo != nil {
+		modelName := ptrStrOr(base.EmbeddingModel, "text-embedding-3-small")
+		promptTokens := uint32(resp.Usage.PromptTokens)
+		totalTokens := uint32(resp.Usage.TotalTokens)
+		if uerr := usageLogRepo.Create(ctx, &aiV1.AiUsageLog{
+			UserId:       trans.Ptr(userId),
+			TenantId:     trans.Ptr(tenantId),
+			ModelName:    &modelName,
+			PromptTokens: &promptTokens,
+			TotalTokens:  &totalTokens,
+		}); uerr != nil {
+			log.Errorf(ctx, "record embedding usage failed: %v", uerr)
+		}
 	}
 
 	literals := make([]string, 0, len(resp.Data))
@@ -459,7 +480,8 @@ func (s *AiKnowledgeService) reindexBase(ctx context.Context, baseId uint32) (in
 		for _, ref := range batch {
 			texts = append(texts, ref.Content)
 		}
-		vectors, err := embedTextsForBase(ctx, s.providerRepo, base, texts)
+		// 重索引是平台维护操作（无操作者）：消耗按知识库归属租户计量、userId=0。
+		vectors, err := embedTextsForBase(ctx, s.providerRepo, s.usageLogRepo, s.log, 0, derefUint32(base.TenantID), base, texts)
 		if err != nil {
 			return updated, err
 		}

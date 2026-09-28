@@ -148,7 +148,7 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 	messages := make([]openai.ChatCompletionMessage, 0, chatContextMaxMessages+2)
 	systemParts := make([]string, 0, 2)
 	if req.GetKnowledgeBaseId() > 0 {
-		hits, searchErr := searchKnowledgeBase(ctx, s.knowledgeRepo, s.providerRepo, operator, req.GetKnowledgeBaseId(), content, ragTopK)
+		hits, searchErr := searchKnowledgeBase(ctx, s.knowledgeRepo, s.providerRepo, s.usageLogRepo, s.log, operator, req.GetKnowledgeBaseId(), content, ragTopK)
 		if searchErr != nil {
 			// 检索失败不阻断对话：降级为无知识库上下文
 			s.log.Errorf(ctx, "knowledge search failed, degrade to plain chat: base=%d: %v", req.GetKnowledgeBaseId(), searchErr)

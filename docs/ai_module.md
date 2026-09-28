@@ -32,6 +32,7 @@
 ## 配额与租户门禁
 
 - `QuotaType.AI_TOKENS=4`（月度）：`chat` 前检查租户套餐配额，超限返回 400 "ai token quota exceeded for this month"；未配置该维度 = 不限量；平台用户（tenant_id=0）跳过检查。
+- **embedding 计量口径（2026-09-28 起）**：全部 embedding 调用——RAG 入库/检索/chat 注入（`embedTextsForBase` 唯一咽喉）、菜单语义搜索的查询向量化与索引重建——与 chat 同口径写入 `sys_ai_usage_logs`。重索引等无操作者场景按知识库归属租户计量（`user_id=0`）。此前这些消耗对配额体系完全不可见。
 - **套餐模块白名单**：AI 六服务已登记进 `pkg/constants/module_mapping.go`（Module 枚举 `AI=11`），租户访问 AI 端点要求租户套餐的白名单里有 `AI` 模块行（`sys_plan_modules`），否则 403 "module not allowed"。漏登记的后果是 fail-closed 拒绝，不是放行。
 - 菜单归类：`ComponentToModule` 已加 `app/ai/` 前缀 → AI 模块。
 - **新部署注意**：`sys_plan_modules` 不会自动出现 `AI` 行——需在「套餐管理」给目标套餐手动添加 AI 模块白名单（或 SQL 直插），否则租户访问 AI 一律 403。
