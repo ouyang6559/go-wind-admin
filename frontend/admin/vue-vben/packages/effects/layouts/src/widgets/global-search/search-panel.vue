@@ -278,7 +278,7 @@ onMounted(() => {
 
 <template>
   <VbenScrollbar>
-    <div class="!flex h-full justify-center px-2 sm:max-h-[450px]">
+    <div class="!flex h-full flex-col items-center px-2 sm:max-h-[450px]">
       <!-- 无搜索结果（语义搜索进行中/已有命中时不显示，避免误报） -->
       <div
         v-if="

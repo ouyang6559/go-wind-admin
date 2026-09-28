@@ -136,7 +136,8 @@ const [BaseForm, baseFormApi] = useVbenForm({
       suffix: () =>
         h(
           'div',
-          { class: 'self-start pt-1' },
+          // shrink-0：flex 行内不被 textarea 挤压换行；self-start 顶部对齐
+          { class: 'ml-1 shrink-0 self-start pt-1' },
           h(AiGenerateButton, {
             scene: 'DESCRIPTION',
             onGenerate: (content: string) =>
