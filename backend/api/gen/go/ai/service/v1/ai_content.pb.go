@@ -82,6 +82,255 @@ func (ContentScene) EnumDescriptor() ([]byte, []int) {
 	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{0}
 }
 
+// 语义搜索 - 请求
+type SemanticSearchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`        // 搜索文本
+	Limit         *uint32                `protobuf:"varint,2,opt,name=limit,proto3,oneof" json:"limit,omitempty"` // 返回条数（默认 8）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SemanticSearchRequest) Reset() {
+	*x = SemanticSearchRequest{}
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SemanticSearchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SemanticSearchRequest) ProtoMessage() {}
+
+func (x *SemanticSearchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SemanticSearchRequest.ProtoReflect.Descriptor instead.
+func (*SemanticSearchRequest) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SemanticSearchRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *SemanticSearchRequest) GetLimit() uint32 {
+	if x != nil && x.Limit != nil {
+		return *x.Limit
+	}
+	return 0
+}
+
+// 语义搜索 - 回应
+type SemanticSearchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*SemanticSearchItem  `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SemanticSearchResponse) Reset() {
+	*x = SemanticSearchResponse{}
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SemanticSearchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SemanticSearchResponse) ProtoMessage() {}
+
+func (x *SemanticSearchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SemanticSearchResponse.ProtoReflect.Descriptor instead.
+func (*SemanticSearchResponse) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SemanticSearchResponse) GetItems() []*SemanticSearchItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+// 搜索结果项
+type SemanticSearchItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`                       // 条目标题（菜单名等）
+	Route         string                 `protobuf:"bytes,2,opt,name=route,proto3" json:"route,omitempty"`                       // 前端路由路径
+	ItemType      string                 `protobuf:"bytes,3,opt,name=item_type,json=itemType,proto3" json:"item_type,omitempty"` // 类型（menu）
+	Score         float32                `protobuf:"fixed32,4,opt,name=score,proto3" json:"score,omitempty"`                     // 余弦相似度（0~1）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SemanticSearchItem) Reset() {
+	*x = SemanticSearchItem{}
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SemanticSearchItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SemanticSearchItem) ProtoMessage() {}
+
+func (x *SemanticSearchItem) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SemanticSearchItem.ProtoReflect.Descriptor instead.
+func (*SemanticSearchItem) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SemanticSearchItem) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *SemanticSearchItem) GetRoute() string {
+	if x != nil {
+		return x.Route
+	}
+	return ""
+}
+
+func (x *SemanticSearchItem) GetItemType() string {
+	if x != nil {
+		return x.ItemType
+	}
+	return ""
+}
+
+func (x *SemanticSearchItem) GetScore() float32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+// 重建搜索索引 - 请求
+type RebuildSearchIndexRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RebuildSearchIndexRequest) Reset() {
+	*x = RebuildSearchIndexRequest{}
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RebuildSearchIndexRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RebuildSearchIndexRequest) ProtoMessage() {}
+
+func (x *RebuildSearchIndexRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RebuildSearchIndexRequest.ProtoReflect.Descriptor instead.
+func (*RebuildSearchIndexRequest) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{3}
+}
+
+// 重建搜索索引 - 回应
+type RebuildSearchIndexResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IndexedCount  uint32                 `protobuf:"varint,1,opt,name=indexed_count,json=indexedCount,proto3" json:"indexed_count,omitempty"` // 索引条目数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RebuildSearchIndexResponse) Reset() {
+	*x = RebuildSearchIndexResponse{}
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RebuildSearchIndexResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RebuildSearchIndexResponse) ProtoMessage() {}
+
+func (x *RebuildSearchIndexResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RebuildSearchIndexResponse.ProtoReflect.Descriptor instead.
+func (*RebuildSearchIndexResponse) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RebuildSearchIndexResponse) GetIndexedCount() uint32 {
+	if x != nil {
+		return x.IndexedCount
+	}
+	return 0
+}
+
 // 内容生成 - 请求
 type GenerateContentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -101,7 +350,7 @@ type GenerateContentRequest struct {
 
 func (x *GenerateContentRequest) Reset() {
 	*x = GenerateContentRequest{}
-	mi := &file_ai_service_v1_ai_content_proto_msgTypes[0]
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +362,7 @@ func (x *GenerateContentRequest) String() string {
 func (*GenerateContentRequest) ProtoMessage() {}
 
 func (x *GenerateContentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ai_service_v1_ai_content_proto_msgTypes[0]
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +375,7 @@ func (x *GenerateContentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateContentRequest.ProtoReflect.Descriptor instead.
 func (*GenerateContentRequest) Descriptor() ([]byte, []int) {
-	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{0}
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GenerateContentRequest) GetScene() ContentScene {
@@ -175,7 +424,7 @@ type GenerateContentResponse struct {
 
 func (x *GenerateContentResponse) Reset() {
 	*x = GenerateContentResponse{}
-	mi := &file_ai_service_v1_ai_content_proto_msgTypes[1]
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -187,7 +436,7 @@ func (x *GenerateContentResponse) String() string {
 func (*GenerateContentResponse) ProtoMessage() {}
 
 func (x *GenerateContentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ai_service_v1_ai_content_proto_msgTypes[1]
+	mi := &file_ai_service_v1_ai_content_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -200,7 +449,7 @@ func (x *GenerateContentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateContentResponse.ProtoReflect.Descriptor instead.
 func (*GenerateContentResponse) Descriptor() ([]byte, []int) {
-	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{1}
+	return file_ai_service_v1_ai_content_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GenerateContentResponse) GetContent() string {
@@ -221,7 +470,21 @@ var File_ai_service_v1_ai_content_proto protoreflect.FileDescriptor
 
 const file_ai_service_v1_ai_content_proto_rawDesc = "" +
 	"\n" +
-	"\x1eai/service/v1/ai_content.proto\x12\rai.service.v1\x1a$gnostic/openapi/v3/annotations.proto\"\xe1\x01\n" +
+	"\x1eai/service/v1/ai_content.proto\x12\rai.service.v1\x1a$gnostic/openapi/v3/annotations.proto\"R\n" +
+	"\x15SemanticSearchRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12\x19\n" +
+	"\x05limit\x18\x02 \x01(\rH\x00R\x05limit\x88\x01\x01B\b\n" +
+	"\x06_limit\"Q\n" +
+	"\x16SemanticSearchResponse\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.ai.service.v1.SemanticSearchItemR\x05items\"s\n" +
+	"\x12SemanticSearchItem\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x14\n" +
+	"\x05route\x18\x02 \x01(\tR\x05route\x12\x1b\n" +
+	"\titem_type\x18\x03 \x01(\tR\bitemType\x12\x14\n" +
+	"\x05score\x18\x04 \x01(\x02R\x05score\"\x1b\n" +
+	"\x19RebuildSearchIndexRequest\"A\n" +
+	"\x1aRebuildSearchIndexResponse\x12#\n" +
+	"\rindexed_count\x18\x01 \x01(\rR\findexedCount\"\xe1\x01\n" +
 	"\x16GenerateContentRequest\x121\n" +
 	"\x05scene\x18\x01 \x01(\x0e2\x1b.ai.service.v1.ContentSceneR\x05scene\x12\x14\n" +
 	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x1d\n" +
@@ -241,9 +504,11 @@ const file_ai_service_v1_ai_content_proto_rawDesc = "" +
 	"\vDESCRIPTION\x10\x01\x12\x10\n" +
 	"\fANNOUNCEMENT\x10\x02\x12\t\n" +
 	"\x05REPLY\x10\x03\x12\v\n" +
-	"\aGENERAL\x10\x042v\n" +
+	"\aGENERAL\x10\x042\xc4\x02\n" +
 	"\x10AiContentService\x12b\n" +
-	"\x0fGenerateContent\x12%.ai.service.v1.GenerateContentRequest\x1a&.ai.service.v1.GenerateContentResponse\"\x00B\xa6\x01\n" +
+	"\x0fGenerateContent\x12%.ai.service.v1.GenerateContentRequest\x1a&.ai.service.v1.GenerateContentResponse\"\x00\x12_\n" +
+	"\x0eSemanticSearch\x12$.ai.service.v1.SemanticSearchRequest\x1a%.ai.service.v1.SemanticSearchResponse\"\x00\x12k\n" +
+	"\x12RebuildSearchIndex\x12(.ai.service.v1.RebuildSearchIndexRequest\x1a).ai.service.v1.RebuildSearchIndexResponse\"\x00B\xa6\x01\n" +
 	"\x11com.ai.service.v1B\x0eAiContentProtoP\x01Z+go-wind-admin/api/gen/go/ai/service/v1;aipb\xa2\x02\x03ASX\xaa\x02\rAi.Service.V1\xca\x02\rAi\\Service\\V1\xe2\x02\x19Ai\\Service\\V1\\GPBMetadata\xea\x02\x0fAi::Service::V1b\x06proto3"
 
 var (
@@ -259,21 +524,31 @@ func file_ai_service_v1_ai_content_proto_rawDescGZIP() []byte {
 }
 
 var file_ai_service_v1_ai_content_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ai_service_v1_ai_content_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_ai_service_v1_ai_content_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_ai_service_v1_ai_content_proto_goTypes = []any{
-	(ContentScene)(0),               // 0: ai.service.v1.ContentScene
-	(*GenerateContentRequest)(nil),  // 1: ai.service.v1.GenerateContentRequest
-	(*GenerateContentResponse)(nil), // 2: ai.service.v1.GenerateContentResponse
+	(ContentScene)(0),                  // 0: ai.service.v1.ContentScene
+	(*SemanticSearchRequest)(nil),      // 1: ai.service.v1.SemanticSearchRequest
+	(*SemanticSearchResponse)(nil),     // 2: ai.service.v1.SemanticSearchResponse
+	(*SemanticSearchItem)(nil),         // 3: ai.service.v1.SemanticSearchItem
+	(*RebuildSearchIndexRequest)(nil),  // 4: ai.service.v1.RebuildSearchIndexRequest
+	(*RebuildSearchIndexResponse)(nil), // 5: ai.service.v1.RebuildSearchIndexResponse
+	(*GenerateContentRequest)(nil),     // 6: ai.service.v1.GenerateContentRequest
+	(*GenerateContentResponse)(nil),    // 7: ai.service.v1.GenerateContentResponse
 }
 var file_ai_service_v1_ai_content_proto_depIdxs = []int32{
-	0, // 0: ai.service.v1.GenerateContentRequest.scene:type_name -> ai.service.v1.ContentScene
-	1, // 1: ai.service.v1.AiContentService.GenerateContent:input_type -> ai.service.v1.GenerateContentRequest
-	2, // 2: ai.service.v1.AiContentService.GenerateContent:output_type -> ai.service.v1.GenerateContentResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: ai.service.v1.SemanticSearchResponse.items:type_name -> ai.service.v1.SemanticSearchItem
+	0, // 1: ai.service.v1.GenerateContentRequest.scene:type_name -> ai.service.v1.ContentScene
+	6, // 2: ai.service.v1.AiContentService.GenerateContent:input_type -> ai.service.v1.GenerateContentRequest
+	1, // 3: ai.service.v1.AiContentService.SemanticSearch:input_type -> ai.service.v1.SemanticSearchRequest
+	4, // 4: ai.service.v1.AiContentService.RebuildSearchIndex:input_type -> ai.service.v1.RebuildSearchIndexRequest
+	7, // 5: ai.service.v1.AiContentService.GenerateContent:output_type -> ai.service.v1.GenerateContentResponse
+	2, // 6: ai.service.v1.AiContentService.SemanticSearch:output_type -> ai.service.v1.SemanticSearchResponse
+	5, // 7: ai.service.v1.AiContentService.RebuildSearchIndex:output_type -> ai.service.v1.RebuildSearchIndexResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_ai_service_v1_ai_content_proto_init() }
@@ -282,13 +557,14 @@ func file_ai_service_v1_ai_content_proto_init() {
 		return
 	}
 	file_ai_service_v1_ai_content_proto_msgTypes[0].OneofWrappers = []any{}
+	file_ai_service_v1_ai_content_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ai_service_v1_ai_content_proto_rawDesc), len(file_ai_service_v1_ai_content_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

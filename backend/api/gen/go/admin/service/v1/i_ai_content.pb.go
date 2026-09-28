@@ -11,6 +11,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -26,20 +27,30 @@ var File_admin_service_v1_i_ai_content_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_ai_content_proto_rawDesc = "" +
 	"\n" +
-	"#admin/service/v1/i_ai_content.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1eai/service/v1/ai_content.proto2\x9f\x01\n" +
+	"#admin/service/v1/i_ai_content.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eai/service/v1/ai_content.proto2\xad\x03\n" +
 	"\x10AiContentService\x12\x8a\x01\n" +
-	"\x0fGenerateContent\x12%.ai.service.v1.GenerateContentRequest\x1a&.ai.service.v1.GenerateContentResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/admin/v1/ai/content/generateB\xbc\x01\n" +
+	"\x0fGenerateContent\x12%.ai.service.v1.GenerateContentRequest\x1a&.ai.service.v1.GenerateContentResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/admin/v1/ai/content/generate\x12\x85\x01\n" +
+	"\x0eSemanticSearch\x12$.ai.service.v1.SemanticSearchRequest\x1a%.ai.service.v1.SemanticSearchResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/admin/v1/ai/content/search\x12\x83\x01\n" +
+	"\x12RebuildSearchIndex\x12\x16.google.protobuf.Empty\x1a).ai.service.v1.RebuildSearchIndexResponse\"*\x82\xd3\xe4\x93\x02$\"\"/admin/v1/ai/content/rebuild-indexB\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIAiContentProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_ai_content_proto_goTypes = []any{
-	(*v1.GenerateContentRequest)(nil),  // 0: ai.service.v1.GenerateContentRequest
-	(*v1.GenerateContentResponse)(nil), // 1: ai.service.v1.GenerateContentResponse
+	(*v1.GenerateContentRequest)(nil),     // 0: ai.service.v1.GenerateContentRequest
+	(*v1.SemanticSearchRequest)(nil),      // 1: ai.service.v1.SemanticSearchRequest
+	(*emptypb.Empty)(nil),                 // 2: google.protobuf.Empty
+	(*v1.GenerateContentResponse)(nil),    // 3: ai.service.v1.GenerateContentResponse
+	(*v1.SemanticSearchResponse)(nil),     // 4: ai.service.v1.SemanticSearchResponse
+	(*v1.RebuildSearchIndexResponse)(nil), // 5: ai.service.v1.RebuildSearchIndexResponse
 }
 var file_admin_service_v1_i_ai_content_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.AiContentService.GenerateContent:input_type -> ai.service.v1.GenerateContentRequest
-	1, // 1: admin.service.v1.AiContentService.GenerateContent:output_type -> ai.service.v1.GenerateContentResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	1, // 1: admin.service.v1.AiContentService.SemanticSearch:input_type -> ai.service.v1.SemanticSearchRequest
+	2, // 2: admin.service.v1.AiContentService.RebuildSearchIndex:input_type -> google.protobuf.Empty
+	3, // 3: admin.service.v1.AiContentService.GenerateContent:output_type -> ai.service.v1.GenerateContentResponse
+	4, // 4: admin.service.v1.AiContentService.SemanticSearch:output_type -> ai.service.v1.SemanticSearchResponse
+	5, // 5: admin.service.v1.AiContentService.RebuildSearchIndex:output_type -> ai.service.v1.RebuildSearchIndexResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

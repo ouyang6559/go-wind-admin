@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AiContentService_GenerateContent_FullMethodName = "/ai.service.v1.AiContentService/GenerateContent"
+	AiContentService_GenerateContent_FullMethodName    = "/ai.service.v1.AiContentService/GenerateContent"
+	AiContentService_SemanticSearch_FullMethodName     = "/ai.service.v1.AiContentService/SemanticSearch"
+	AiContentService_RebuildSearchIndex_FullMethodName = "/ai.service.v1.AiContentService/RebuildSearchIndex"
 )
 
 // AiContentServiceClient is the client API for AiContentService service.
@@ -31,6 +33,10 @@ const (
 type AiContentServiceClient interface {
 	// 生成内容
 	GenerateContent(ctx context.Context, in *GenerateContentRequest, opts ...grpc.CallOption) (*GenerateContentResponse, error)
+	// 语义搜索（菜单等可导航条目）
+	SemanticSearch(ctx context.Context, in *SemanticSearchRequest, opts ...grpc.CallOption) (*SemanticSearchResponse, error)
+	// 重建搜索索引（向量化全部菜单条目）
+	RebuildSearchIndex(ctx context.Context, in *RebuildSearchIndexRequest, opts ...grpc.CallOption) (*RebuildSearchIndexResponse, error)
 }
 
 type aiContentServiceClient struct {
@@ -51,6 +57,26 @@ func (c *aiContentServiceClient) GenerateContent(ctx context.Context, in *Genera
 	return out, nil
 }
 
+func (c *aiContentServiceClient) SemanticSearch(ctx context.Context, in *SemanticSearchRequest, opts ...grpc.CallOption) (*SemanticSearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SemanticSearchResponse)
+	err := c.cc.Invoke(ctx, AiContentService_SemanticSearch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aiContentServiceClient) RebuildSearchIndex(ctx context.Context, in *RebuildSearchIndexRequest, opts ...grpc.CallOption) (*RebuildSearchIndexResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RebuildSearchIndexResponse)
+	err := c.cc.Invoke(ctx, AiContentService_RebuildSearchIndex_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AiContentServiceServer is the server API for AiContentService service.
 // All implementations must embed UnimplementedAiContentServiceServer
 // for forward compatibility.
@@ -60,6 +86,10 @@ func (c *aiContentServiceClient) GenerateContent(ctx context.Context, in *Genera
 type AiContentServiceServer interface {
 	// 生成内容
 	GenerateContent(context.Context, *GenerateContentRequest) (*GenerateContentResponse, error)
+	// 语义搜索（菜单等可导航条目）
+	SemanticSearch(context.Context, *SemanticSearchRequest) (*SemanticSearchResponse, error)
+	// 重建搜索索引（向量化全部菜单条目）
+	RebuildSearchIndex(context.Context, *RebuildSearchIndexRequest) (*RebuildSearchIndexResponse, error)
 	mustEmbedUnimplementedAiContentServiceServer()
 }
 
@@ -72,6 +102,12 @@ type UnimplementedAiContentServiceServer struct{}
 
 func (UnimplementedAiContentServiceServer) GenerateContent(context.Context, *GenerateContentRequest) (*GenerateContentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GenerateContent not implemented")
+}
+func (UnimplementedAiContentServiceServer) SemanticSearch(context.Context, *SemanticSearchRequest) (*SemanticSearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SemanticSearch not implemented")
+}
+func (UnimplementedAiContentServiceServer) RebuildSearchIndex(context.Context, *RebuildSearchIndexRequest) (*RebuildSearchIndexResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RebuildSearchIndex not implemented")
 }
 func (UnimplementedAiContentServiceServer) mustEmbedUnimplementedAiContentServiceServer() {}
 func (UnimplementedAiContentServiceServer) testEmbeddedByValue()                          {}
@@ -112,6 +148,42 @@ func _AiContentService_GenerateContent_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AiContentService_SemanticSearch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SemanticSearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AiContentServiceServer).SemanticSearch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AiContentService_SemanticSearch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AiContentServiceServer).SemanticSearch(ctx, req.(*SemanticSearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AiContentService_RebuildSearchIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RebuildSearchIndexRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AiContentServiceServer).RebuildSearchIndex(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AiContentService_RebuildSearchIndex_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AiContentServiceServer).RebuildSearchIndex(ctx, req.(*RebuildSearchIndexRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AiContentService_ServiceDesc is the grpc.ServiceDesc for AiContentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -122,6 +194,14 @@ var AiContentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateContent",
 			Handler:    _AiContentService_GenerateContent_Handler,
+		},
+		{
+			MethodName: "SemanticSearch",
+			Handler:    _AiContentService_SemanticSearch_Handler,
+		},
+		{
+			MethodName: "RebuildSearchIndex",
+			Handler:    _AiContentService_RebuildSearchIndex_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

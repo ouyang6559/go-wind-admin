@@ -848,6 +848,14 @@ export interface AiContentService {
   GenerateContent(
     request: aiservicev1_GenerateContentRequest,
   ): Promise<aiservicev1_GenerateContentResponse>;
+  // 语义搜索（菜单等可导航条目）
+  SemanticSearch(
+    request: aiservicev1_SemanticSearchRequest,
+  ): Promise<aiservicev1_SemanticSearchResponse>;
+  // 重建搜索索引
+  RebuildSearchIndex(
+    request: wellKnownEmpty,
+  ): Promise<aiservicev1_RebuildSearchIndexResponse>;
 }
 
 export function createAiContentServiceClient(
@@ -861,6 +869,22 @@ export function createAiContentServiceClient(
         service: 'AiContentService',
         method: 'GenerateContent',
       }) as Promise<aiservicev1_GenerateContentResponse>;
+    },
+    SemanticSearch(request) {
+      const path = `admin/v1/ai/content/search`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiContentService',
+        method: 'SemanticSearch',
+      }) as Promise<aiservicev1_SemanticSearchResponse>;
+    },
+    RebuildSearchIndex(_request) {
+      const path = `admin/v1/ai/content/rebuild-index`;
+      const body = null;
+      return transport.unary(path, 'POST', body, {
+        service: 'AiContentService',
+        method: 'RebuildSearchIndex',
+      }) as Promise<aiservicev1_RebuildSearchIndexResponse>;
     },
   };
 }
@@ -893,6 +917,30 @@ export type aiservicev1_ContentScene =
 export type aiservicev1_GenerateContentResponse = {
   content: string | undefined;
   totalTokens: number | undefined;
+};
+
+// 语义搜索 - 请求
+export type aiservicev1_SemanticSearchRequest = {
+  limit?: number;
+  query: string | undefined;
+};
+
+// 语义搜索 - 回应
+export type aiservicev1_SemanticSearchResponse = {
+  items: aiservicev1_SemanticSearchItem[] | undefined;
+};
+
+// 搜索结果项
+export type aiservicev1_SemanticSearchItem = {
+  itemType: string | undefined;
+  route: string | undefined;
+  score: number | undefined;
+  title: string | undefined;
+};
+
+// 重建搜索索引 - 回应
+export type aiservicev1_RebuildSearchIndexResponse = {
+  indexedCount: number | undefined;
 };
 
 // AI 对话会话管理服务

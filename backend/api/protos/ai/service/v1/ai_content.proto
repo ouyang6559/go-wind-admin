@@ -9,6 +9,39 @@ import "gnostic/openapi/v3/annotations.proto";
 service AiContentService {
   // 生成内容
   rpc GenerateContent (GenerateContentRequest) returns (GenerateContentResponse) {}
+
+  // 语义搜索（菜单等可导航条目）
+  rpc SemanticSearch (SemanticSearchRequest) returns (SemanticSearchResponse) {}
+
+  // 重建搜索索引（向量化全部菜单条目）
+  rpc RebuildSearchIndex (RebuildSearchIndexRequest) returns (RebuildSearchIndexResponse) {}
+}
+
+// 语义搜索 - 请求
+message SemanticSearchRequest {
+  string query = 1;                // 搜索文本
+  optional uint32 limit = 2;       // 返回条数（默认 8）
+}
+
+// 语义搜索 - 回应
+message SemanticSearchResponse {
+  repeated SemanticSearchItem items = 1;
+}
+
+// 搜索结果项
+message SemanticSearchItem {
+  string title = 1;    // 条目标题（菜单名等）
+  string route = 2;    // 前端路由路径
+  string item_type = 3 [json_name = "itemType"]; // 类型（menu）
+  float score = 4;     // 余弦相似度（0~1）
+}
+
+// 重建搜索索引 - 请求
+message RebuildSearchIndexRequest {}
+
+// 重建搜索索引 - 回应
+message RebuildSearchIndexResponse {
+  uint32 indexed_count = 1 [json_name = "indexedCount"]; // 索引条目数
 }
 
 // 场景标识（服务端按此选择预设提示词模板）

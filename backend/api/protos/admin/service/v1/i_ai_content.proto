@@ -3,6 +3,7 @@ syntax = "proto3";
 package admin.service.v1;
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 import "ai/service/v1/ai_content.proto";
 
@@ -13,6 +14,21 @@ service AiContentService {
     option (google.api.http) = {
       post: "/admin/v1/ai/content/generate"
       body: "*"
+    };
+  }
+
+  // 语义搜索（菜单等可导航条目）
+  rpc SemanticSearch (ai.service.v1.SemanticSearchRequest) returns (ai.service.v1.SemanticSearchResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/ai/content/search"
+      body: "*"
+    };
+  }
+
+  // 重建搜索索引
+  rpc RebuildSearchIndex (google.protobuf.Empty) returns (ai.service.v1.RebuildSearchIndexResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/ai/content/rebuild-index"
     };
   }
 }

@@ -13,6 +13,9 @@ import (
 
 	entCrud "github.com/tx7do/go-crud/entgo"
 
+	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
@@ -36,6 +39,7 @@ type AiContentService struct {
 
 	providerRepo *data.AiProviderRepo
 	usageRepo    *data.AiUsageLogRepo
+	menuRepo     *data.MenuRepo
 	entClient    *entCrud.EntClient[*ent.Client]
 }
 
@@ -43,12 +47,14 @@ func NewAiContentService(
 	ctx *bootstrap.Context,
 	providerRepo *data.AiProviderRepo,
 	usageRepo *data.AiUsageLogRepo,
+	menuRepo *data.MenuRepo,
 	entClient *entCrud.EntClient[*ent.Client],
 ) *AiContentService {
 	return &AiContentService{
 		log:          ctx.NewLoggerHelper("ai_content/service/admin-service"),
 		providerRepo: providerRepo,
 		usageRepo:    usageRepo,
+		menuRepo:     menuRepo,
 		entClient:    entClient,
 	}
 }
@@ -134,4 +140,171 @@ func (s *AiContentService) GenerateContent(ctx context.Context, req *aiV1.Genera
 		Content:     content,
 		TotalTokens: tokens,
 	}, nil
+}
+
+// ── 语义搜索（pgvector 升级全局搜索） ────────────────────────────────
+
+const buildSearchIndexSQL = "CREATE TABLE IF NOT EXISTS sys_ai_search_index (" +
+	"id BIGSERIAL PRIMARY KEY, " +
+	"created_at TIMESTAMPTZ DEFAULT NOW(), " +
+	"item_type VARCHAR(20) NOT NULL DEFAULT 'menu', " +
+	"item_id BIGINT NOT NULL, " +
+	"title TEXT NOT NULL, " +
+	"route TEXT NOT NULL DEFAULT '', " +
+	"embedding vector)"
+
+type searchResultRow struct {
+	Title string  `sql:"title"`
+	Route string  `sql:"route"`
+	Score float64 `sql:"score"`
+}
+
+// BuildMenuSearchIndex 向量化全部菜单标题并写入搜索索引表（先清后写）。
+func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, error) {
+	db := s.entClient.DB()
+	if _, err := db.ExecContext(ctx, buildSearchIndexSQL); err != nil {
+		return 0, fmt.Errorf("create search index table: %w", err)
+	}
+	menus, err := s.menuRepo.List(ctx, paginationV1PagingNoLimit(), true)
+	if err != nil {
+		return 0, err
+	}
+	if _, err = db.ExecContext(ctx, "DELETE FROM sys_ai_search_index WHERE item_type = 'menu'"); err != nil {
+		return 0, fmt.Errorf("clear search index: %w", err)
+	}
+
+	provider, err := s.providerRepo.GetEnabledDefault(ctx)
+	if err != nil {
+		return 0, err
+	}
+	client, err := newOpenAIClientForProvider(ctx, provider)
+	if err != nil {
+		return 0, err
+	}
+
+	var texts []string
+	var routes []string
+	for _, m := range menus.GetItems() {
+		if m.Path == nil {
+			continue
+		}
+		title := ""
+		if m.Meta != nil && m.Meta.Title != nil {
+			title = *m.Meta.Title
+		}
+		if title == "" && m.Name != nil {
+			title = *m.Name
+		}
+		if title == "" {
+			continue
+		}
+		texts = append(texts, title)
+		routes = append(routes, *m.Path)
+	}
+	if len(texts) == 0 {
+		return 0, nil
+	}
+
+	embCtx, embCancel := context.WithTimeout(ctx, 60*time.Second)
+	defer embCancel()
+	var vectors []string
+	for start := 0; start < len(texts); start += 32 {
+		end := start + 32
+		if end > len(texts) {
+			end = len(texts)
+		}
+		resp, embErr := client.CreateEmbeddings(embCtx, openai.EmbeddingRequest{
+			Model: openai.EmbeddingModel("text-embedding-3-small"),
+			Input: texts[start:end],
+		})
+		if embErr != nil {
+			return 0, fmt.Errorf("embed batch: %w", embErr)
+		}
+		for _, d := range resp.Data {
+			vectors = append(vectors, vectorToLiteral(d.Embedding))
+		}
+	}
+
+	inserted := uint32(0)
+	for i := range texts {
+		if _, execErr := db.ExecContext(ctx,
+			"INSERT INTO sys_ai_search_index (item_type, item_id, title, route, embedding) VALUES ('menu', $1, $2, $3, $4::vector)",
+			i, texts[i], routes[i], vectors[i],
+		); execErr != nil {
+			s.log.Errorf(ctx, "insert search index failed: %v", execErr)
+			continue
+		}
+		inserted++
+	}
+	return inserted, nil
+}
+
+// SemanticSearch 语义搜索：向量化查询 → pgvector 余弦检索菜单索引。
+func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.SemanticSearchRequest) (*aiV1.SemanticSearchResponse, error) {
+	query := strings.TrimSpace(req.GetQuery())
+	if query == "" {
+		return &aiV1.SemanticSearchResponse{}, nil
+	}
+	limit := int(req.GetLimit())
+	if limit <= 0 {
+		limit = 8
+	}
+
+	provider, err := s.providerRepo.GetEnabledDefault(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, err := newOpenAIClientForProvider(ctx, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	embCtx, embCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer embCancel()
+	embResp, embErr := client.CreateEmbeddings(embCtx, openai.EmbeddingRequest{
+		Model: openai.EmbeddingModel("text-embedding-3-small"),
+		Input: []string{query},
+	})
+	if embErr != nil {
+		return nil, adminV1.ErrorInternalServerError("embed query failed: %v", embErr)
+	}
+	queryVec := vectorToLiteral(embResp.Data[0].Embedding)
+
+	db := s.entClient.DB()
+	rows, dbErr := db.QueryContext(ctx,
+		"SELECT title, route, 1 - (embedding <=> $1::vector) AS score FROM sys_ai_search_index WHERE item_type = 'menu' ORDER BY embedding <=> $1::vector LIMIT $2",
+		queryVec, limit,
+	)
+	if dbErr != nil {
+		s.log.Errorf(ctx, "semantic search query failed: %s", dbErr.Error())
+		return nil, adminV1.ErrorInternalServerError("semantic search failed")
+	}
+	defer func() { _ = rows.Close() }()
+
+	resp := &aiV1.SemanticSearchResponse{Items: make([]*aiV1.SemanticSearchItem, 0, limit)}
+	for rows.Next() {
+		var title, route string
+		var score float64
+		if err = rows.Scan(&title, &route, &score); err != nil {
+			continue
+		}
+		resp.Items = append(resp.Items, &aiV1.SemanticSearchItem{
+			Title: title, Route: route, ItemType: "menu", Score: float32(score),
+		})
+	}
+	return resp, rows.Err()
+}
+
+// RebuildSearchIndex 重建搜索索引 RPC。
+func (s *AiContentService) RebuildSearchIndex(ctx context.Context, _ *emptypb.Empty) (*aiV1.RebuildSearchIndexResponse, error) {
+	count, err := s.BuildMenuSearchIndex(ctx)
+	if err != nil {
+		return nil, adminV1.ErrorInternalServerError("rebuild search index failed: %v", err)
+	}
+	return &aiV1.RebuildSearchIndexResponse{IndexedCount: count}, nil
+}
+
+// paginationV1PagingNoLimit 构造不分页的 PagingRequest。
+func paginationV1PagingNoLimit() *paginationV1.PagingRequest {
+	return &paginationV1.PagingRequest{NoPaging: trans.Ptr(true)}
 }

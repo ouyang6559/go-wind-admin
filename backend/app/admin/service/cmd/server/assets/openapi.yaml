@@ -262,6 +262,38 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GenerateContentResponse'
+    /admin/v1/ai/content/rebuild-index:
+        post:
+            tags:
+                - AiContentService
+            description: 重建搜索索引
+            operationId: AiContentService_RebuildSearchIndex
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RebuildSearchIndexResponse'
+    /admin/v1/ai/content/search:
+        post:
+            tags:
+                - AiContentService
+            description: 语义搜索（菜单等可导航条目）
+            operationId: AiContentService_SemanticSearch
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SemanticSearchRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SemanticSearchResponse'
     /admin/v1/ai/conversations:
         get:
             tags:
@@ -11394,6 +11426,13 @@ components:
                     type: string
                     description: 配额上限值
             description: 配额用量项
+        RebuildSearchIndexResponse:
+            type: object
+            properties:
+                indexedCount:
+                    type: integer
+                    format: uint32
+            description: 重建搜索索引 - 回应
         RedisCacheMonitorInfo:
             type: object
             properties:
@@ -11717,6 +11756,36 @@ components:
                     items:
                         $ref: '#/components/schemas/KnowledgeHit'
             description: 检索 - 回应
+        SemanticSearchItem:
+            type: object
+            properties:
+                title:
+                    type: string
+                route:
+                    type: string
+                itemType:
+                    type: string
+                score:
+                    type: number
+                    format: float
+            description: 搜索结果项
+        SemanticSearchRequest:
+            type: object
+            properties:
+                query:
+                    type: string
+                limit:
+                    type: integer
+                    format: uint32
+            description: 语义搜索 - 请求
+        SemanticSearchResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/SemanticSearchItem'
+            description: 语义搜索 - 回应
         SendMessageRequest:
             type: object
             properties:
