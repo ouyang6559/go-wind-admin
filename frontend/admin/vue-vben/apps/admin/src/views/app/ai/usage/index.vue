@@ -1,9 +1,13 @@
 <script lang="ts" setup>
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
 import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
+import { dateUtil } from '@vben/utils';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { apiClient, PaginationQuery } from '#/api';
 
 const monthTokens = ref(0);
@@ -11,26 +15,21 @@ const monthCalls = ref(0);
 const quotaConfigured = ref(false);
 const quotaLimit = ref(0);
 
-const usageRows = ref<Record<string, any>[]>([]);
-const total = ref(0);
-const page = ref(1);
-const loading = ref(false);
-
 const metricItems = computed(() => [
   {
     color: '#3b82f6',
     label: $t('page.aiUsage.monthTokens'),
-    value: monthTokens.value,
+    value: monthTokens.value.toLocaleString(),
   },
   {
     color: '#22d3ee',
     label: $t('page.aiUsage.monthCalls'),
-    value: monthCalls.value,
+    value: monthCalls.value.toLocaleString(),
   },
   {
     color: '#a78bfa',
     label: $t('page.aiUsage.quota'),
-    value: quotaConfigured.value ? `${quotaLimit.value}` : '∞',
+    value: quotaConfigured.value ? quotaLimit.value.toLocaleString() : '∞',
   },
 ]);
 
@@ -46,33 +45,92 @@ async function loadSummary() {
   }
 }
 
-async function loadRows() {
-  loading.value = true;
-  try {
-    const resp = await apiClient.aiUsageLogService.List(
-      new PaginationQuery({ paging: { page: page.value, pageSize: 20 } }).toRawParams(),
-    );
-    usageRows.value = (resp.items || []) as Record<string, any>[];
-    total.value = Number(resp.total || 0);
-  } catch (error) {
-    console.error('load usage rows failed:', error);
-  } finally {
-    loading.value = false;
-  }
+/** 流水列表 fetcher：List + 分页参数（Grid proxy 复用） */
+async function fetchListAiUsageLogs(query: PaginationQuery) {
+  return apiClient.aiUsageLogService.List(query.toRawParams());
 }
 
-const columns = [
-  { title: $t('page.aiUsage.model'), dataIndex: 'modelName' },
-  { title: $t('page.aiUsage.promptTokens'), dataIndex: 'promptTokens', width: 120 },
-  { title: $t('page.aiUsage.completionTokens'), dataIndex: 'completionTokens', width: 130 },
-  { title: $t('page.aiUsage.totalTokens'), dataIndex: 'totalTokens', width: 110 },
-  { title: $t('page.aiUsage.duration'), dataIndex: 'durationMs', width: 100 },
-  { title: $t('page.aiUsage.time'), dataIndex: 'createdAt', width: 180 },
-];
+const formOptions = {
+  collapsed: false,
+  showCollapseButton: false,
+  submitOnEnter: true,
+  schema: [
+    {
+      component: 'Input',
+      fieldName: 'modelName',
+      label: $t('page.aiUsage.model'),
+      componentProps: { allowClear: true },
+    },
+  ],
+};
+
+const gridOptions: VxeGridProps<Record<string, any>> = {
+  toolbarConfig: {
+    custom: true,
+    refresh: true,
+    zoom: true,
+  },
+  height: 'auto',
+  pagerConfig: {},
+  rowConfig: { isHover: true, keyField: 'id' },
+  stripe: true,
+  proxyConfig: {
+    ajax: {
+      query: async ({ page }, formValues) => {
+        return await fetchListAiUsageLogs(
+          new PaginationQuery({
+            paging: { page: page.currentPage, pageSize: page.pageSize },
+            // formValues 字符串值由 PaginationQuery 统一转 __contains（搜索铁律）
+            formValues:
+              formValues && Object.keys(formValues).length > 0
+                ? { ...formValues }
+                : undefined,
+          }),
+        );
+      },
+    },
+  },
+  columns: [
+    { title: $t('ui.table.seq'), type: 'seq', width: 50 },
+    { title: $t('page.aiUsage.model'), field: 'modelName', minWidth: 180 },
+    {
+      title: $t('page.aiUsage.promptTokens'),
+      field: 'promptTokens',
+      width: 130,
+      formatter: ({ cellValue }) => Number(cellValue ?? 0).toLocaleString(),
+    },
+    {
+      title: $t('page.aiUsage.completionTokens'),
+      field: 'completionTokens',
+      width: 140,
+      formatter: ({ cellValue }) => Number(cellValue ?? 0).toLocaleString(),
+    },
+    {
+      title: $t('page.aiUsage.totalTokens'),
+      field: 'totalTokens',
+      width: 110,
+      formatter: ({ cellValue }) => Number(cellValue ?? 0).toLocaleString(),
+    },
+    {
+      title: $t('page.aiUsage.duration'),
+      field: 'durationMs',
+      width: 110,
+      formatter: ({ cellValue }) => `${Number(cellValue ?? 0)} ms`,
+    },
+    {
+      title: $t('page.aiUsage.time'),
+      field: 'createdAt',
+      width: 180,
+      formatter: ({ cellValue }) =>
+        cellValue ? dateUtil(cellValue).format('YYYY-MM-DD HH:mm:ss') : '',
+    },
+  ],
+};
+
+const [Grid] = useVbenVxeGrid({ gridOptions, formOptions });
 
 onMounted(() => {
   loadSummary();
-  loadRows();
 });
 </script>
 
@@ -93,19 +151,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- 流水列表 -->
-      <div
-        class="min-h-0 flex-1 rounded-xl border border-solid border-gray-200 bg-card p-4 dark:border-gray-700"
-      >
-        <a-table
-          :columns="columns"
-          :data-source="usageRows"
-          :loading="loading"
-          :pagination="{ pageSize: 20, showSizeChanger: false }"
-          :scroll="{ y: 'calc(100% - 40px)' }"
-          row-key="id"
-          size="small"
-        />
+      <!-- 流水列表：vxe Grid 统一搜索/服务端分页约定（与其余管理页一致） -->
+      <div class="min-h-0 flex-1">
+        <Grid />
       </div>
     </div>
   </Page>

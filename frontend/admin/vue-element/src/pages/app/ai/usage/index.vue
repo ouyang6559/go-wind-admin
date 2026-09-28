@@ -15,49 +15,31 @@
       </el-col>
     </el-row>
 
-    <!-- 流水列表 -->
-    <el-card shadow="hover" class="flex-1">
-      <el-table :data="usageRows" size="small" v-loading="loading" border stripe>
-        <el-table-column prop="modelName" :label="t('pages.ai_usage.model')" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="promptTokens" :label="t('pages.ai_usage.promptTokens')" width="120" />
-        <el-table-column prop="completionTokens" :label="t('pages.ai_usage.completionTokens')" width="130" />
-        <el-table-column prop="totalTokens" :label="t('pages.ai_usage.totalTokens')" width="110" />
-        <el-table-column :label="t('pages.ai_usage.duration')" width="100">
-          <template #default="{ row }">{{ row.durationMs || 0 }} ms</template>
-        </el-table-column>
-        <el-table-column prop="createdAt" :label="t('pages.ai_usage.time')" width="180" />
-      </el-table>
-      <div class="mt-3 flex justify-end">
-        <el-pagination
-          v-model:current-page="page"
-          :page-size="20"
-          layout="total, prev, pager, next"
-          :total="total"
-          @current-change="loadRows"
-        />
-      </div>
-    </el-card>
+    <!-- 流水列表：ProPage 统一搜索/分页/导出约定（与其余管理页一致） -->
+    <div class="flex-1 min-h-0">
+      <ProPage ref="pageRef" :config="pageConfig" />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from "vue";
-import { ElCard, ElCol, ElProgress, ElRow, ElTable, ElTableColumn, ElPagination } from "element-plus";
+import { ElCard, ElCol, ElProgress, ElRow } from "element-plus";
 import { useI18n } from "@/core/i18n";
+import ProPage from "@/components/Pro/ProPage/index.vue";
+import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import { PaginationQuery } from "@/core/transport/rest";
 import { apiClient } from "@/api/client";
+import { createPagedExportAction } from "@/api/composables";
 
 const { t } = useI18n();
+
+const pageRef = ref();
 
 const monthTokens = ref(0);
 const monthCalls = ref(0);
 const quotaConfigured = ref(false);
 const quotaLimit = ref(0);
-
-const usageRows = ref<Record<string, any>[]>([]);
-const total = ref(0);
-const page = ref(1);
-const loading = ref(false);
 
 const metricItems = computed(() => {
   const pct = quotaConfigured.value && quotaLimit.value > 0
@@ -82,24 +64,82 @@ async function loadSummary() {
   }
 }
 
-async function loadRows() {
-  loading.value = true;
-  try {
-    const resp = await apiClient.aiUsageLogService.List(
-        new PaginationQuery({ paging: { page: page.value, pageSize: 20 } }).toRawParams(),
-      );
-    usageRows.value = (resp.items || []) as Record<string, any>[];
-    total.value = Number(resp.total || 0);
-  } catch (error: any) {
-    console.error("load usage rows failed:", error);
-  } finally {
-    loading.value = false;
-  }
+/** 流水列表 fetcher：List + 分页参数（列表与导出共用） */
+async function fetchUsageLogs(query: PaginationQuery) {
+  return apiClient.aiUsageLogService.List(query.toRawParams());
 }
+
+const pageConfig = computed<ProPageConfig>(() => ({
+  skeleton: true,
+  exportFilename: "ai-usage-logs",
+  search: {
+    grid: true,
+    fields: [
+      {
+        type: "input",
+        label: t("pages.ai_usage.model"),
+        field: "modelName",
+        attrs: { placeholder: t("common.placeholder.input"), clearable: true },
+      },
+    ],
+  },
+  table: {
+    listAction: async (query: any) => {
+      const { page, pageSize, ...rest } = query;
+      // formValues 字符串值由 PaginationQuery 统一转 __contains（搜索铁律）
+      const result = await fetchUsageLogs(
+        new PaginationQuery({
+          paging: { page: page || 1, pageSize: pageSize || 20 },
+          formValues: Object.keys(rest).length > 0 ? rest : undefined,
+        }),
+      );
+      return { items: result.items || [], total: Number(result.total || 0) };
+    },
+    exportsAction: createPagedExportAction(fetchUsageLogs),
+    toolbar: [],
+    toolbarRight: [],
+    defaultToolbar: ["refresh", "exports", "filter"],
+    tableAttrs: { border: true, stripe: true },
+    columns: [
+      { type: "index", label: t("common.table.seq"), width: 60 },
+      { prop: "modelName", label: t("pages.ai_usage.model"), minWidth: 180 },
+      {
+        prop: "promptTokens",
+        label: t("pages.ai_usage.promptTokens"),
+        width: 130,
+        formatter: (row: any) => Number(row.promptTokens ?? 0).toLocaleString(),
+      },
+      {
+        prop: "completionTokens",
+        label: t("pages.ai_usage.completionTokens"),
+        width: 140,
+        formatter: (row: any) => Number(row.completionTokens ?? 0).toLocaleString(),
+      },
+      {
+        prop: "totalTokens",
+        label: t("pages.ai_usage.totalTokens"),
+        width: 110,
+        formatter: (row: any) => Number(row.totalTokens ?? 0).toLocaleString(),
+      },
+      {
+        prop: "durationMs",
+        label: t("pages.ai_usage.duration"),
+        width: 110,
+        formatter: (row: any) => `${Number(row.durationMs ?? 0)} ms`,
+      },
+      {
+        prop: "createdAt",
+        label: t("pages.ai_usage.time"),
+        width: 180,
+        cellType: "date",
+        dateFormat: "YYYY-MM-DD HH:mm:ss",
+      },
+    ],
+  },
+}));
 
 onMounted(() => {
   loadSummary();
-  loadRows();
 });
 </script>
 
