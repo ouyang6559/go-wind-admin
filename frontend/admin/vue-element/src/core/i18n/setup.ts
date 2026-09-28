@@ -14,7 +14,11 @@ const i18n = createI18n({
 // 从 src/locales/ 加载翻译文件
 const modules = import.meta.glob("../../locales/**/*.json");
 const localesMap = loadLocalesMapFromDir(/..\/locales\/([^/]+)\/(.*)\.json$/, modules);
-let loadMessages: LoadMessageFn;
+// 必须声明即赋默认值：initPreferences 在 setupI18n 之前运行，其 handleUpdates 会
+// 因 app.locale 存在而调用 loadLocaleMessages；若此处是 undefined，
+// 冷启动（尤其已登录刷新，refreshToken 网络往返拉长了时序窗口）会随机抛出
+// "Uncaught (in promise) TypeError: loadMessages is not a function"（setup.ts loadLocaleMessages）。
+let loadMessages: LoadMessageFn = async () => ({});
 
 /**
  * Set i18n language
