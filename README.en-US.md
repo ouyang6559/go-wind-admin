@@ -161,7 +161,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # port 5666
 <table>
 <tr><th>Layer</th><th>Technologies</th></tr>
 <tr><td><strong>Backend Framework</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
-<tr><td><strong>ORM</strong></td><td><code>Ent</code> (primary) · <code>GORM</code> (auxiliary) · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
+<tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code> (choose one — switched by build tag, Ent by default) · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
 <tr><td><strong>Middleware</strong></td><td><code>Redis</code> (compose pulls <code>bitnami/redis:latest</code>, no version pin; the codebase uses only long-standing commands such as Set/Expire/Publish — nothing Redis-8-specific) · <code>MinIO</code> (S3-compatible object storage)</td></tr>
 <tr><td><strong>Authentication & Authorization</strong></td><td><code>JWT</code> · <code>Casbin</code> · <code>OPA</code></td></tr>
 <tr><td><strong>Realtime</strong></td><td><code>SSE</code> (server push) · <code>Asynq</code> (async tasks)</td></tr>

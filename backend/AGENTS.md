@@ -44,7 +44,7 @@ backend/
 │       └── internal/
 │           ├── data/             # 数据层 (Repository)
 │           │   ├── ent/          # Ent 生成代码 & schema [禁止手动修改]
-│           │   ├── gorm/         # GORM 相关
+│           │   ├── gorm/         # GORM 平行后端 (gorm_backend 标签，与 ent 仓储互斥)
 │           │   └── *_repo.go     # 各资源 Repository
 │           ├── server/           # 传输层 (HTTP/Asynq/SSE)
 │           └── service/          # 业务逻辑层 (Service)
@@ -95,9 +95,9 @@ Proto (API 定义) → Service (业务逻辑) → Data/Repo (数据访问)
 ### 3. Data 层 - 数据访问
 
 - 位置: `app/admin/service/internal/data/*_repo.go`
-- 使用自封装的 `go-crud` 库，**同时支持 Ent 和 GORM 两种 ORM**:
-  - **Ent** (主要): `go-crud/entgo` 泛型 Repository，用于所有 CRUD 操作
-  - **GORM** (辅助): `go-crud/gorm` Client，当前主要用于自动迁移 (`gorm/models/`)
+- 使用自封装的 `go-crud` 库，**支持 Ent 和 GORM 两种 ORM，二选一**（构建标签 `gorm_backend` 切换，默认构建 Ent）:
+  - **Ent**（默认）: `go-crud/entgo` 泛型 Repository，用于所有 CRUD 操作
+  - **GORM**（平行后端）: `data/gorm/` 仓储实现（仅 `gorm_backend` 标签下编译，与 ent 仓储互斥），服务层待 ORM 切换 Phase 4 接线
 - 通过 `go-utils/mapper.CopierMapper` 做 Entity ↔ DTO 自动转换（注册 copierutil 转换器处理类型差异）
 - Repository 泛型签名包含 **10** 个类型参数，顺序固定：Query, Select, Create, CreateBulk, Update, UpdateOne, Delete, Predicate, **DTO**, Entity（照 `internal/data/api_repo.go:36-46` 抄）
 - 必须注册时间转换器: `copierutil.NewTimeStringConverterPair()` + `copierutil.NewTimeTimestamppbConverterPair()`（注意是 **Converter** Pair，不是 Converted）
