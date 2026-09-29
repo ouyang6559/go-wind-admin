@@ -97,25 +97,18 @@ const gridOptions: VxeGridProps<NotificationRule> = {
     ajax: {
       query: async ({ page }, formValues) => {
         const values = (formValues ?? {}) as Record<string, any>;
-        try {
-          return await fetchListNotificationRules(
-            new PaginationQuery({
-              paging: { page: page.currentPage, pageSize: page.pageSize },
-              // 枚举字段只从下拉取完整值，不给模糊输入框（仓库铁律：ID/枚举不进 contains 搜索）
-              formValues: {
-                channel: values.channel,
-                eventType: values.eventType,
-              },
-            }),
-          );
-        } catch (error: any) {
-          // 不吞错：原始错误对象进控制台，用户那句翻译不包含服务端的原因
-          console.error('[notification-rule] list failed', error);
-          notification.error({
-            message: error?.message || $t('page.notificationRule.fetchFailed'),
-          });
-          return { items: [], total: 0 };
-        }
+        // 失败不在此捕获：抛出后由 use-vxe-grid 记日志并在页面上显示原因与重试入口，
+        // 自己 catch 会把原因吞成「暂无数据」，还会跟内联错误态重复提示
+        return fetchListNotificationRules(
+          new PaginationQuery({
+            paging: { page: page.currentPage, pageSize: page.pageSize },
+            // 枚举字段只从下拉取完整值，不给模糊输入框（仓库铁律：ID/枚举不进 contains 搜索）
+            formValues: {
+              channel: values.channel,
+              eventType: values.eventType,
+            },
+          }),
+        );
       },
     },
   },

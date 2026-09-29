@@ -3,6 +3,7 @@ import type { VxeGridProps, VxeUIExport } from 'vxe-table';
 
 import type { VxeGridApi } from './api';
 
+import { $t } from '@vben/locales';
 import { formatDate, formatDateTime, isFunction } from '@vben/utils';
 
 export function extendProxyOptions(
@@ -40,19 +41,45 @@ function extendProxyOption(
     ...args: Recordable<any>[]
   ) => {
     const formValues = getFormValues();
-    const data = await configFn(
-      params,
-      {
-        /**
-         * 开启toolbarConfig.refresh功能
-         * 点击刷新按钮 这里的值为PointerEvent 会携带错误参数
-         */
-        ...(customValues instanceof PointerEvent ? {} : customValues),
-        ...formValues,
-      },
-      ...args,
-    );
-    return data;
+    // 只有 query 承载"列表页三态"：加载中标记 + 失败原因要交给外层组件渲染骨架/横幅
+    const isQuery = key === 'query';
+    if (isQuery) {
+      api.queryLoading.value = true;
+      api.queryError.value = null;
+    }
+    try {
+      const data = await configFn(
+        params,
+        {
+          /**
+           * 开启toolbarConfig.refresh功能
+           * 点击刷新按钮 这里的值为PointerEvent 会携带错误参数
+           */
+          ...(customValues instanceof PointerEvent ? {} : customValues),
+          ...formValues,
+        },
+        ...args,
+      );
+      if (isQuery) {
+        api.hasLoaded.value = true;
+      }
+      return data;
+    } catch (error) {
+      if (isQuery) {
+        // 不吞错：原始错误对象进控制台；页面上留一条可读原因（传输层已把 message 本地化，
+        // 见 apps/admin/src/transport/rest/request-client.ts 的 request catch）
+        console.error('[vxe-grid] 列表数据请求失败', error);
+        api.queryError.value =
+          (error as { message?: string } | null)?.message ||
+          $t('common.loadDataFailed');
+      }
+      // 原样抛出：vxe 自己收尾 tableLoading，并保留页面定义 queryError 钩子的能力
+      throw error;
+    } finally {
+      if (isQuery) {
+        api.queryLoading.value = false;
+      }
+    }
   };
   api.setState({
     gridOptions: {

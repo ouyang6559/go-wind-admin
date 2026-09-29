@@ -3,8 +3,6 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { Page, type VbenFormProps } from '@vben/common-ui';
 
-import { notification } from 'ant-design-vue';
-
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   fetchListNotificationDeliveries,
@@ -129,29 +127,22 @@ const gridOptions: VxeGridProps<NotificationDelivery> = {
           orderBy = [sort.order === 'asc' ? sortField : `-${sortField}`];
         }
 
-        try {
-          return await fetchListNotificationDeliveries(
-            new PaginationQuery({
-              paging: { page: page.currentPage, pageSize: page.pageSize },
-              // 一律传裸字段名，模糊算子由 PaginationQuery 统一追加；
-              // ID 列（recipientUserId / channelId）不进搜索表单
-              formValues: {
-                channel: values.channel,
-                eventType: values.eventType,
-                status: values.status,
-                target: values.target,
-              },
-              orderBy,
-            }),
-          );
-        } catch (error: any) {
-          // 不吞错：原始错误对象进控制台，同时给用户可读文案
-          console.error('[notification-delivery] list failed:', error);
-          notification.error({
-            message: error?.message || $t('page.notificationDelivery.fetchFailed'),
-          });
-          return { items: [], total: 0 };
-        }
+        // 失败不在此捕获：抛出后由 use-vxe-grid 记日志并在页面上显示原因与重试入口，
+        // 自己 catch 会把原因吞成「暂无数据」，还会跟内联错误态重复提示
+        return fetchListNotificationDeliveries(
+          new PaginationQuery({
+            paging: { page: page.currentPage, pageSize: page.pageSize },
+            // 一律传裸字段名，模糊算子由 PaginationQuery 统一追加；
+            // ID 列（recipientUserId / channelId）不进搜索表单
+            formValues: {
+              channel: values.channel,
+              eventType: values.eventType,
+              status: values.status,
+              target: values.target,
+            },
+            orderBy,
+          }),
+        );
       },
     },
   },

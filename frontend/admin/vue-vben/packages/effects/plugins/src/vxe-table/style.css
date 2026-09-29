@@ -29,7 +29,11 @@
   /* --vxe-ui-input-disabled-background-color: #262727; */
 
   /* loading */
-  --vxe-ui-loading-background-color: hsl(var(--overlay-content));
+  /* 这层底色摘掉：vxe 在每次装列 / 载数据时都会点亮遮罩（isColLoading / isRowLoading），
+     那是内部状态、不受 proxyConfig.showLoading 与我们的 250ms 阈值管，留着就是每次刷新闪一下灰。
+     真正该出现的加载态由 use-vxe-grid 的 #loading 槽按 delayedLoading 渲染，
+     遮罩内容自带背景（骨架实底 card / VbenLoading 的 overlay-content） */
+  --vxe-ui-loading-background-color: transparent;
 
   /* table */
   --vxe-ui-table-header-background-color: hsl(var(--accent));
@@ -49,6 +53,16 @@
   --vxe-ui-table-row-hover-current-background-color: hsl(var(--accent-hover));
 
   /* --vxe-ui-table-fixed-scrolling-box-shadow-color: rgb(0 0 0 / 80%); */
+}
+
+/* vxe 把遮罩内容装进一个 top:50% + translateY(-50%) 的零高盒（.vxe-loading--wrapper），
+   插槽里的骨架写 height:100% 会跟它一起塌成 0（实测：DOM 在、paint 面积 0）。
+   拉满整块遮罩，加载态才拿得到表体的真实高度；transform 必须一起清掉，
+   否则 -50% 是按拉满后的高度算的，内容会整体往上跑半屏 */
+.vxe-grid .vxe-table--loading > .vxe-loading--wrapper {
+  top: 0;
+  height: 100%;
+  transform: none;
 }
 
 .vxe-pager {
