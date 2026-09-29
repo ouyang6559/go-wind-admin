@@ -264,6 +264,16 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
 
 - **页面容器**：三端各自容器（react `PageContainer` / ele `ProPage` / vben `Page`），但结构统一为：canvas 大底 → 搜索卡片（surface）→ 工具栏 → 表格卡片（surface + 12px 圆角 + 阴影）。
 - **表格**：无边框 + 斑马纹可选；表头独立色（浅 `#F0F2F5` 系 / 暗 `#1F2937`）；行 hover 用主色 8% α；行高紧凑（≤40px，ele 30px 现状可保留）。
+- **列表加载态（2026-09-29 定稿，react 已落地，ele/vben 待移植）**：三态分工按"形状是否已知 + 耗时是否够长"判，不是骨架/转圈二选一——**首屏**（一行数据都没有）= 表格形状骨架屏；**表内刷新/翻页**（已有数据）= Spin；**请求失败** = 错误态 + 重试入口。
+  - 出场阈值统一 **250ms**（骨架与 Spin 共用一个常量）：本地接口常在 100~200ms 返回，早于阈值出现的加载态比"什么都不显示"更闪。实测 201ms 自然加载：骨架 0 帧、Spin 0 帧。
+  - 骨架行数 = 该页 `pagination.defaultPageSize`；`pagination={false}` 的树表/抽屉没有 pageSize 可依，取常量 10。
+  - **骨架必须复用页面自己的 columns**（antd `<Table>` 只替换单元格 render），禁止自画灰块：react `/notification/deliveries`（`scroll.x=1670`、12 列）实测骨架态与真实态 12 个 `<th>` 的 x/宽/高逐列全等；表头底色两态同值（浅 `rgb(250,250,250)`、暗 `rgb(31,41,55)` = 上面「表格」条的 `#1F2937`）。
+  - **骨架只继承横向 scroll**：`scroll.y` 会给骨架多出一层限高 `.ant-table-body`，而这批页面渲染出的真实表格并没有那层（实测两态 `hasBodyLayer:false`），照搬曾让分页器跳动 −136px。
+  - 已知残余差并保留：占位条高 24px（`Skeleton.Button size="small"`）vs 文本行盒 22px ⇒ 每行约 2px，20 行的页面在数据到位后分页器上移 43px；表头位置不动，不为此钉死行高（骨架的诚实口径是"按 pageSize 猜行数"，不是"和结果一样高"）。
+  - 占位条颜色取 antd token 渐变（浅 `rgba(0,0,0,.06)→(0,0,0,.15)→.06`、暗 `rgba(255,255,255,.08)`），**组件内不写死任何颜色**；本次浅色态与暗色态都以 computed style 数值对照给出（上面的 thBg/barBg），截图对照不可用——测量标签页 `visibilityState:hidden` 下 `take_screenshot` 不出图。
+  - 首屏失败用 `Empty` + 「重试」而不是"暂无数据"（后者会被读成"查询成功但结果为空"）；已有数据后刷新失败在表格上方挂 `Alert type="error"` + 重试，**旧数据保留**（实测 rows 20→20、Alert 文案「加载失败」+「重试」按钮，点一次重试即恢复）。
+  - 错误文案分两档：页面 `request` 自己 catch 后返回 `success:false` 时包装层拿不到原因，内联显示通用文案「加载失败」（toast 仍由页面发，实测两者并存）；只有 request 抛出才显示原始 `error.message`。**不要为此把 toast 删掉**——toast 保留原因、内联保留动作，分工是有意的。
+  - 偏好设置 `transition.loading`（「页面切换 Loading」）自此有真消费者：控制首屏骨架，关掉后骨架 0 帧、Spin 接管（实测 `sk=0, spinSpinning=1`），不再是面板里的死配置。
 - **表单/抽屉**：输入控件底与表面同层（暗 `#111827` / 浅白），以 `rgba(255,255,255,.1)` 边框区分；focus 主色边框 + 3px 12% 柔光；抽屉遮罩 `rgba(0,0,0,.6)`，宽度基准 480。
 - **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。**hover 态两态同机制：实底档改 `background-color`/`border-color`、文字/链接档改 `color`，禁止用 `filter: brightness()` 只给暗色加一层亮度**（暗色静止态常带 `!important`，会压掉库原生的 hover 背景色，于是 filter 成了暗色唯一的悬停反馈——既不对称又让"关不掉"）。落地：react 删 `pro-components-dark.css` 原三条质感规则；ele `_dark-mode.scss` 原 7 处 hover `filter: brightness(1.15)` 全部换成 `color-mix(in srgb, var(--dark-*) 85%, #ffffff)`；vben 无此类装饰。ele 实测：暗 `#006BE6` → hover `rgb(38,129,234)`，浅 `#006BE6` → hover `rgb(6,81,167)`（EP 原生 `--el-button-hover-bg-color`），两态 `filter` 均为 `none`；方向不同是故意的（暗色向亮、浅色向暗，见 2.3 层级模型）。
 - **认证页（登录/注册）**：画布深底 + 实底表面卡（24px 大圆角、主色柔影）；品牌插画带 vben 同款 float 动效（`translateY 0→-20px→0`，5s 循环，尊重 `prefers-reduced-motion`）。
@@ -324,3 +334,7 @@ vben 端另修 `registerGlobComp.ts` 漏注册 Radio（AI 问数页 `a-radio-gro
 选择器自身，`/opm/users` 实测 `.button-group` 计数 0、`.el-form--inline` 计数 1），查询区实际类名是
 `.pro-search__actions` —— 整块 `.button-group { … }` 是死代码，本次只把它里面的 filter 换掉、**未删块**，
 要清理另开一次改动（grep 命中 ≠ 生效，先量匹配数）。
+同日按新 §4「列表加载态」条把 react 列表页的加载态三态化：新增 `src/components/common/ListTable/{index.tsx,TableSkeleton.tsx}`（首屏骨架 + 250ms 阈值 Spin + 失败态与重试），
+39 个列表页只把 `<ProTable>` 换成 `<ListTable>`（import 与标签两处，`request`/`columns`/`actionRef` 用法不变，实测替换后页面上 `<ProTable` 计数 0、`<ListTable<` 计数 39），
+`locales/{zh-CN,en-US}/_core/common.json` 各加 1 个 `button.retry`。**ele/vben 两端未移植**（按"react 先行、其余移植"工序，本轮只落 react）；
+骨架/错误态的实测数值（逐列全等、分页器 43px 残余差、rows 20→20 保留）记在 §4 该条内，截图对照因测量标签页 `visibilityState:hidden` 不可用。
