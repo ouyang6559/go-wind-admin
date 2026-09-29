@@ -264,9 +264,9 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
 
 - **页面容器**：三端各自容器（react `PageContainer` / ele `ProPage` / vben `Page`），但结构统一为：canvas 大底 → 搜索卡片（surface）→ 工具栏 → 表格卡片（surface + 12px 圆角 + 阴影）。
 - **表格**：无边框 + 斑马纹可选；表头独立色（浅 `#F0F2F5` 系 / 暗 `#1F2937`）；行 hover 用主色 8% α；行高紧凑（≤40px，ele 30px 现状可保留）。
-- **列表加载态（2026-09-29 定稿，react 已落地，ele/vben 待移植）**：三态分工按"形状是否已知 + 耗时是否够长"判，不是骨架/转圈二选一——**首屏**（一行数据都没有）= 表格形状骨架屏；**表内刷新/翻页**（已有数据）= Spin；**请求失败** = 错误态 + 重试入口。
+- **列表加载态（2026-09-29 定稿，react 基准 / ele / vben 三端均已落地）**：三态分工按"形状是否已知 + 耗时是否够长"判，不是骨架/转圈二选一——**首屏**（一行数据都没有）= 表格形状骨架屏；**表内刷新/翻页**（已有数据）= Spin；**请求失败** = 错误态 + 重试入口。
   - 出场阈值统一 **250ms**（骨架与 Spin 共用一个常量）：本地接口常在 100~200ms 返回，早于阈值出现的加载态比"什么都不显示"更闪。实测 201ms 自然加载：骨架 0 帧、Spin 0 帧。
-  - 骨架行数 = 该页 `pagination.defaultPageSize`；`pagination={false}` 的树表/抽屉没有 pageSize 可依，取常量 10。
+  - 骨架行数（react 口径）= 该页 `pagination.defaultPageSize`；`pagination={false}` 的树表/抽屉没有 pageSize 可依，取常量 10。**另两端的实际口径见下面「以可见区为准」条**。
   - **骨架必须复用页面自己的 columns**（antd `<Table>` 只替换单元格 render），禁止自画灰块：react `/notification/deliveries`（`scroll.x=1670`、12 列）实测骨架态与真实态 12 个 `<th>` 的 x/宽/高逐列全等；表头底色两态同值（浅 `rgb(250,250,250)`、暗 `rgb(31,41,55)` = 上面「表格」条的 `#1F2937`）。
   - **骨架只继承横向 scroll**：`scroll.y` 会给骨架多出一层限高 `.ant-table-body`，而这批页面渲染出的真实表格并没有那层（实测两态 `hasBodyLayer:false`），照搬曾让分页器跳动 −136px。
   - 已知残余差并保留：占位条高 24px（`Skeleton.Button size="small"`）vs 文本行盒 22px ⇒ 每行约 2px，20 行的页面在数据到位后分页器上移 43px；表头位置不动，不为此钉死行高（骨架的诚实口径是"按 pageSize 猜行数"，不是"和结果一样高"）。
@@ -274,6 +274,13 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
   - 首屏失败用 `Empty` + 「重试」而不是"暂无数据"（后者会被读成"查询成功但结果为空"）；已有数据后刷新失败在表格上方挂 `Alert type="error"` + 重试，**旧数据保留**（实测 rows 20→20，点一次重试即恢复）。
   - **列表页的 `request` 不许自己 catch**：错误一律抛给 `ListTable`，由它 `console.error` 带出原始错误对象，并把 `error.message` 直接显示在内联错误态里。此前 39 页中 34 页写的是 `catch → message.error → return {success:false}`——既是"只有 toast 没有日志"（违反全仓铁律 1），又让内联只能显示通用文案「加载失败」；改后 toast 不再与内联重复，原因常驻在表格上方且带重试入口（实测 `/notification/deliveries` 翻页失败：内联「网络连接错误,请检查网络设置后重试」+「重试」，toasts 0 条，控制台 `[RequestClient]` 与 `[ListTable]` 两行都带原始错误）。页面自己的**写操作**（增删改）仍可 `message.error`，那条路不经过表格。
   - 偏好设置 `transition.loading`（「页面切换 Loading」）自此有真消费者：控制首屏骨架，关掉后骨架 0 帧、Spin 接管（实测 `sk=0, spinSpinning=1`），不再是面板里的死配置。
+  - **骨架行数以可见区为准，不是照抄 pageSize**：react 取 `defaultPageSize`；ele 的骨架卡是无滚动 flex 块，内容区实测 488px / 行高 39.8px ⇒ 铺 20 行会溢出裁切，保持 8 行；vben 的骨架画在 vxe 的 loading 遮罩里，遮罩多高由**空表表体**决定（实测 676×140）⇒ 挂载时同步量一次自身高度按 32px 折算（140 ⇒ 表头 + 3 行），`min(pageSize, 8)` 只是上限。
+  - **vben 接入点 = `plugins/src/vxe-table/use-vxe-grid.vue` 一处**（39 个列表页共用，页面侧零改动）：`api.ts` 加 `queryLoading/queryError/hasLoaded` 三个 ref，`extends.ts` 只包 `proxyConfig.ajax.query` 写入它们，骨架/横幅/空态由该组件渲染。三处非显然的坑，改这块前先读：
+    ① `init()` 必须**先 `extendProxyOptions` 再发首个 `reload`**（原顺序是先 reload 后包装）——VxeGrid 的 props 要到下一次渲染才换上包装函数，首屏那一次走未包装的原始函数，`hasLoaded`/`queryError` 都不被写入，三态直接失效；
+    ② `proxyConfig.showLoading=false` **不足以**让 vxe 不点亮遮罩：`currLoading = isColLoading || isRowLoading || loading` 是它装列/载数据的内部状态，既不看 `showLoading` 也不看 250ms 阈值（实测快响应时遮罩仍然 `display:block`）。做法是把 `--vxe-ui-loading-background-color` 改 `transparent`、`#loading` 槽内容自己按 `delayedLoading` 决定，快响应时槽里什么都不渲染；
+    ③ 槽里的容器要能拿到高度：vxe 把内容装进 `top:50% + translateY(-50%)` 的**零高盒**，骨架写 `height:100%` 会跟着塌成 0（实测 DOM 在、paint 面积 0，看起来"骨架没生效"），`style.css` 把 `.vxe-grid .vxe-table--loading > .vxe-loading--wrapper` 拉成 `top:0;height:100%;transform:none` 后两分支（骨架 / VbenLoading）才真正铺满表体。
+  - vben 失败态落点（`/notification/deliveries` 实测，判一律取 painted 面积 + `visibility`，不看 DOM 是否存在）：快响应（<250ms）整轮骨架/Spin 均 0；慢首屏骨架 painted `676x140`、3 行、数据到位后归位；慢刷新（已有数据）骨架 0、`VbenLoading` 根节点 `676x140` 且 `invisible opacity-0` 已摘；刷新失败保留旧行（rows 恒 20）、横幅 painted `676x49` 落在 `top` 槽内、卡片自行增高 ~60px 而 `document.scrollHeight` 保持 772 不引页面滚动、点「重试」后横幅消失 `queryError` 归 null；首屏失败空态容器 painted `676x80` 显示原因 + 一个可见「重试」（vxe 同时挂着 `.vxe-table--empty-block` 的 `visibility:hidden` 克隆，按存在计数会读成 2）。
+  - **测量环境的一条限制**：标签页 `visibilityState:hidden` 时**没有渲染帧 ⇒ `ResizeObserver` 回调与 CSS transition 都不推进**（实测遮罩里 `clientHeight=140` 而 RO 计数 0、`opacity` 恒 0）。所以 vben 的骨架行数改用 `onMounted` 一次性同步测量，不用 RO——否则在后台标签里永远量不到，且量具自己也读不出真假。
 - **表单/抽屉**：输入控件底与表面同层（暗 `#111827` / 浅白），以 `rgba(255,255,255,.1)` 边框区分；focus 主色边框 + 3px 12% 柔光；抽屉遮罩 `rgba(0,0,0,.6)`，宽度基准 480。
 - **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。**hover 态两态同机制：实底档改 `background-color`/`border-color`、文字/链接档改 `color`，禁止用 `filter: brightness()` 只给暗色加一层亮度**（暗色静止态常带 `!important`，会压掉库原生的 hover 背景色，于是 filter 成了暗色唯一的悬停反馈——既不对称又让"关不掉"）。落地：react 删 `pro-components-dark.css` 原三条质感规则；ele `_dark-mode.scss` 原 7 处 hover `filter: brightness(1.15)` 全部换成 `color-mix(in srgb, var(--dark-*) 85%, #ffffff)`；vben 无此类装饰。ele 实测：暗 `#006BE6` → hover `rgb(38,129,234)`，浅 `#006BE6` → hover `rgb(6,81,167)`（EP 原生 `--el-button-hover-bg-color`），两态 `filter` 均为 `none`；方向不同是故意的（暗色向亮、浅色向暗，见 2.3 层级模型）。
 - **认证页（登录/注册）**：画布深底 + 实底表面卡（24px 大圆角、主色柔影）；品牌插画带 vben 同款 float 动效（`translateY 0→-20px→0`，5s 循环，尊重 `prefers-reduced-motion`）。
@@ -342,3 +349,14 @@ vben 端另修 `registerGlobComp.ts` 漏注册 Radio（AI 问数页 `a-radio-gro
 错误改由 `ListTable` 一处 `console.error` 带原始对象并内联显示 `error.message`；顺手删两个零消费者死目录
 `react/src/layouts/components/LoadingSkeleton/`（12 文件，其 `presets/TableSkeleton.tsx` 与本次骨架实现重复）与
 `react/src/components/common/PageContainer/index.tsx`（**活的那份在 `react/src/layouts/components/PageContainer/`，两者同名勿混**）。
+承上，「ele/vben 两端未移植」那句话后续由两笔补齐：
+**ele**（`b9dd3182`）接在 `components/Pro/ProPage/index.vue` + `composables/useTableState.ts` 这一处接入点上（38 个列表页无需逐页改），
+`transition.loading` 从此有消费者、表内 spinner 加 250ms 阈值（注入 900ms 延迟实测 mask 在 273ms/275ms 两把量具同值出现）、
+失败态无数据整块换 `el-empty`+重试（实测首屏失败 → 内联「网络连接错误,请检查网络设置后重试」，点重试 rows 0→20）、有数据在表格上方挂 `el-alert` 且保留旧行；
+delivery/rule 两页的 `listAction` 自 catch 一并剥掉；`locales/{en-US,zh-CN}/common.json` 加 `common.button.retry`；骨架保持 8 行（理由见 §4「以可见区为准」条）。
+**vben**（2026-09-29 续）接在 `packages/effects/plugins/src/vxe-table/`（新增 `table-skeleton.vue`，改 `use-vxe-grid.vue`/`extends.ts`/`api.ts`/`style.css`，
+`packages/locales` 两语各加 `common.loadDataFailed`/`common.retry`，`views/app/notification/{delivery,rule}/index.vue` 的 `query` 不再自 catch），
+六个场景 live 实测通过、数值记在 §4 该条内；`apps/admin` 下 `npx vue-tsc --noEmit --skipLibCheck` 退出码 0
+（阳性对照：往新文件塞一行类型错误后同一条命令报 2 处并指向该文件，确认它真在检查范围内，不是"看不见所以没错"）。
+本轮踩到并修掉的两个假绿：① 骨架 `height:100%` 塌在 vxe 的零高遮罩盒里（DOM 在、paint 面积 0），先前"骨架 8 行且布局不动"的读数只数了 DOM 存在；
+② `init()` 原先先 `reload` 后包 `query`，首屏那一次绕过包装函数 ⇒ `hasLoaded` 永为 false，一次冷加载出两段加载态。
