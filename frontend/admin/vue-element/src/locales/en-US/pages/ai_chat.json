@@ -2,7 +2,7 @@
   "moduleName": "conversation",
   "newConversation": "New chat",
   "conversations": "Conversations",
-  "inputPlaceholder": "Type a message; Enter to send, Shift+Enter for newline",
+  "inputPlaceholder": "Type a message…",
   "send": "Send",
   "sending": "Thinking…",
   "emptyTitle": "Start chatting with AI",
@@ -19,5 +19,7 @@
   "tokensUsage": "prompt {prompt} / completion {completion} tokens",
   "rename": "Rename",
   "renamePrompt": "Enter a new conversation title",
-  "renameSuccess": "Title updated"
+  "renameSuccess": "Title updated",
+  "untitled": "New conversation",
+  "sendHint": "Enter to send · Shift+Enter for newline"
 }

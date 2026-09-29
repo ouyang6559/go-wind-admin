@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container h-full flex flex-1 flex-col">
+  <div class="app-container ai-usage-page h-full flex flex-1 flex-col">
     <!-- 汇总卡 -->
     <el-row :gutter="16" class="mb-4">
       <el-col v-for="m in metricItems" :key="m.label" :xs="24" :sm="8">
@@ -45,10 +45,12 @@ const metricItems = computed(() => {
   const pct = quotaConfigured.value && quotaLimit.value > 0
     ? Math.min(100, Math.round((monthTokens.value * 100) / quotaLimit.value))
     : undefined;
+  // 汇总数字是「文字」不是色块，取值随主题切换（见底部 --metric-* 定义）：
+  // 亮色下 #22d3ee/#a78bfa 对白底只有 1.81/2.72:1（24px 大字号的下限是 3.0）
   return [
-    { label: t("pages.ai_usage.monthTokens"), value: monthTokens.value.toLocaleString(), color: "#3b82f6", progress: pct },
-    { label: t("pages.ai_usage.monthCalls"), value: monthCalls.value.toLocaleString(), color: "#22d3ee", progress: undefined },
-    { label: t("pages.ai_usage.quota"), value: quotaConfigured.value ? quotaLimit.value.toLocaleString() : "∞", color: "#a78bfa", progress: undefined },
+    { label: t("pages.ai_usage.monthTokens"), value: monthTokens.value.toLocaleString(), color: "var(--metric-blue)", progress: pct },
+    { label: t("pages.ai_usage.monthCalls"), value: monthCalls.value.toLocaleString(), color: "var(--metric-cyan)", progress: undefined },
+    { label: t("pages.ai_usage.quota"), value: quotaConfigured.value ? quotaLimit.value.toLocaleString() : "∞", color: "var(--metric-violet)", progress: undefined },
   ];
 });
 
@@ -144,6 +146,21 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// 汇总数字的三个强调色（24px/600 → WCAG 大字号门槛 3.0:1）。
+// 亮色侧原值实测不可读：#22d3ee 1.81、#a78bfa 2.72（卡片是白底），
+// 故亮色降到 cyan-700 / violet-600（5.36 / 5.70）；暗色侧原值达标（9.82 / 6.52）保留。
+.ai-usage-page {
+  --metric-blue: #3b82f6; // 白底 3.68
+  --metric-cyan: #0e7490;
+  --metric-violet: #7c3aed;
+}
+
+html.dark .ai-usage-page {
+  --metric-blue: #3b82f6; // L1 #111827 上 4.82
+  --metric-cyan: #22d3ee;
+  --metric-violet: #a78bfa;
+}
+
 .metric-label {
   font-size: 12px;
   color: var(--el-text-color-secondary);

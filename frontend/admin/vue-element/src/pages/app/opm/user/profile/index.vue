@@ -118,11 +118,11 @@ const settingList = [
 
     &:hover {
       background-color: var(--el-fill-color-light);
-      color: var(--el-color-primary);
+      color: var(--gowind-primary-text);
     }
 
     &.active {
-      color: var(--el-color-primary);
+      color: var(--gowind-primary-text);
       font-weight: 500;
 
       &::after {

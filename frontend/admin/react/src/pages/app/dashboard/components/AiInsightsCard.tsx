@@ -6,11 +6,14 @@ import { apiClient } from '@/api/client';
 import { useI18n } from '@/core/i18n';
 import type { AiInsightAlert, AiSensitiveOpItem } from '@/api/generated/admin/service/v1';
 
-/** 严重度 → 左边条/标签色（语义一致：红=高、橙=中、蓝=低）。 */
+/** 严重度 → 左边条/标签色（语义一致：红=高、橙=中、蓝=低）。
+ *  条色取 antd 语义 token，与 ele 端 `.sev-*` 规则同一映射（danger/warning/primary）；
+ *  原先的 red/orange/blue-500 是 Tailwind 调色板， hues 与 §2.1 语义色不一致。
+ *  tagColor 保持预设名：那是 antd Tag 库内预设，非本页色值。 */
 const SEVERITY_STYLE: Record<string, { bar: string; tagColor: string }> = {
-  HIGH: { bar: 'bg-red-500', tagColor: 'red' },
-  MEDIUM: { bar: 'bg-orange-500', tagColor: 'orange' },
-  LOW: { bar: 'bg-blue-500', tagColor: 'blue' },
+  HIGH: { bar: 'bg-[color:var(--ant-color-error)]', tagColor: 'red' },
+  MEDIUM: { bar: 'bg-[color:var(--ant-color-warning)]', tagColor: 'orange' },
+  LOW: { bar: 'bg-[color:var(--ant-color-primary)]', tagColor: 'blue' },
 };
 
 /** 告警 type → i18n title/detail 模板键（文案在 dashboard.json，后端只回结构化事实）。 */
@@ -78,7 +81,7 @@ const AiInsightsCard = () => {
             <div className="text-sm font-semibold text-[color:var(--ant-color-text)]">
               {t('aiInsights.title')}
             </div>
-            <div className="text-xs text-[color:var(--ant-color-text-tertiary)]">
+            <div className="text-xs text-[color:var(--ant-color-text-secondary)]">
               {t('aiInsights.subtitle')}
             </div>
           </div>

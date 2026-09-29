@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Empty, Input, Popconfirm, Select, Spin, Tooltip, Typography, App } from 'antd';
+import { App, Button, Input, Popconfirm, Select, Tooltip } from 'antd';
 import {
+  BookOutlined,
   DeleteOutlined,
+  EditOutlined,
+  InboxOutlined,
+  LoadingOutlined,
+  MessageOutlined,
+  NumberOutlined,
   PlusOutlined,
+  RobotOutlined,
   SendOutlined,
   UserOutlined,
-  RobotOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { aiservicev1_AiConversation, aiservicev1_AiMessage } from '@/api/generated/admin/service/v1';
@@ -23,6 +30,7 @@ import {
 import { fetchListAiKnowledgeBases } from '@/api/hooks/ai-knowledge';
 import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '@/api/generated/admin/service/v1';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import './chat-page.css';
 
 interface ChatChunk {
   conversationId?: number;
@@ -46,12 +54,22 @@ export default function AiChatPage() {
 
   const [activeId, setActiveId] = useState<number | undefined>(undefined);
 
-  // 首次加载自动选中最近会话
+  // 仅在首次拉到列表时自动选中最近会话：放在 loadConversations 里会让「新建对话」
+  // 立刻被重新选中顶回去，空态与"新会话"标题都渲染不出来
+  const autoSelected = useRef(false);
   useEffect(() => {
-    if (activeId === undefined && conversations.length > 0) {
+    if (!autoSelected.current && conversations.length > 0) {
+      autoSelected.current = true;
       setActiveId(conversations[0].id);
     }
-  }, [conversations, activeId]);
+  }, [conversations]);
+
+  // 右栏标题：未选中会话时是"新会话"，选中后取标题，无标题回落到 ID
+  const activeTitle = useMemo(() => {
+    if (activeId === undefined) return t('untitled');
+    const conv = conversations.find((c) => c.id === activeId);
+    return conv?.title || `#${conv?.id}`;
+  }, [activeId, conversations, t]);
 
   // ── 消息列表 ──────────────────────────────────────────────────────
   const messagesQuery = useListAiMessages(
@@ -72,6 +90,11 @@ export default function AiChatPage() {
   const [renameText, setRenameText] = useState('');
   const updateConvMutation = useUpdateAiConversation();
 
+  const startRename = (conv: aiservicev1_AiConversation) => {
+    setRenamingId(conv.id!);
+    setRenameText(conv.title ?? '');
+  };
+
   const commitRename = (conv: (typeof conversations)[number]) => {
     const title = renameText.trim();
     setRenamingId(undefined);
@@ -90,6 +113,10 @@ export default function AiChatPage() {
   // ── 知识库选择（RAG：发送时携带 knowledgeBaseId） ─────────────────
   const [knowledgeBases, setKnowledgeBases] = useState<AiKnowledgeBase[]>([]);
   const [knowledgeBaseId, setKnowledgeBaseId] = useState<number | undefined>(undefined);
+
+  // 头部知识库标签：未选则为空串（不渲染标签）
+  const selectedKb = knowledgeBases.find((k) => k.id === knowledgeBaseId);
+  const activeKbName = knowledgeBaseId === undefined ? '' : (selectedKb?.name || `#${knowledgeBaseId}`);
 
   useEffect(() => {
     fetchListAiKnowledgeBases(new PaginationQuery({ paging: { page: 1, pageSize: 100 } }))
@@ -156,7 +183,7 @@ export default function AiChatPage() {
     onSuccess: () => {
       antdMessage.success(t('deleteSuccess'));
       setStreamingText('');
-      
+
       queryClient.invalidateQueries({ queryKey: ['listAiConversations'] });
       queryClient.invalidateQueries({ queryKey: ['listAiMessages'] });
     },
@@ -181,141 +208,144 @@ export default function AiChatPage() {
 
   return (
     <ContentContainer heightMode="fixed">
-      <div className="flex h-full min-h-0 gap-4">
+      <div className="ai-chat-page flex h-full min-h-0 gap-3">
         {/* 左栏：会话列表 */}
-        <div className="flex w-64 shrink-0 flex-col rounded-xl border border-solid border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between px-3 py-2">
-            <Typography.Text strong>{t('conversations')}</Typography.Text>
-            <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleNewConversation}>
+        <aside className="chat-card flex w-60 shrink-0 flex-col">
+          <div className="panel-head">
+            <MessageOutlined />
+            <span className="panel-head__title">{t('conversations')}</span>
+            {conversations.length > 0 && <span className="panel-head__badge">{conversations.length}</span>}
+          </div>
+          <div className="px-3 pt-2">
+            <Button className="new-conv-btn" icon={<PlusOutlined />} onClick={handleNewConversation}>
               {t('newConversation')}
             </Button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+          <div className="conv-list">
             {conversations.length === 0 ? (
-              <Empty description={t('noConversations')} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <div className="conv-list__empty">
+                <InboxOutlined style={{ fontSize: 26 }} />
+                <span>{t('noConversations')}</span>
+              </div>
             ) : (
               conversations.map((conv) => (
                 <div
                   key={conv.id}
                   role="button"
                   tabIndex={0}
+                  className={`conv-item${activeId === conv.id ? ' is-active' : ''}`}
                   onClick={() => setActiveId(conv.id)}
-                  onDoubleClick={() => {
-                    setRenamingId(conv.id!);
-                    setRenameText(conv.title ?? '');
-                  }}
+                  onDoubleClick={() => startRename(conv)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') setActiveId(conv.id);
                   }}
-                  className={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                    activeId === conv.id
-                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
                 >
-                  {renamingId === conv.id ? (
-                    <Input
-                      size="small"
-                      autoFocus
-                      value={renameText}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => setRenameText(e.target.value)}
-                      onPressEnter={() => commitRename(conv)}
-                      onBlur={() => commitRename(conv)}
-                    />
-                  ) : (
-                    <span
-                      className="truncate"
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        setRenamingId(conv.id!);
-                        setRenameText(conv.title ?? '');
+                  <div className="conv-item__text">
+                    {renamingId === conv.id ? (
+                      <Input
+                        size="small"
+                        autoFocus
+                        value={renameText}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setRenameText(e.target.value)}
+                        onPressEnter={() => commitRename(conv)}
+                        onBlur={() => commitRename(conv)}
+                      />
+                    ) : (
+                      <>
+                        <span className="conv-item__title">{conv.title || `#${conv.id}`}</span>
+                        {conv.createdAt && (
+                          <span className="conv-item__time">{dayjs(conv.createdAt).format('MM-DD HH:mm')}</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="conv-item__ops">
+                    <Tooltip title={t('rename')}>
+                      <button
+                        type="button"
+                        className="row-op"
+                        aria-label={t('rename')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startRename(conv);
+                        }}
+                      >
+                        <EditOutlined style={{ fontSize: 14 }} />
+                      </button>
+                    </Tooltip>
+                    <Popconfirm
+                      title={t('deleteConversation')}
+                      description={t('deleteConversationConfirm')}
+                      onConfirm={(e) => {
+                        e?.stopPropagation();
+                        handleDeleteConversation(conv.id!);
                       }}
+                      onCancel={(e) => e?.stopPropagation()}
                     >
-                      {conv.title || `#${conv.id}`}
-                    </span>
-                  )}
-                  <Popconfirm
-                    title={t('deleteConversation')}
-                    description={t('deleteConversationConfirm')}
-                    onConfirm={(e) => {
-                      e?.stopPropagation();
-                      handleDeleteConversation(conv.id!);
-                    }}
-                    onCancel={(e) => e?.stopPropagation()}
-                  >
-                    <Button
-                      type="text"
-                      size="small"
-                      danger
-                      className="hidden group-hover:inline-flex"
-                      icon={<DeleteOutlined />}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </Popconfirm>
+                      <Tooltip title={t('deleteConversation')}>
+                        <button
+                          type="button"
+                          className="row-op row-op--danger"
+                          aria-label={t('deleteConversation')}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <DeleteOutlined style={{ fontSize: 14 }} />
+                        </button>
+                      </Tooltip>
+                    </Popconfirm>
+                  </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </aside>
 
-        {/* 右栏：消息区 */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-solid border-gray-200 dark:border-gray-700">
-          <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-            {messages.length === 0 && !isStreaming ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-400">
-                <RobotOutlined className="text-5xl" />
-                <Typography.Title level={5} className="!mb-0">
-                  {t('emptyTitle')}
-                </Typography.Title>
-                <Typography.Text type="secondary">{t('emptyDesc')}</Typography.Text>
-              </div>
-            ) : (
-              <>
-                {messages.map((msg) => (
-                  <MessageBubble key={msg.id} message={msg} />
-                ))}
-                {isStreaming && (
-                  <div className="flex items-start gap-3">
-                    <Avatar role="assistant" />
-                    <div className="max-w-[75%] rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-2 dark:bg-gray-800">
-                      {streamingText ? (
-                        <MarkdownContent content={streamingText} />
-                      ) : (
-                        <Spin size="small" />
-                      )}
-                      <Typography.Text type="secondary" className="!text-xs">
-                        {t('streaming')}
-                      </Typography.Text>
-                    </div>
-                  </div>
-                )}
-              </>
+        {/* 右栏：消息区 + 输入区 */}
+        <section className="chat-card flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="panel-head">
+            <span className="panel-head__title" title={activeTitle}>
+              {activeTitle}
+            </span>
+            {activeKbName && (
+              <span className="panel-head__tag">
+                <BookOutlined style={{ fontSize: 12 }} />
+                {activeKbName}
+              </span>
             )}
+            {messages.length > 0 && <span className="panel-head__badge">{messages.length}</span>}
           </div>
 
-          {/* 输入区 */}
-          <div className="border-t border-solid border-gray-200 p-3 dark:border-gray-700">
-            <div className="mb-2 flex items-center gap-2">
-              <Typography.Text type="secondary" className="!text-xs shrink-0">
-                {t('knowledgeBase')}
-              </Typography.Text>
-              <Select
-                value={knowledgeBaseId}
-                onChange={(v) => setKnowledgeBaseId(v)}
-                allowClear
-                size="small"
-                className="min-w-48"
-                placeholder={t('knowledgeBasePlaceholder')}
-                options={knowledgeBases.map((kb) => ({ label: kb.name ?? `#${kb.id}`, value: kb.id! }))}
-              />
+          <div ref={scrollRef} className="msg-scroll">
+            <div className="msg-list">
+              {messages.length === 0 && !isStreaming ? (
+                <div className="chat-empty">
+                  <div className="chat-empty__icon">
+                    <RobotOutlined style={{ fontSize: 24 }} />
+                  </div>
+                  <div className="chat-empty__title">{t('emptyTitle')}</div>
+                  <div className="chat-empty__desc">{t('emptyDesc')}</div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg) => (
+                    <MessageBubble key={msg.id} message={msg} />
+                  ))}
+                  {isStreaming && <StreamingBubble text={streamingText} />}
+                </>
+              )}
             </div>
-            <div className="flex items-end gap-2">
+          </div>
+
+          {/* 输入区：文本域与工具行同框，与正文同宽对齐阅读柱 */}
+          <div className="composer">
+            <div className="composer__box">
               <Input.TextArea
+                className="composer__input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t('inputPlaceholder')}
-                autoSize={{ minRows: 1, maxRows: 5 }}
+                autoSize={{ minRows: 2, maxRows: 6 }}
                 onPressEnter={(e) => {
                   if (!e.shiftKey) {
                     e.preventDefault();
@@ -323,20 +353,38 @@ export default function AiChatPage() {
                   }
                 }}
                 disabled={isStreaming}
-                className="flex-1"
               />
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                loading={isStreaming}
-                onClick={handleSend}
-                disabled={!input.trim()}
-              >
-                {isStreaming ? t('sending') : t('send')}
-              </Button>
+              <div className="composer__bar">
+                <div className="composer__tool">
+                  <BookOutlined style={{ fontSize: 13 }} />
+                  <span className="composer__tool-label">{t('knowledgeBase')}</span>
+                  <Select
+                    value={knowledgeBaseId}
+                    onChange={(v) => setKnowledgeBaseId(v)}
+                    allowClear
+                    size="small"
+                    className="composer__kb"
+                    placeholder={t('knowledgeBasePlaceholder')}
+                    options={knowledgeBases.map((kb) => ({ label: kb.name ?? `#${kb.id}`, value: kb.id! }))}
+                  />
+                </div>
+                <div className="composer__actions">
+                  <span className="composer__hint">{t('sendHint')}</span>
+                  <Button
+                    type="primary"
+                    shape="round"
+                    icon={<SendOutlined />}
+                    loading={isStreaming}
+                    onClick={handleSend}
+                    disabled={!input.trim()}
+                  >
+                    {isStreaming ? t('sending') : t('send')}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </ContentContainer>
   );
@@ -344,10 +392,10 @@ export default function AiChatPage() {
 
 // ── 子组件 ──────────────────────────────────────────────────────────
 
-function Avatar({ role }: { role: string }) {
+function Avatar({ role }: { role: 'assistant' | 'user' }) {
   const { t } = useTranslation('aiChat');
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+    <div className="msg__avatar">
       {role === 'assistant' ? <RobotOutlined /> : <UserOutlined />}
       <span className="sr-only">{role === 'assistant' ? t('assistant') : t('you')}</span>
     </div>
@@ -360,27 +408,60 @@ function MessageBubble({ message: msg }: { message: aiservicev1_AiMessage }) {
 
   if (isUser) {
     return (
-      <div className="flex flex-row-reverse items-start gap-3">
+      <div className="msg msg--user">
         <Avatar role="user" />
-        <div className="max-w-[75%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-blue-500 px-4 py-2 text-white">
-          {msg.content}
+        <div className="msg__main">
+          <div className="msg__meta">
+            <span className="msg__who">{t('you')}</span>
+            {msg.createdAt && <span>{dayjs(msg.createdAt).format('HH:mm:ss')}</span>}
+          </div>
+          <div className="msg__bubble msg__bubble--user">{msg.content}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-start gap-3">
+    <div className="msg msg--ai">
       <Avatar role="assistant" />
-      <div className="max-w-[75%] rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-2 dark:bg-gray-800">
-        <MarkdownContent content={msg.content ?? ''} />
-        {(msg.promptTokens || msg.completionTokens) && (
-          <Tooltip title={`${msg.modelName ?? ''} · ${msg.durationMs ?? 0}ms`}>
-            <Typography.Text type="secondary" className="!text-xs">
-              {t('tokensUsage', { prompt: msg.promptTokens ?? 0, completion: msg.completionTokens ?? 0 })}
-            </Typography.Text>
-          </Tooltip>
-        )}
+      <div className="msg__main">
+        <div className="msg__meta">
+          <span className="msg__who">{t('assistant')}</span>
+          {msg.createdAt && <span>{dayjs(msg.createdAt).format('HH:mm:ss')}</span>}
+        </div>
+        <div className="msg__bubble msg__bubble--ai">
+          <MarkdownContent content={msg.content ?? ''} />
+          {(msg.promptTokens || msg.completionTokens) && (
+            <Tooltip title={`${msg.modelName ?? ''} · ${msg.durationMs ?? 0}ms`}>
+              <div className="msg__foot">
+                <NumberOutlined style={{ fontSize: 11 }} />
+                {t('tokensUsage', { prompt: msg.promptTokens ?? 0, completion: msg.completionTokens ?? 0 })}
+              </div>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 流式占位气泡：片段到达前用打点动画，到达后原地渲染 markdown */
+function StreamingBubble({ text }: { text: string }) {
+  const { t } = useTranslation('aiChat');
+  return (
+    <div className="msg msg--ai">
+      <Avatar role="assistant" />
+      <div className="msg__main">
+        <div className="msg__meta">
+          <span className="msg__who">{t('assistant')}</span>
+        </div>
+        <div className="msg__bubble msg__bubble--ai">
+          {text ? <MarkdownContent content={text} /> : <span className="typing"><i /><i /><i /></span>}
+          <div className="msg__foot">
+            <LoadingOutlined className="is-spinning" style={{ fontSize: 11 }} />
+            {t('streaming')}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -388,7 +469,7 @@ function MessageBubble({ message: msg }: { message: aiservicev1_AiMessage }) {
 
 function MarkdownContent({ content }: { content: string }) {
   return (
-    <div className="prose prose-sm max-w-none break-words dark:prose-invert [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-gray-900 [&_pre]:p-3 [&_pre]:text-gray-100">
+    <div className="markdown-body break-words">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   );

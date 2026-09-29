@@ -13,10 +13,13 @@
       "base": #006BE6,
     ),
     "success": (
-      "base": #57D1A0,
+      // 规范成功色 hsl(144 57% 58%) = #57D188（docs/design-language.md §2.1，
+      // 2026-09-13 勘误：原 #57D1A0 换算有误）
+      "base": #57D188,
     ),
     "warning": (
-      "base": #EF7A48,
+      // 规范警告色 hsl(42 84% 61%) = #EFBD48（同上勘误：原 #EF7A48 有误）
+      "base": #EFBD48,
     ),
     "danger": (
       "base": #FF3860,
@@ -478,4 +481,107 @@ body,
 .el-input__inner {
   font-weight: var(--el-font-weight-primary);
   font-size: 14px; // 输入框字号
+}
+
+/* ============================================
+ * 3. 语义色"作文字"时的合格档（design-language.md §2.1）
+ * ============================================
+ * 库内把 --el-color-{primary,success,warning,danger} 原值同时用于实底填充和文字/软底标签，
+ * 而基准值本身按 §2.1 的亮度（primary 0.16 / success 0.49 / warning 0.55 / danger 0.22）
+ * 只适合当填充，不适合当文字：2026-09-28 三端实测——暗色主色文字 3.33~3.59（ele 端 363 处）、
+ * 亮色 success/warning 标签文字 1.91/1.74、亮色 danger 文字按钮 3.51。
+ * 这里按"色阶派生规则"用 color-mix 从基准色反解出文字档（比例 = 对白底与该色浅底 tint
+ * 双双 ≥4.5:1 的最小降档；暗色侧 = 对 §2.3 的 L0/L1/浮层/表头全部暗面 ≥4.5:1 的最小升档），
+ * 因此换主色后仍随 --el-color-* 联动，不是写死的色值。
+ * 填充（实底按钮/徽标底色）继续用基准值，只有"文字/软底标签前景"换成本节变量。
+ *
+ * 本节一律带 !important，原因是注入顺序而非权重（2026-09-28 探针实测）：
+ * unplugin-element-plus 在组件首次使用时才追加 theme-chalk 的单组件 css 与 base.css，
+ * 这些 <style> 落在本文件（bootstrap.ts:6 的 @/styles/index.scss）之后，
+ * 于是 `.el-tag.el-tag--primary`、`.el-button--primary.is-link` 与 base.css 的 :root
+ * 都用等价选择器把值改回去并胜出——实测 sheet 序号：全局 scss=#3，el-button.css=#10，
+ * el-tag.css=#71，base.css=#6。同一坑此前只被 _dark-mode.scss:25-26 用 !important 绕开，
+ * 所以浅色模式下 index.scss:50 的 --el-text-color-secondary:#6B7280 一直是死声明
+ * （实测 paints #909399，183 处空值单元格 + 98 处命令面板文字因此只有 3.08:1）。
+ */
+:root {
+  --gowind-primary-text: color-mix(in srgb, var(--el-color-primary) 90%, #0b0f19);
+  --gowind-success-text: color-mix(in srgb, var(--el-color-success) 50%, #0b0f19);
+  --gowind-warning-text: color-mix(in srgb, var(--el-color-warning) 50%, #0b0f19);
+  --gowind-danger-text: color-mix(in srgb, var(--el-color-danger) 70%, #0b0f19);
+
+  /* 次要文字档（§2.2 定稿 #676E7C）：EP 默认 #909399 对白底只有 3.08:1，
+   * 而上一版取 gray-500 #6B7280 是**按白底**量的——离开白底就掉下来：
+   * 白 4.83 / 页面大底 #F5F5F5 4.43 / 卡片灰 #F0F2F5 4.31 / 面板头 #F0F2F5 实测 4.31（2026-09-28 扫测）。
+   * 沿同一色相压暗到 #676E7C 后四处全部达标：5.12 / 4.70 / 4.57 / 4.57。
+   * 与 react 端 SECONDARY_TEXT_LIGHT、vue-vben 端 --muted-foreground 同值，三端一起改。 */
+  --el-text-color-secondary: #676e7c !important;
+  /* 占位符对齐 §2.2 的 gray-400（暗色侧 _dark-mode.scss 早已用同值） */
+  --el-text-color-placeholder: #9ca3af !important;
+
+  /* 实底语义色上的前景 = §2.1 规定的暗色 L0（白字在 #FF3860 上只有 3.51:1） */
+  --gowind-solid-ink: #0b0f19;
+}
+
+html.dark {
+  --gowind-primary-text: color-mix(in srgb, var(--el-color-primary) 70%, #ffffff);
+  --gowind-success-text: color-mix(in srgb, var(--el-color-success) 90%, #ffffff);
+  --gowind-warning-text: color-mix(in srgb, var(--el-color-warning) 90%, #ffffff);
+  --gowind-danger-text: color-mix(in srgb, var(--el-color-danger) 90%, #ffffff);
+}
+
+/* ---------- link / text 按钮：前景走文字档 ---------- */
+/* EP 的 .el-button--{type}.is-link/.is-text/.is-plain 把 --el-button-text-color 指到基准色
+ * （is-plain 只改静止态前景：plain 的 hover 走 --el-button-hover-text-color，仍是白字实底，不受本节影响） */
+.el-button--primary.is-link,
+.el-button--primary.is-text,
+.el-button--primary.is-plain {
+  --el-button-text-color: var(--gowind-primary-text) !important;
+  --el-button-hover-link-text-color: var(--gowind-primary-text) !important;
+}
+
+.el-button--danger.is-link,
+.el-button--danger.is-text,
+.el-button--danger.is-plain {
+  --el-button-text-color: var(--gowind-danger-text) !important;
+  --el-button-hover-link-text-color: var(--gowind-danger-text) !important;
+}
+
+.el-button--success.is-link,
+.el-button--success.is-text,
+.el-button--success.is-plain {
+  --el-button-text-color: var(--gowind-success-text) !important;
+  --el-button-hover-link-text-color: var(--gowind-success-text) !important;
+}
+
+.el-button--warning.is-link,
+.el-button--warning.is-text,
+.el-button--warning.is-plain {
+  --el-button-text-color: var(--gowind-warning-text) !important;
+  --el-button-hover-link-text-color: var(--gowind-warning-text) !important;
+}
+
+/* ---------- Tag（light/plain 效果）：文字档；dark 效果由 EP 自己的白字规则胜出 ---------- */
+.el-tag.el-tag--primary {
+  --el-tag-text-color: var(--gowind-primary-text) !important;
+}
+
+.el-tag.el-tag--success {
+  --el-tag-text-color: var(--gowind-success-text) !important;
+}
+
+.el-tag.el-tag--warning {
+  --el-tag-text-color: var(--gowind-warning-text) !important;
+}
+
+.el-tag.el-tag--danger {
+  --el-tag-text-color: var(--gowind-danger-text) !important;
+}
+
+/* ---------- 徽标实底：§2.1 的暗色 L0 前景（EP 这里写死 color-white） ---------- */
+.el-badge__content.el-badge__content--danger,
+.el-badge__content.el-badge__content--primary,
+.el-badge__content.el-badge__content--success,
+.el-badge__content.el-badge__content--warning {
+  color: var(--gowind-solid-ink) !important;
 }

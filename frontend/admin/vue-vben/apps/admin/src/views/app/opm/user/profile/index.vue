@@ -57,7 +57,6 @@ const handleSwitchTab = (key: string) => {
         v-model:active-key="activeKey"
         tab-position="left"
         :tab-bar-style="{ width: '220px' }"
-        class="edge-tabs"
       >
         <template v-for="item in settingList" :key="item.key">
           <a-tab-pane :tab="item.name">
@@ -68,17 +67,3 @@ const handleSwitchTab = (key: string) => {
     </a-card>
   </Page>
 </template>
-
-<style lang="less">
-.edge-tabs {
-  margin: 0;
-}
-
-/* 使用 Vue scoped 的深度选择器，覆盖 Antd 的默认内边距/外边距 */
-.edge-tabs,
-::v-deep(.ant-tabs-content, .ant-tabs-content-holder, .ant-tabs-tabpane) {
-  padding: 0 !important;
-  margin: 0 !important;
-  box-sizing: border-box;
-}
-</style>

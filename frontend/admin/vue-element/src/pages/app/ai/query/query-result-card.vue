@@ -7,7 +7,7 @@
         <ElRadioButton value="table">{{ t("pages.ai_query.viewTable") }}</ElRadioButton>
       </ElRadioGroup>
       <span v-else />
-      <span class="text-xs text-gray-400">{{ t("pages.ai_query.rowCount", { count: rows.length }) }}</span>
+      <span class="row-count text-xs">{{ t("pages.ai_query.rowCount", { count: rows.length }) }}</span>
     </div>
 
     <EchartsUI v-if="chartable && viewMode === 'chart'" ref="chartRef" height="280px" width="100%" />
@@ -104,3 +104,10 @@ const tableRows = computed(() =>
 
 watch([chartable, chartOption, viewMode], render, { immediate: true, deep: true });
 </script>
+
+<style lang="scss" scoped>
+// tailwind gray-400 在浅色白底上实测仅 2.54:1，改走 EP 次要文字 token（§5.2 禁止硬编码色值）
+.row-count {
+  color: var(--el-text-color-secondary);
+}
+</style>

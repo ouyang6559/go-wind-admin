@@ -7,6 +7,7 @@
 export {}
 declare global {
   const Activity: typeof import('react').Activity
+  const AiGenerateButton: typeof import('../src/components/common/AiGenerateButton/index').default
   const ApiPageSelect: typeof import('../src/components/common/Selects/index').ApiPageSelect
   const ApiSelect: typeof import('../src/components/common/Selects/index').ApiSelect
   const ApiTreeSelect: typeof import('../src/components/common/Selects/index').ApiTreeSelect

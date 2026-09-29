@@ -107,7 +107,8 @@ const insights = ref<AiInsightsResponse>();
 const insightsLoading = ref(false);
 
 const metricItems = computed(() => [
-  { label: t("pages.dashboard.todayLoginCount"), value: props.overview?.todayLoginCount ?? 0, color: "#3b82f6" },
+  // 语义色走 --el-* token（docs/design-language.md §2.1）；#3b82f6 是 §3.2 已退役的旧主色
+  { label: t("pages.dashboard.todayLoginCount"), value: props.overview?.todayLoginCount ?? 0, color: "var(--el-color-primary)" },
   { label: t("pages.dashboard.todayOperationCount"), value: props.overview?.todayOperationCount ?? 0, color: "#22d3ee" },
   { label: t("pages.dashboard.userCount"), value: props.overview?.userCount ?? 0, color: "#a78bfa" },
   { label: t("pages.dashboard.roleCount"), value: props.overview?.roleCount ?? 0, color: "#34d399" },
@@ -121,13 +122,15 @@ const failRate = computed(() => {
 });
 
 const ACTION_COLORS: Record<string, string> = {
-  CREATE: "#3b82f6",
-  UPDATE: "#22d3ee",
-  DELETE: "#ef4444",
+  // 语义可对应的动作用 §2.1 的语义 token；EXPORT/UPDATE 的紫/青是纯分类装饰色，
+  // 本仓 token 表里没有对应项，要收口得先扩 §2.1 再三端同补，故此处保留原值。
+  ASSIGN: "var(--el-color-success)",
+  CREATE: "var(--el-color-primary)",
+  DELETE: "var(--el-color-danger)",
   EXPORT: "#a78bfa",
-  ASSIGN: "#34d399",
-  IMPORT: "#fbbf24",
-  OTHER: "#94a3b8",
+  IMPORT: "var(--el-color-warning)",
+  OTHER: "var(--el-text-color-secondary)",
+  UPDATE: "#22d3ee",
 };
 
 const actionBars = computed(() => {
@@ -140,7 +143,7 @@ const actionBars = computed(() => {
       label: a.label || "-",
       count: a.count || 0,
       pct: Math.round(((a.count || 0) * 100) / total),
-      color: ACTION_COLORS[a.label || ""] || "#94a3b8",
+      color: ACTION_COLORS[a.label || ""] || "var(--el-text-color-secondary)",
     }));
 });
 
@@ -244,11 +247,11 @@ async function handleScan() {
   font-weight: 600;
 
   &.is-high {
-    color: var(--el-color-danger);
+    color: var(--gowind-danger-text);
   }
 
   &.is-ok {
-    color: var(--el-color-success);
+    color: var(--gowind-success-text);
   }
 }
 

@@ -915,7 +915,7 @@
     "moduleName": "对话",
     "newConversation": "新建对话",
     "conversations": "会话列表",
-    "inputPlaceholder": "输入消息，Enter 发送，Shift+Enter 换行",
+    "inputPlaceholder": "输入消息…",
     "send": "发送",
     "sending": "思考中…",
     "emptyTitle": "开始与 AI 对话",
@@ -934,7 +934,9 @@
     "knowledgeBasePlaceholder": "选择后对话将检索注入相关片段",
     "rename": "重命名",
     "renamePrompt": "请输入新的会话标题",
-    "renameSuccess": "已更新标题"
+    "renameSuccess": "已更新标题",
+    "untitled": "新对话",
+    "sendHint": "Enter 发送 / Shift + Enter 换行"
   },
   "ai": {
     "moduleName": "AI 助手",

@@ -22,7 +22,9 @@
   /* input */
   --vxe-ui-input-border-color: hsl(var(--border));
 
-  /* --vxe-ui-input-placeholder-color: #8d9095; */
+  /* 空表格文案走这条（.vxe-table--empty-block）；不覆写则落到 vxe 默认的浅色
+     #3c3d3e，暗色下与 L1 表面 #111827 对比度仅 1.6:1，等于看不见 */
+  --vxe-ui-input-placeholder-color: hsl(var(--muted-foreground));
 
   /* --vxe-ui-input-disabled-background-color: #262727; */
 

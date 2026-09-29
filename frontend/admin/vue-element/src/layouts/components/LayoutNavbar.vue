@@ -230,7 +230,7 @@ function handleSettingsClick() {
     transform: scale(1.05);
 
     :deep(.svg-local-icon) {
-      color: var(--el-color-primary);
+      color: var(--gowind-primary-text);
     }
   }
 

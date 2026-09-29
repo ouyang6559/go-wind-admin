@@ -103,6 +103,9 @@ const ApiAuditLog = () => {
         METHOD_LIST.map((item) => [item.value, { text: item.label, status: 'Default' }]),
       ),
       render: (_, record) => {
+        // Tag 预设色名（与本文件 successToColor 同一用法）；此前把 'success' 这类
+        // 预设名直接当 CSS color 值写进 style，浏览器丢弃整条声明，方法列三端里只有
+        // 这一端没有任何颜色区分。
         const colorMap: Record<string, string> = {
           GET: 'success',
           POST: 'processing',
@@ -113,10 +116,8 @@ const ApiAuditLog = () => {
           OPTIONS: 'default',
         };
 
-  return (
-          <span style={{ color: colorMap[record.httpMethod || ''] || '#666' }}>
-            {record.httpMethod}
-          </span>
+        return (
+          <Tag color={colorMap[record.httpMethod || ''] || 'default'}>{record.httpMethod}</Tag>
         );
       },
     },

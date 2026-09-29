@@ -245,7 +245,7 @@ const handleInputKeydown: (evt: KeyboardEvent | Event) => any = (evt) => {
 }
 
 .command-palette-input__suffix :deep(.svg-local-icon):hover {
-  color: var(--el-color-primary);
+  color: var(--gowind-primary-text);
 }
 
 .command-palette-results {
@@ -294,7 +294,7 @@ const handleInputKeydown: (evt: KeyboardEvent | Event) => any = (evt) => {
   padding: 0 6px;
   font-size: 11px;
   line-height: 18px;
-  color: var(--el-color-primary);
+  color: var(--gowind-primary-text);
   background: var(--el-color-primary-light-9);
   border-radius: 6px;
 }

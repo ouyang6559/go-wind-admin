@@ -15,19 +15,23 @@ const monthCalls = ref(0);
 const quotaConfigured = ref(false);
 const quotaLimit = ref(0);
 
+// 汇总卡数值是"文字"不是"填充"，取值必须随主题走 --metric-* 档
+//（定义在 packages/styles/src/antd/index.css，与 react / vue-element 端同名变量同值）：
+// 原来直接写 hsl(var(--primary)) 与 tailwind 的 cyan-400/violet-400，实测浅色下 1.81:1、
+// 2.72:1，连 24px 大字号的 3.0:1 下限都够不到（2026-09-28 全页面扫测）。
 const metricItems = computed(() => [
   {
-    color: '#3b82f6',
+    color: 'var(--metric-blue)',
     label: $t('page.aiUsage.monthTokens'),
     value: monthTokens.value.toLocaleString(),
   },
   {
-    color: '#22d3ee',
+    color: 'var(--metric-cyan)',
     label: $t('page.aiUsage.monthCalls'),
     value: monthCalls.value.toLocaleString(),
   },
   {
-    color: '#a78bfa',
+    color: 'var(--metric-violet)',
     label: $t('page.aiUsage.quota'),
     value: quotaConfigured.value ? quotaLimit.value.toLocaleString() : '∞',
   },
@@ -142,9 +146,9 @@ onMounted(() => {
         <div
           v-for="m in metricItems"
           :key="m.label"
-          class="rounded-xl border border-solid border-gray-200 bg-card p-4 dark:border-gray-700"
+          class="rounded-xl border border-solid border-border bg-card p-4"
         >
-          <div class="mb-2 text-sm text-gray-400">{{ m.label }}</div>
+          <div class="mb-2 text-sm text-muted-foreground">{{ m.label }}</div>
           <div class="text-2xl font-semibold tabular-nums" :style="{ color: m.color }">
             {{ m.value }}
           </div>

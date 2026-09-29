@@ -10,6 +10,7 @@ import {
 } from '@/api/hooks/user-profile';
 import { useAuthStore } from '@/stores';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import { getCharColor, getRandomColor } from '@/utils/color';
 import { getGenderOptions } from '../constants';
 import MfaManagement from './MfaManagement';
 import MySessions from './MySessions';
@@ -31,13 +32,6 @@ function formatTimestamp(ts: any): string {
   if (isNaN(d.getTime())) return '-';
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
-/** 根据字符串首字符生成固定颜色 */
-function getCharColor(char: string): string {
-  const colors = ['#1677ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
-  const code = char.charCodeAt(0);
-  return colors[code % colors.length];
 }
 
 /**
@@ -213,21 +207,21 @@ const UserProfile = () => {
                       <Descriptions column={1} size="small" style={{ marginBottom: 16 }}>
                         <Descriptions.Item label={t('roleNames')}>
                           {user?.roleNames?.map((role) => (
-                            <Tag key={role} style={{ backgroundColor: getCharColor(role), color: '#333', border: 'none' }}>
+                            <Tag key={role} style={{ backgroundColor: getRandomColor(role), color: '#333', border: 'none' }}>
                               {role}
                             </Tag>
                           ))}
                         </Descriptions.Item>
                         <Descriptions.Item label={t('orgUnitNames')}>
                           {user?.orgUnitNames?.map((org) => (
-                            <Tag key={org} style={{ backgroundColor: getCharColor(org), color: '#333', border: 'none' }}>
+                            <Tag key={org} style={{ backgroundColor: getRandomColor(org), color: '#333', border: 'none' }}>
                               {org}
                             </Tag>
                           ))}
                         </Descriptions.Item>
                         <Descriptions.Item label={t('positionNames')}>
                           {user?.positionNames?.map((pos) => (
-                            <Tag key={pos} style={{ backgroundColor: getCharColor(pos), color: '#333', border: 'none' }}>
+                            <Tag key={pos} style={{ backgroundColor: getRandomColor(pos), color: '#333', border: 'none' }}>
                               {pos}
                             </Tag>
                           ))}

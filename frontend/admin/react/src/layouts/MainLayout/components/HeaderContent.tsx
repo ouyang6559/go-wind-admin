@@ -393,7 +393,7 @@ export const HeaderContent = ({
                       <div
                         style={{
                           fontSize: 12,
-                          color: 'var(--ant-color-text-tertiary)',
+                          color: 'var(--ant-color-text-secondary)',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -407,7 +407,7 @@ export const HeaderContent = ({
                   <span
                     style={{
                       fontSize: 12,
-                      color: 'var(--ant-color-text-tertiary)',
+                      color: 'var(--ant-color-text-secondary)',
                       flexShrink: 0,
                     }}
                   >
@@ -616,7 +616,7 @@ export const HeaderContent = ({
                         }}
                       >
                         <span style={{ fontSize: 13 }}>{item.title}</span>
-                        <span style={{ fontSize: 12, color: 'var(--ant-color-text-tertiary)' }}>
+                        <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>
                           {(item.score * 100).toFixed(0)}%
                         </span>
                       </div>
@@ -624,7 +624,7 @@ export const HeaderContent = ({
                   </div>
                 )}
                 {!semanticLoading && semanticQuery.trim() && semanticResults.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-tertiary)', fontSize: 13 }}>
+                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
                     未找到相关页面
                   </div>
                 )}

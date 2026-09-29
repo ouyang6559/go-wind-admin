@@ -160,16 +160,16 @@ function sampleText(key: string): string {
       <!-- 消息滚动区 -->
       <div
         ref="scrollRef"
-        class="min-h-0 flex-1 overflow-y-auto rounded-xl border border-solid border-gray-200 bg-card p-4 dark:border-gray-700"
+        class="min-h-0 flex-1 overflow-y-auto rounded-xl border border-solid border-border bg-card p-4"
       >
         <!-- 标题 + 示例问题（仅首轮前展示） -->
         <div
           v-if="rounds.length === 0"
           class="flex flex-col items-center gap-3 py-10 text-center"
         >
-          <span class="text-5xl text-blue-500">⚡</span>
+          <span class="text-5xl">⚡</span>
           <div class="text-lg font-semibold">{{ $t('page.aiQuery.title') }}</div>
-          <div class="text-sm text-gray-400">{{ $t('page.aiQuery.emptyDesc') }}</div>
+          <div class="text-sm text-muted-foreground">{{ $t('page.aiQuery.emptyDesc') }}</div>
           <div class="mt-2 flex flex-wrap justify-center gap-2">
             <a-button
               v-for="key in sampleKeys"
@@ -187,7 +187,7 @@ function sampleText(key: string): string {
             <!-- 用户问题：右侧气泡 -->
             <div class="flex flex-row-reverse items-start gap-3">
               <div
-                class="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-blue-500 px-4 py-2 text-white"
+                class="max-w-[80%] whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-primary px-4 py-2 text-primary-foreground"
               >
                 {{ round.question }}
               </div>
@@ -196,22 +196,22 @@ function sampleText(key: string): string {
             <!-- 结果卡片：左侧 -->
             <div class="flex items-start gap-3">
               <div
-                class="min-w-0 flex-1 rounded-xl border border-solid border-gray-200 bg-card p-4 dark:border-gray-700"
+                class="min-w-0 flex-1 rounded-xl border border-solid border-border bg-card p-4"
               >
                 <div
                   v-if="round.loading"
-                  class="flex items-center gap-2 text-sm text-gray-400"
+                  class="flex items-center gap-2 text-sm text-muted-foreground"
                 >
-                  <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                  <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
                   {{ $t('page.aiQuery.thinking') }}
                 </div>
                   <template v-else>
                   <details class="mb-3" open>
-                    <summary class="cursor-pointer text-xs text-gray-400">
+                    <summary class="cursor-pointer text-xs text-muted-foreground">
                       {{ $t('page.aiQuery.generatedSql') }}
                     </summary>
                     <pre
-                      class="mt-2 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100"
+                      class="sql-block mt-2 overflow-x-auto p-3 text-xs leading-relaxed"
                       >{{ round.sql }}</pre
                     >
                   </details>
@@ -228,12 +228,12 @@ function sampleText(key: string): string {
                           {{ $t('page.aiQuery.viewTable') }}
                         </a-radio-button>
                       </a-radio-group>
-                      <span class="text-xs text-gray-400">
+                      <span class="text-xs text-muted-foreground">
                         {{ $t('page.aiQuery.rowCount', { count: round.rows?.length ?? 0 }) }}
                       </span>
                     </div>
                     <div
-                      class="mb-2 overflow-hidden rounded-lg border border-solid border-gray-200 p-2 dark:border-gray-700"
+                      class="mb-2 overflow-hidden rounded-lg border border-solid border-border p-2"
                     >
                       <EchartsUI ref="chartRef" height="280px" width="100%" />
                     </div>
@@ -255,14 +255,14 @@ function sampleText(key: string): string {
                   </template>
                   <div
                     v-if="round.sql && (round.rows?.length ?? 0) === 0"
-                    class="mt-2 text-xs text-gray-400"
+                    class="mt-2 text-xs text-muted-foreground"
                   >
                     {{ $t('page.aiQuery.noRows') }}
                   </div>
 
                   <div
                     v-if="round.answer"
-                    class="mt-3 rounded-lg border border-solid border-blue-900 bg-blue-950 p-3 text-sm leading-relaxed"
+                    class="mt-3 rounded-xl border border-solid border-border bg-primary/5 p-3 text-sm leading-relaxed"
                   >
                     <a-tag color="processing">{{ $t('page.aiQuery.answerTag') }}</a-tag>
                     <div class="markdown-body break-words" v-html="md(round.answer)"></div>
@@ -277,7 +277,7 @@ function sampleText(key: string): string {
 
       <!-- 输入区（吸底） -->
       <div
-        class="shrink-0 rounded-xl border border-solid border-gray-200 bg-card p-3 dark:border-gray-700"
+        class="shrink-0 rounded-xl border border-solid border-border bg-card p-3"
       >
         <div class="flex items-end gap-2">
           <a-textarea
@@ -304,6 +304,18 @@ function sampleText(key: string): string {
 
 
 <style scoped>
+/* SQL 块：放在 bg-card 的结果卡里，所以取 --accent（比表面亮一档）而不是再铺一层 --card */
+.sql-block {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+/* 本页 markdown 样式原先只有 p/table/th/td 四条，且两条是坏的：
+   `border: 1px solid var(--border)` 拿到的是 HSL 三元组而非颜色 → 整条声明被丢弃；
+   `rgb(128 128 128 / 10%)` 是硬编码中性灰。列表/代码/引用此前完全没样式
+   （Tailwind 语境下 list-style 与缩进被 reset 掉了），故与 ai/chat 参照实现对齐。 */
 .markdown-body :deep(p) {
   margin: 0 0 0.5em;
 }
@@ -312,19 +324,117 @@ function sampleText(key: string): string {
   margin-bottom: 0;
 }
 
-.markdown-body :deep(table) {
-  border-collapse: collapse;
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3),
+.markdown-body :deep(h4) {
+  margin: 0.8em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-body :deep(h1) {
+  font-size: 1.25em;
+}
+
+.markdown-body :deep(h2) {
+  font-size: 1.15em;
+}
+
+.markdown-body :deep(h3),
+.markdown-body :deep(h4) {
+  font-size: 1.05em;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+
+.markdown-body :deep(ul:last-child),
+.markdown-body :deep(ol:last-child) {
+  margin-bottom: 0;
+}
+
+.markdown-body :deep(ul) {
+  list-style: disc;
+}
+
+.markdown-body :deep(ul ul) {
+  list-style: circle;
+}
+
+.markdown-body :deep(ol) {
+  list-style: decimal;
+}
+
+.markdown-body :deep(li) {
+  margin: 0.2em 0;
+}
+
+.markdown-body :deep(li > p) {
+  margin: 0;
+}
+
+.markdown-body :deep(a) {
+  color: hsl(var(--primary));
+  text-decoration: none;
+}
+
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-body :deep(blockquote) {
+  padding: 2px 0 2px 12px;
   margin: 0.5em 0;
-  width: 100%;
+  color: hsl(var(--muted-foreground));
+  border-left: 3px solid hsl(var(--border));
+}
+
+.markdown-body :deep(code) {
+  padding: 1px 5px;
+  font-size: 0.92em;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+}
+
+.markdown-body :deep(pre) {
+  max-width: 100%;
+  padding: 12px;
+  margin: 0.5em 0;
+  overflow-x: auto;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+.markdown-body :deep(pre code) {
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  background: transparent;
+  border: none;
+}
+
+.markdown-body :deep(table) {
+  display: block;
+  max-width: 100%;
+  margin: 0.5em 0;
+  overflow-x: auto;
+  border-collapse: collapse;
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
-  border: 1px solid var(--border);
-  padding: 4px 8px;
+  padding: 5px 10px;
+  border: 1px solid hsl(var(--border));
 }
 
 .markdown-body :deep(th) {
-  background: rgb(128 128 128 / 10%);
+  font-weight: 600;
+  background: hsl(var(--muted));
 }
 </style>

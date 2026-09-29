@@ -38,16 +38,53 @@
 | `--destructive` | `hsl(348 100% 61%)` | `#FF3860` | 危险/错误（antd colorError、EP danger/error） |
 | `--primary-foreground` | `hsl(0 0% 98%)` | `#FAFAFA` | 主色上的文字 |
 
+**语义色实底上的前景**：`--primary`（相对亮度 0.16）用 `--primary-foreground` 即可（白字 4.95:1）。
+但 `--success`（0.49）/ `--warning`（0.55）配近白只有 1.87:1 / 1.74:1（按 2.1 HEX 换算）。实测到的两处真实缺陷：
+vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react 同按钮旧值 `#fff` on `#52c41a` **2.27:1**，
+且 react 端还被 `pro-components-dark.css` 的暗色兜底 `!important` 整条覆盖成中性灰（暗色下绿色从未渲染，实测 bg `#1c2128`）。
+规定：**实底 success/warning 按钮的前景取 2.3 的暗色 L0 `#0B0F19`（亮/暗两态同值，在 `#57D188` 上 9.98:1）**，
+不得沿用 `--*-foreground` 的近白值。三端现状：ele 由 EP 的 soft 变体（`#57D188` 文字 on `#1B2720`，8.02:1 暗色实测）
+已合规，react/vben 已按本条改深色墨；`--destructive` `#FF3860` 配白字 3.51:1（EP 徽标暗色实测），12px 仍不足 4.5，
+属库内派生值、暂未统一。
+
+**语义色当文字用（Tag 文字态、link/text/plain 按钮、页签激活态、查询区折叠按钮、链接）不许直接用基准色**：
+基准色在白底上是 destructive **3.51** / success **1.93** / warning **1.74**（primary 4.95 也只是勉强过），
+统一改走"向中性墨（浅色）/ 向白（暗色）混色"的文字档，写成 `color-mix(in srgb, <语义色> P%, <中性基准>)`
+——用户换主题预设（主色变了）时档位自动跟随，不需要再手算一遍。
+
+| 档 | 浅色（向 `#0B0F19` 混） | 暗色（向 `#FFFFFF` 混） |
+|---|---|---|
+| primary | 90% → `#0162D2`（白 5.71 / 画布 `#F1F3F6` 5.13 / 主色 light-9 淡底 `#E6F0FD` 4.96） | 70% → `#4D97EE`（L1 5.89） |
+| success | 50% → `#317051`（5.89） | 90% → `#68D694`（9.83） |
+| warning | 50% → `#7D6631`（5.50） | 90% → `#F1C45A`（10.80） |
+| destructive | 70% → `#B62C4B`（6.09） | 90% → `#FF4C70`（5.51） |
+
+比 2.1 基准色"更暗/更亮"是故意的：文字档只服务文字，实底按钮与徽标的前景看上一条。
+变量名三端统一 `--gowind-{primary,success,warning,danger}-text` + `--gowind-solid-ink`，落点见 §3。
+
+**两条踩过坑的结论，改样式前必读**：
+
+1. **浅色的"深墨前景"规则不能整条搬进暗色**。antd/EP 在暗色下自己派生了一套语义色（暗色 error `#DC3355`、
+   选中菜单实底 `#035EC7`），跟 2.1 的基准值不是一个颜色：白字 on `#DC3355` = **4.52** 而 `#0B0F19` 墨字只有
+   **4.24**；暗色选中菜单实底上白字 **6.12**、primary 文字档 **3.13**（比基准色还低）。
+   所以"实底配深墨""选中菜单文字降档"这类规则一律限定 `html[data-theme='light']` / `html:not(.dark)`，
+   暗色另走 70/90/90/90 档。这一条曾经制造过 77 处暗色新违规。
+2. **三端覆盖层都得写 `!important`，但理由各不相同**：react 的 antd v6 cssinjs 注入在打包样式**之后**，
+   且 Tag 规则是 `:where(hash).ant-tag.ant-tag-success:not(.ant-tag-disabled).ant-tag-filled` = **0-4-0**，
+   三 class 的覆盖必输；vue-element 由 unplugin-element-plus 把组件 CSS 追加到全局 SCSS 之后；
+   vue-vben 的 ant-design-vue v4 虽是 `hashPriority:'low'`（0-1-0，权重能赢），但 dev 与 prod 的注入顺序不同。
+   结论：**按权重推不如实测**——写覆盖前先用探针读一次生效值，别按选择器复杂度赌。
+
 **色阶派生规则**：由基准色程序化生成 -50 ～ -900 阶梯（vben / vue-element 已有 `generatorColorVariables`；react 端由 antd `defaultAlgorithm/darkAlgorithm` 自动派生 hover/active）。交互态规则：**hover 取亮一阶、active 取暗一阶，禁止手工挑色**。EP 侧 `light-3/5/7/8/9`、`dark-2` 一律由脚本生成，不手写。
 
 ### 2.2 中性色 · 浅色模式
 
-> **落地状态按端不同**（2026-09-25 复核）：vue-element ✓（`styles/vendors/_element-plus.scss:31` 页面画布
+> **落地状态按端不同**（2026-09-25 复核，2026-09-29 补文字档一层）：vue-element ✓（`styles/vendors/_element-plus.scss:31` 页面画布
 > `#F1F3F6`、`:52` 边框 `#E4E4E7`）、vue-vben ✓（`packages/@core/base/design/src/design-tokens/default.css:10`
-> `--background-deep: 216 20.11% 95.47%` = `#F1F3F6`）、**react ✗**——react 端只有
-> `core/preferences/config/darkTheme.ts` 一套 token 覆盖，**浅色模式没有任何 token 覆写**，
-> 画布/边框走 antd `defaultAlgorithm` 的默认派生值，与本表并不严格相等。
-> 本表因此对 react 是"目标值"而非"现值"；要 react 浅色严格对齐本表，需要新增一套 light tokens（未做，属新工作）。
+> `--background-deep: 216 20.11% 95.47%` = `#F1F3F6`）、**react 半 ✓**——react 端只有
+> `core/preferences/config/darkTheme.ts` 一套 token 覆盖，**浅色模式的画布/边框仍走 antd `defaultAlgorithm`
+> 的默认派生值**，与本表不严格相等（要严格对齐需新增一套 light tokens，未做，属新工作）；
+> 但**文字层次（次要档 + 2.1 的语义色文字档）react 已落**：`src/styles/semantic-text.css`，三端同值。
 
 | Token | 值 | ≈HEX | 说明 |
 |---|---|---|---|
@@ -56,10 +93,19 @@
 | 边框 | `hsl(240 5.9% 90%)` | `#E4E4E7` | 通用边框（≈ zinc-200） |
 | 文字-主 | `#1F2937` | — | 标题、重点（gray-800） |
 | 文字-常规 | `#374151` | — | 正文（gray-700） |
-| 文字-次要 | `#6B7280` | — | 辅助说明（gray-500） |
-| 文字-占位 | `#9CA3AF` | — | placeholder（gray-400） |
+| 文字-次要 | `#676E7C`（= `hsl(220 9.25% 44.51%)`） | — | 辅助说明、描述表标签。2026-09-29 由 `#6B7280`(gray-500) 提暗一档：旧值在白底 4.83 达标，但落在**实际容器底色**上就不够——antd 表头 `#F5F5F5` 4.43、vxe/EP 表头 `#F0F2F5` 4.31、画布 `#F1F3F6` 4.35；新值同底 4.70 / 4.57 / 4.61 |
+| 文字-占位 | `#9CA3AF` | — | placeholder（gray-400），**不参与 4.5 判定**，见下方豁免边界 |
 
-灰阶统一走 Tailwind gray/slate 族（与暗色同一冷调体系）。浅色投影：卡片静止 `0 1px 2px rgba(0,0,0,.05)`，悬浮态 `0 4px 12px rgba(0,0,0,.08)`，克制不发光。
+> **占位符档的豁免边界**（2026-09-29 定稿，三端一致）：`#9CA3AF` on 白 = 2.54，但它承载的是"尚未成为内容"的
+> 提示语，不是正文，按 4.5 判会把每一张带筛选区的列表页都报成缺陷；antd 同档更浅（`rgba(0,0,0,.25)`）。
+> 判据必须窄：**只有坐在表单控件里**（`.el-select/.el-input/.el-textarea/.el-date-editor/.ant-select/.ant-picker/…`）
+> 且带 `is-transparent` 空态标记的 `*placeholder` 节点才算这一档。
+> `.avatar-placeholder`（姓名首字，85px）、vxe 的"暂无数据"等**是内容文字，不豁免**，实测仍按 4.5 判。
+> 选中后的值走 EP 的 `#606266`（去掉 `is-transparent`），同样要量。
+
+灰阶统一走 Tailwind gray/slate 族（与暗色同一冷调体系），**次要档是唯一的例外**：`#676E7C` 不在 gray/slate
+的任一级上（gray-500 `#6B7280` 在淡底色上差 0.1~0.2，slate-500 `#64748B` 偏蓝过冷），按 2.1 的混色思路取冷灰。
+浅色投影：卡片静止 `0 1px 2px rgba(0,0,0,.05)`，悬浮态 `0 4px 12px rgba(0,0,0,.08)`，克制不发光。
 
 ### 2.3 中性色 · 暗色模式（权威 = react 六轮定稿）
 
@@ -76,7 +122,12 @@
 配套（暗色必读，均为定稿结论，勿改）：
 
 - **边框要"拒绝隐形"**：输入类 `rgba(255,255,255,.1)`（hover `.2`，focus 主色；2026-09-08 对齐 vben 实测值修订）、通用 `rgba(148,163,184,.28)`、分隔线 `rgba(255,255,255,.08)`（5% 时卡片与大底糊成一片）。
-- **文字**：主 `#F8FAFC`、次 `#8B949E`、三级 `#6E7681`、placeholder `#9CA3AF`（提亮对齐 vben）；表单标签降一档用 `#DCE3ED`（值是主角）。
+- **文字**：主 `#F8FAFC`、次 `#8B949E`（L1 上 5.77 / 浮层 `#1C2128` 上 5.26，与 2.2 的浅色次要档 `#676E7C` 同为一档，
+  2026-09-29 三端逐页实测对齐）、三级 `#6E7681`（L1 上 **3.86**，只给 12px 以上的非关键注记；2026-09-29 的三端逐页实测
+  没有任何渲染文本取该值，真要用进正文得先提到次要档）、placeholder `#9CA3AF`（提亮对齐 vben，豁免口径见 2.2 末注）；
+  表单标签降一档用 `#DCE3ED`（值是主角）。
+- **暗色语义色文字档另算**：暗色下 antd/EP 自己派生一套语义色，浅色的"深墨前景"规则在暗色是倒退，
+  详见 2.1「语义色当文字用」的两条踩坑结论。
 - **填充/hover**：浮层列表项 hover `rgba(255,255,255,.08)`；fill 四阶 `rgba(255,255,255,.14/.09/.05/.03)`。
 - **投影必须用黑**：`0 6px 16px rgba(0,0,0,.45), 0 3px 6px rgba(0,0,0,.3)`（antd darkAlgorithm 派生的白投影在暗底不可见）。
 - **遮罩**：Drawer `rgba(0,0,0,.6)`，通用 `rgba(0,0,0,.45)`。
@@ -152,6 +203,9 @@
 机制：`preferences`（`packages/@core/preferences`）→ `update-css-variables.ts` 写 `--primary` 等 HSL 三元组 + `html.dark`/`data-theme` → `useAntdDesignTokens()` / `useElementPlusDesignTokens()` 派生组件库 token。
 
 - 本项目 override 仅 `app.name` / `accessMode`（`apps/admin/src/preferences.ts`），默认主题即本规范基准，**无强制迁移项**。
+- 2.1 的语义色文字档 + 2.2/2.3 的次要档落点：`packages/styles/src/antd/index.css` 末尾的 `--gowind-*-text` 段
+  （变量由 `hsl(var(--primary|success|warning|destructive))` 混色，跟随主题预设；规则带 `!important`，理由见 2.1 第 2 条）。
+  **这一层是纯 CSS 且经 postcss 处理，注释只能写 `/* */`，写 `//` 会在 dev 直接 500（`Unknown word …`）。**
 - 曾经的"唯一开放项"已关闭：2.3 的 react 系暗色已被采纳——`packages/@core/base/design/src/design-tokens/dark.css:4-11`
   的 `--background` / `--background-deep` / `--popover` / `--foreground` 已是近黑蓝系，该文件头注释（2026-09-08）
   即写明"暗色中性色对齐设计语言规范（docs/design-language.md §2.3，近黑蓝系，与 react 端定稿一致）"。
@@ -168,6 +222,8 @@
 | 主色 α（暗色） | `config/darkTheme.ts:86,102,103,104` | `activeShadow …0.12`、`rowHoverBg …0.08`、`rowSelectedBg …0.15`、`rowSelectedHoverBg …0.2`，全为 `rgba(0, 107, 230, …)` |
 | 顶栏 50 | `src/layouts/MainLayout/index.tsx:300` | `height: 50` |
 | 折叠 48 / 展开 224 | `src/layouts/MainLayout/components/SiderMenu/index.tsx:99` | `isCollapsed ? 48 : (sidebarConfig?.width ?? 224)` |
+| 语义色文字档 2.1 + 次要档 2.2 | `src/styles/semantic-text.css`（由 `main.tsx` 引入） | `--gowind-*-text` = `color-mix(...)`，规则一律带 `!important`（2.1 第 2 条）；浅/暗两态各一组变量，深墨类规则只在 `html[data-theme='light']` 下生效 |
+| 页签激活态文字 | `src/layouts/MainLayout/components/TabsBar/tabsbar.css` | 浅色走 `--gowind-primary-text`；暗色的 chrome/card 形态保持 `var(--ant-color-text)`（本地规则同样带 `!important`，否则被 2.1 那层的新页签规则盖掉） |
 
 > **一处与 2.3 有意的偏差**：react 不覆写表头色——`darkTheme.ts:99-100` 注释说明
 > `colorHeaderBg` 不是合法 antd Token（原值 `'#1F2937'` 已移除），表头由 `colorBgContainer/colorFillAlter`
@@ -191,16 +247,16 @@
 | 字重 2.5 | `src/styles/index.scss:46` | `--el-font-weight-primary: 400` |
 | 顶栏 / 折叠 / 边距 2.6 | `_variables.scss:16`（50px）/ `LeftLayout.vue:57`、`MixLayout.vue:123`（48）/ `_layouts.scss:9-10`（16px） | 与 2.6 一致 |
 | vxe 暗色 | `styles/vendors/_vxe-table.scss:180,183,185,187` | 表头 `#1F2937`、表体/布局底 `#111827`、斑马纹 `rgba(255,255,255,.03)` |
+| 语义色文字档 2.1 + 次要档 2.2 | `styles/vendors/_element-plus.scss` 的 `--gowind-*-text` 段 | 把 EP 的 `--el-button-text-color` / `--el-tag-text-color` 指到文字档（`.el-button--{type}` 的 `is-link/is-text/is-plain` 三变体 + `.el-tag--{type}`），带 `!important`——unplugin-element-plus 把组件 CSS 追加在本文件之后，不带就输；次要档 `--el-text-color-secondary: #676E7C` |
 
 **沿革（退役旧值）**：主色 `hsl(220 100% 55%)` / `#165DFF`、浅色 canvas `#F7F8FA`、浅色边框 `#E5E6EB`、
 字重 500、折叠 54、`app-container` 15px，以及上面括号里那一整列 Arco 暗色灰。
 运行时注入（`update-css-variables.ts`）与 SCSS 兜底两处必须同值，改一处就要同步另一处。
 
-> **实测到的不一致（待修代码，不是待修文档）**：SCSS 兜底里的 success / warning 仍是 2.1 勘误前的
-> `#57D1A0` / `#EF7A48`（`styles/vendors/_element-plus.scss:16,19`），与规范值
+> **曾实测到的不一致（2026-09-28 已修代码）**：SCSS 兜底里的 success / warning 一度仍是 2.1 勘误前的
+> `#57D1A0` / `#EF7A48`（`styles/vendors/_element-plus.scss` 的 `$colors` success / warning base），与规范值
 > `hsl(144 57% 58%)`≈`#57D188` / `hsl(42 84% 61%)`≈`#EFBD48` 不同；运行时注入走的是规范值，
-> 所以只有"运行时注入未覆盖到的场景"（首屏前 / 未执行主题脚本时）会露出旧色。按上面的"两处必须同值"规则，
-> 这两行 SCSS 值应对齐 2.1。
+> 所以只有"运行时注入未覆盖到的场景"（首屏前 / 未执行主题脚本时）会露出旧色。现两处已同值。
 
 ---
 
@@ -209,10 +265,19 @@
 - **页面容器**：三端各自容器（react `PageContainer` / ele `ProPage` / vben `Page`），但结构统一为：canvas 大底 → 搜索卡片（surface）→ 工具栏 → 表格卡片（surface + 12px 圆角 + 阴影）。
 - **表格**：无边框 + 斑马纹可选；表头独立色（浅 `#F0F2F5` 系 / 暗 `#1F2937`）；行 hover 用主色 8% α；行高紧凑（≤40px，ele 30px 现状可保留）。
 - **表单/抽屉**：输入控件底与表面同层（暗 `#111827` / 浅白），以 `rgba(255,255,255,.1)` 边框区分；focus 主色边框 + 3px 12% 柔光；抽屉遮罩 `rgba(0,0,0,.6)`，宽度基准 480。
+- **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。react 暗色侧原 `pro-components-dark.css` 的三条质感规则已删；vue-element 暗色搜索区主按钮仍保留 hover `filter: brightness(1.15)`（`_dark-mode.scss:205`），属同类装饰、本次未纳入，待决是否一并收敛。
 - **认证页（登录/注册）**：画布深底 + 实底表面卡（24px 大圆角、主色柔影）；品牌插画带 vben 同款 float 动效（`translateY 0→-20px→0`，5s 循环，尊重 `prefers-reduced-motion`）。
 - **页签栏**：chrome 形态、38px。选中页签走"温和配方"（2026-09-16 修订，基准 = vben）：暗色 = 中性灰底（fill ≈ 白 10%）+ 正常亮文字，浅色 = 主色 15% 底 + 主色文字；**禁用主色描边 / 发光阴影 / 底部指示线 / 字重加粗**（形状本身即指示）；悬停 = 中性微底，关闭按钮跟随文字色不用主色。
 - **默认头像**（2026-09-16 统一）：三端统一使用橘猫插画 `default-avatar.png`（react/ele public 同文件，vben 经 `apps/admin/src/preferences.ts` 覆盖框架默认的 webp——带 Vben 品牌字样已弃用）；用于导航栏当前用户、通知、锁屏等无头像兜底；用户列表/详情的"姓名首字 + 底色"兜底保留（承载身份信息）。
 - **侧边栏菜单交互态（2026-09-16 定稿，基准 = react antd Menu）**：悬停 = 中性灰遮罩（浅 `#F5F7FA` 系 / 暗 `rgba(255,255,255,.05~.08)`，8px 圆角）；选中 = 主色实底 + 白字（`--primary-foreground`）+ 8px 圆角药丸，不得用左侧竖条 / 淡色底 / 字重加粗来区分选中（vben 旧"选中与悬停同灰"、ele 旧"inset 蓝条 + light-9 淡底"均废弃）；父级展开链路只做文字/图标提亮，不铺底色。折叠后的弹出子菜单选中态同规则。横向顶部菜单暂不约束。
+- **实底主色标"位置"，不标"次级动作"（2026-09-29 定稿，基准 = react）**：实底主色块留给状态标识（上一条的导航选中、列表/分页的当前选中）与页面级主行动（提交、发送）；
+  **列表面板里的"新建 X"这类次级动作按钮一律中性描边**——它和导航选中同色同形时，用户分不清哪个是菜单高亮、哪个是按钮。
+  踩坑实测（ele `/ai/chat` 左栏）：`<ElButton type="primary" plain>` 浅色下是淡底 `#E6F0FD` + 文字档 `#0162D2`（4.96 ✓），
+  **暗色下 EP 把 plain 直接渲染成 `#006BE6` 实底 + 白字**（4.95），与侧边栏选中项、会话选中行叠成三枚一模一样的蓝药丸；
+  改回默认按钮后三端同形（react 实测 `#FFFFFF` 浅 / `#1C2128` 暗，vben 为 `a-button` 默认态）。
+  反向结论一并记下：**别用"淡底 + 主色文字"去降"面板内选中"这一档**——暗色淡底 `#121D29` 与面板 `#111827` 只差
+  **1.04:1**（浅色 `#E6F0FD` vs 白 1.15:1），铺不出可辨的选中块，实底主色在这一档是必要的
+  （把淡底加浓到文字对比仍 ≥4.5 的上限 ≈14% 主色：浅 4.67 / 暗 5.16，底色与面板差也只有 1.22:1 / 1.14:1）。
 - **图表**：数据色板 = 主色阶梯（-300~-700）+ 语义色；枚举分类名本地化复用既有 i18n 命名空间，不新增同义 key。
 - **空态**：文字性空态，不引入插画资源。
 - **错误/兜底页（401/403/404/500/offline/coming-soon）**（2026-09-16 定稿）：插画填色一律走 `--fb-*` 插画语义变量（`primary/ink/paper/mist/mist-2/line/navy/navy-deep/skin/skin-light`），SVG 内禁用裸色值。亮色为"纸墨日光"原色；暗色为"月夜"版——装饰件压暗至画布上方一档（mist `#182136` / mist-2 `#22304a` / line `#33405e`）、藏青物件提亮保形（navy `#46547a` / navy-deep `#38456a`）、主色提亮一档（`color-mix(in srgb, 主色 78%, white)`）。主色锚点接线：react 由 ThemeProvider 写 `--app-color-primary` 到 `<html>`，ele 复用 `--primary-hsl`。插画后方垫主色柔光晕（radial-gradient `--fb-glow`，暗色更明显）；进场 fade+上浮 450ms 依次错峰 + 插画 6s 悬浮呼吸，动效尊重 `preferences.transition.enable` 与 `prefers-reduced-motion`。
@@ -239,4 +304,14 @@
 2. **vue-element 跟进**：主色/语义色 + 暗色底统一 + 尺寸，改动集中在 4 个样式/配置文件。
 3. **vben 收尾**：按最终决议决定是否把暗色 default 主题对齐 react 系 4 个值（**已决**：采纳 react 系，见 §3.1 与 `dark.css:4-11`）。
 
-> 维护记录：2026-09-08 首版定稿（基准取 vben 视觉语言 + react 暗色中性色定稿）；2026-09-13 勘误 2.1 表 success/warning ≈HEX，并补记 vue-element 端收尾迁移（暗色文字层次/抽屉输入同层化/Tag 与图表色板对齐 react/浅色 Arco 灰清除）；2026-09-16 新增 §4 错误/兜底页 `--fb-*` 插画语义变量与两态色板（react/ele 已迁移并暗浅两态实测，vben 维持 `--primary/--foreground` 现状）；2026-09-25 复核：确认 §2.6/§3.2/§3.3 的"现值 → 目标"清单**已落地**，改写为落点索引（逐条 file:line）+ 沿革，§2.5 字体栈改记三端实测值，§2.2 标注 react 浅色无 token 覆写，并补"三选一口径"说明。
+> 维护记录：2026-09-08 首版定稿（基准取 vben 视觉语言 + react 暗色中性色定稿）；2026-09-13 勘误 2.1 表 success/warning ≈HEX，并补记 vue-element 端收尾迁移（暗色文字层次/抽屉输入同层化/Tag 与图表色板对齐 react/浅色 Arco 灰清除）；2026-09-16 新增 §4 错误/兜底页 `--fb-*` 插画语义变量与两态色板（react/ele 已迁移并暗浅两态实测，vben 维持 `--primary/--foreground` 现状）；2026-09-25 复核：确认 §2.6/§3.2/§3.3 的"现值 → 目标"清单**已落地**，改写为落点索引（逐条 file:line）+ 沿革，§2.5 字体栈改记三端实测值，§2.2 标注 react 浅色无 token 覆写，并补"三选一口径"说明；2026-09-28 三端逐页暗色实测（对比度探针，react/ele/vben 各 39–40 路由）：新增 2.1「语义色实底上的前景」条并把 react/vben 任务页"启动全部"按钮前景改深色墨，修 ele 端 SCSS success/warning 与运行时注入不同值（见 3.3 注），清理 ele 面包屑/AI 问数/分析卡的裸色值；2026-09-29 三端逐页浅/暗两态复测（react 39 路由、ele/vben 各 50 路由，
+单次实测 5.4k~6.8k 个文本节点，探针口径：4.5，大字号/粗体档 3.0）：新增 2.1「语义色当文字用」文字档表
+（三端各落一层覆盖，违规读数 react 浅 333→0 / 暗 251→0、vben 浅 484→0 / 暗 93→0、ele 浅 80→0 / 暗 38→0）；
+2.2 次要档 `#6B7280`→`#676E7C` 并定稿占位符档的豁免边界；2.3 补暗色语义色的两条踩坑结论（浅色深墨规则在暗色是倒退）。
+vben 端另修 `registerGlobComp.ts` 漏注册 Radio（AI 问数页 `a-radio-group` 整块不渲染，实测 console 的
+`Failed to resolve component` 两条随注册消失）；同日按新 §4「实底主色标位置不标次级动作」条，把 ele AI 助手页
+"新建对话"按钮从 `type="primary" plain`（暗色实测 `#006BE6` 实底 + 白字，与侧边栏选中同色同形）改回默认按钮，
+`/ai/chat` 暗/浅两态复测各 52 个文本节点、违规 0。同日按新 §4「按钮质感」条删 react 暗色主按钮的高光渐变 +
+品牌色发光投影（原 `pro-components-dark.css:513-524` 三条，含配套的 hover/active `filter: brightness`），
+暗/浅两态同一按钮实测计算值对齐：`backgroundImage` 均 `none`、`filter` 均 `none`、`boxShadow` 同为库原生
+`0 2px 0`（暗 `rgba(3,129,249,.21)` / 浅 `rgba(5,165,255,.1)`），差异只剩主色本身。

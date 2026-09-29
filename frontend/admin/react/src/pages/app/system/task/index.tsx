@@ -330,7 +330,17 @@ const TaskManagement = () => {
                 cancelText={t('common:button.cancel')}
               >
                 <Button
-                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
+                  // type="primary" 是必需的：styles/pro-components-dark.css:499 的暗色兜底规则
+                  // 命中 `.ant-btn:not(.ant-btn-primary)…` 并带 !important，会把这颗按钮整个覆盖成
+                  // 中性灰底——绿色"启动"语义在暗色下从未生效（实测 bg #1c2128）。
+                  // 前景取 §2.3 暗色 L0 #0B0F19 而非白色：语义色实底（success #4db577/#57D188，
+                  // 亮度 0.36–0.49）配近白前景实测只有 1.85:1（vben 同按钮）～2.56:1，深色墨在同一底上 ≥6.4:1。
+                  type="primary"
+                  style={{
+                    backgroundColor: 'var(--ant-color-success)',
+                    borderColor: 'var(--ant-color-success)',
+                    color: '#0b0f19',
+                  }}
                   icon={<CaretRightOutlined />}
                   loading={startAllMutation.isPending}
                 >

@@ -46,16 +46,19 @@ export default function AiUsagePage() {
       ? Math.min(100, Math.round(((summaryData.monthTokens ?? 0) * 100) / (summaryData.quotaLimit || 1)))
       : 0;
 
+  // 汇总卡数值是"文字"，取值随主题走 --metric-* 档（定义在 styles/semantic-text.css，
+  // 与 vue-element 端同值）：原实现用主色 token 和 tailwind cyan-500，实测
+  // 暗色主色 2.90:1、cyan-500 对白底 2.37:1，24px 大字号的 3.0 下限都过不了。
   const cards = [
     {
       label: t('summary.monthTokens'),
       value: (summaryData?.monthTokens ?? 0).toLocaleString(),
-      color: 'text-blue-500',
+      color: 'text-[color:var(--metric-blue)]',
     },
     {
       label: t('summary.monthCalls'),
       value: (summaryData?.monthCalls ?? 0).toLocaleString(),
-      color: 'text-cyan-500',
+      color: 'text-[color:var(--metric-cyan)]',
     },
   ];
 
@@ -69,21 +72,21 @@ export default function AiUsagePage() {
               key={c.label}
               className="rounded-xl border border-solid border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
             >
-              <div className="mb-2 text-sm text-gray-400">{c.label}</div>
+              <div className="mb-2 text-sm text-[color:var(--ant-color-text-secondary)]">{c.label}</div>
               <div className={`text-2xl font-semibold tabular-nums ${c.color}`}>{c.value}</div>
             </div>
           ))}
           <div className="rounded-xl border border-solid border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-            <div className="mb-2 text-sm text-gray-400">{t('summary.quota')}</div>
+            <div className="mb-2 text-sm text-[color:var(--ant-color-text-secondary)]">{t('summary.quota')}</div>
             {summaryData?.quotaConfigured ? (
               <>
                 <Progress percent={quotaPct} status={quotaPct > 80 ? 'exception' : 'normal'} />
-                <div className="mt-1 text-xs text-gray-400">
+                <div className="mt-1 text-xs text-[color:var(--ant-color-text-secondary)]">
                   {(summaryData.monthTokens ?? 0).toLocaleString()} / {(summaryData.quotaLimit ?? 0).toLocaleString()}
                 </div>
               </>
             ) : (
-              <div className="text-2xl font-semibold text-gray-400">∞</div>
+              <div className="text-2xl font-semibold text-[color:var(--ant-color-text-secondary)]">∞</div>
             )}
           </div>
         </div>

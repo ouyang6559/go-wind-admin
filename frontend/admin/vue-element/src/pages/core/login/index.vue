@@ -494,7 +494,7 @@ html:not(.dark) {
     }
 
     :deep(.el-link) {
-      color: var(--el-color-primary) !important;
+      color: var(--gowind-primary-text) !important;
     }
   }
 }

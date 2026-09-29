@@ -199,7 +199,7 @@ function handleSettingsClick() {
       transform: scale(1.05);
 
       :deep(.svg-local-icon) {
-        color: var(--el-color-primary);
+        color: var(--gowind-primary-text);
       }
     }
 
@@ -323,7 +323,7 @@ function handleSettingsClick() {
       transform: scale(1.05);
 
       :deep(.svg-local-icon) {
-        color: var(--el-color-primary) !important;
+        color: var(--gowind-primary-text) !important;
       }
     }
   }
@@ -350,11 +350,11 @@ function handleSettingsClick() {
     color: var(--el-text-color-regular) !important;
   }
   ::v-deep(.tenant-switcher__trigger:hover) {
-    color: var(--el-color-primary) !important;
+    color: var(--gowind-primary-text) !important;
     background: var(--el-fill-color-light);
   }
   ::v-deep(.tenant-switcher__trigger:hover .tenant-switcher__icon) {
-    color: var(--el-color-primary) !important;
+    color: var(--gowind-primary-text) !important;
   }
 }
 
@@ -364,7 +364,7 @@ function handleSettingsClick() {
     color: var(--el-text-color-regular) !important;
 
     &:hover {
-      color: var(--el-color-primary) !important;
+      color: var(--gowind-primary-text) !important;
     }
   }
 }

@@ -353,7 +353,8 @@
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    color: var(--el-text-color-placeholder);
+    // 空态文案是内容不是 placeholder（占位档对白底只有 2.30:1）
+    color: var(--el-text-color-secondary);
 
     .vxe-icon--empty {
       font-size: 48px;
