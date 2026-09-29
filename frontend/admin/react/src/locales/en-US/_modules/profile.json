@@ -34,7 +34,6 @@
   "save": "Save Changes",
   "saveSuccess": "Saved successfully",
   "saveFailed": "Save failed",
-  "fetchFailed": "Failed to fetch user info",
   "oldPassword": "Current Password",
   "oldPasswordPlaceholder": "Enter current password",
   "requiredOldPassword": "Please enter current password",

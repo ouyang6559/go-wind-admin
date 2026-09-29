@@ -29,7 +29,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "selectTypeFirst": "请先在左侧选择一个字典类型",
   "dictEntryList": "字典条目列表",
   "languageCode": "语言编码",

@@ -27,7 +27,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "requiredName": "请输入参数名称",
   "requiredKey": "请输入参数键名",
   "requiredValue": "请输入参数键值",

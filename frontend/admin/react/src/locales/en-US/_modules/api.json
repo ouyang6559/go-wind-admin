@@ -28,7 +28,6 @@
   "deleteFailed": "Delete failed",
   "syncSuccess": "Synced successfully",
   "syncFailed": "Sync failed",
-  "fetchFailed": "Failed to fetch data",
   "maxChars": "Maximum {{max}} characters",
   "requiredPath": "Please enter API path",
   "requiredMethod": "Please select request method"

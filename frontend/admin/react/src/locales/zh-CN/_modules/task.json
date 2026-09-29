@@ -54,7 +54,6 @@
   "deleteFailed": "删除失败",
   "operationFailed": "操作失败",
   "updateStatusFailed": "状态更新失败",
-  "fetchFailed": "获取数据失败",
   "requiredTypeName": "请选择类型名称",
   "requiredType": "请选择任务类型",
   "taskType": {

@@ -24,7 +24,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "yes": "启用",
   "no": "禁用"
 }

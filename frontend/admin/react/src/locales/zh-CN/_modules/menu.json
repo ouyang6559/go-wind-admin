@@ -38,7 +38,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "maxChars": "最多 {{max}} 个字符",
   "requiredTitle": "请输入菜单标题",
   "requiredPath": "请输入路由路径",

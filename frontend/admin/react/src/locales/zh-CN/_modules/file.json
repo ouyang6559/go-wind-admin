@@ -25,7 +25,6 @@
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
   "uploadFailed": "上传失败",
-  "fetchFailed": "获取数据失败",
   "requiredFileName": "请输入文件名称",
   "providerMap": {
     "MINIO": "MinIO",

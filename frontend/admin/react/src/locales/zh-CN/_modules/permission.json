@@ -37,7 +37,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "selectGroupFirst": "请先在左侧选择一个权限分组",
   "statusMap": {
     "ON": "启用",

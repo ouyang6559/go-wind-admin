@@ -24,7 +24,6 @@
   "createFailed": "Creation failed",
   "updateFailed": "Update failed",
   "deleteFailed": "Delete failed",
-  "fetchFailed": "Failed to fetch data",
   "requiredType": "Please select policy type",
   "requiredMethod": "Please select login method",
   "requiredValue": "Please enter policy value",

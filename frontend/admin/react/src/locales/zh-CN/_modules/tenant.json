@@ -31,7 +31,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "tenantIdMissing": "租户 ID 不存在",
   "maxChars": "最多 {{max}} 个字符",
   "requiredName": "请输入租户名称",

@@ -50,7 +50,6 @@
   "createSuccess": "Created",
   "updateSuccess": "Saved",
   "saveFailed": "Save failed",
-  "fetchFailed": "Failed to load notification channels",
   "requiredName": "Name is required",
   "requiredPassword": "Password is required",
   "testSend": "Test Send",
