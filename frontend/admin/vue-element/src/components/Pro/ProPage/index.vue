@@ -28,6 +28,16 @@
         :show-pagination="skeletonProps.showPagination ?? config.table.pagination !== false"
       />
 
+      <!-- 首屏加载失败（没有可展示的数据）：整块替换为错误态 + 重试 -->
+      <div
+        v-else-if="tableState.hasError.value && tableData.length === 0"
+        class="pro-page__error"
+      >
+        <ElEmpty :description="errorText" :image-size="120">
+          <ElButton type="primary" @click="handleRetry">{{ t("common.button.retry") }}</ElButton>
+        </ElEmpty>
+      </div>
+
       <!-- 正常内容 -->
       <template v-else>
         <!-- 工具栏 -->
@@ -48,6 +58,16 @@
           <template #right><slot name="toolbar-right" /></template>
         </ProToolbar>
 
+        <!-- 翻页/搜索失败但仍有旧数据：保留表格，只在表上方挂一条错误横幅 -->
+        <ElAlert
+          v-if="tableState.hasError.value"
+          class="pro-page__error-alert"
+          type="error"
+          :title="errorText"
+          :closable="false"
+          show-icon
+        />
+
         <!-- 表格 -->
         <ProTable
           ref="tableRef"
@@ -56,7 +76,7 @@
           :table-id="tableId"
           :columns="config.table.columns"
           :data="tableData"
-          :loading="tableState.loading.value"
+          :loading="delayedLoading"
           :row-key="rowKey"
           :table="config.table.tableAttrs"
           :empty-action-text="config.table.emptyActionText"
@@ -118,10 +138,11 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>, Q extends Record<string, any>">
-import { reactive, computed, ref, useSlots, watch } from "vue";
+import { reactive, computed, ref, useSlots, watch, onBeforeUnmount } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useRoute } from "vue-router";
 import { useI18n } from "@/core/i18n";
+import { preferences } from "@/core/preferences";
 
 import ProSearch from "../ProSearch/index.vue";
 import ProTable from "../ProTable/index.vue";
@@ -177,6 +198,45 @@ const exportModalRef = ref<InstanceType<typeof ExportModal>>();
 const importModalRef = ref<InstanceType<typeof ImportModal>>();
 
 const tableData = computed(() => tableState.data.value);
+
+// === 加载态：250ms 阈值，避免快响应下 spinner 一闪而过 ===
+// 与 react 端 ListTable 的 loading.delay 同值，见 docs/design-language.md §4「列表加载态」。
+const LOADING_DELAY = 250;
+const delayedLoading = ref(false);
+let loadingDelayTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearLoadingDelayTimer() {
+  if (loadingDelayTimer !== null) {
+    clearTimeout(loadingDelayTimer);
+    loadingDelayTimer = null;
+  }
+}
+
+watch(
+  () => tableState.loading.value,
+  (isLoading) => {
+    clearLoadingDelayTimer();
+    if (isLoading) {
+      // 已在显示则不重新计时，否则慢响应会让 spinner 反复消失又出现。
+      if (!delayedLoading.value) {
+        loadingDelayTimer = setTimeout(() => {
+          delayedLoading.value = true;
+          loadingDelayTimer = null;
+        }, LOADING_DELAY);
+      }
+    } else {
+      delayedLoading.value = false;
+    }
+  }
+);
+
+const errorText = computed(
+  () => tableState.error.value || t("common.message.loadDataFailed")
+);
+
+function handleRetry() {
+  tableState.fetch(searchParams);
+}
 
 // === 选中数据（用于导出） ===
 const selectionData = computed(() => tableState.selection.value);
@@ -465,16 +525,22 @@ function handleModalSubmit() {
 tableState.fetch(searchParams);
 
 // === 骨架屏：追踪首次加载 ===
+// 页面 config.skeleton 决定「这页允不允许上骨架」，偏好设置 transition.loading 决定
+// 「全局要不要用骨架代替 spinner」——两者都为真才渲染骨架。关掉开关后回落到表内 delayed Spin，
+// 这条开关从此名副其实（此前它只有 schema 和抽屉开关，0 个消费者）。
 const skeletonEnabled = computed(
   () => props.config.skeleton !== undefined && props.config.skeleton !== false
 );
+const globalLoadingSkeleton = computed(() => preferences.transition.loading);
 const skeletonProps = computed<SkeletonConfig>(() => {
   const s = props.config.skeleton;
   if (s === true || s === undefined || s === false) return {} as SkeletonConfig;
   return s;
 });
 const hasLoaded = ref(false);
-const showSkeleton = computed(() => skeletonEnabled.value && !hasLoaded.value);
+const showSkeleton = computed(
+  () => skeletonEnabled.value && globalLoadingSkeleton.value && !hasLoaded.value
+);
 
 watch(
   () => tableState.loading.value,
@@ -482,6 +548,8 @@ watch(
     if (!loading) hasLoaded.value = true;
   }
 );
+
+onBeforeUnmount(clearLoadingDelayTimer);
 
 defineExpose({
   tableRef,
@@ -514,6 +582,18 @@ defineExpose({
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 8px;
     box-shadow: var(--el-box-shadow-light);
+  }
+
+  &__error {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  &__error-alert {
+    margin-bottom: 8px;
   }
 }
 </style>

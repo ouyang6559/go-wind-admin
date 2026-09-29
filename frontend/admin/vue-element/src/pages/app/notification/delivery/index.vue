@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from "vue";
-import { ElMessage, ElTag } from "element-plus";
+import { ElTag } from "element-plus";
 
 import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
@@ -108,26 +108,19 @@ const pageConfig = computed<ProPageConfig<NotificationDelivery>>(() => ({
 
     listAction: async (query: any) => {
       const { page, pageSize, ...queryParams } = query;
-      try {
-        const result = await fetchListNotificationDeliveries(
-          new PaginationQuery({
-            paging: { page: page || 1, pageSize: pageSize || 20 },
-            formValues: {
-              eventType: queryParams.eventType,
-              channel: queryParams.channel,
-              target: queryParams.target,
-              status: queryParams.status,
-            },
-            orderBy: ["-created_at"],
-          })
-        );
-        return { items: result.items || [], total: result.total || 0 };
-      } catch (error: any) {
-        // 不吞错：ElMessage 只是给用户看的文案，排查要靠控制台里的原始错误对象
-        console.error("list notification deliveries failed:", error);
-        ElMessage.error(error?.message || $t("pages.notification_delivery.fetchFailed"));
-        return { items: [], total: 0 };
-      }
+      const result = await fetchListNotificationDeliveries(
+        new PaginationQuery({
+          paging: { page: page || 1, pageSize: pageSize || 20 },
+          formValues: {
+            eventType: queryParams.eventType,
+            channel: queryParams.channel,
+            target: queryParams.target,
+            status: queryParams.status,
+          },
+          orderBy: ["-created_at"],
+        })
+      );
+      return { items: result.items || [], total: result.total || 0 };
     },
     toolbar: [],
     toolbarRight: [],
