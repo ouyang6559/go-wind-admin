@@ -265,7 +265,7 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
 - **页面容器**：三端各自容器（react `PageContainer` / ele `ProPage` / vben `Page`），但结构统一为：canvas 大底 → 搜索卡片（surface）→ 工具栏 → 表格卡片（surface + 12px 圆角 + 阴影）。
 - **表格**：无边框 + 斑马纹可选；表头独立色（浅 `#F0F2F5` 系 / 暗 `#1F2937`）；行 hover 用主色 8% α；行高紧凑（≤40px，ele 30px 现状可保留）。
 - **表单/抽屉**：输入控件底与表面同层（暗 `#111827` / 浅白），以 `rgba(255,255,255,.1)` 边框区分；focus 主色边框 + 3px 12% 柔光；抽屉遮罩 `rgba(0,0,0,.6)`，宽度基准 480。
-- **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。react 暗色侧原 `pro-components-dark.css` 的三条质感规则已删；vue-element 暗色搜索区主按钮仍保留 hover `filter: brightness(1.15)`（`_dark-mode.scss:205`），属同类装饰、本次未纳入，待决是否一并收敛。
+- **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。**hover 态两态同机制：实底档改 `background-color`/`border-color`、文字/链接档改 `color`，禁止用 `filter: brightness()` 只给暗色加一层亮度**（暗色静止态常带 `!important`，会压掉库原生的 hover 背景色，于是 filter 成了暗色唯一的悬停反馈——既不对称又让"关不掉"）。落地：react 删 `pro-components-dark.css` 原三条质感规则；ele `_dark-mode.scss` 原 7 处 hover `filter: brightness(1.15)` 全部换成 `color-mix(in srgb, var(--dark-*) 85%, #ffffff)`；vben 无此类装饰。ele 实测：暗 `#006BE6` → hover `rgb(38,129,234)`，浅 `#006BE6` → hover `rgb(6,81,167)`（EP 原生 `--el-button-hover-bg-color`），两态 `filter` 均为 `none`；方向不同是故意的（暗色向亮、浅色向暗，见 2.3 层级模型）。
 - **认证页（登录/注册）**：画布深底 + 实底表面卡（24px 大圆角、主色柔影）；品牌插画带 vben 同款 float 动效（`translateY 0→-20px→0`，5s 循环，尊重 `prefers-reduced-motion`）。
 - **页签栏**：chrome 形态、38px。选中页签走"温和配方"（2026-09-16 修订，基准 = vben）：暗色 = 中性灰底（fill ≈ 白 10%）+ 正常亮文字，浅色 = 主色 15% 底 + 主色文字；**禁用主色描边 / 发光阴影 / 底部指示线 / 字重加粗**（形状本身即指示）；悬停 = 中性微底，关闭按钮跟随文字色不用主色。
 - **默认头像**（2026-09-16 统一）：三端统一使用橘猫插画 `default-avatar.png`（react/ele public 同文件，vben 经 `apps/admin/src/preferences.ts` 覆盖框架默认的 webp——带 Vben 品牌字样已弃用）；用于导航栏当前用户、通知、锁屏等无头像兜底；用户列表/详情的"姓名首字 + 底色"兜底保留（承载身份信息）。
@@ -315,3 +315,12 @@ vben 端另修 `registerGlobComp.ts` 漏注册 Radio（AI 问数页 `a-radio-gro
 品牌色发光投影（原 `pro-components-dark.css:513-524` 三条，含配套的 hover/active `filter: brightness`），
 暗/浅两态同一按钮实测计算值对齐：`backgroundImage` 均 `none`、`filter` 均 `none`、`boxShadow` 同为库原生
 `0 2px 0`（暗 `rgba(3,129,249,.21)` / 浅 `rgba(5,165,255,.1)`），差异只剩主色本身。
+同日把 ele 端同族装饰一并收敛：`_dark-mode.scss` 7 处 hover `filter: brightness(1.15)`（实底 primary/success/warning/danger
+四组 + 表格体 danger 文字档 + `.button-group` 内两处）改为 `color-mix(in srgb, var(--dark-*) 85%, #ffffff)` 的
+`background-color`/`border-color`/`color`；stylelint 错误数与 HEAD 基线同为 118（本次零新增），`/opm/profile`
+真 hover 实测暗 `#006BE6`→`rgb(38,129,234)`、浅 `#006BE6`→`rgb(6,81,167)`，两态 `filter` 均 `none`。
+**顺带记一条排查教训**：这条尾巴最初是按 grep 命中 `filter: brightness`（`_dark-mode.scss:205`）报出来的，实测该
+选择器 `html.dark .el-form--inline .button-group …` 在页面上匹配 **0 个元素**（全 src 检索 `button-group` 只命中这行
+选择器自身，`/opm/users` 实测 `.button-group` 计数 0、`.el-form--inline` 计数 1），查询区实际类名是
+`.pro-search__actions` —— 整块 `.button-group { … }` 是死代码，本次只把它里面的 filter 换掉、**未删块**，
+要清理另开一次改动（grep 命中 ≠ 生效，先量匹配数）。

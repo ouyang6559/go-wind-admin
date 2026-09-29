@@ -202,7 +202,8 @@ html.dark {
           border-color: var(--dark-primary) !important;
 
           &:hover {
-            filter: brightness(1.15);
+            background-color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
+            border-color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
           }
         }
 
@@ -225,7 +226,7 @@ html.dark {
         color: var(--dark-primary) !important;
 
         &:hover {
-          filter: brightness(1.15);
+          color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
         }
       }
     }
@@ -607,15 +608,18 @@ html.dark {
   // 注意：is-link / is-text 是 Element Plus 的弱化按钮（透明背景、主色文字），
   // 实心样式会破坏其语义，故用 :not() 排除，交由 Element Plus 内置样式接管。
   .el-button:not(.pro-toolbar .el-button):not(.pro-search__actions .el-button) {
+    // hover 态与浅色同机制：改 background-color（EP 原生也是走 background-color），
+    // 不用 filter: brightness —— 静止态背景是 !important，filter 成了暗色独有的装饰层。
+    // 取值见 design-language.md §4「按钮质感」。
     // 主按钮
     &.el-button--primary:not(.is-link):not(.is-text) {
       background-color: var(--dark-primary) !important;
       border-color: var(--dark-primary) !important;
       color: #fff !important;
 
-      // hover 态：亮度微增，强化主操作的交互感
       &:hover {
-        filter: brightness(1.15);
+        background-color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
+        border-color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
       }
     }
 
@@ -626,7 +630,8 @@ html.dark {
       color: #fff !important;
 
       &:hover {
-        filter: brightness(1.15);
+        background-color: color-mix(in srgb, var(--dark-success) 85%, #ffffff) !important;
+        border-color: color-mix(in srgb, var(--dark-success) 85%, #ffffff) !important;
       }
     }
 
@@ -637,7 +642,8 @@ html.dark {
       color: #fff !important;
 
       &:hover {
-        filter: brightness(1.15);
+        background-color: color-mix(in srgb, var(--dark-accent) 85%, #ffffff) !important;
+        border-color: color-mix(in srgb, var(--dark-accent) 85%, #ffffff) !important;
       }
     }
 
@@ -648,7 +654,8 @@ html.dark {
       color: #fff !important;
 
       &:hover {
-        filter: brightness(1.15);
+        background-color: color-mix(in srgb, var(--dark-error) 85%, #ffffff) !important;
+        border-color: color-mix(in srgb, var(--dark-error) 85%, #ffffff) !important;
       }
     }
   }
@@ -866,7 +873,7 @@ html.dark {
         color: var(--dark-error) !important;
 
         &:hover {
-          filter: brightness(1.15);
+          color: color-mix(in srgb, var(--dark-error) 85%, #ffffff) !important;
         }
       }
     }
