@@ -192,44 +192,6 @@ html.dark {
         }
       }
     }
-
-    // 按钮组
-    .button-group {
-      .el-button {
-        // 搜索按钮（主色）
-        &.el-button--primary {
-          background-color: var(--dark-primary) !important;
-          border-color: var(--dark-primary) !important;
-
-          &:hover {
-            background-color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
-            border-color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
-          }
-        }
-
-        // 重置按钮（默认）
-        &:not(.el-button--primary) {
-          background-color: var(--dark-bg-table) !important;
-          border-color: var(--dark-border) !important;
-          color: var(--dark-text-primary) !important;
-
-          &:hover {
-            background-color: var(--dark-bg-hover) !important;
-            border-color: var(--dark-primary) !important;
-            color: var(--dark-primary) !important;
-          }
-        }
-      }
-
-      // 展开/收起链接
-      .el-link.el-link--primary {
-        color: var(--dark-primary) !important;
-
-        &:hover {
-          color: color-mix(in srgb, var(--dark-primary) 85%, #ffffff) !important;
-        }
-      }
-    }
   }
 
   // Drawer/Dialog — 现代高质感暗黑模式
