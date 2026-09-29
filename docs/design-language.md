@@ -271,8 +271,8 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
   - **骨架只继承横向 scroll**：`scroll.y` 会给骨架多出一层限高 `.ant-table-body`，而这批页面渲染出的真实表格并没有那层（实测两态 `hasBodyLayer:false`），照搬曾让分页器跳动 −136px。
   - 已知残余差并保留：占位条高 24px（`Skeleton.Button size="small"`）vs 文本行盒 22px ⇒ 每行约 2px，20 行的页面在数据到位后分页器上移 43px；表头位置不动，不为此钉死行高（骨架的诚实口径是"按 pageSize 猜行数"，不是"和结果一样高"）。
   - 占位条颜色取 antd token 渐变（浅 `rgba(0,0,0,.06)→(0,0,0,.15)→.06`、暗 `rgba(255,255,255,.08)`），**组件内不写死任何颜色**；本次浅色态与暗色态都以 computed style 数值对照给出（上面的 thBg/barBg），截图对照不可用——测量标签页 `visibilityState:hidden` 下 `take_screenshot` 不出图。
-  - 首屏失败用 `Empty` + 「重试」而不是"暂无数据"（后者会被读成"查询成功但结果为空"）；已有数据后刷新失败在表格上方挂 `Alert type="error"` + 重试，**旧数据保留**（实测 rows 20→20、Alert 文案「加载失败」+「重试」按钮，点一次重试即恢复）。
-  - 错误文案分两档：页面 `request` 自己 catch 后返回 `success:false` 时包装层拿不到原因，内联显示通用文案「加载失败」（toast 仍由页面发，实测两者并存）；只有 request 抛出才显示原始 `error.message`。**不要为此把 toast 删掉**——toast 保留原因、内联保留动作，分工是有意的。
+  - 首屏失败用 `Empty` + 「重试」而不是"暂无数据"（后者会被读成"查询成功但结果为空"）；已有数据后刷新失败在表格上方挂 `Alert type="error"` + 重试，**旧数据保留**（实测 rows 20→20，点一次重试即恢复）。
+  - **列表页的 `request` 不许自己 catch**：错误一律抛给 `ListTable`，由它 `console.error` 带出原始错误对象，并把 `error.message` 直接显示在内联错误态里。此前 39 页中 34 页写的是 `catch → message.error → return {success:false}`——既是"只有 toast 没有日志"（违反全仓铁律 1），又让内联只能显示通用文案「加载失败」；改后 toast 不再与内联重复，原因常驻在表格上方且带重试入口（实测 `/notification/deliveries` 翻页失败：内联「网络连接错误,请检查网络设置后重试」+「重试」，toasts 0 条，控制台 `[RequestClient]` 与 `[ListTable]` 两行都带原始错误）。页面自己的**写操作**（增删改）仍可 `message.error`，那条路不经过表格。
   - 偏好设置 `transition.loading`（「页面切换 Loading」）自此有真消费者：控制首屏骨架，关掉后骨架 0 帧、Spin 接管（实测 `sk=0, spinSpinning=1`），不再是面板里的死配置。
 - **表单/抽屉**：输入控件底与表面同层（暗 `#111827` / 浅白），以 `rgba(255,255,255,.1)` 边框区分；focus 主色边框 + 3px 12% 柔光；抽屉遮罩 `rgba(0,0,0,.6)`，宽度基准 480。
 - **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。**hover 态两态同机制：实底档改 `background-color`/`border-color`、文字/链接档改 `color`，禁止用 `filter: brightness()` 只给暗色加一层亮度**（暗色静止态常带 `!important`，会压掉库原生的 hover 背景色，于是 filter 成了暗色唯一的悬停反馈——既不对称又让"关不掉"）。落地：react 删 `pro-components-dark.css` 原三条质感规则；ele `_dark-mode.scss` 原 7 处 hover `filter: brightness(1.15)` 全部换成 `color-mix(in srgb, var(--dark-*) 85%, #ffffff)`；vben 无此类装饰。ele 实测：暗 `#006BE6` → hover `rgb(38,129,234)`，浅 `#006BE6` → hover `rgb(6,81,167)`（EP 原生 `--el-button-hover-bg-color`），两态 `filter` 均为 `none`；方向不同是故意的（暗色向亮、浅色向暗，见 2.3 层级模型）。
@@ -338,3 +338,7 @@ vben 端另修 `registerGlobComp.ts` 漏注册 Radio（AI 问数页 `a-radio-gro
 39 个列表页只把 `<ProTable>` 换成 `<ListTable>`（import 与标签两处，`request`/`columns`/`actionRef` 用法不变，实测替换后页面上 `<ProTable` 计数 0、`<ListTable<` 计数 39），
 `locales/{zh-CN,en-US}/_core/common.json` 各加 1 个 `button.retry`。**ele/vben 两端未移植**（按"react 先行、其余移植"工序，本轮只落 react）；
 骨架/错误态的实测数值（逐列全等、分页器 43px 残余差、rows 20→20 保留）记在 §4 该条内，截图对照因测量标签页 `visibilityState:hidden` 不可用。
+同日续：把 39 个列表页 `request` 里的 `try/catch → message.error → return success:false` 全部剥掉（其中 34 页此前只有 toast、没有日志，属违反全仓铁律 1），
+错误改由 `ListTable` 一处 `console.error` 带原始对象并内联显示 `error.message`；顺手删两个零消费者死目录
+`react/src/layouts/components/LoadingSkeleton/`（12 文件，其 `presets/TableSkeleton.tsx` 与本次骨架实现重复）与
+`react/src/components/common/PageContainer/index.tsx`（**活的那份在 `react/src/layouts/components/PageContainer/`，两者同名勿混**）。
