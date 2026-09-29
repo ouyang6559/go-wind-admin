@@ -22,7 +22,7 @@ interface UsageRow {
 
 /**
  * AI 用量页：当月汇总（tokens/调用次数/配额进度）+ 用量流水列表。
- * 平台用户见平台侧记录（tenant_id=0）；租户用户由后端租户隔离自动限定本租户。
+ * 两者口径相同：平台用户见全量，租户用户由后端租户隔离自动限定本租户。
  */
 export default function AiUsagePage() {
   const { t } = useTranslation('aiUsage');
@@ -31,12 +31,30 @@ export default function AiUsagePage() {
   const tableScrollY = useProTableScrollY(containerRef);
   const summary = useGetAiUsageSummary();
 
+  // 数字列等宽数位（docs/design-language.md:163 既有建议；此前全仓未落，实测 td 取 normal）。
+  // 这页一屏都是 tokens/耗时，位数错位比别的列表页更扎眼。
+  const tabularNumsCell = () => ({ style: { fontVariantNumeric: 'tabular-nums' } });
+
+  // ProTable 的 render 首参是**已经渲染好的值**（null 已被换成 '-'），所以取数一律从 record 读：
+  // 早期写法 Number(v ?? 0) 在空值上拿到的是 '-'，Number('-') = NaN；`v ?? 0` 更是永远不触发。
+  const intCell =
+    (key: 'promptTokens' | 'completionTokens' | 'totalTokens') =>
+    (_: unknown, record: UsageRow) =>
+      Number(record[key] ?? 0).toLocaleString();
+
   const columns: ProColumns<UsageRow>[] = [
     { title: t('model'), dataIndex: 'modelName', minWidth: 160 },
-    { title: t('promptTokens'), dataIndex: 'promptTokens', width: 130, render: (v) => Number(v ?? 0).toLocaleString() },
-    { title: t('completionTokens'), dataIndex: 'completionTokens', width: 140, render: (v) => Number(v ?? 0).toLocaleString() },
-    { title: t('totalTokens'), dataIndex: 'totalTokens', width: 110, render: (v) => Number(v ?? 0).toLocaleString() },
-    { title: t('duration'), dataIndex: 'durationMs', width: 100, render: (v) => `${v ?? 0} ms` },
+    { title: t('promptTokens'), dataIndex: 'promptTokens', width: 130, onCell: tabularNumsCell, render: intCell('promptTokens') },
+    { title: t('completionTokens'), dataIndex: 'completionTokens', width: 140, onCell: tabularNumsCell, render: intCell('completionTokens') },
+    { title: t('totalTokens'), dataIndex: 'totalTokens', width: 110, onCell: tabularNumsCell, render: intCell('totalTokens') },
+    {
+      title: t('duration'),
+      dataIndex: 'durationMs',
+      width: 100,
+      onCell: tabularNumsCell,
+      // 向量化/embedding 一路径历史上没记耗时，NULL 就留空而不是渲染成「- ms」
+      render: (_, record) => (record.durationMs == null ? '-' : `${record.durationMs} ms`),
+    },
     { title: t('time'), dataIndex: 'createdAt', width: 180, valueType: 'dateTime' },
   ];
 
@@ -96,6 +114,11 @@ export default function AiUsagePage() {
           actionRef={actionRef}
           rowKey="id"
           search={false}
+          pagination={{
+            defaultPageSize: TABLE.DEFAULT_PAGE_SIZE,
+            showSizeChanger: true,
+            showQuickJumper: true,
+          }}
           scroll={{ y: tableScrollY, x: 800 }}
           request={async (params) => {
             const { current, pageSize } = params;
@@ -106,7 +129,6 @@ export default function AiUsagePage() {
             return { data: res.items || [], total: res.total || 0, success: true };
           }}
           columns={columns}
-          toolBarRender={false}
         />
       </div>
     </ContentContainer>

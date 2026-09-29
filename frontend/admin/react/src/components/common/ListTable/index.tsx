@@ -113,8 +113,10 @@ export function ListTable<
     return configured && configured > 0 ? configured : TABLE.DEFAULT_PAGE_SIZE;
   }, [pagination]);
 
-  // 骨架只继承横向滚动宽度：scroll.y 那层限高 body 在真实表格里并不存在，照搬会让两态结构不同、分页位置跳动
+  // 骨架继承页面的两向 scroll：scroll.x 保证列宽与真实表格逐列对齐，scroll.y 保证两态都有
+  // 同一层限高 .ant-table-body —— 分页器的落点由它决定，骨架缺这层就会在数据到位时整段跳动。
   const scrollX = typeof scroll === 'object' ? scroll?.x : undefined;
+  const scrollY = typeof scroll === 'object' ? scroll?.y : undefined;
 
   const tableViewRender = useCallback<NonNullable<ListTableProps<RecordType, Params>['tableViewRender']>>(
     (_tableProps, defaultDom) => {
@@ -137,6 +139,7 @@ export function ListTable<
             size={size}
             bordered={bordered}
             scrollX={scrollX}
+            scrollY={scrollY}
             pagination={pagination}
           />
         );
@@ -162,13 +165,20 @@ export function ListTable<
       }
       return defaultDom;
     },
-    [phase, showSkeleton, errorReason, retry, columns, skeletonRows, size, bordered, scrollX, pagination, t],
+    [phase, showSkeleton, errorReason, retry, columns, skeletonRows, size, bordered, scrollX, scrollY, pagination, t],
   );
 
   return (
     <ProTable<RecordType, Params>
       {...restProps}
       columns={columns}
+      // 这四个 prop 上面为了喂骨架/算骨架行数而被解构出来，解构即从 restProps 里摘走，
+      // 不在此显式转交就会被 ProTable 静默丢掉（scroll.y 丢 → 无粘性表头与限高 body，
+      // scroll.x 丢 → 列被压到容器宽度，pagination 丢 → 页面关不掉分页器）。
+      pagination={pagination}
+      size={size}
+      bordered={bordered}
+      scroll={scroll}
       actionRef={ownActionRef}
       request={wrappedRequest}
       loading={{ ...(typeof loading === 'object' ? loading : {}), delay: LOADING_DELAY }}

@@ -13,8 +13,13 @@ export interface TableSkeletonProps<RecordType extends Record<string, any>> {
   rows: number;
   size?: TableProps<RecordType>['size'];
   bordered?: boolean;
-  /** 只传横向 scroll：scroll.y 会让骨架多出一层限高 body，而这套页面渲染出的真实表格没有那层，两态结构不一致 */
+  /**
+   * 横向 scroll：决定骨架的列宽能否与真实表格逐列对齐。
+   * 纵向 scroll：真实表格有它就必须一起接——那层限高 `.ant-table-body` 是分页器落点的决定者，
+   * 骨架少了它就只能按 rows 撑高，首屏→数据到位会让分页器整段跳动。
+   */
   scrollX?: number | string | true;
+  scrollY?: number | string;
   pagination?: TableProps<RecordType>['pagination'];
 }
 
@@ -31,6 +36,7 @@ export function TableSkeleton<RecordType extends Record<string, any>>({
   size,
   bordered,
   scrollX,
+  scrollY,
   pagination,
 }: TableSkeletonProps<RecordType>) {
   const skeletonColumns = useMemo<TableColumnsType<RecordType>>(
@@ -66,7 +72,11 @@ export function TableSkeleton<RecordType extends Record<string, any>>({
       dataSource={dataSource}
       size={size}
       bordered={bordered}
-      scroll={scrollX === undefined ? undefined : { x: scrollX }}
+      scroll={
+        scrollX === undefined && scrollY === undefined
+          ? undefined
+          : { x: scrollX, ...(scrollY === undefined ? {} : { y: scrollY }) }
+      }
       pagination={pagination}
     />
   );
