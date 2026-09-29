@@ -11,6 +11,5 @@
   "channelId": "渠道配置",
   "relatedId": "关联对象",
   "sentAt": "完成时间",
-  "lastError": "失败原因",
-  "fetchFailed": "获取投递记录失败"
+  "lastError": "失败原因"
 }

@@ -750,8 +750,7 @@
     "requiredRecipient": "Recipient is required",
     "createSuccess": "Created",
     "updateSuccess": "Saved",
-    "saveFailed": "Save failed",
-    "fetchFailed": "Failed to load notification channels"
+    "saveFailed": "Save failed"
   },
   "notificationDelivery": {
     "moduleName": "Notification Deliveries",
@@ -767,8 +766,7 @@
     "channelId": "Channel config",
     "relatedId": "Related object",
     "sentAt": "Completed at",
-    "lastError": "Failure reason",
-    "fetchFailed": "Failed to load delivery records"
+    "lastError": "Failure reason"
   },
   "notificationRule": {
     "moduleName": "Notification Routing Rules",
@@ -789,7 +787,6 @@
     "createSuccess": "Created",
     "updateSuccess": "Saved",
     "saveFailed": "Save failed",
-    "fetchFailed": "Failed to load routing rules",
     "requiredEventType": "Select an event type",
     "requiredChannel": "Select a channel",
     "testDispatch": "Test dispatch",

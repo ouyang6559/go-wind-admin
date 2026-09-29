@@ -11,6 +11,5 @@
   "channelId": "Channel config",
   "relatedId": "Related object",
   "sentAt": "Completed at",
-  "lastError": "Failure reason",
-  "fetchFailed": "Failed to load delivery records"
+  "lastError": "Failure reason"
 }
