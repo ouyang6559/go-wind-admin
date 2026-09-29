@@ -184,22 +184,23 @@ func (r *AiUsageLogRepo) FetchTenantTokenQuotaLimit(ctx context.Context, tenantI
 }
 
 // MonthStats 聚合本月（自 monthStart 起）的用量：tokens 总和与调用次数。
-// tenantId=0 时统计平台侧记录（tenant_id=0 的行）。
+// 口径与本表列表一致：租户管理员只算本租户，平台管理员（tenantId=0）算全量。
+// 这里换 SystemViewer 是为了绕开 privacy 做聚合，谓词就得自己按 viewer 补——原先无条件
+// TenantIDEQ(tenantId) 让平台管理员的摘要只统计 tenant_id=0 的行，与它下方全量的流水列表对不上。
 func (r *AiUsageLogRepo) MonthStats(ctx context.Context, tenantId uint32, monthStart time.Time) (uint64, uint64, error) {
 	sysCtx := appViewer.NewSystemViewerContext(ctx)
 	var rows []struct {
 		Total uint64 `sql:"total"`
 		Cnt   uint64 `sql:"cnt"`
 	}
-	err := r.entClient.Client().AiUsageLog.Query().
-		Where(
-			aiusagelog.TenantIDEQ(tenantId),
-			aiusagelog.CreatedAtGTE(monthStart),
-		).
-		Aggregate(
-			ent.As(ent.Sum(aiusagelog.FieldTotalTokens), "total"),
-			ent.As(ent.Count(), "cnt"),
-		).
+	q := r.entClient.Client().AiUsageLog.Query().Where(aiusagelog.CreatedAtGTE(monthStart))
+	if tenantId > 0 {
+		q = q.Where(aiusagelog.TenantIDEQ(tenantId))
+	}
+	err := q.Aggregate(
+		ent.As(ent.Sum(aiusagelog.FieldTotalTokens), "total"),
+		ent.As(ent.Count(), "cnt"),
+	).
 		Scan(sysCtx, &rows)
 	if err != nil {
 		r.log.Errorf(ctx, "month stats failed: %s", err.Error())

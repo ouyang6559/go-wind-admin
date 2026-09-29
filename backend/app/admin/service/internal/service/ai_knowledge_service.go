@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/tx7do/go-utils/trans"
@@ -338,6 +339,7 @@ func embedTextsForBase(ctx context.Context, providerRepo *data.AiProviderRepo, u
 		return nil, err
 	}
 
+	callStart := time.Now()
 	resp, err := client.CreateEmbeddings(ctx, openai.EmbeddingRequest{
 		Model: openai.EmbeddingModel(ptrStrOr(base.EmbeddingModel, "text-embedding-3-small")),
 		Input: texts,
@@ -353,12 +355,14 @@ func embedTextsForBase(ctx context.Context, providerRepo *data.AiProviderRepo, u
 		modelName := ptrStrOr(base.EmbeddingModel, "text-embedding-3-small")
 		promptTokens := uint32(resp.Usage.PromptTokens)
 		totalTokens := uint32(resp.Usage.TotalTokens)
+		durationMs := uint32(time.Since(callStart).Milliseconds())
 		if uerr := usageLogRepo.Create(ctx, &aiV1.AiUsageLog{
 			UserId:       trans.Ptr(userId),
 			TenantId:     trans.Ptr(tenantId),
 			ModelName:    &modelName,
 			PromptTokens: &promptTokens,
 			TotalTokens:  &totalTokens,
+			DurationMs:   &durationMs,
 		}); uerr != nil {
 			log.Errorf(ctx, "record embedding usage failed: %v", uerr)
 		}

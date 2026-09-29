@@ -33,7 +33,8 @@ func NewAiUsageLogService(ctx *bootstrap.Context, repo *data.AiUsageLogRepo) *Ai
 }
 
 // GetUsageSummary 当月用量汇总：tokens/调用次数 + 套餐配额上限。
-// 平台用户（tenant_id=0）统计平台侧记录且不限量；租户用户按本租户统计并带出套餐配额。
+// 统计范围与本表流水列表同口径（见 MonthStats）：租户用户按本租户，平台管理员按全量；
+// 配额只对租户成立，平台侧不限量。
 func (s *AiUsageLogService) GetUsageSummary(ctx context.Context, _ *emptypb.Empty) (*aiV1.UsageSummaryResponse, error) {
 	operator, err := auth.FromContext(ctx)
 	if err != nil {

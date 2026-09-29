@@ -102,6 +102,7 @@ func (s *AiContentService) GenerateContent(ctx context.Context, req *aiV1.Genera
 		return nil, err
 	}
 
+	callStart := time.Now()
 	cCtx, cancel := context.WithTimeout(ctx, aiContentCallTimeout)
 	defer cancel()
 	resp, err := client.CreateChatCompletion(cCtx, openai.ChatCompletionRequest{
@@ -118,6 +119,7 @@ func (s *AiContentService) GenerateContent(ctx context.Context, req *aiV1.Genera
 
 	content := strings.TrimSpace(resp.Choices[0].Message.Content)
 	tokens := uint32(resp.Usage.TotalTokens)
+	durationMs := uint32(time.Since(callStart).Milliseconds())
 
 	// 记用量（尽力而为，不阻断返回）
 	if s.usageRepo != nil {
@@ -132,6 +134,7 @@ func (s *AiContentService) GenerateContent(ctx context.Context, req *aiV1.Genera
 			PromptTokens:     &promptTokens,
 			CompletionTokens: &completionTokens,
 			TotalTokens:      &totalTokens,
+			DurationMs:       &durationMs,
 		}); uerr != nil {
 			s.log.Errorf(ctx, "ai content usage log failed: %v", uerr)
 		}
@@ -253,6 +256,7 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 		for _, d := range docs[start:end] {
 			batch = append(batch, d.title)
 		}
+		callStart := time.Now()
 		resp, embErr := client.CreateEmbeddings(embCtx, openai.EmbeddingRequest{
 			Model: openai.EmbeddingModel("text-embedding-3-small"),
 			Input: batch,
@@ -267,12 +271,14 @@ func (s *AiContentService) BuildMenuSearchIndex(ctx context.Context) (uint32, er
 			modelName := "text-embedding-3-small"
 			promptTokens := uint32(resp.Usage.PromptTokens)
 			totalTokens := uint32(resp.Usage.TotalTokens)
+			durationMs := uint32(time.Since(callStart).Milliseconds())
 			if uerr := s.usageRepo.Create(ctx, &aiV1.AiUsageLog{
 				UserId:       trans.Ptr(operator.UserId),
 				TenantId:     trans.Ptr(operator.GetTenantId()),
 				ModelName:    &modelName,
 				PromptTokens: &promptTokens,
 				TotalTokens:  &totalTokens,
+				DurationMs:   &durationMs,
 			}); uerr != nil {
 				s.log.Errorf(ctx, "record embedding usage failed: %v", uerr)
 			}
@@ -352,6 +358,7 @@ func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.Semanti
 
 	embCtx, embCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer embCancel()
+	callStart := time.Now()
 	embResp, embErr := client.CreateEmbeddings(embCtx, openai.EmbeddingRequest{
 		Model: openai.EmbeddingModel("text-embedding-3-small"),
 		Input: []string{query},
@@ -368,12 +375,14 @@ func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.Semanti
 		modelName := "text-embedding-3-small"
 		promptTokens := uint32(embResp.Usage.PromptTokens)
 		totalTokens := uint32(embResp.Usage.TotalTokens)
+		durationMs := uint32(time.Since(callStart).Milliseconds())
 		if uerr := s.usageRepo.Create(ctx, &aiV1.AiUsageLog{
 			UserId:       trans.Ptr(operator.UserId),
 			TenantId:     trans.Ptr(operator.GetTenantId()),
 			ModelName:    &modelName,
 			PromptTokens: &promptTokens,
 			TotalTokens:  &totalTokens,
+			DurationMs:   &durationMs,
 		}); uerr != nil {
 			s.log.Errorf(ctx, "record embedding usage failed: %v", uerr)
 		}

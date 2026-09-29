@@ -33,6 +33,9 @@
 
 - `QuotaType.AI_TOKENS=4`（月度）：`chat` 前检查租户套餐配额，超限返回 400 "ai token quota exceeded for this month"；未配置该维度 = 不限量；平台用户（tenant_id=0）跳过检查。
 - **embedding 计量口径（2026-09-28 起）**：全部 embedding 调用——RAG 入库/检索/chat 注入（`embedTextsForBase` 唯一咽喉）、菜单语义搜索的查询向量化与索引重建——与 chat 同口径写入 `sys_ai_usage_logs`。重索引等无操作者场景按知识库归属租户计量（`user_id=0`）。此前这些消耗对配额体系完全不可见。
+  同批遗留的耗时缺口已补（2026-09-29）：这四处 DTO 原本没有 `duration_ms` 字段，流水页因此显示空值；现按 `ai_chat_service.go:213/237` 的既有写法（调用前取时间、写行前 `time.Since`）各自补上。**2026-09-29 之前写入的历史行不会回填**，`duration_ms` 保持 NULL，react 端渲染为 `-`（不是 `- ms`）。
+  实测归属（48 行流水全表逐页读，`model|completionTokens|duration` 三元组）：库内 4 行 NULL 全是 `deepseek-chat` 且带 completion tokens（23/23/23/37）⇒ 来自 `GenerateContent`（表单旁的 ✨ 场景化内容生成），**不是** embedding；`text-embedding-*` 行实测 0 条，所以另三处 embedding 的补写目前是预防性的（接上 RAG/语义搜索后才会真的有行）。
+- **用量页摘要与流水同口径（2026-09-29）**：`GetUsageSummary` 的 `MonthStats` 只在 `tenantId>0` 时加租户谓词——租户管理员按本租户统计，平台管理员统计全量，与他下方看到的全量流水列表一致（此前无条件 `TenantIDEQ(tid)`，平台管理员的卡是 47 条/3,259 tokens 而列表是 48 条，同屏两个数字对不上）。配额不受影响：租户分支谓词不变，平台侧本就跳过检查（上一条）且卡上显示 ∞。
 - **套餐模块白名单**：AI 六服务已登记进 `pkg/constants/module_mapping.go`（Module 枚举 `AI=11`），租户访问 AI 端点要求租户套餐的白名单里有 `AI` 模块行（`sys_plan_modules`），否则 403 "module not allowed"。漏登记的后果是 fail-closed 拒绝，不是放行。
 - 菜单归类：`ComponentToModule` 已加 `app/ai/` 前缀 → AI 模块。
 - **新部署注意**：`sys_plan_modules` 不会自动出现 `AI` 行——需在「套餐管理」给目标套餐手动添加 AI 模块白名单（或 SQL 直插），否则租户访问 AI 一律 403。
