@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { App, Button, Popconfirm, Space, Tag, Tooltip } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -149,7 +149,7 @@ const OnlineSessionPage = () => {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-        <ProTable<OnlineSession>
+        <ListTable<OnlineSession>
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {

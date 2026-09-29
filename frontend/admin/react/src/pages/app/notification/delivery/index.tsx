@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { App, Tag, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -197,7 +197,7 @@ const NotificationDeliveryPage = () => {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-        <ProTable<NotificationDelivery>
+        <ListTable<NotificationDelivery>
           actionRef={actionRef}
           columns={columns}
           request={async (params, sorter) => {

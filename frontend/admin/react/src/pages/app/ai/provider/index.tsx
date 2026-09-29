@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, Tooltip, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, CloudOutlined, LaptopOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -124,7 +124,7 @@ export default function AiProviderPage() {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-      <ProTable<AiProvider>
+      <ListTable<AiProvider>
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto', defaultCollapsed: false }}

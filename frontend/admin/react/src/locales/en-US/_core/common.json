@@ -6,7 +6,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "submit": "Submit",
-    "reset": "Reset"
+    "reset": "Reset",
+    "retry": "Retry"
   },
   "header": {
     "profile": "Profile",

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import {
-  ProTable,
   ModalForm,
   ProFormText,
   ProFormTextArea,
@@ -251,7 +251,7 @@ const NotificationRulePage = () => {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-        <ProTable<NotificationRule>
+        <ListTable<NotificationRule>
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {

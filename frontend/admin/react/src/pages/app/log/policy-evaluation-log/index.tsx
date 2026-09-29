@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { DownloadOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -206,7 +206,7 @@ const PolicyEvaluationLog = () => {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-        <ProTable<PolicyEvaluationLog>
+        <ListTable<PolicyEvaluationLog>
           actionRef={actionRef}
           columns={columns}
           request={async (params, sorter) => {

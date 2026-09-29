@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { internal_messageservicev1_InternalMessageRecipient as InboxItem } from '@/api/generated/admin/service/v1';
@@ -71,7 +71,7 @@ const InternalMessagePage: React.FC<InternalMessagePageProps> = ({ userId }) => 
       ref={containerRef}
       style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
     >
-      <ProTable<InboxItem>
+      <ListTable<InboxItem>
         actionRef={actionRef}
         columns={columns}
         request={async (params) => {

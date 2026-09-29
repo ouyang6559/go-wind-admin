@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, InfoCircleOutlined , SafetyOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -252,7 +252,7 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
         className="page-container-content"
         style={{ padding: '0 8px', height: '100%' }}
       >
-        <ProTable<any>
+        <ListTable<any>
           actionRef={actionRef}
           columns={columns}
           headerTitle={false}

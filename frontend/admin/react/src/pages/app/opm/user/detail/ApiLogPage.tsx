@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { auditservicev1_ApiAuditLog as ApiAuditLog } from '@/api/generated/admin/service/v1';
@@ -156,7 +156,7 @@ const ApiLogPage: React.FC<ApiLogPageProps> = ({ userId }) => {
       ref={containerRef}
       style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
     >
-      <ProTable<ApiAuditLog>
+      <ListTable<ApiAuditLog>
         actionRef={actionRef}
         columns={columns}
         request={async (params) => {

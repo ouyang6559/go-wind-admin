@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Drawer, Popconfirm, Tag, Tooltip, App } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -137,7 +137,7 @@ const ScriptLogDrawer: React.FC<ScriptLogDrawerProps> = ({ open, onClose }) => {
       size={960}
       destroyOnHidden
     >
-      <ProTable<ScriptLog>
+      <ListTable<ScriptLog>
         actionRef={actionRef}
         columns={columns}
         request={async (params, _sorter, _filter) => {

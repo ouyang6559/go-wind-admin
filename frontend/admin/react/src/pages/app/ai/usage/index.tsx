@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Progress } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { PaginationQuery } from '@/core';
@@ -92,7 +92,7 @@ export default function AiUsagePage() {
         </div>
 
         {/* 流水列表 */}
-        <ProTable<UsageRow>
+        <ListTable<UsageRow>
           actionRef={actionRef}
           rowKey="id"
           search={false}

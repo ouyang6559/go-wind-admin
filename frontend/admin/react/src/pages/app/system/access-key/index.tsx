@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Modal, Popconfirm, Tag, Typography, App } from 'antd';
 import {
   EditOutlined,
@@ -149,7 +149,7 @@ export default function AccessKeyPage() {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-        <ProTable<AccessKey>
+        <ListTable<AccessKey>
           actionRef={actionRef}
           columns={columns}
           rowKey="id"
