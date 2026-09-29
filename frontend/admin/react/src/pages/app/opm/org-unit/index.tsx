@@ -200,30 +200,25 @@ const OrgUnitManagement = () => {
             actionRef={actionRef}
             columns={columns}
             request={async (params, _sorter, _filter) => {
-              try {
-                const query = new PaginationQuery({
-                  formValues: Object.fromEntries(
-                    Object.entries(params).filter(
-                      ([key]) => !['current', 'pageSize'].includes(key),
-                    ),
+              const query = new PaginationQuery({
+                formValues: Object.fromEntries(
+                  Object.entries(params).filter(
+                    ([key]) => !['current', 'pageSize'].includes(key),
                   ),
-                });
+                ),
+              });
 
-                const response = await fetchListOrgUnits(query);
-                const items = (response.items || []) as OrgUnit[];
-                // API 已返回树形结构，只需清理空 children
-                cleanEmptyChildren(items as any[]);
-                setTreeData(items);
+              const response = await fetchListOrgUnits(query);
+              const items = (response.items || []) as OrgUnit[];
+              // API 已返回树形结构，只需清理空 children
+              cleanEmptyChildren(items as any[]);
+              setTreeData(items);
 
-                return {
-                  data: items,
-                  total: (response as any).total ?? items.length,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return { data: [], total: 0, success: false };
-              }
+              return {
+                data: items,
+                total: (response as any).total ?? items.length,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

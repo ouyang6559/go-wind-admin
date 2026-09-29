@@ -98,17 +98,12 @@ export default function AiUsagePage() {
           search={false}
           scroll={{ y: tableScrollY, x: 800 }}
           request={async (params) => {
-            try {
-              const { current, pageSize } = params;
-              const query = new PaginationQuery({
-                paging: { page: current || 1, pageSize: pageSize || TABLE.DEFAULT_PAGE_SIZE },
-              });
-              const res = await fetchListAiUsageLogs(query);
-              return { data: res.items || [], total: res.total || 0, success: true };
-            } catch (error) {
-              console.error('fetch ai usage logs failed:', error);
-              return { data: [], total: 0, success: false };
-            }
+            const { current, pageSize } = params;
+            const query = new PaginationQuery({
+              paging: { page: current || 1, pageSize: pageSize || TABLE.DEFAULT_PAGE_SIZE },
+            });
+            const res = await fetchListAiUsageLogs(query);
+            return { data: res.items || [], total: res.total || 0, success: true };
           }}
           columns={columns}
           toolBarRender={false}

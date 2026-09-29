@@ -158,41 +158,36 @@ const PermissionGroupList: React.FC<PermissionGroupListProps> = ({
           columns={columns}
           headerTitle={false}
           request={async (params) => {
-            try {
-              const query = new PaginationQuery({
-                formValues: Object.fromEntries(
-                  Object.entries(params).filter(
-                    ([key]) => !['current', 'pageSize'].includes(key),
-                  ),
+            const query = new PaginationQuery({
+              formValues: Object.fromEntries(
+                Object.entries(params).filter(
+                  ([key]) => !['current', 'pageSize'].includes(key),
                 ),
+              ),
+            });
+
+            const response = await fetchListPermissionGroups(query);
+            const items = (response.items || []) as any[];
+            // API 已返回树形结构，只需清理空 children
+            cleanEmptyChildren(items);
+            setTreeData(items);
+
+            // 默认展开全部
+            const keys: React.Key[] = [];
+            const collectKeys = (nodes: any[]) => {
+              nodes.forEach((n) => {
+                keys.push(n.id as number);
+                if (n.children?.length) collectKeys(n.children);
               });
+            };
+            collectKeys(items);
+            setExpandedRowKeys(keys);
 
-              const response = await fetchListPermissionGroups(query);
-              const items = (response.items || []) as any[];
-              // API 已返回树形结构，只需清理空 children
-              cleanEmptyChildren(items);
-              setTreeData(items);
-
-              // 默认展开全部
-              const keys: React.Key[] = [];
-              const collectKeys = (nodes: any[]) => {
-                nodes.forEach((n) => {
-                  keys.push(n.id as number);
-                  if (n.children?.length) collectKeys(n.children);
-                });
-              };
-              collectKeys(items);
-              setExpandedRowKeys(keys);
-
-              return {
-                data: items,
-                total: (response as any).total ?? items.length,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
-            }
+            return {
+              data: items,
+              total: (response as any).total ?? items.length,
+              success: true,
+            };
           }}
           rowKey="id"
           search={{

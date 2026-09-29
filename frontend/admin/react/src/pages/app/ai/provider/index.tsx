@@ -130,18 +130,13 @@ export default function AiProviderPage() {
         search={{ labelWidth: 'auto', defaultCollapsed: false }}
         scroll={{ y: tableScrollY, x: 1000 }}
         request={async (params) => {
-          try {
-            const { current, pageSize, ...rest } = params;
-            const query = new PaginationQuery({
-              paging: { page: current || 1, pageSize: pageSize || TABLE.DEFAULT_PAGE_SIZE },
-              formValues: rest,
-            });
-            const res = await fetchListAiProviders(query);
-            return { data: res.items || [], total: res.total || 0, success: true };
-          } catch (error) {
-            console.error('fetch ai providers failed:', error);
-            return { data: [], total: 0, success: false };
-          }
+          const { current, pageSize, ...rest } = params;
+          const query = new PaginationQuery({
+            paging: { page: current || 1, pageSize: pageSize || TABLE.DEFAULT_PAGE_SIZE },
+            formValues: rest,
+          });
+          const res = await fetchListAiProviders(query);
+          return { data: res.items || [], total: res.total || 0, success: true };
         }}
         toolBarRender={() => [
           <Tooltip key="create-tip" title={t('isDefaultTooltip')}>

@@ -145,41 +145,31 @@ const ConfigManagement = () => {
             actionRef={actionRef}
             columns={columns}
             request={async (params, sorter, _filter) => {
-              try {
-                const query = new PaginationQuery({
-                  paging: {
-                    page: params.current || 1,
-                    pageSize: params.pageSize || 10,
-                  },
-                  formValues: Object.fromEntries(
-                    Object.entries(params).filter(
-                      ([key]) => !['current', 'pageSize'].includes(key),
-                    ),
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || 10,
+                },
+                formValues: Object.fromEntries(
+                  Object.entries(params).filter(
+                    ([key]) => !['current', 'pageSize'].includes(key),
                   ),
-                  orderBy:
-                    sorter && Object.keys(sorter).length > 0
-                      ? Object.entries(sorter).map(([key, value]) =>
-                          value === 'ascend' ? key : `-${key}`,
-                        )
-                      : undefined,
-                });
+                ),
+                orderBy:
+                  sorter && Object.keys(sorter).length > 0
+                    ? Object.entries(sorter).map(([key, value]) =>
+                        value === 'ascend' ? key : `-${key}`,
+                      )
+                    : undefined,
+              });
 
-                const response = await fetchListConfigs(query);
+              const response = await fetchListConfigs(query);
 
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                console.error('fetch config list failed:', error);
-                message.error(error.message || t('fetchFailed'));
-                return {
-                  data: [],
-                  total: 0,
-                  success: false,
-                };
-              }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

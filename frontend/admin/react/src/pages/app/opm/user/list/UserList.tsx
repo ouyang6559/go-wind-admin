@@ -258,41 +258,36 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
           headerTitle={false}
           params={{ tenantId, orgUnitId }}
           request={async (params) => {
-            try {
-              const formValues: Record<string, any> = {
-                ...Object.fromEntries(
-                  Object.entries(params).filter(
-                    ([key]) => !['current', 'pageSize', 'tenantId', 'orgUnitId'].includes(key),
-                  ),
+            const formValues: Record<string, any> = {
+              ...Object.fromEntries(
+                Object.entries(params).filter(
+                  ([key]) => !['current', 'pageSize', 'tenantId', 'orgUnitId'].includes(key),
                 ),
-              };
-              // tenantId 存在时带上租户筛选
-              if (tenantId != null) {
-                formValues.tenant_id = tenantId;
-              }
-              // orgUnitId 存在时带上组织筛选
-              if (orgUnitId != null) {
-                formValues.org_unit_id = orgUnitId;
-              }
-              const query = new PaginationQuery({
-                paging: {
-                  page: params.current || 1,
-                  pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
-                },
-                formValues,
-              });
-
-              const response = await fetchListUsers(query);
-
-              return {
-                data: response.items || [],
-                total: response.total || 0,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
+              ),
+            };
+            // tenantId 存在时带上租户筛选
+            if (tenantId != null) {
+              formValues.tenant_id = tenantId;
             }
+            // orgUnitId 存在时带上组织筛选
+            if (orgUnitId != null) {
+              formValues.org_unit_id = orgUnitId;
+            }
+            const query = new PaginationQuery({
+              paging: {
+                page: params.current || 1,
+                pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
+              },
+              formValues,
+            });
+
+            const response = await fetchListUsers(query);
+
+            return {
+              data: response.items || [],
+              total: response.total || 0,
+              success: true,
+            };
           }}
           rowKey="id"
           search={{

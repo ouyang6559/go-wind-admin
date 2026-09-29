@@ -255,20 +255,14 @@ const NotificationRulePage = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
-            try {
-              const query = new PaginationQuery({
-                paging: { page: params.current || 1, pageSize: params.pageSize || 20 },
-                formValues: Object.fromEntries(
-                  Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
-                ),
-              });
-              const response = await fetchListNotificationRules(query);
-              return { data: response.items || [], total: response.total || 0, success: true };
-            } catch (error: any) {
-              console.error('list notification rules failed', error);
-              message.error(error.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
-            }
+            const query = new PaginationQuery({
+              paging: { page: params.current || 1, pageSize: params.pageSize || 20 },
+              formValues: Object.fromEntries(
+                Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
+              ),
+            });
+            const response = await fetchListNotificationRules(query);
+            return { data: response.items || [], total: response.total || 0, success: true };
           }}
           rowKey="id"
           search={{ labelWidth: 'auto', defaultCollapsed: false }}

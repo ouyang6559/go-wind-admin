@@ -135,30 +135,25 @@ const InternalMessageList = () => {
             actionRef={actionRef}
             columns={columns}
             request={async (params, _sorter, _filter) => {
-              try {
-                const formValues: Record<string, any> = {};
-                // 过滤搜索参数
-                Object.entries(params).forEach(([key, value]) => {
-                  if (!['current', 'pageSize'].includes(key) && value !== undefined) {
-                    formValues[key] = value;
-                  }
-                });
+              const formValues: Record<string, any> = {};
+              // 过滤搜索参数
+              Object.entries(params).forEach(([key, value]) => {
+                if (!['current', 'pageSize'].includes(key) && value !== undefined) {
+                  formValues[key] = value;
+                }
+              });
 
-                const query = new PaginationQuery({
-                  formValues,
-                });
+              const query = new PaginationQuery({
+                formValues,
+              });
 
-                const response = await fetchListInternalMessages(query);
+              const response = await fetchListInternalMessages(query);
 
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return { data: [], total: 0, success: false };
-              }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

@@ -100,17 +100,12 @@ export default function AiKnowledgePage() {
           search={false}
           scroll={{ y: tableScrollY, x: 900 }}
           request={async (params) => {
-            try {
-              const { current, pageSize } = params;
-              const query = new PaginationQuery({
-                paging: { page: current || 1, pageSize: pageSize || TABLE.DEFAULT_PAGE_SIZE },
-              });
-              const res = await fetchListAiKnowledgeBases(query);
-              return { data: res.items || [], total: res.total || 0, success: true };
-            } catch (error) {
-              console.error('fetch ai knowledge bases failed:', error);
-              return { data: [], total: 0, success: false };
-            }
+            const { current, pageSize } = params;
+            const query = new PaginationQuery({
+              paging: { page: current || 1, pageSize: pageSize || TABLE.DEFAULT_PAGE_SIZE },
+            });
+            const res = await fetchListAiKnowledgeBases(query);
+            return { data: res.items || [], total: res.total || 0, success: true };
           }}
           toolBarRender={() => [
             <Button

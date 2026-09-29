@@ -286,36 +286,27 @@ const MenuManagement = () => {
             actionRef={actionRef}
             columns={columns}
             request={async (params, _sorter, _filter) => {
-              try {
-                const query = new PaginationQuery({
-                  paging: {
-                    page: 1,
-                    pageSize: 1000,
-                  },
-                  formValues: {
-                    'meta.title': params.menuName,
-                    status: params.status,
-                  },
-                });
+              const query = new PaginationQuery({
+                paging: {
+                  page: 1,
+                  pageSize: 1000,
+                },
+                formValues: {
+                  'meta.title': params.menuName,
+                  status: params.status,
+                },
+              });
 
-                const response = await fetchListMenus(query);
-                const items = response.items || [];
-                const treeData = buildMenuTree(items as Menu[]);
-                setTreeData(treeData);
+              const response = await fetchListMenus(query);
+              const items = response.items || [];
+              const treeData = buildMenuTree(items as Menu[]);
+              setTreeData(treeData);
 
-                return {
-                  data: treeData,
-                  total: items.length,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return {
-                  data: [],
-                  total: 0,
-                  success: false,
-                };
-              }
+              return {
+                data: treeData,
+                total: items.length,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

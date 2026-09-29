@@ -153,25 +153,16 @@ const OnlineSessionPage = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
-            try {
-              const response = await fetchListOnlineSessions({
-                page: params.current || 1,
-                pageSize: params.pageSize || 20,
-                keyword: (params.keyword as string) || undefined,
-              });
-              return {
-                data: response.items || [],
-                total: response.total || 0,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return {
-                data: [],
-                total: 0,
-                success: false,
-              };
-            }
+            const response = await fetchListOnlineSessions({
+              page: params.current || 1,
+              pageSize: params.pageSize || 20,
+              keyword: (params.keyword as string) || undefined,
+            });
+            return {
+              data: response.items || [],
+              total: response.total || 0,
+              success: true,
+            };
           }}
           toolBarRender={() => [
             <TableExportButton

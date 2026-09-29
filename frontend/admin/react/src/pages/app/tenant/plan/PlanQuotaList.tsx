@@ -122,40 +122,35 @@ const PlanQuotaList: React.FC<PlanQuotaListProps> = ({ planId }) => {
             headerTitle={false}
             params={{ planId }}
             request={async (params, sorter) => {
-              try {
-                const orderBy: string[] = [];
-                if (sorter && Object.keys(sorter).length > 0) {
-                  for (const key in sorter) {
-                    orderBy.push((sorter[key] === 'ascend' ? '' : '-') + key);
-                  }
+              const orderBy: string[] = [];
+              if (sorter && Object.keys(sorter).length > 0) {
+                for (const key in sorter) {
+                  orderBy.push((sorter[key] === 'ascend' ? '' : '-') + key);
                 }
-                const query = new PaginationQuery({
-                  paging: {
-                    page: params.current || 1,
-                    pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
-                  },
-                  formValues: {
-                    ...Object.fromEntries(
-                      Object.entries(params).filter(
-                        ([key]) => !['current', 'pageSize', 'planId'].includes(key),
-                      ),
-                    ),
-                    plan_id: planId,
-                  },
-                  orderBy,
-                });
-
-                const response = await fetchListPlanQuotas(query);
-
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return { data: [], total: 0, success: false };
               }
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
+                },
+                formValues: {
+                  ...Object.fromEntries(
+                    Object.entries(params).filter(
+                      ([key]) => !['current', 'pageSize', 'planId'].includes(key),
+                    ),
+                  ),
+                  plan_id: planId,
+                },
+                orderBy,
+              });
+
+              const response = await fetchListPlanQuotas(query);
+
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

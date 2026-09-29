@@ -160,25 +160,20 @@ export default function AccessKeyPage() {
             showSizeChanger: true,
           }}
           request={async (params) => {
-            try {
-              const { current, pageSize, ...rest } = params;
-              const query = new PaginationQuery({
-                paging: {
-                  page: current || 1,
-                  pageSize: pageSize || 20,
-                },
-                formValues: rest,
-              });
-              const res = await fetchListAccessKeys(query);
-              return {
-                data: res.items || [],
-                total: res.total || 0,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error?.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
-            }
+            const { current, pageSize, ...rest } = params;
+            const query = new PaginationQuery({
+              paging: {
+                page: current || 1,
+                pageSize: pageSize || 20,
+              },
+              formValues: rest,
+            });
+            const res = await fetchListAccessKeys(query);
+            return {
+              data: res.items || [],
+              total: res.total || 0,
+              success: true,
+            };
           }}
           toolBarRender={() => [
             <Button

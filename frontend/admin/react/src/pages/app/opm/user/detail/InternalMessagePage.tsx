@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import ListTable from '@/components/common/ListTable';
-import { Tag, App } from 'antd';
+import { Tag } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { internal_messageservicev1_InternalMessageRecipient as InboxItem } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
@@ -23,7 +23,6 @@ interface InternalMessagePageProps {
 const InternalMessagePage: React.FC<InternalMessagePageProps> = ({ userId }) => {
   const { t } = useTranslation('inbox');
   const actionRef = useRef<ActionType>(null);
-  const { message } = App.useApp();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const tableScrollY = useProTableScrollY(containerRef);
@@ -75,38 +74,33 @@ const InternalMessagePage: React.FC<InternalMessagePageProps> = ({ userId }) => 
         actionRef={actionRef}
         columns={columns}
         request={async (params) => {
-          try {
-            const formValues: Record<string, any> = {};
-            Object.entries(params).forEach(([key, value]) => {
-              if (!['current', 'pageSize'].includes(key) && value !== undefined) {
-                formValues[key] = value;
-              }
-            });
-
-            // 添加 userId 过滤
-            if (userId) {
-              formValues.recipient_user_id = userId.toString();
+          const formValues: Record<string, any> = {};
+          Object.entries(params).forEach(([key, value]) => {
+            if (!['current', 'pageSize'].includes(key) && value !== undefined) {
+              formValues[key] = value;
             }
+          });
 
-            const query = new PaginationQuery({
-              paging: {
-                page: params.current || 1,
-                pageSize: params.pageSize || 20,
-              },
-              formValues,
-            });
-
-            const response = await fetchListUserInbox(query);
-
-            return {
-              data: response.items || [],
-              total: response.total || 0,
-              success: true,
-            };
-          } catch (error: any) {
-            message.error(error.message || t('fetchFailed'));
-            return { data: [], total: 0, success: false };
+          // 添加 userId 过滤
+          if (userId) {
+            formValues.recipient_user_id = userId.toString();
           }
+
+          const query = new PaginationQuery({
+            paging: {
+              page: params.current || 1,
+              pageSize: params.pageSize || 20,
+            },
+            formValues,
+          });
+
+          const response = await fetchListUserInbox(query);
+
+          return {
+            data: response.items || [],
+            total: response.total || 0,
+            success: true,
+          };
         }}
         rowKey="id"
         search={{

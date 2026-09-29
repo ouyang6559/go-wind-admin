@@ -152,41 +152,32 @@ const ApiManagement = () => {
             actionRef={actionRef}
             columns={columns}
             request={async (params, sorter, _filter) => {
-              try {
-                // 构建查询对象
-                const query = new PaginationQuery({
-                  paging: {
-                    page: params.current || 1,
-                    pageSize: params.pageSize || 10,
-                  },
-                  formValues: Object.fromEntries(
-                    Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
-                  ),
-                  orderBy:
-                    sorter && Object.keys(sorter).length > 0
-                      ? Object.entries(sorter).map(([key, value]) =>
-                          value === 'ascend' ? key : `-${key}`,
-                        )
-                      : undefined,
-                });
+              // 构建查询对象
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || 10,
+                },
+                formValues: Object.fromEntries(
+                  Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
+                ),
+                orderBy:
+                  sorter && Object.keys(sorter).length > 0
+                    ? Object.entries(sorter).map(([key, value]) =>
+                        value === 'ascend' ? key : `-${key}`,
+                      )
+                    : undefined,
+              });
 
-                // 调用 API
-                const response = await fetchListApis(query);
+              // 调用 API
+              const response = await fetchListApis(query);
 
-                // ProTable 要求返回格式：{ data, total, success }
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return {
-                  data: [],
-                  total: 0,
-                  success: false,
-                };
-              }
+              // ProTable 要求返回格式：{ data, total, success }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

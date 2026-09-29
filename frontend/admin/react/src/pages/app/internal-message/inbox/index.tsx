@@ -186,31 +186,26 @@ const InboxList = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params, _sorter, _filter) => {
-            try {
-              const formValues: Record<string, any> = {};
-              Object.entries(params).forEach(([key, value]) => {
-                if (!['current', 'pageSize'].includes(key) && value !== undefined) {
-                  formValues[key] = value;
-                }
-              });
-              // 收件箱只看自己的：不传 recipient_user_id 会按租户过滤，列出其他用户的收件记录
-              formValues.recipient_user_id = String(userId);
+            const formValues: Record<string, any> = {};
+            Object.entries(params).forEach(([key, value]) => {
+              if (!['current', 'pageSize'].includes(key) && value !== undefined) {
+                formValues[key] = value;
+              }
+            });
+            // 收件箱只看自己的：不传 recipient_user_id 会按租户过滤，列出其他用户的收件记录
+            formValues.recipient_user_id = String(userId);
 
-              const query = new PaginationQuery({
-                formValues,
-              });
+            const query = new PaginationQuery({
+              formValues,
+            });
 
-              const response = await fetchListUserInbox(query);
+            const response = await fetchListUserInbox(query);
 
-              return {
-                data: response.items || [],
-                total: response.total || 0,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
-            }
+            return {
+              data: response.items || [],
+              total: response.total || 0,
+              success: true,
+            };
           }}
           rowKey="id"
           search={{

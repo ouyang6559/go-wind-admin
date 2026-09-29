@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import ListTable from '@/components/common/ListTable';
-import { App, Tag, Tooltip } from 'antd';
+import { Tag, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type {
   notificationservicev1_Channel,
@@ -67,7 +67,6 @@ const toSnakeCase = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerC
 const NotificationDeliveryPage = () => {
   const { t } = useTranslation('notification-delivery');
   const actionRef = useRef<ActionType>(null);
-  const { message } = App.useApp();
   const containerRef = useRef<HTMLDivElement>(null);
   const tableScrollY = useProTableScrollY(containerRef);
 
@@ -201,40 +200,31 @@ const NotificationDeliveryPage = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params, sorter) => {
-            try {
-              const query = new PaginationQuery({
-                paging: {
-                  page: params.current || 1,
-                  pageSize: params.pageSize || 20,
-                },
-                formValues: Object.fromEntries(
-                  Object.entries(params).filter(
-                    ([key]) => !['current', 'pageSize'].includes(key),
-                  ),
+            const query = new PaginationQuery({
+              paging: {
+                page: params.current || 1,
+                pageSize: params.pageSize || 20,
+              },
+              formValues: Object.fromEntries(
+                Object.entries(params).filter(
+                  ([key]) => !['current', 'pageSize'].includes(key),
                 ),
-                orderBy:
-                  sorter && Object.keys(sorter).length > 0
-                    ? Object.entries(sorter).map(([key, value]) =>
-                        value === 'ascend' ? toSnakeCase(key) : `-${toSnakeCase(key)}`,
-                      )
-                    : ['-created_at'],
-              });
+              ),
+              orderBy:
+                sorter && Object.keys(sorter).length > 0
+                  ? Object.entries(sorter).map(([key, value]) =>
+                      value === 'ascend' ? toSnakeCase(key) : `-${toSnakeCase(key)}`,
+                    )
+                  : ['-created_at'],
+            });
 
-              const response = await fetchListNotificationDeliveries(query);
+            const response = await fetchListNotificationDeliveries(query);
 
-              return {
-                data: response.items || [],
-                total: response.total || 0,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return {
-                data: [],
-                total: 0,
-                success: false,
-              };
-            }
+            return {
+              data: response.items || [],
+              total: response.total || 0,
+              success: true,
+            };
           }}
           rowKey="id"
           search={{

@@ -135,33 +135,28 @@ const DictEntryList: React.FC<DictEntryListProps> = ({ typeId }) => {
             headerTitle={false}
             params={{ typeId }}
             request={async (params) => {
-              try {
-                const query = new PaginationQuery({
-                  paging: {
-                    page: params.current || 1,
-                    pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
-                  },
-                  formValues: {
-                    ...Object.fromEntries(
-                      Object.entries(params).filter(
-                        ([key]) => !['current', 'pageSize', 'typeId'].includes(key),
-                      ),
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
+                },
+                formValues: {
+                  ...Object.fromEntries(
+                    Object.entries(params).filter(
+                      ([key]) => !['current', 'pageSize', 'typeId'].includes(key),
                     ),
-                    type_id: typeId,
-                  },
-                });
+                  ),
+                  type_id: typeId,
+                },
+              });
 
-                const response = await fetchListDictEntries(query);
+              const response = await fetchListDictEntries(query);
 
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return { data: [], total: 0, success: false };
-              }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{
