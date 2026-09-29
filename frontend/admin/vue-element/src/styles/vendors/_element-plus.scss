@@ -561,6 +561,40 @@ html.dark {
   --el-button-hover-link-text-color: var(--gowind-warning-text) !important;
 }
 
+/* ---------- 禁用态：实底按钮一律去实底 ----------
+ * 现象（2026-09-29 /ai/chat 发送按钮实测，空态 vs 有字态）：暗色下底色/文字/边框三项零差异
+ * （两态都是 #006BE6 + #FFFFFF），唯一线索只剩 cursor:not-allowed；浅色下是 #80B5F3 + 白字，
+ * 仍是一枚淡蓝药丸。用户读作"点了没反应"而不是"还不能点"。
+ * 两个来源，分别修：
+ *   暗色 = 我们自己的 _dark-mode.scss 用 !important 给 .el-button--{type} 硬刷实底、没排除
+ *          is-disabled（那边已补 :not(.is-disabled)，禁用态由此回落到本节这条 var 通道——
+ *          只改变量不改 background-color 声明，是因为 EP 原生就走 var(--el-button-disabled-bg-color)）；
+ *   浅色 = EP 原生配方 --el-button-disabled-bg-color: <type>-light-5 + 前景留白字。
+ * 基准 = react / vben（antd 的配方是中性 rgba(墨/白,.05) 底 + rgba(.25) 字，
+ * 实测 react 暗 #1D2432 + #4B515C、浅 #F5F5F5 + #BFBFBF；vben 暗 #232A38 + #4B515C）。
+ * 禁用件按 WCAG 1.4.3 属 inactive 豁免，这一档要的是"状态可辨"不是可读性，所以照 react 取淡。 */
+.el-button--primary,
+.el-button--success,
+.el-button--warning,
+.el-button--danger,
+.el-button--info {
+  --el-button-disabled-text-color: rgba(11, 15, 25, 0.25) !important;
+  --el-button-disabled-bg-color: rgba(11, 15, 25, 0.05) !important;
+  --el-button-disabled-border-color: rgba(11, 15, 25, 0.1) !important;
+}
+
+html.dark {
+  .el-button--primary,
+  .el-button--success,
+  .el-button--warning,
+  .el-button--danger,
+  .el-button--info {
+    --el-button-disabled-text-color: rgba(248, 250, 252, 0.25) !important;
+    --el-button-disabled-bg-color: rgba(248, 250, 252, 0.05) !important;
+    --el-button-disabled-border-color: rgba(248, 250, 252, 0.1) !important;
+  }
+}
+
 /* ---------- Tag（light/plain 效果）：文字档；dark 效果由 EP 自己的白字规则胜出 ---------- */
 .el-tag.el-tag--primary {
   --el-tag-text-color: var(--gowind-primary-text) !important;

@@ -573,8 +573,13 @@ html.dark {
     // hover 态与浅色同机制：改 background-color（EP 原生也是走 background-color），
     // 不用 filter: brightness —— 静止态背景是 !important，filter 成了暗色独有的装饰层。
     // 取值见 design-language.md §4「按钮质感」。
+    // 四个类型选择器一律 :not(.is-disabled)：这里刷的是 !important 实底，不排除的话禁用态会被
+    // 一起画成"可点的蓝药丸"（2026-09-29 /ai/chat 发送按钮实测空态与有字态底色/文字/边框零差异，
+    // 只剩 cursor 一条线索）。排除后禁用态回落到 EP 的 --el-button-disabled-* 通道，
+    // 其值由 vendors/_element-plus.scss 指到中性 rgba，与 react/vben 的禁用配方同档。
+    // 注：:not(.is-disabled) 挂在父选择器上，嵌套的 &:hover 因此也带排除，禁用后 hover 不动。
     // 主按钮
-    &.el-button--primary:not(.is-link):not(.is-text) {
+    &.el-button--primary:not(.is-link):not(.is-text):not(.is-disabled) {
       background-color: var(--dark-primary) !important;
       border-color: var(--dark-primary) !important;
       color: #fff !important;
@@ -586,7 +591,7 @@ html.dark {
     }
 
     // 成功按钮
-    &.el-button--success:not(.is-link):not(.is-text) {
+    &.el-button--success:not(.is-link):not(.is-text):not(.is-disabled) {
       background-color: var(--dark-success) !important;
       border-color: var(--dark-success) !important;
       color: #fff !important;
@@ -598,7 +603,7 @@ html.dark {
     }
 
     // 警告按钮
-    &.el-button--warning:not(.is-link):not(.is-text) {
+    &.el-button--warning:not(.is-link):not(.is-text):not(.is-disabled) {
       background-color: var(--dark-accent) !important;
       border-color: var(--dark-accent) !important;
       color: #fff !important;
@@ -610,7 +615,7 @@ html.dark {
     }
 
     // 危险按钮
-    &.el-button--danger:not(.is-link):not(.is-text) {
+    &.el-button--danger:not(.is-link):not(.is-text):not(.is-disabled) {
       background-color: var(--dark-error) !important;
       border-color: var(--dark-error) !important;
       color: #fff !important;

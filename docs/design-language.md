@@ -284,6 +284,12 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
   - **测量环境的一条限制**：标签页 `visibilityState:hidden` 时**没有渲染帧 ⇒ `ResizeObserver` 回调、`requestAnimationFrame` 与 CSS transition 都不推进**（实测遮罩里 `clientHeight=140` 而 RO 计数 0、`opacity` 恒 0；react 侧同类后果是 `useProTableScrollY` 停在它自己返回的初始 `100px`，量到的表体高度**不是用户看到的那个**）。所以 vben 的骨架行数改用 `onMounted` 一次性同步测量，不用 RO——否则在后台标签里永远量不到，且量具自己也读不出真假；在后台标签读 react 表格高度时，报告里必须写明读的是"未 settle 的初始值"。
 - **表单/抽屉**：输入控件底与表面同层（暗 `#111827` / 浅白），以 `rgba(255,255,255,.1)` 边框区分；focus 主色边框 + 3px 12% 柔光；抽屉遮罩 `rgba(0,0,0,.6)`，宽度基准 480。
 - **按钮质感（2026-09-29 定稿，暗/浅两态一致）**：主按钮两态一律用 UI 库原生的扁平实色 + 原生 `0 2px 0` 底投影，**禁止叠顶部高光渐变与品牌色发光投影**（暗色的层次由 2.3 的"明度随层级递增 + 黑投影"表达，不靠发光；浅色的克制口径见 2.2 末）。**hover 态两态同机制：实底档改 `background-color`/`border-color`、文字/链接档改 `color`，禁止用 `filter: brightness()` 只给暗色加一层亮度**（暗色静止态常带 `!important`，会压掉库原生的 hover 背景色，于是 filter 成了暗色唯一的悬停反馈——既不对称又让"关不掉"）。落地：react 删 `pro-components-dark.css` 原三条质感规则；ele `_dark-mode.scss` 原 7 处 hover `filter: brightness(1.15)` 全部换成 `color-mix(in srgb, var(--dark-*) 85%, #ffffff)`；vben 无此类装饰。ele 实测：暗 `#006BE6` → hover `rgb(38,129,234)`，浅 `#006BE6` → hover `rgb(6,81,167)`（EP 原生 `--el-button-hover-bg-color`），两态 `filter` 均为 `none`；方向不同是故意的（暗色向亮、浅色向暗，见 2.3 层级模型）。
+- **禁用态一律去实底（2026-09-29 定稿，基准 = react）**：语义色实底按钮进 disabled 必须换成中性档——浅 `rgba(11,15,25,.05)` 底 + `rgba(11,15,25,.25)` 字 / 暗 `rgba(248,250,252,.05)` 底 + `rgba(248,250,252,.25)` 字，**不许"仍是主色底只是变浅一档"**（用户读作"点了没反应"而不是"还不能点"）。
+  踩坑实测（ele `/ai/chat` 发送按钮，空输入 vs 有输入两态对撞）：暗色下底色/文字/边框**三项零差异**（两态都是 `#006BE6` + `#FFFFFF`，cr 同为 4.95），唯一线索只剩 `cursor:not-allowed`；浅色下是 `#80B5F3` + 白（2.14），仍是一枚淡蓝药丸。
+  基准端同页两态：react 暗 `#1D2432` + `#4B515C`（1.95）、浅 `#F5F5F5` + `#BFBFBF`（1.69），vben 暗 `#232A38` + `#4B515C`。改后 ele 实测暗 `#1D2332` + `#4B515C`、浅 `#F3F3F4` + `#C2C3C6`，与 react 同档。
+  **两个来源要分别修**（只修一个会留下"变量已解析对、底色纹丝不动"的假修复）：暗色 = 我们自己的 `_dark-mode.scss` 给 `.el-button--{type}` 刷 `!important` 实底时没排除 `is-disabled`（已补 `:not(.is-disabled)`，primary/success/warning/danger 各一处，嵌套的 `&:hover` 随之一起排除）；浅色 = EP 原生 `--el-button-disabled-bg-color: <type>-light-5` 且前景留白字（在 `vendors/_element-plus.scss` 把 `--el-button-disabled-*` 三件套指到中性 rgba，走变量而非直接改 `background-color`，因为 EP 原生就从这个变量取）。
+  禁用件按 WCAG 1.4.3 属 inactive 豁免，不参与 4.5 判定（`style-sweep.mjs` 的 `dis()` 已按 `.is-disabled/[disabled]` 豁免——改这条前先确认量具跟上，否则全页扫测会凭空多出几十条"违规"）。
+  **边界**：`is-loading` ≠ `is-disabled`（EP 只把 loading 记进 `ariaDisabled`/`disabled` 属性，类名不带 `is-disabled`），实测发送中按钮仍是 `#006BE6` 实底 + spinner，"去实底"不会把加载态一起画灰；`is-plain/is-text/is-link` 的禁用态走 EP 自己的淡档（light-9 底 + light-5 字，是显式声明不是变量），本次未接管（全仓仅 1 处 `plain` 按钮：`system/script/script-log-dialog.vue:37`）。
 - **认证页（登录/注册）**：画布深底 + 实底表面卡（24px 大圆角、主色柔影）；品牌插画带 vben 同款 float 动效（`translateY 0→-20px→0`，5s 循环，尊重 `prefers-reduced-motion`）。
 - **页签栏**：chrome 形态、38px。选中页签走"温和配方"（2026-09-16 修订，基准 = vben）：暗色 = 中性灰底（fill ≈ 白 10%）+ 正常亮文字，浅色 = 主色 15% 底 + 主色文字；**禁用主色描边 / 发光阴影 / 底部指示线 / 字重加粗**（形状本身即指示）；悬停 = 中性微底，关闭按钮跟随文字色不用主色。
 - **默认头像**（2026-09-16 统一）：三端统一使用橘猫插画 `default-avatar.png`（react/ele public 同文件，vben 经 `apps/admin/src/preferences.ts` 覆盖框架默认的 webp——带 Vben 品牌字样已弃用）；用于导航栏当前用户、通知、锁屏等无头像兜底；用户列表/详情的"姓名首字 + 底色"兜底保留（承载身份信息）。
@@ -341,7 +347,9 @@ vben 端另修 `registerGlobComp.ts` 漏注册 Radio（AI 问数页 `a-radio-gro
 选择器 `html.dark .el-form--inline .button-group …` 在页面上匹配 **0 个元素**（全 src 检索 `button-group` 只命中这行
 选择器自身，`/opm/users` 实测 `.button-group` 计数 0、`.el-form--inline` 计数 1），查询区实际类名是
 `.pro-search__actions` —— 整块 `.button-group { … }` 是死代码，本次只把它里面的 filter 换掉、**未删块**，
-要清理另开一次改动（grep 命中 ≠ 生效，先量匹配数）。
+要清理另开一次改动（grep 命中 ≠ 生效，先量匹配数）；同日补 §4「禁用态一律去实底」条：ele `/ai/chat` 发送按钮空输入态暗色实测与可点态三项（底色/文字/边框）零差异，
+根因两处分别修——`_dark-mode.scss` 的 `.el-button--{type}` !important 实底补 `:not(.is-disabled)`、`vendors/_element-plus.scss` 把 `--el-button-disabled-*` 指到中性 rgba；
+改后 ele 暗 `#1D2332`+`#4B515C` / 浅 `#F3F3F4`+`#C2C3C6`，与 react（`#1D2432`+`#4B515C` / `#F5F5F5`+`#BFBFBF`）同档，loading 态实测未被连带画灰（4/4 采样仍实底）。
 同日按新 §4「列表加载态」条把 react 列表页的加载态三态化：新增 `src/components/common/ListTable/{index.tsx,TableSkeleton.tsx}`（首屏骨架 + 250ms 阈值 Spin + 失败态与重试），
 39 个列表页只把 `<ProTable>` 换成 `<ListTable>`（import 与标签两处，`request`/`columns`/`actionRef` 用法不变，实测替换后页面上 `<ProTable` 计数 0、`<ListTable<` 计数 39），
 `locales/{zh-CN,en-US}/_core/common.json` 各加 1 个 `button.retry`。**ele/vben 两端未移植**（按"react 先行、其余移植"工序，本轮只落 react）；
