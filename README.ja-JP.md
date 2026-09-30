@@ -135,9 +135,9 @@ gow run admin
 
 | フロントエンド版 | ディレクトリ | 起動コマンド | ポート |
 |------------------|--------------|--------------|--------|
-| React | `frontend/admin/react` | `pnpm dev` | 5888 |
-| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 5777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 5666 |
+| React | `frontend/admin/react` | `pnpm dev` | 15888 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
 
 ```shell
 # 3 つのうち 1 つを選ぶ：まずそのフロントエンドへ cd してから install → 起動。
@@ -145,11 +145,11 @@ gow run admin
 # そこで `pnpm install` を実行すると ENOENT エラーになる。
 cd frontend/admin/react
 pnpm install
-pnpm dev                    # ポート 5888
+pnpm dev                    # ポート 15888
 
 # 残り 2 系：
-cd frontend/admin/vue-element && pnpm install && pnpm dev            # ポート 5777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート 5666
+cd frontend/admin/vue-element && pnpm install && pnpm dev            # ポート 15777
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート 15666
 ```
 
 > vue-vben 自体が pnpm workspace（`pnpm-workspace.yaml` + `apps/` + `packages/`）なので、依存インストールは必ず**そのルート**で行う。`pnpm dev:antd` は workspace から `@vben/web-antd` app を選んで起動するだけ。`apps/admin` で単独 install すると catalog のバージョン固定を迂回する。

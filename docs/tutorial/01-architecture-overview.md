@@ -23,7 +23,7 @@ docs/                       本文档体系（教程层 + 参考层，见 [docs/
 后端目录的逐项说明见
 [backend_project_struct.md](../backend_project_struct.md)——它是目录职责的权威参考。
 
-**三个前端端口约定（本地开发）**：react `5888`、vue-element `5777`、vue-vben `5666`。
+**三个前端端口约定（本地开发）**：react `15888`、vue-element `15777`、vue-vben `15666`。
 端口写在各自的 dev 环境变量里，键名不统一：react `.env.development` 的 `VITE_SERVER_PORT`、
 vue-element `.env.development` 的 `VITE_APP_PORT`、vue-vben `apps/admin/.env.development` 的 `VITE_PORT`
 （若端口被占用 vite 会自动顺延，启动日志里有实际端口）。

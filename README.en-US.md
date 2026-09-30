@@ -135,9 +135,9 @@ All three live under the `frontend/admin` directory — **pick one**, install it
 
 | Frontend Edition | Directory | Command | Port |
 |------------------|-----------|---------|------|
-| React | `frontend/admin/react` | `pnpm dev` | 5888 |
-| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 5777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 5666 |
+| React | `frontend/admin/react` | `pnpm dev` | 15888 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
 
 ```shell
 # Pick ONE: cd into that frontend first, then install and start.
@@ -145,11 +145,11 @@ All three live under the `frontend/admin` directory — **pick one**, install it
 # so running `pnpm install` there only fails with ENOENT.
 cd frontend/admin/react
 pnpm install
-pnpm dev                    # port 5888
+pnpm dev                    # port 15888
 
 # The other two ends:
-cd frontend/admin/vue-element && pnpm install && pnpm dev            # port 5777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # port 5666
+cd frontend/admin/vue-element && pnpm install && pnpm dev            # port 15777
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # port 15666
 ```
 
 > vue-vben is itself a pnpm workspace (`pnpm-workspace.yaml` + `apps/` + `packages/`), so dependencies must be installed at **its** root; `pnpm dev:antd` then selects the `@vben/web-antd` app from the workspace. Installing inside `apps/admin` bypasses the catalog version pins.

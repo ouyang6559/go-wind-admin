@@ -26,9 +26,9 @@
 
 | 端 | 规模（页面文件 / 源码行，2026-09-25 实测） | 形态 | 门禁命令 | dev 端口 |
 |---|---|---|---|---|
-| react | 96 / 5.7 万（`react/src` 的 ts+tsx+css） | ProTable + DrawerForm + TanStack Query | `npm run typecheck` | 5888 |
-| vue-element | 102 / 7.1 万（`vue-element/src` 的 ts+vue+样式） | ProPage 配置驱动 + vxe-table + ElForm | `npx vue-tsc --noEmit` | 5777 |
-| vue-vben | 89 / 9.7 万（**整个 monorepo**：apps + packages + internal；只算 `apps/admin/src` 是 4.6 万） | VxeGrid + useVbenDrawer，Vben 5.x monorepo | `pnpm run check:type` | 5666 |
+| react | 96 / 5.7 万（`react/src` 的 ts+tsx+css） | ProTable + DrawerForm + TanStack Query | `npm run typecheck` | 15888 |
+| vue-element | 102 / 7.1 万（`vue-element/src` 的 ts+vue+样式） | ProPage 配置驱动 + vxe-table + ElForm | `npx vue-tsc --noEmit` | 15777 |
+| vue-vben | 89 / 9.7 万（**整个 monorepo**：apps + packages + internal；只算 `apps/admin/src` 是 4.6 万） | VxeGrid + useVbenDrawer，Vben 5.x monorepo | `pnpm run check:type` | 15666 |
 
 复测（在 `frontend/admin/` 下）：
 `find react/src -type f \( -name '*.ts' -o -name '*.tsx' \) | wc -l` 一类命令即可；vben 的规模要按
@@ -65,14 +65,13 @@ ts:
 
 ### 第 3 步：收 CORS 白名单
 
-`backend/app/admin/service/configs/server.yaml:25-35` 的 `origins` 是逐端列的：三个演示域名 +
-`localhost:5666/5777/5888/5667/5778`。删掉用不上的那些。
+`backend/app/admin/service/configs/server.yaml:25-33` 的 `origins` 是逐端列的：三个演示域名 +
+`localhost:15666/15777/15888`（2026-09-30 起三端 dev 端口从 5xxx 整体迁到 15xxx，旧段让给
+姐妹仓，配置里也不再带顺延余量位）。删掉用不上的那些。
 
-注意 `5667` / `5778` 与 `5666` / `5777` 成对出现：vite 端口被占用时会自动 +1（教程 02 第 6 节），
-这两个就是给顺延留的余量。**react 没有这一位**——表里只有 `5888`，没有 `5889`。所以裁剪时
-**给保留的那一端补两位**（含 5888 顺延用的 5889），别只留一个端口——默认端口一旦被占
-（上一个 dev server 没退干净），实际端口顺延到 +1 就撞 CORS。保留的是 react 且不改配置的话，
-这个坑现在就已经在：5888 被占时前端跑在 5889，而后端白名单里没有它。
+vite 端口被占用时会自动 +1（教程 02 第 6 节），**实际监听的端口必须进白名单**。15xxx 是本仓
+专用段，姐妹仓不再来挤，但"上一个 dev server 没退干净"的自撞仍可能发生——裁剪时给保留的
+那一端补上顺延位（保留 react 就补 `15889`），或真撞上时再把实际端口加进白名单。
 
 ## 4. 唯一会咬人的数据层耦合：菜单表没有"端"这个维度
 
@@ -101,7 +100,7 @@ ts:
 `docs/` 里按三端口径写的表述分布很广，自己数一遍（命中数随口径浮动，别信二手数字）：
 
 ```bash
-grep -roc -E 'vue-vben|vue-element|三端|5888|5777|5666' docs README*.md | grep -v ':0' | sort -t: -k2 -rn | head
+grep -roc -E 'vue-vben|vue-element|三端|15888|15777|15666' docs README*.md | grep -v ':0' | sort -t: -k2 -rn | head
 ```
 
 量级参考（2026-09-25 跑上面那条命令的实际前三页结果）：

@@ -135,9 +135,9 @@ gow run admin
 
 | 前端版本 | 目录 | 启动命令 | 端口 |
 |---------|------|---------|------|
-| React | `frontend/admin/react` | `pnpm dev` | 5888 |
-| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 5777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 5666 |
+| React | `frontend/admin/react` | `pnpm dev` | 15888 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
 
 ```shell
 # 三选一：先 cd 进你选的那一端，再装依赖、再启动。
@@ -145,11 +145,11 @@ gow run admin
 # 在这两处跑 pnpm install 只会得到 ENOENT 报错。
 cd frontend/admin/react
 pnpm install
-pnpm dev                    # 端口 5888
+pnpm dev                    # 端口 15888
 
 # 换成另外两端：
-cd frontend/admin/vue-element && pnpm install && pnpm dev            # 端口 5777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 5666
+cd frontend/admin/vue-element && pnpm install && pnpm dev            # 端口 15777
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 15666
 ```
 
 > vue-vben 本身是个 pnpm workspace（`pnpm-workspace.yaml` + `apps/` + `packages/`），所以必须在它的**根目录**装依赖，`pnpm dev:antd` 再从 workspace 里挑出 `@vben/web-antd` 这个 app 启动——在 `apps/admin` 下单独 `pnpm install` 会破坏 catalog 版本锁定。
