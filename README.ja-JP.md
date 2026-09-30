@@ -163,7 +163,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート
 <tr><td><strong>バックエンドフレームワーク</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
 <tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code>（2 択 1、ビルドタグで切替、デフォルトは Ent） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
 <tr><td><strong>ミドルウェア</strong></td><td><code>Redis</code>（compose は <code>bitnami/redis:latest</code> を取得、バージョン固定なし。コード側は Set/Expire/Publish などの長期コマンドのみで、Redis 8 専用コマンドは不使用） · <code>MinIO</code>（S3 互換オブジェクトストレージ）</td></tr>
-<tr><td><strong>認証・認可</strong></td><td><code>JWT</code> · <code>Casbin</code> · <code>OPA</code></td></tr>
+<tr><td><strong>認証・認可</strong></td><td><code>JWT</code>（認証） · <code>Casbin</code> / <code>OPA</code>（認可エンジン、2 択 1、デフォルトは全許可の noop）</td></tr>
 <tr><td><strong>リアルタイム通信</strong></td><td><code>SSE</code>（サーバープッシュ） · <code>Asynq</code>（非同期タスク）</td></tr>
 <tr><td><strong>スクリプトエンジン</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多言語 Hook プラグインシステム</td></tr>
 <tr><td><strong>フロントエンド</strong></td><td><strong>3 択 1</strong> — 下の 3 行は並列の選択肢で、3 つ同時に採用するものではありません</td></tr>
