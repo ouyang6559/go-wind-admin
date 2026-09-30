@@ -167,9 +167,9 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート
 <tr><td><strong>リアルタイム通信</strong></td><td><code>SSE</code>（サーバープッシュ） · <code>Asynq</code>（非同期タスク）</td></tr>
 <tr><td><strong>スクリプトエンジン</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多言語 Hook プラグインシステム</td></tr>
 <tr><td><strong>フロントエンド</strong></td><td><strong>3 択 1</strong> — 下の 3 行は並列の選択肢で、3 つ同時に採用するものではありません</td></tr>
-<tr><td><strong>Vue Vben 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code></td></tr>
-<tr><td><strong>Vue Element 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code>（軽量ピュア版）</td></tr>
-<tr><td><strong>React 版</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code>（UMI 不使用）</td></tr>
+<tr><td><strong>Vue Vben 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code> · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>Vue Element 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code>（軽量ピュア版） · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>React 版</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code>（UMI 不使用） · <code>Tailwind CSS</code></td></tr>
 <tr><td><strong>デプロイ・運用</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
 </table>
 

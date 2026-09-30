@@ -167,9 +167,9 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # port 5666
 <tr><td><strong>Realtime</strong></td><td><code>SSE</code> (server push) · <code>Asynq</code> (async tasks)</td></tr>
 <tr><td><strong>Scripting Engine</strong></td><td><code>go-scripts</code> · <code>Lua</code> (gopher-lua) · <code>JavaScript</code> (goja) · multi-language hook plugin system</td></tr>
 <tr><td><strong>Frontend</strong></td><td><strong>Pick one</strong> — the three rows below are parallel options, not something to adopt together</td></tr>
-<tr><td><strong>Vue Vben Edition</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code></td></tr>
-<tr><td><strong>Vue Element Edition</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code> (lightweight pure edition)</td></tr>
-<tr><td><strong>React Edition</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code> (no UMI)</td></tr>
+<tr><td><strong>Vue Vben Edition</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code> · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>Vue Element Edition</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code> (lightweight pure edition) · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>React Edition</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code> (no UMI) · <code>Tailwind CSS</code></td></tr>
 <tr><td><strong>Deployment & Ops</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
 </table>
 
