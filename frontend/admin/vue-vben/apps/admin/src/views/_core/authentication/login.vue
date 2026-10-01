@@ -86,6 +86,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       component: 'VbenInput',
       componentProps: {
         placeholder: $t('authentication.tenantCode'),
+        autocomplete: 'off',
       },
       fieldName: 'tenant_code',
       label: $t('authentication.tenantCode'),
@@ -95,6 +96,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       component: 'VbenInput',
       componentProps: {
         placeholder: $t('authentication.usernameTip'),
+        autocomplete: 'username',
       },
       dependencies: {
         trigger(values) {
@@ -111,6 +113,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       component: 'VbenInputPassword',
       componentProps: {
         placeholder: $t('authentication.password'),
+        autocomplete: 'current-password',
       },
       fieldName: 'password',
       label: $t('authentication.password'),

@@ -110,6 +110,25 @@ body {
     --app-bg-nav: #ffffff;
 }
 
+/* ========== Chrome 自动填充底色覆盖 ==========
+   保存过密码的浏览器上，Chrome 密码管理器按 autoComplete=username /
+   current-password 填充账号与密码框，并在 app 样式之上强制绘制
+   input:-webkit-autofill 白底——background 无法覆盖它，暗色主题下
+   账号/密码两个输入框因此整块发白（登录页首当其冲；无痕窗口没有
+   已存密码、不触发填充，所以"看起来正常"，Ctrl+R 也清不掉）。
+   处置：box-shadow inset 用输入框自身 token 底色（antd Input 常规
+   底色即 colorBgContainer，暗亮两主题同源）盖回；text-fill-color /
+   caret-color 恢复文字与光标色；无限过渡作双保险拖住 Chrome 的底色绘制。 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--ant-color-text);
+    caret-color: var(--ant-color-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--ant-color-bg-container) inset;
+    transition: background-color 99999s ease-in-out 0s;
+}
+
 .ant-table-cell .ant-space-item a {
     display: inline-flex;
     align-items: center;

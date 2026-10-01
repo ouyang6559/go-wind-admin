@@ -16,6 +16,7 @@
         <el-input
           v-model.trim="loginFormData.tenant_code"
           :placeholder="t('core.login.tenantCode')"
+          autocomplete="off"
         >
           <template #prefix>
             <el-icon><User /></el-icon>
@@ -25,7 +26,11 @@
 
       <!-- 用户名 -->
       <el-form-item prop="username">
-        <el-input v-model.trim="loginFormData.username" :placeholder="t('core.login.username')">
+        <el-input
+          v-model.trim="loginFormData.username"
+          :placeholder="t('core.login.username')"
+          autocomplete="username"
+        >
           <template #prefix>
             <el-icon><User /></el-icon>
           </template>
@@ -39,6 +44,7 @@
             v-model.trim="loginFormData.password"
             :placeholder="t('core.login.password')"
             type="password"
+            autocomplete="current-password"
             show-password
             @keyup="checkCapsLock"
             @keyup.enter="handleLoginSubmit"
@@ -56,6 +62,7 @@
           <el-input
             v-model.trim="loginFormData.captchaCode"
             :placeholder="t('core.login.captchaCode')"
+            autocomplete="off"
             @keyup.enter="handleLoginSubmit"
           >
             <template #prefix>
