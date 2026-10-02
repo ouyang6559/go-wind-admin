@@ -1,5 +1,6 @@
 {
   "dashboard": "Overview",
+  "dashboard-analytics": "Analytics",
   "tenant": "Tenant Management",
   "tenant-members": "Tenant List",
   "tenant-plans": "Subscription Plans",

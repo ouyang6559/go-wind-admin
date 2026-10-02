@@ -13,9 +13,9 @@ import {
   AuditOutlined,
 } from '@ant-design/icons';
 import { useI18n } from '@/core/i18n';
-import { AiInsightsCard, SourceDonutChart, SourcePieChart, StatsCard, TrendChart } from './components';
+import { AiInsightsCard, SourceDonutChart, SourcePieChart, StatsCard, TrendChart } from '../components';
 
-const Dashboard = () => {
+const Analytics = () => {
   const { t } = useI18n('dashboard');
 
   // 概览卡：数值来自后端 GetOverview。加载中时整体返回 Spin。
@@ -89,4 +89,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Analytics;
