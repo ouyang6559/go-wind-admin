@@ -155,6 +155,7 @@
     "openSearch": "Open search panel",
     "close": "Close",
     "noHistory": "No search history",
+    "noResults": "No matching pages found",
     "semanticBadge": "AI",
     "searching": "Searching…",
     "switch": "Switch",

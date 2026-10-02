@@ -55,7 +55,7 @@
             v-if="displayList.length === 0 && !isSemanticSearching"
             class="command-palette-empty"
           >
-            {{ $t("common.commandPalette.noHistory") }}
+            {{ keyword.trim() ? $t("common.commandPalette.noResults") : $t("common.commandPalette.noHistory") }}
           </div>
           <div
             v-else-if="displayList.length === 0 && isSemanticSearching"

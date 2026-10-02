@@ -56,6 +56,7 @@ interface HeaderContentProps {
   isDark: boolean;
   onToggleTheme: (event?: React.MouseEvent<HTMLElement>) => void;
   onOpenSettings: () => void;
+  menuData: any[];
   widgetConfig: {
     fullscreen: boolean;
     globalSearch: boolean;
@@ -78,6 +79,7 @@ export const HeaderContent = ({
   isDark,
   onToggleTheme,
   onOpenSettings,
+  menuData,
   widgetConfig,
 }: HeaderContentProps) => {
   const { t } = useI18n('common');
@@ -441,26 +443,116 @@ export const HeaderContent = ({
     </div>
   );
 
-  // ── 语义搜索状态 ──
+  // ── 全局搜索（本地菜单匹配 + 语义搜索；形态对齐 vue-element CommandPalette / vue-vben SearchPanel）──
   const [semanticSearchOpen, setSemanticSearchOpen] = useState(false);
   const [semanticQuery, setSemanticQuery] = useState('');
   const [semanticResults, setSemanticResults] = useState<{title: string; route: string; score: number}[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const semanticTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // 菜单标题翻译：与面包屑（tRoutes(title)）同语义——i18next 对 'routes:xxx' /
+  // 'menu:xxx' 形态的 key 自动按「命名空间:键」解析，无需剥前缀
+  const resolveMenuTitle = (label: string | undefined): string =>
+    label ? tRoutes(label, { defaultValue: label }) : '';
+
+  // 扁平化菜单树为可搜索的叶子页列表（i18n 相关：语言切换时重建）
+  const searchableMenus = useMemo(() => {
+    const excluded = ['/login', '/401', '/403', '/404', '/500'];
+    const out: { title: string; path: string }[] = [];
+    const walk = (items: any[]) => {
+      for (const item of items) {
+        if (item.children?.length) {
+          walk(item.children);
+          continue;
+        }
+        const raw = item.name || item.label;
+        if (!item.path || !raw || excluded.includes(item.path)) continue;
+        if (out.some((o) => o.path === item.path)) continue;
+        out.push({ title: resolveMenuTitle(raw), path: item.path });
+      }
+    };
+    walk(menuData);
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menuData, i18n.language]);
+
+  // 本地关键字匹配（contains，标题或路径）
+  const localResults = useMemo(() => {
+    const kw = semanticQuery.trim().toLowerCase();
+    if (!kw) return [];
+    return searchableMenus.filter(
+      (item) => item.title.toLowerCase().includes(kw) || item.path.toLowerCase().includes(kw),
+    );
+  }, [semanticQuery, searchableMenus]);
+
+  // 键盘导航作用于「本地 + 语义」合并列表（与展示顺序一致）
+  const combinedResults = useMemo(
+    () => [...localResults, ...semanticResults],
+    [localResults, semanticResults],
+  );
+
+  const closeSearch = () => {
+    setSemanticSearchOpen(false);
+    setSemanticResults([]);
+    setSemanticQuery('');
+    setActiveIndex(-1);
+  };
 
   const handleSemanticSearch = (query: string) => {
     setSemanticQuery(query);
+    setActiveIndex(-1);
     clearTimeout(semanticTimer.current);
     if (!query.trim()) { setSemanticResults([]); return; }
     semanticTimer.current = setTimeout(async () => {
       setSemanticLoading(true);
       try {
         const resp = await apiClient.aiContentService.SemanticSearch({ query: query.trim(), limit: 8 });
-        setSemanticResults((resp.items ?? []) as any);
-      } catch { setSemanticResults([]); }
-      finally { setSemanticLoading(false); }
+        setSemanticResults(
+          (resp.items ?? [])
+            .filter((item) => item?.route)
+            .map((item) => ({
+              title: item.title ?? item.route ?? '',
+              route: item.route ?? '',
+              score: item.score ?? 0,
+            })),
+        );
+      } catch (error) {
+        // 不吞错：带出原始错误对象；语义搜索失败降级为仅本地结果
+        console.error('semantic search failed:', error);
+        setSemanticResults([]);
+      } finally { setSemanticLoading(false); }
     }, 500);
   };
+
+  const goSearchItem = (item: { path?: string; route?: string }) => {
+    const path = item.path || item.route;
+    if (!path) return;
+    closeSearch();
+    navigate(path);
+  };
+
+  // Ctrl+K / Cmd+K 呼出全局搜索（偏好里可关：shortcutKeys.enable + shortcutKeys.globalSearch）
+  const shortcutEnabled = usePreferencesStore((s) => s.preferences.shortcutKeys?.enable ?? true);
+  const searchShortcutEnabled = usePreferencesStore((s) => s.preferences.shortcutKeys?.globalSearch ?? true);
+  useEffect(() => {
+    if (!widgetConfig.globalSearch || !shortcutEnabled || !searchShortcutEnabled) return undefined;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSemanticSearchOpen((open) => {
+          if (!open) {
+            setSemanticResults([]);
+            setSemanticQuery('');
+            setActiveIndex(-1);
+          }
+          return !open;
+        });
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [widgetConfig.globalSearch, shortcutEnabled, searchShortcutEnabled]);
 
   return (
     <div
@@ -584,7 +676,7 @@ export const HeaderContent = ({
             trigger="click"
             placement="bottomRight"
             open={semanticSearchOpen}
-            onOpenChange={(v) => { setSemanticSearchOpen(v); if (!v) { setSemanticResults([]); setSemanticQuery(''); } }}
+            onOpenChange={(v) => { if (v) { setSemanticSearchOpen(true); } else { closeSearch(); } }}
             content={
               <div style={{ width: 360, padding: 8 }}>
                 <Input.Search
@@ -592,30 +684,83 @@ export const HeaderContent = ({
                   size="large"
                   value={semanticQuery}
                   onChange={(e) => handleSemanticSearch(e.target.value)}
-                  onSearch={(value) => handleSemanticSearch(value)}
+                  onKeyDown={(e) => {
+                    if (e.nativeEvent.isComposing) return;
+                    const list = combinedResults;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      if (list.length) setActiveIndex((i) => (i >= list.length - 1 ? 0 : i + 1));
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      if (list.length) setActiveIndex((i) => (i <= 0 ? list.length - 1 : i - 1));
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const target = list[activeIndex >= 0 ? activeIndex : 0];
+                      if (target) goSearchItem(target);
+                    } else if (e.key === 'Escape') {
+                      closeSearch();
+                    }
+                  }}
                   autoFocus
                   allowClear
                 />
                 {semanticLoading && (
                   <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
-                    搜索中…
+                    {t('header.searching')}
+                  </div>
+                )}
+                {!semanticLoading && localResults.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    {localResults.map((item, i) => (
+                      <div
+                        key={item.path}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
+                          ...(activeIndex === i ? { backgroundColor: 'var(--ant-color-fill-tertiary)' } : {}),
+                        }}
+                        className="semantic-search-item"
+                        onMouseEnter={() => setActiveIndex(i)}
+                        onClick={() => goSearchItem(item)}
+                      >
+                        <span style={{ fontSize: 13 }}>{item.title}</span>
+                        <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>
+                          {item.path}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {!semanticLoading && semanticResults.length > 0 && (
                   <div style={{ marginTop: 8 }}>
                     {semanticResults.map((item, i) => (
                       <div
-                        key={i}
+                        key={`${item.route}-${i}`}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
+                          ...(activeIndex === localResults.length + i ? { backgroundColor: 'var(--ant-color-fill-tertiary)' } : {}),
                         }}
                         className="semantic-search-item"
-                        onClick={() => {
-                          if (item.route) { window.location.hash = '#' + item.route; setSemanticSearchOpen(false); }
-                        }}
+                        onMouseEnter={() => setActiveIndex(localResults.length + i)}
+                        onClick={() => goSearchItem(item)}
                       >
-                        <span style={{ fontSize: 13 }}>{item.title}</span>
+                        <span style={{ fontSize: 13 }}>
+                          {item.title}
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              padding: '0 5px',
+                              fontSize: 11,
+                              lineHeight: '17px',
+                              color: 'var(--ant-color-primary)',
+                              backgroundColor: 'var(--ant-color-primary-bg)',
+                              borderRadius: 4,
+                            }}
+                          >
+                            {t('header.semanticBadge')}
+                          </span>
+                        </span>
                         <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>
                           {(item.score * 100).toFixed(0)}%
                         </span>
@@ -623,9 +768,9 @@ export const HeaderContent = ({
                     ))}
                   </div>
                 )}
-                {!semanticLoading && semanticQuery.trim() && semanticResults.length === 0 && (
+                {!semanticLoading && semanticQuery.trim() && combinedResults.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
-                    未找到相关页面
+                    {t('header.noResults')}
                   </div>
                 )}
               </div>

@@ -26,7 +26,10 @@
     "switchLanguage": "Switch Language",
     "search": "Search",
     "searchPlaceholder": "Search menu or features...",
-    "searchShortcut": "Ctrl K"
+    "searchShortcut": "Ctrl K",
+    "searching": "Searching…",
+    "noResults": "No matching pages found",
+    "semanticBadge": "AI"
   },
   "refresh": "Refresh",
   "home": "Home",

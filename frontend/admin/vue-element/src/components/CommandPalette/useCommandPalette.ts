@@ -104,7 +104,12 @@ export function useCommandPalette() {
   }
 
   function getDisplayList() {
-    return results.value.length ? results.value : history.value;
+    // 键盘选择列表必须与模板展示列表一致（关键词态=本地+语义合并，空关键词=历史）：
+    // 此前只回本地结果或历史，语义命中的行无法用键盘选中，本地无结果时回车甚至会跳去历史项。
+    if (keyword.value.trim()) {
+      return [...results.value, ...semanticResults.value];
+    }
+    return history.value;
   }
 
   function onSelect() {
