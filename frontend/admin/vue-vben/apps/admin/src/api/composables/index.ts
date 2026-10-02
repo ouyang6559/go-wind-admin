@@ -68,6 +68,7 @@ export * from './notification-delivery';
 // 通知路由规则（事件 → 渠道 + 派发方式）
 export * from './notification-rule';
 export * from './notification-template';
+export * from './monitor-alert';
 export * from './role';
 // 通用枚举与工具函数
 export * from './shared';

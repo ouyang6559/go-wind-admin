@@ -45,7 +45,8 @@
     "serverMonitor": "Server Monitor",
     "scripts": "Scripts",
     "config": "Config Management",
-    "accessKeys": "OpenAPI Credentials"
+    "accessKeys": "OpenAPI Credentials",
+    "monitorAlerts": "Monitor Alerts"
   },
   "notification": {
     "moduleName": "Notifications",

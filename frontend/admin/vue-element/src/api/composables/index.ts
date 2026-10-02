@@ -76,6 +76,7 @@ export * from "./notification-delivery";
 // 通知路由规则（事件类型 → 渠道 + 派发方式）
 export * from "./notification-rule";
 export * from "./notification-template";
+export * from "./monitor-alert";
 
 // 首页分析概览
 export * from "./dashboard";

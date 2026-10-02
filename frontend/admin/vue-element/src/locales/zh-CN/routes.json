@@ -51,7 +51,8 @@
     "serverMonitor": "服务监控",
     "scripts": "脚本管理",
     "config": "参数管理",
-    "accessKeys": "OpenAPI 凭证"
+    "accessKeys": "OpenAPI 凭证",
+    "monitorAlerts": "监控告警"
   },
   "notification": {
     "moduleName": "通知管理",
