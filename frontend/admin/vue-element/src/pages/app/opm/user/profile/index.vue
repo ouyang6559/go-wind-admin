@@ -42,12 +42,13 @@ import EditPasswordPage from "./edit-password-page.vue";
 import AccountBindPage from "./account-bind-page.vue";
 import SecureSettingPage from "./secure-setting-page.vue";
 import MySessionsPage from "./my-sessions-page.vue";
+import NotificationPreferencePage from "./notification-preference-page.vue";
 
 import { $t } from "@/core/i18n";
 
 const activeTab = ref("1");
 
-// 消息通知 tab 已移除：后端暂无用户通知偏好能力，原页为模板演示数据。
+// 「消息通知」tab（P3）：后端已有用户通知偏好能力，见 notification-preference-page.vue
 
 // 子页（安全设置/账号绑定）通过 switch-tab 事件跳转到对应设置页
 const handleSwitchTab = (key: string) => {
@@ -79,6 +80,11 @@ const settingList = [
     key: "5",
     name: $t("pages.user.profile.tab.activeSessions"),
     component: MySessionsPage,
+  },
+  {
+    key: "6",
+    name: $t("pages.user.profile.tab.notification"),
+    component: NotificationPreferencePage,
   },
 ];
 </script>

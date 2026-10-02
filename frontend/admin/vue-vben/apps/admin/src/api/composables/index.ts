@@ -55,6 +55,7 @@ export * from './plan';
 export * from './redis-cache-monitor';
 
 // 在线会话
+export * from './notification-preference';
 export * from './online-session';
 
 // 服务监控
