@@ -207,6 +207,6 @@ asynq mux 的"Start 后不能注册 handler"约束 vs 脚本处理器运行期�
 | typeName 路由/去重键合一 | 库层限制，跨租户同名互斥（第 8 节），库改造 TODO |
 | 备份恢复流程 | 仅导出上传，无自动恢复/演练工具链；桶内对象无生命周期清理 |
 | WAIT_RESULT 型 | 枚举与装载路径在，无内置消费方示范；语义同 asynq wait-result |
-| 系统级任务的可见性 | 不入 sys_tasks，管理页不可见、不可停（现共三个：到期扫描 5.1、审计归档 5.2、台账清扫 5.6）——监控只能靠服务日志（"系统级…定时任务已注册"/"expiry scan:"等前缀） |
+| 系统级任务的可见性 | 不入 sys_tasks，管理页不可见、不可停（现共五个：到期扫描 5.1、审计归档 5.2、台账清扫 5.6、监控告警扫描 5.7、AI 日报 5.8）——监控只能靠服务日志（"系统级…定时任务已注册"/"scan done:"等前缀）。**可视化的设计权衡已备**（2026-10-03，动工前先读）：A) 纯前端静态卡片——信息价值低，不解决"最近跑没跑"；B) 启动期 upsert 进 sys_tasks + `is_system` 标记列、startTask 跳过系统行（调度已在常驻段注册，防二次注册）——触碰面大但能复用任务页；C) 新表 `sys_task_runs` 记录每次执行（task_type/started_at/status/duration/error）+ 任务页新标签页展示——不碰 typeName 去重雷区、运维价值最高（看得见成败），推荐 C；执行记录可由统一包装器包住各 handler 写入 |
 | **时间窗谓词要看驱动怎么渲染时间** | `created_at` 这类经 `timestamptz`（Postgres）存的列按"瞬间"比较，任何时区渲染都对；但同一句谓词跑在把时间渲染成**带时区文本**的驱动上（本机 sqlite 回归测试即此形）就成了字典序比较。坑的来源是写入侧：`SendDirect` 的 `created_at` 经过 `timestamppb` 往返（渲染成 UTC），而谓词参数 `time.Now()` 带本地时区（+08）—— 实测会把"一分钟前"的行判成"十五分钟前"。`SweepStaleSending` 因此把比较侧统一 `.UTC()`；**新写按时间窗筛行的任务时同样注意**（审计归档 `CreatedAtLT`、到期扫描 `ExpiredAtLTE` 目前只在 Postgres 上实测过） |
 | **asynq 队列没有命名空间** | 键形如 `asynq:{<queue>}:…`，**不带应用前缀** ⇒ "同一个 Redis DB + 同一个队列名"就是同一个队列。两个项目共库时互相抢任务，抢到的一方没有 handler 就 `handler not found` 退避重试直至归档（本机 DB 1 上实测读到过本仓 `tenant_expiry_scan` 躺在 `asynq:{default}:retry` 里，而同一 DB 里同时活着另一项目的 worker）。唯一的隔离手段是 `server.asynq.uri` 换 DB（或改 `queues` 名字），**部署时共库必须显式错开**；库层不提供"按消费者组区分"的能力 |
