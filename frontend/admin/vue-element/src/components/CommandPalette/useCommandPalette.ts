@@ -46,6 +46,10 @@ export function useCommandPalette() {
   // ============================================
 
   function open() {
+    // 每次打开都重建菜单索引：标题在索引期翻译（loadRoutes 存的是 key，
+    // 不重建则换语言后仍是旧文案；路由后到时也能补上）
+    menuItems.value = [];
+    loadRoutes(accessStore.accessRoutes);
     keyword.value = "";
     results.value = [];
     semanticResults.value = [];
@@ -71,7 +75,11 @@ export function useCommandPalette() {
       return;
     }
     const kw = keyword.value.toLowerCase();
-    results.value = menuItems.value.filter((item) => item.title.toLowerCase().includes(kw));
+    // 与 react 端同口径：标题或路径 contains（key 已在索引期翻译为文案）
+    results.value = menuItems.value.filter(
+      (item) =>
+        item.title.toLowerCase().includes(kw) || item.path.toLowerCase().includes(kw)
+    );
     queueSemanticSearch(keyword.value.trim());
   }
 
@@ -202,7 +210,12 @@ export function useCommandPalette() {
         loadRoutes(route.children, path);
       } else if (route.meta?.title && typeof route.meta.title === "string") {
         menuItems.value.push({
-          title: route.meta.title === "dashboard" ? t("common.text.home") : route.meta.title,
+          // meta.title 是 i18n key（如 routes.tenant.member），索引期必须翻译，
+          // 否则展示裸 key 且中文永远匹配不上；t() 对不存在的 key 原样返回
+          title:
+            route.meta.title === "dashboard"
+              ? t("common.text.home")
+              : t(route.meta.title),
           path,
           name: typeof route.name === "string" ? route.name : undefined,
           icon: typeof route.meta.icon === "string" ? route.meta.icon : undefined,
