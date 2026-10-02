@@ -207,6 +207,19 @@ message SendDirectNotificationRequest {
     json_name = "requestId",
     (gnostic.openapi.v3.property) = { description: "派发请求ID（留空则服务端生成）" }
   ]; // 派发请求ID
+
+  // 通知模板编码：给出时 title/content 由模板渲染得出，请求里的 title/content 被覆盖。
+  // 渲染发生在落台账之前——异步派发的载荷里装的就是渲染结果，重试不重新解析模板。
+  optional string template_code = 11 [
+    json_name = "templateCode",
+    (gnostic.openapi.v3.property) = { description: "通知模板编码（给出时覆盖 title/content）" }
+  ]; // 通知模板编码
+
+  // 模板变量：占位符名 → 值；模板引用了变量集里没有的占位符时整个渲染报错。
+  map<string, string> template_vars = 12 [
+    json_name = "templateVars",
+    (gnostic.openapi.v3.property) = { description: "模板变量（占位符名 → 值）" }
+  ]; // 模板变量
 }
 
 // 直发通知 - 回应

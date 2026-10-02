@@ -36,6 +36,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationdelivery"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationpreference"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationrule"
+	"go-wind-admin/app/admin/service/internal/data/ent/notificationtemplate"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
@@ -161,6 +162,7 @@ func checkColumn(t, c string) error {
 			notificationdelivery.Table:     notificationdelivery.ValidColumn,
 			notificationpreference.Table:   notificationpreference.ValidColumn,
 			notificationrule.Table:         notificationrule.ValidColumn,
+			notificationtemplate.Table:     notificationtemplate.ValidColumn,
 			operationauditlog.Table:        operationauditlog.ValidColumn,
 			orgunit.Table:                  orgunit.ValidColumn,
 			permission.Table:               permission.ValidColumn,

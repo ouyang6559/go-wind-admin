@@ -96,6 +96,9 @@ type NotificationPreference func(*sql.Selector)
 // NotificationRule is the predicate function for notificationrule builders.
 type NotificationRule func(*sql.Selector)
 
+// NotificationTemplate is the predicate function for notificationtemplate builders.
+type NotificationTemplate func(*sql.Selector)
+
 // OperationAuditLog is the predicate function for operationauditlog builders.
 type OperationAuditLog func(*sql.Selector)
 

@@ -35,6 +35,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationdelivery"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationpreference"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationrule"
+	"go-wind-admin/app/admin/service/internal/data/ent/notificationtemplate"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
@@ -848,6 +849,37 @@ func init() {
 	notificationruleDescID := notificationruleMixinFields0[0].Descriptor()
 	// notificationrule.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	notificationrule.IDValidator = notificationruleDescID.Validators[0].(func(uint32) error)
+	notificationtemplateMixin := schema.NotificationTemplate{}.Mixin()
+	notificationtemplateMixinFields0 := notificationtemplateMixin[0].Fields()
+	_ = notificationtemplateMixinFields0
+	notificationtemplateMixinFields3 := notificationtemplateMixin[3].Fields()
+	_ = notificationtemplateMixinFields3
+	notificationtemplateFields := schema.NotificationTemplate{}.Fields()
+	_ = notificationtemplateFields
+	// notificationtemplateDescIsEnabled is the schema descriptor for is_enabled field.
+	notificationtemplateDescIsEnabled := notificationtemplateMixinFields3[0].Descriptor()
+	// notificationtemplate.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	notificationtemplate.DefaultIsEnabled = notificationtemplateDescIsEnabled.Default.(bool)
+	// notificationtemplateDescName is the schema descriptor for name field.
+	notificationtemplateDescName := notificationtemplateFields[0].Descriptor()
+	// notificationtemplate.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	notificationtemplate.NameValidator = notificationtemplateDescName.Validators[0].(func(string) error)
+	// notificationtemplateDescCode is the schema descriptor for code field.
+	notificationtemplateDescCode := notificationtemplateFields[1].Descriptor()
+	// notificationtemplate.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	notificationtemplate.CodeValidator = notificationtemplateDescCode.Validators[0].(func(string) error)
+	// notificationtemplateDescTitleTemplate is the schema descriptor for title_template field.
+	notificationtemplateDescTitleTemplate := notificationtemplateFields[2].Descriptor()
+	// notificationtemplate.TitleTemplateValidator is a validator for the "title_template" field. It is called by the builders before save.
+	notificationtemplate.TitleTemplateValidator = notificationtemplateDescTitleTemplate.Validators[0].(func(string) error)
+	// notificationtemplateDescContentTemplate is the schema descriptor for content_template field.
+	notificationtemplateDescContentTemplate := notificationtemplateFields[3].Descriptor()
+	// notificationtemplate.ContentTemplateValidator is a validator for the "content_template" field. It is called by the builders before save.
+	notificationtemplate.ContentTemplateValidator = notificationtemplateDescContentTemplate.Validators[0].(func(string) error)
+	// notificationtemplateDescID is the schema descriptor for id field.
+	notificationtemplateDescID := notificationtemplateMixinFields0[0].Descriptor()
+	// notificationtemplate.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	notificationtemplate.IDValidator = notificationtemplateDescID.Validators[0].(func(uint32) error)
 	operationauditlogMixin := schema.OperationAuditLog{}.Mixin()
 	operationauditlog.Policy = privacy.NewPolicies(operationauditlogMixin[2], schema.OperationAuditLog{})
 	operationauditlog.Hooks[0] = func(next ent.Mutator) ent.Mutator {

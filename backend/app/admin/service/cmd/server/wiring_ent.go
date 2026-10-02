@@ -150,6 +150,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
 	notificationRuleRepo := data.NewNotificationRuleRepo(ctx, entClient)
+	notificationTemplateRepo := data.NewNotificationTemplateRepo(ctx, entClient)
 	accessKeyRepo := data.NewAccessKeyRepo(ctx, entClient)
 
 	// AI（提供商 / 会话 / 消息 / 用量流水）
@@ -173,7 +174,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	channelRegistry := channel.NewRegistry()
 	channelRegistry.Register(channel.NewEmailSender(notificationChannelRepo))
 	channelRegistry.Register(channel.NewWebhookSender(notificationChannelRepo))
-	notificationService := service.NewNotificationService(ctx, notificationDeliveryRepo, notificationRuleRepo, channelRegistry)
+	notificationService := service.NewNotificationService(ctx, notificationDeliveryRepo, notificationRuleRepo, notificationTemplateRepo, channelRegistry)
+	notificationTemplateService := service.NewNotificationTemplateService(ctx, notificationTemplateRepo)
 
 	// 认证与登录策略
 	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, vcodeCache, notificationService)
@@ -311,6 +313,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
 		notificationRuleService,
 		notificationPreferenceService,
+		notificationTemplateService,
 		accessKeyService,
 		configService,
 		aiProviderService,

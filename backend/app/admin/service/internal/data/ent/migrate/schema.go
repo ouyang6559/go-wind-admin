@@ -1758,6 +1758,41 @@ var (
 			},
 		},
 	}
+	// NotificationTemplatesColumns holds the columns for the "notification_templates" table.
+	NotificationTemplatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "is_enabled", Type: field.TypeBool, Nullable: true, Comment: "是否启用", Default: true},
+		{Name: "remark", Type: field.TypeString, Nullable: true, Comment: "备注"},
+		{Name: "name", Type: field.TypeString, Nullable: true, Comment: "模板名称"},
+		{Name: "code", Type: field.TypeString, Nullable: true, Comment: "模板编码（全局唯一，发送方以 template_code 引用）"},
+		{Name: "title_template", Type: field.TypeString, Nullable: true, Comment: "标题模板，支持 {{var}} 占位符"},
+		{Name: "content_template", Type: field.TypeString, Nullable: true, Comment: "正文模板，支持 {{var}} 占位符"},
+	}
+	// NotificationTemplatesTable holds the schema information for the "notification_templates" table.
+	NotificationTemplatesTable = &schema.Table{
+		Name:       "notification_templates",
+		Comment:    "通知模板表",
+		Columns:    NotificationTemplatesColumns,
+		PrimaryKey: []*schema.Column{NotificationTemplatesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "uk_notification_tpl_code",
+				Unique:  true,
+				Columns: []*schema.Column{NotificationTemplatesColumns[10]},
+			},
+			{
+				Name:    "idx_notification_tpl_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{NotificationTemplatesColumns[7]},
+			},
+		},
+	}
 	// SysOperationAuditLogsColumns holds the columns for the "sys_operation_audit_logs" table.
 	SysOperationAuditLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -3603,6 +3638,7 @@ var (
 		SysNotificationDeliveriesTable,
 		NotificationPreferencesTable,
 		SysNotificationRulesTable,
+		NotificationTemplatesTable,
 		SysOperationAuditLogsTable,
 		SysOrgUnitsTable,
 		SysPermissionsTable,
@@ -3789,6 +3825,11 @@ func init() {
 	}
 	SysNotificationRulesTable.Annotation = &entsql.Annotation{
 		Table:     "sys_notification_rules",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	NotificationTemplatesTable.Annotation = &entsql.Annotation{
+		Table:     "notification_templates",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

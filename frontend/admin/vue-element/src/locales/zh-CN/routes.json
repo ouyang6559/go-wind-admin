@@ -57,7 +57,8 @@
     "moduleName": "通知管理",
     "channels": "通知渠道",
     "rules": "通知路由规则",
-    "deliveries": "通知投递台账"
+    "deliveries": "通知投递台账",
+    "templates": "通知模板"
   },
   "tenant": {
     "moduleName": "租户管理",

@@ -108,6 +108,7 @@ var DefaultPermissions = []*permissionV1.Permission{
 			60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
 			72, 73, 74,
 			80, 81, 82, 83, 84,
+			101,
 		},
 		ApiIds: []uint32{
 			1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -1015,6 +1016,22 @@ var DefaultMenus = []*permissionV1.Menu{
 			Title:     trans.Ptr("menu.notification.deliveries"),
 			Icon:      trans.Ptr("lucide:send"),
 			Order:     trans.Ptr(int32(3)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		// 通知模板：可复用的标题/正文占位模板，发送方以 template_code 引用（P3 第二片）
+		Id:        trans.Ptr(uint32(101)),
+		ParentId:  trans.Ptr(uint32(74)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("NotificationTemplateManagement"),
+		Path:      trans.Ptr("templates"),
+		Component: trans.Ptr("app/notification/template/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.notification.templates"),
+			Icon:      trans.Ptr("lucide:layout-template"),
+			Order:     trans.Ptr(int32(4)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},

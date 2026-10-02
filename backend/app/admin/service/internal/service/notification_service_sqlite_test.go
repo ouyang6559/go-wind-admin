@@ -65,6 +65,8 @@ type notificationSvcEnv struct {
 	// client 是同一份内存库的 ent 客户端，只给测试注入故障用（见 notification_record_sqlite_test.go
 	// 的 armRecordWriteFailure）——生产代码不从这里走。
 	client *ent.Client
+
+	templateRepo *data.NotificationTemplateRepo
 }
 
 func newNotificationServiceForTest(t *testing.T) *notificationSvcEnv {
@@ -80,6 +82,7 @@ func newNotificationServiceForTest(t *testing.T) *notificationSvcEnv {
 		log:          bLogger.NewHelper(bLogger.NopLogger()),
 		deliveryRepo: data.NewNotificationDeliveryRepoForTest(entClient),
 		ruleRepo:     newSeededRuleRepoForTest(t, entClient),
+		templateRepo: data.NewNotificationTemplateRepoForTest(entClient),
 		channels:     registry,
 	}
 
@@ -93,6 +96,8 @@ func newNotificationServiceForTest(t *testing.T) *notificationSvcEnv {
 		),
 		email:  email,
 		client: entClient.Client(),
+
+		templateRepo: svc.templateRepo,
 	}
 }
 

@@ -57,7 +57,8 @@
     "moduleName": "Notifications",
     "channels": "Notification Channels",
     "rules": "Notification Routing Rules",
-    "deliveries": "Notification Deliveries"
+    "deliveries": "Notification Deliveries",
+    "templates": "Templates"
   },
   "tenant": {
     "moduleName": "Tenant Management",

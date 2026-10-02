@@ -174,6 +174,7 @@ func NewRestServer(
 	// register:param ── 新模块服务形参在此行后注册(make register 工具锚点,勿删)
 	notificationRuleService *service.NotificationRuleService,
 	notificationPreferenceService *service.NotificationPreferenceService,
+	notificationTemplateService *service.NotificationTemplateService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
 	aiProviderService *service.AiProviderService,
@@ -262,6 +263,7 @@ func NewRestServer(
 	// register:route ── 新模块路由在此行后注册(make register 工具锚点,勿删)
 	adminV1.RegisterNotificationRuleServiceHTTPServer(srv, notificationRuleService)
 	adminV1.RegisterNotificationPreferenceServiceHTTPServer(srv, notificationPreferenceService)
+	adminV1.RegisterNotificationTemplateServiceHTTPServer(srv, notificationTemplateService)
 	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
 	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
 	adminV1.RegisterAiProviderServiceHTTPServer(srv, aiProviderService)

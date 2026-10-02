@@ -564,6 +564,8 @@ func (m *SendDirectNotificationRequest) validate(all bool) error {
 
 	// no validation rules for Content
 
+	// no validation rules for TemplateVars
+
 	if m.ChannelId != nil {
 		// no validation rules for ChannelId
 	}
@@ -586,6 +588,10 @@ func (m *SendDirectNotificationRequest) validate(all bool) error {
 
 	if m.RequestId != nil {
 		// no validation rules for RequestId
+	}
+
+	if m.TemplateCode != nil {
+		// no validation rules for TemplateCode
 	}
 
 	if len(errors) > 0 {

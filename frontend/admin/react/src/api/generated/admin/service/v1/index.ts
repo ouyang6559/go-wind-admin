@@ -7402,6 +7402,271 @@ export type notificationservicev1_TestDispatchNotificationResponse = {
   status: notificationservicev1_DeliveryStatus | undefined;
 };
 
+// 通知模板管理服务（平台管理员；租户由 notification_platform_guard 拒绝）
+export interface NotificationTemplateService {
+  // 模板列表（分页，contains 搜索）
+  ListNotificationTemplate(
+    request: pagination_PagingRequest,
+  ): Promise<notificationservicev1_ListNotificationTemplateResponse>;
+  // 模板详情
+  GetNotificationTemplate(
+    request: notificationservicev1_GetNotificationTemplateRequest,
+  ): Promise<notificationservicev1_NotificationTemplate>;
+  // 新建模板
+  CreateNotificationTemplate(
+    request: notificationservicev1_CreateNotificationTemplateRequest,
+  ): Promise<notificationservicev1_NotificationTemplate>;
+  // 更新模板（CRUD 请求体必须包 {data:{...}}，见仓铁律）
+  UpdateNotificationTemplate(
+    request: notificationservicev1_UpdateNotificationTemplateRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除模板
+  DeleteNotificationTemplate(
+    request: notificationservicev1_DeleteNotificationTemplateRequest,
+  ): Promise<wellKnownEmpty>;
+  // 试渲染：按变量集渲染指定模板，返回标题与正文（管理页预览用，不产生投递）
+  RenderNotificationTemplate(
+    request: notificationservicev1_RenderNotificationTemplateRequest,
+  ): Promise<notificationservicev1_RenderNotificationTemplateResponse>;
+}
+
+export function createNotificationTemplateServiceClient(
+  transport: ClientTransport,
+): NotificationTemplateService {
+  return {
+    ListNotificationTemplate(request) {
+      const path = `admin/v1/notification-templates`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'NotificationTemplateService',
+        method: 'ListNotificationTemplate',
+      }) as Promise<notificationservicev1_ListNotificationTemplateResponse>;
+    },
+    GetNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.code) {
+        queryParams.push(
+          `code=${encodeURIComponent(request.code.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'NotificationTemplateService',
+        method: 'GetNotificationTemplate',
+      }) as Promise<notificationservicev1_NotificationTemplate>;
+    },
+    CreateNotificationTemplate(request) {
+      const path = `admin/v1/notification-templates`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationTemplateService',
+        method: 'CreateNotificationTemplate',
+      }) as Promise<notificationservicev1_NotificationTemplate>;
+    },
+    UpdateNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'NotificationTemplateService',
+        method: 'UpdateNotificationTemplate',
+      }) as Promise<wellKnownEmpty>;
+    },
+    DeleteNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'NotificationTemplateService',
+        method: 'DeleteNotificationTemplate',
+      }) as Promise<wellKnownEmpty>;
+    },
+    RenderNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}/render`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationTemplateService',
+        method: 'RenderNotificationTemplate',
+      }) as Promise<notificationservicev1_RenderNotificationTemplateResponse>;
+    },
+  };
+}
+export type notificationservicev1_ListNotificationTemplateResponse = {
+  items: notificationservicev1_NotificationTemplate[] | undefined;
+  total: number | undefined;
+};
+
+// 通知模板：可复用的标题/正文占位模板（{{var}}），平台全局、code 全局唯一。
+export type notificationservicev1_NotificationTemplate = {
+  // 模板编码，发送方以 template_code 引用；全局唯一，仅限字母数字与下划线/连字符
+  code?: string;
+  // 正文模板，支持 {{var}} 占位符
+  contentTemplate?: string;
+  createdAt?: wellKnownTimestamp;
+  id?: number;
+  isEnabled?: boolean;
+  name?: string;
+  remark?: string;
+  // 标题模板，支持 {{var}} 占位符；未识别占位符在渲染时报错
+  titleTemplate?: string;
+  updatedAt?: wellKnownTimestamp;
+};
+
+export type notificationservicev1_GetNotificationTemplateRequest = {
+  code?: string;
+  id?: number;
+};
+
+export type notificationservicev1_CreateNotificationTemplateRequest = {
+  data: notificationservicev1_NotificationTemplate | undefined;
+};
+
+export type notificationservicev1_UpdateNotificationTemplateRequest = {
+  data: notificationservicev1_NotificationTemplate | undefined;
+  id: number | undefined;
+  // 字段掩码：留空更新全部字段
+  updateMask?: wellKnownFieldMask;
+};
+
+export type notificationservicev1_DeleteNotificationTemplateRequest = {
+  id: number | undefined;
+};
+
+// 按变量集试渲染（管理页预览；发送不经过这里）
+export type notificationservicev1_RenderNotificationTemplateRequest = {
+  // 被渲染的模板 ID
+  id: number | undefined;
+  // 变量集：占位符名 → 值；模板引用了变量集里没有的占位符时整个渲染报错
+  variables: { [key: string]: string } | undefined;
+};
+
+export type notificationservicev1_RenderNotificationTemplateResponse = {
+  content: string | undefined;
+  title: string | undefined;
+};
+
 // 在线会话管理服务（在线用户列表 + 强制下线）
 export interface OnlineSessionService {
   // 查询在线会话列表
@@ -12437,6 +12702,7 @@ export class ApiClient {
   private _notificationPreferenceService?: NotificationPreferenceService;
   private _notificationRuleService?: NotificationRuleService;
   private _notificationService?: NotificationService;
+  private _notificationTemplateService?: NotificationTemplateService;
   private _onlineSessionService?: OnlineSessionService;
   private _operationAuditLogService?: OperationAuditLogService;
   private _orgUnitService?: OrgUnitService;
@@ -12589,6 +12855,10 @@ export class ApiClient {
 
   get notificationService(): NotificationService {
     return this._notificationService ??= createNotificationServiceClient(this._transport);
+  }
+
+  get notificationTemplateService(): NotificationTemplateService {
+    return this._notificationTemplateService ??= createNotificationTemplateServiceClient(this._transport);
   }
 
   get onlineSessionService(): OnlineSessionService {

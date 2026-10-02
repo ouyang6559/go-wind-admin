@@ -37,6 +37,7 @@ type NotificationService struct {
 	log          *bLogger.Helper
 	deliveryRepo *data.NotificationDeliveryRepo
 	ruleRepo     *data.NotificationRuleRepo
+	templateRepo *data.NotificationTemplateRepo
 	channels     *channel.Registry
 
 	// taskEnqueuer 异步派发能力。默认 nil（asynq 未配置）＝全部事件走同步投递；
@@ -48,12 +49,14 @@ func NewNotificationService(
 	ctx *bootstrap.Context,
 	deliveryRepo *data.NotificationDeliveryRepo,
 	ruleRepo *data.NotificationRuleRepo,
+	templateRepo *data.NotificationTemplateRepo,
 	channelRegistry *channel.Registry,
 ) *NotificationService {
 	return &NotificationService{
 		log:          ctx.NewLoggerHelper("notification/service/admin-service"),
 		deliveryRepo: deliveryRepo,
 		ruleRepo:     ruleRepo,
+		templateRepo: templateRepo,
 		channels:     channelRegistry,
 	}
 }
@@ -134,6 +137,15 @@ func (s *NotificationService) SendDirect(ctx context.Context, req *notificationV
 	if req == nil || req.GetTarget() == "" {
 		return nil, errors.New("notification target is required")
 	}
+
+	// 模板渲染在落台账之前：异步派发的载荷装的是渲染结果，重试不再解析模板，
+	// 台账里存的 title/content（经 sender 落库）与实际发出的字节一致。
+	if req.GetTemplateCode() != "" {
+		if err := s.applyTemplate(ctx, req); err != nil {
+			return nil, err
+		}
+	}
+
 	if req.GetTitle() == "" || req.GetContent() == "" {
 		return nil, errors.New("notification title and content are required")
 	}
@@ -195,6 +207,39 @@ func resolveRequestId(req *notificationV1.SendDirectNotificationRequest) string 
 		return v
 	}
 	return id.NewGUIDv4(false)
+}
+
+// applyTemplate 按 template_code 解析模板并渲染 title/content，覆盖请求里的同名入参。
+//
+// 模板不存在/停用/渲染失败一律报错上抛：调用方显式点名了一个模板，静默降级为直发
+// 等于把"文案没人管"藏进成功日志。停用与不存在分开说——前者是运营动作，后者是代码 bug。
+func (s *NotificationService) applyTemplate(ctx context.Context, req *notificationV1.SendDirectNotificationRequest) error {
+	if s.templateRepo == nil {
+		return fmt.Errorf("notification template %q not found: template repo is not wired", req.GetTemplateCode())
+	}
+	tpl, err := s.templateRepo.GetByCode(ctx, req.GetTemplateCode())
+	if err != nil {
+		return err
+	}
+	if tpl == nil {
+		return fmt.Errorf("notification template %q not found", req.GetTemplateCode())
+	}
+	if !tpl.GetIsEnabled() {
+		return fmt.Errorf("notification template %q is disabled", req.GetTemplateCode())
+	}
+
+	title, err := renderTemplate(tpl.GetTitleTemplate(), req.GetTemplateVars())
+	if err != nil {
+		return fmt.Errorf("render template %q title: %w", req.GetTemplateCode(), err)
+	}
+	content, err := renderTemplate(tpl.GetContentTemplate(), req.GetTemplateVars())
+	if err != nil {
+		return fmt.Errorf("render template %q content: %w", req.GetTemplateCode(), err)
+	}
+
+	req.Title = title
+	req.Content = content
+	return nil
 }
 
 // deliver 当场投递并回写台账结论。同步事件、以及入队失败的兜底共用这一条路。
