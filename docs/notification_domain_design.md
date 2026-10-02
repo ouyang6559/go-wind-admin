@@ -331,7 +331,7 @@ vben 端乐观插入拿到 `messageId:0` + Invalid Date，其去重逻辑随后�
 | C 路由规则表 + WEBHOOK 出口 | 已完成 | 2026-09-20 | `sys_notification_rules`、WEBHOOK 渠道、测试投递 |
 | C7 全新安装链路 + 平台侧授权 | 已完成 | 2026-09-20 | 装到没装过的库上跑一遍、通知域补 `requirePlatformAdmin` |
 | 欠账 1 失败路径也落 `channel_id` | 已完成 | 2026-09-21 | 失败行不再空挂渠道 |
-| 欠账 2 租户侧边栏整箱被清空 | **未修** | — | 成因已实测定位，修法写在同一节里，差在"等点头"（改的是全部租户的可见菜单集） |
+| 欠账 2 租户侧边栏整箱被清空 | 已完成 | 2026-10-02 | `TenantRepo` 读侧补 `WithPlan()` 边回填；vben 抽屉读写不同键一并修 |
 | M 通知域提为一级菜单 | 已完成 | 2026-09-21 | 菜单树重排 + 启动期 identity 序列自愈 |
 | N WEBHOOK 出站风格与载荷模板 | 已完成 | 2026-09-21 | 五种签名风格 + 载荷模板 |
 | P3 偏好与模板 | **未开始** | — | 用户通知偏好 / 分类退订 / 静音时段 + 模板管理，单独排期 |
@@ -872,7 +872,7 @@ webhook 侧三条失败用例（SSRF 拦下 / 对端 5xx / 配置不可用）按
 **门禁**：本块纯后端 + 文档，三端未动。`go build ./...` 通过，`go vet ./app/admin/service/internal/data/... ./app/admin/service/internal/service/...` 无输出，
 `go test -count=1 ./app/...` 六个包全绿。
 
-### 欠账 2（租户侧边栏整箱被清空：成因已定位，**未修**，2026-09-21）
+### 欠账 2（租户侧边栏整箱被清空：成因已定位，~~未修~~ **已修 2026-10-02**）
 
 **编号口径**：§4 里的「欠账 1 / 欠账 2」是"把代码侧的欠账先做完"这一轮排出来的两块，
 与 §7 待办里那两项 `D1`、`D2`（mailpit 成功投递实测 / 已部署实例「接口同步」后的 403→200 复测）不是同一套编号。
@@ -918,7 +918,7 @@ webhook 侧三条失败用例（SSRF 拦下 / 对端 5xx / 配置不可用）按
 模块门禁真正生效的地方是 Api 表闸门（§4 C7 那两格 403 `module not allowed` 就是它），所以这一格属显示层缺陷、
 不构成数据越权 —— 但"套餐白名单已经管不住菜单"这件事必须记下来，否则改完 `plan_id` 会以为门禁在生效。
 
-**修法（未做，等点头）**：`TenantRepo` 的读路径补边回填，形状照 `plan_module_repo.go:112-114` ——
+**修法（2026-10-02 已按此落地，见 §7 对应条目）**：`TenantRepo` 的读路径补边回填，形状照 `plan_module_repo.go:112-114` ——
 `Get`/`List` 的 builder 加 `WithPlan()`，DTO 上 `if e.Edges.Plan != nil { dto.PlanId = &e.Edges.Plan.ID }`。
 不在通知域范围内，而且它改变的是**所有租户用户的侧边栏可见集**（今天全空 → 修完变成"按套餐白名单"），
 影响面比本轮通知域那两块大；若同时想把白名单真正接上（递归过滤叶子），那是第三次行为变化，
@@ -1466,14 +1466,19 @@ gow run admin
       连带后果：**异步重试从第二次起显式钉住第一次那条配置**（`dispatchRequest` 读台账的 `channel_id`），
       于是一次投递只有一次渠道答案，中途把它停用/删除会让剩下的尝试变成 SKIPPED，而不是改选下一条。
       实测的对照行、行为变化理由与探针账目见 §4 欠账 1。
-- [ ] 欠账 2 **未修，跨域等点头**：租户侧边栏整箱被清空（`GET /admin/v1/routes` → `{"items":[]}`）。
-      成因已定位并实测：`plan_id` 是 ent 的**边外键**而非字段，`TenantRepo` 的 copier mapper 读不到非导出字段，
-      于是 `filterMenusByPlanWhitelist` 的 `t.PlanId == nil` 命中、无日志 `return nil`。
-      修法是读侧补 `WithPlan()` + 手工回填 `dto.PlanId`（照 `plan_module_repo.go:112-114`），
-      **但它属套餐/租户导航域**、改变的是全部租户用户可见的菜单集，所以本轮只交成因。
-      同一段代码另两格顺带记下：白名单只遍历顶层节点而顶层根菜单一条都不带 `module`（当时 9 条根 / 实际过滤面 0/35；
-      M 块之后重测为 47 行 / 根 10 条 / 带 module 0 条，结论不变，见 §4 M），
-      以及**三端**租户编辑抽屉的「订阅套餐」下拉在编辑态恒为空（vben 那份还读写不同键）。全在 §4 欠账 2。
+- [x] 欠账 2 **已修（2026-10-02）**：租户侧边栏整箱被清空（`GET /admin/v1/routes` → `{"items":[]}`）。
+      成因即当时定位的：`plan_id` 是 ent 的**边外键**而非字段，`TenantRepo` 的 copier mapper 读不到非导出字段，
+      `filterMenusByPlanWhitelist` 的 `t.PlanId == nil` 命中、无日志 `return nil`。
+      修法照原案落地：`tenant_repo.go` 的 `Get`/`List` 读侧补 `WithPlan()` 预载并手工回填 `dto.PlanId`
+      （`Get` 因 `repository.Get` 泛型实现拿不到 entity，按其语义展开为 mask 归一化 + 列裁剪 + `Only` 后回填；
+      `List` 改手写映射循环 + 独立 count builder）。
+      回归测试 `tenant_repo_sqlite_test.go` 的 `TestTenantRepoSqlite_PlanIdEdgeBackfill`
+      （带套餐/无套餐 × Get 按主键/按 code/List）；e2e 实测：新建绑套餐租户后，平台侧 Get/List 响应带 `planId`，
+      租户 token 的 `/admin/v1/routes` 从 `{"items":[]}` 恢复为 6 条根节点（与本文记录的根容器数一致），探针数据即建即删。
+      **白名单只遍历顶层节点、叶子从不被检查这一格未动**（递归过滤是第三次行为变化，仍需单独确认；
+      在此之前"修完 plan_id 后白名单实际过滤面为 0"的旧结论依然成立——租户侧边栏恢复的是"全部授权菜单"）。
+      同段第三症状同步收口：三端租户编辑抽屉「订阅套餐」编辑态回填恢复（react/ele 本就读写同键、只差后端回填）；
+      vben 那份读写不同键（表单字段 `subscriptionPlan` 吃遗留字符串列、提交却当 `planId`）已把表单字段改名 `planId` 统一。
 
 P2 新增事件类型时的落点清单（一枚 `INTERNAL_MESSAGE` 要逐个点到的地方，漏任一处都是静默不一致）。
 **C 之后第一行变了**：路由不再是 Go 表，而是"播种一行默认规则 + 页面可改"：
