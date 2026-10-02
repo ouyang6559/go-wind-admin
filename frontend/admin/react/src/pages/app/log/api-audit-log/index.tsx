@@ -9,6 +9,7 @@ import { PaginationQuery } from '@/core';
 import { TABLE, METHOD_LIST } from '@/config/constants';
 import { fetchListApiAuditLogs } from '@/api/hooks/api-audit-log';
 import { exportAuditLogs, type AuditExportFormat } from '@/utils/csv';
+import { exportAuditLogsServer } from '@/api/hooks/audit-export';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
 
@@ -163,6 +164,18 @@ const ApiAuditLog = () => {
   ];
 
         // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
+  // 服务端全量导出（XLSX，上限 50 万行）：当前搜索条件透传给后端，
+  // 突破客户端聚合导出的 1 万行上限
+  const handleServerExport = async () => {
+    try {
+      await exportAuditLogsServer('api', JSON.stringify(latestParamsRef.current ?? {}));
+      message.success(t('exportServerSuccess'));
+    } catch (error: any) {
+      console.error('server-side audit export failed', error);
+      message.error(error?.message || t('exportServerFailed'));
+    }
+  };
+
   const handleExport = async (format: AuditExportFormat) => {
     const exportColumns = columns
       .filter((c) => c.dataIndex && !c.hideInTable)
@@ -232,8 +245,15 @@ const ApiAuditLog = () => {
                 items: [
                   { key: 'csv', label: t('exportCsv') },
                   { key: 'xlsx', label: t('exportXlsx') },
+                  { key: 'server-xlsx', label: t('exportServerXlsx') },
                 ],
-                onClick: ({ key }) => handleExport(key as AuditExportFormat),
+                onClick: ({ key }) => {
+                  if (key === 'server-xlsx') {
+                    handleServerExport();
+                    return;
+                  }
+                  handleExport(key as AuditExportFormat);
+                },
               }}
             >
               <Button icon={<DownloadOutlined />}>{t('export')}</Button>

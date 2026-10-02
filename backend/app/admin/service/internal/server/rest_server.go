@@ -176,6 +176,7 @@ func NewRestServer(
 	notificationPreferenceService *service.NotificationPreferenceService,
 	notificationTemplateService *service.NotificationTemplateService,
 	monitorAlertService *service.MonitorAlertService,
+	auditExportService *service.AuditExportService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
 	aiProviderService *service.AiProviderService,
@@ -253,6 +254,12 @@ func NewRestServer(
 	// TODO 它不能够使用代码生成器生成的Handler，需要手动注册。代码生成器生成的Handler无法处理文件上传下载的请求。
 	// 但，代码生成器生成代码可以提供给OpenAPI使用。
 	registerFileTransferServiceHandler(srv, fileTransferService)
+
+	// 审计日志服务端导出：手动注册（二进制文件响应，proto 生成路由写不了响应头）。
+	// 手动路由无 Operation → auth 中间件不应用 → 鉴权在 handler 内显式做（平台管理员）。
+	srv.Route("/").GET("admin/v1/audit-logs:export", func(ctx http.Context) error {
+		return auditExportService.ServeExport(ctx.Response(), ctx.Request())
+	})
 
 	adminV1.RegisterInternalMessageServiceHTTPServer(srv, internalMessageService)
 	adminV1.RegisterInternalMessageCategoryServiceHTTPServer(srv, internalMessageCategoryService)
