@@ -79,6 +79,9 @@ type InternalMessageService struct {
 	internalMessageCategoryRepo  *data.InternalMessageCategoryRepo
 	internalMessageRecipientRepo *data.InternalMessageRecipientRepo
 	userRepo                     data.UserRepo
+	// notificationPreferenceRepo 收件人的通知偏好（静音时段/分类退订）。
+	// 可为 nil（旧测试装配/未接线）：nil 时偏好全部跳过，行为与 P3 之前一致。
+	notificationPreferenceRepo *data.NotificationPreferenceRepo
 
 	internalMessagePublisher InternalMessagePublisher
 	taskEnqueuer             TaskEnqueuer
@@ -104,6 +107,7 @@ func NewInternalMessageService(
 	internalMessageCategoryRepo *data.InternalMessageCategoryRepo,
 	internalMessageRecipientRepo *data.InternalMessageRecipientRepo,
 	userRepo data.UserRepo,
+	notificationPreferenceRepo *data.NotificationPreferenceRepo,
 	authenticator *data.Authenticator,
 	clientType authenticationV1.ClientType,
 ) *InternalMessageService {
@@ -113,6 +117,7 @@ func NewInternalMessageService(
 		internalMessageCategoryRepo:  internalMessageCategoryRepo,
 		internalMessageRecipientRepo: internalMessageRecipientRepo,
 		userRepo:                     userRepo,
+		notificationPreferenceRepo:   notificationPreferenceRepo,
 		authenticator:                authenticator,
 		clientType:                   clientType,
 		// 默认空操作发布者：SSE 未配置时不 panic；配置后由 RegisterInternalMessagePublisher 覆盖
@@ -373,6 +378,7 @@ func (s *InternalMessageService) SendMessage(ctx context.Context, req *internalM
 		senderId := msg.GetCreatedBy()
 		title := msg.GetTitle()
 		content := msg.GetContent()
+		categoryId := msg.GetCategoryId()
 		vc, _ := viewer.FromContext(ctx)
 
 		if s.taskEnqueuer != nil {
@@ -381,10 +387,10 @@ func (s *InternalMessageService) SendMessage(ctx context.Context, req *internalM
 				TenantId:  operator.GetTenantId(),
 			}); err != nil {
 				s.log.Errorf(ctx, "enqueue broadcast task for message [%d] failed, falling back to goroutine: %s", msgId, err)
-				s.fanoutBroadcastGoroutine(msgId, senderId, title, content, vc)
+				s.fanoutBroadcastGoroutine(msgId, senderId, categoryId, title, content, vc)
 			}
 		} else {
-			s.fanoutBroadcastGoroutine(msgId, senderId, title, content, vc)
+			s.fanoutBroadcastGoroutine(msgId, senderId, categoryId, title, content, vc)
 		}
 	} else {
 		// 定向发送：人数少，仍同步执行，但改走通知域的缝——
@@ -508,9 +514,29 @@ func (s *InternalMessageService) sendNotification(ctx context.Context, messageId
 	}
 	recipient.Id = entity.Id
 
-	s.publishNotification(ctx, recipient)
+	// 静音时段只抑制实时推送（DND）：收件行已落库，用户打开收件箱仍能看到。
+	// 偏好查询失败按"无偏好"放行推送——fail-open 只影响即时性，不影响可靠性。
+	if s.userInQuietWindow(ctx, recipientUserId, *now) {
+		s.log.Debugf(ctx, "directed notification to user [%d] suppressed by quiet hours (message %d)", recipientUserId, messageId)
+	} else {
+		s.publishNotification(ctx, recipient)
+	}
 
 	return nil
+}
+
+// userInQuietWindow 判定用户当前是否处于其静音时段内。
+// 偏好仓储未接线/查询失败/用户未配置 → false（不过抑制）。
+func (s *InternalMessageService) userInQuietWindow(ctx context.Context, userID uint32, now time.Time) bool {
+	if s.notificationPreferenceRepo == nil {
+		return false
+	}
+	pref, err := s.notificationPreferenceRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		s.log.Errorf(ctx, "query notification preference for user [%d] failed, push suppression skipped: %s", userID, err)
+		return false
+	}
+	return inQuietWindow(pref, now)
 }
 
 // recipientTenantID 查收件用户自己的租户，用于给收件行打标（定向路径；广播路径的受众
@@ -549,7 +575,10 @@ func viewerTenantID(ctx context.Context) uint32 {
 // 租户 0，而收件箱读取按读者租户过滤 → 租户用户一行都读不到（父消息行本身也是 tenant 0，
 // 读侧的回填同因，见 internal_message_recipient_service.go 的 ListUserInbox）。
 // 租户管理员的广播不受影响：受众已被隐私层筛成本租户，逐行取值与 viewer 同值。
-func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId, senderUserId uint32, title, content string) {
+//
+// categoryId 是消息本体的分类：收件人在偏好里退订了它则整行不落库也不推送
+// （点对点定向发送不走这里，不受退订约束）。
+func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId, senderUserId, categoryId uint32, title, content string) {
 	now := time.Now()
 
 	broadcastTenantId := viewerTenantID(ctx)
@@ -571,17 +600,36 @@ func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId
 			break
 		}
 
-		recipients := make([]*internalMessageV1.InternalMessageRecipient, 0, len(users.GetItems()))
+		// 一页受众的偏好一次取齐：退订的整行跳过（不落库不推送），
+		// 静音时段的照常落库但跳过实时推送。查询失败按"无人配置"处理——
+		// 偏好层永远 fail-open，只影响打扰度，不影响消息到达。
+		userIds := make([]uint32, 0, len(users.GetItems()))
 		for _, user := range users.GetItems() {
+			userIds = append(userIds, user.GetId())
+		}
+		prefs := s.broadcastPreferences(ctx, messageId, userIds)
+
+		recipients := make([]*internalMessageV1.InternalMessageRecipient, 0, len(users.GetItems()))
+		quietUserIds := make(map[uint32]struct{})
+		for _, user := range users.GetItems() {
+			userId := user.GetId()
+			if pref := prefs[userId]; pref != nil {
+				if categoryMuted(pref, categoryId) {
+					continue
+				}
+				if inQuietWindow(pref, now) {
+					quietUserIds[userId] = struct{}{}
+				}
+			}
 			userTenantId := user.GetTenantId()
 			if userTenantId == 0 && broadcastTenantId != 0 {
 				// 平台用户的租户确实是 0，所以"受众没带租户"只在广播方是租户时才可能被察觉——
 				// 那种情况下按 0 落库等于把行藏进收件人读不到的地方（go-crud 的 DTO 映射退化即触发）。
 				s.log.Errorf(ctx, "broadcast message [%d]: recipient user [%d] carries no tenant, labeled with broadcaster tenant [%d]",
-					messageId, user.GetId(), broadcastTenantId)
+					messageId, userId, broadcastTenantId)
 				userTenantId = broadcastTenantId
 			}
-			recipients = append(recipients, newMessageRecipient(messageId, user.GetId(), senderUserId, userTenantId, &now, title, content))
+			recipients = append(recipients, newMessageRecipient(messageId, userId, senderUserId, userTenantId, &now, title, content))
 		}
 
 		// CreateBulk 用 ON CONFLICT DO NOTHING 幂等写入：asynq 重试时已落库的行会被忽略而非报错。
@@ -592,17 +640,20 @@ func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId
 		}
 		total += len(recipients)
 
-		userIds := make([]uint32, 0, len(recipients))
+		pushUserIds := make([]uint32, 0, len(recipients))
 		for _, recipient := range recipients {
-			userIds = append(userIds, recipient.GetRecipientUserId())
+			pushUserIds = append(pushUserIds, recipient.GetRecipientUserId())
 		}
-		recipientIds, err := s.internalMessageRecipientRepo.IdsByMessageAndRecipients(ctx, messageId, userIds)
+		recipientIds, err := s.internalMessageRecipientRepo.IdsByMessageAndRecipients(ctx, messageId, pushUserIds)
 		if err != nil {
 			// 回读失败不中断：宁可推一条缺 id 的通知，也不丢掉整个广播。
 			s.log.Errorf(ctx, "broadcast message [%d]: read back recipient ids (page %d) failed: %s", messageId, page, err)
 		}
 		for _, recipient := range recipients {
 			recipient.Id = trans.Ptr(recipientIds[recipient.GetRecipientUserId()])
+			if _, quiet := quietUserIds[recipient.GetRecipientUserId()]; quiet {
+				continue
+			}
 			s.publishNotification(ctx, recipient)
 		}
 
@@ -614,17 +665,44 @@ func (s *InternalMessageService) executeBroadcast(ctx context.Context, messageId
 	s.log.Infof(ctx, "broadcast message [%d] to %d recipients done", messageId, total)
 }
 
+// broadcastPreferences 拉一页受众的偏好，按 user_id 索引。
+// 仓储未接线或查询失败时返回空 map（偏好层 fail-open），但失败必须留下日志。
+func (s *InternalMessageService) broadcastPreferences(ctx context.Context, messageId uint32, userIds []uint32) map[uint32]*notificationV1.NotificationPreference {
+	if s.notificationPreferenceRepo == nil || len(userIds) == 0 {
+		return nil
+	}
+	prefs, err := s.notificationPreferenceRepo.ListByUserIDs(ctx, userIds)
+	if err != nil {
+		s.log.Errorf(ctx, "broadcast message [%d]: list recipient preferences failed, suppression skipped: %s", messageId, err)
+		return nil
+	}
+	return prefs
+}
+
+// categoryMuted 判定偏好是否退订了给定分类；分类为零值（未归类消息）时不退订任何人。
+func categoryMuted(pref *notificationV1.NotificationPreference, categoryId uint32) bool {
+	if pref == nil || categoryId == 0 {
+		return false
+	}
+	for _, id := range pref.GetMutedCategoryIds() {
+		if id == categoryId {
+			return true
+		}
+	}
+	return false
+}
+
 // fanoutBroadcastGoroutine 是 asynq 未配置时的回退路径：
 // 在脱离请求的后台 ctx 上异步执行 fan-out（客户端断连不会中断投递）。
 // viewer 从请求 ctx 取出后贴到后台 ctx，保持租户可见性。
-func (s *InternalMessageService) fanoutBroadcastGoroutine(messageId, senderUserId uint32, title, content string, vc viewer.Context) {
+func (s *InternalMessageService) fanoutBroadcastGoroutine(messageId, senderUserId, categoryId uint32, title, content string, vc viewer.Context) {
 	go func() {
 		broadcastCtx, cancel := context.WithTimeout(context.Background(), defaultBroadcastTimeout)
 		defer cancel()
 		if vc != nil {
 			broadcastCtx = viewer.WithContext(broadcastCtx, vc)
 		}
-		s.executeBroadcast(broadcastCtx, messageId, senderUserId, title, content)
+		s.executeBroadcast(broadcastCtx, messageId, senderUserId, categoryId, title, content)
 	}()
 }
 
@@ -658,7 +736,7 @@ func (s *InternalMessageService) AsyncBroadcastMessage(taskType string, taskData
 		return err
 	}
 
-	s.executeBroadcast(ctx, taskData.MessageId, msg.GetCreatedBy(), msg.GetTitle(), msg.GetContent())
+	s.executeBroadcast(ctx, taskData.MessageId, msg.GetCreatedBy(), msg.GetCategoryId(), msg.GetTitle(), msg.GetContent())
 
 	return nil
 }

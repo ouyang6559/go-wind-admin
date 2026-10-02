@@ -90,6 +90,9 @@ type NotificationChannel func(*sql.Selector)
 // NotificationDelivery is the predicate function for notificationdelivery builders.
 type NotificationDelivery func(*sql.Selector)
 
+// NotificationPreference is the predicate function for notificationpreference builders.
+type NotificationPreference func(*sql.Selector)
+
 // NotificationRule is the predicate function for notificationrule builders.
 type NotificationRule func(*sql.Selector)
 

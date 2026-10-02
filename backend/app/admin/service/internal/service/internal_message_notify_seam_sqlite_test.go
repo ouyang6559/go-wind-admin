@@ -228,7 +228,7 @@ func TestBroadcastSsePayloadCarriesRecipientId(t *testing.T) {
 
 	// 广播在 asynq handler 的 ctx 上跑：viewer 按任务 payload 的租户重建，与 HTTP 请求 ctx 无关。
 	broadcastCtx := viewer.WithContext(context.Background(), appViewer.NewUserViewer(0, 7, 0, "", nil))
-	e.im.executeBroadcast(broadcastCtx, msg.GetId(), 1, "广播标题", "广播正文")
+	e.im.executeBroadcast(broadcastCtx, msg.GetId(), 1, 0, "广播标题", "广播正文")
 
 	require.Len(t, e.pub.events, 3, "三个收件人各推一条")
 	for i := range e.pub.events {

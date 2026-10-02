@@ -143,6 +143,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	internalMessageRepo := data.NewInternalMessageRepo(ctx, entClient)
 	internalMessageCategoryRepo := data.NewInternalMessageCategoryRepo(ctx, entClient)
 	internalMessageRecipientRepo := data.NewInternalMessageRecipientRepo(ctx, entClient)
+	notificationPreferenceRepo := data.NewNotificationPreferenceRepo(ctx, entClient)
 
 	// 平台脚本
 	scriptRepo := data.NewScriptRepo(ctx, entClient)
@@ -224,9 +225,10 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	adminPortalService := service.NewAdminPortalService(ctx, menuRepo, roleRepo, userRepo, permissionRepo, planModuleRepo, tenantRepo)
 
 	// 站内信
-	internalMessageService := service.NewInternalMessageService(ctx, internalMessageRepo, internalMessageCategoryRepo, internalMessageRecipientRepo, userRepo, authenticator, clientType)
+	internalMessageService := service.NewInternalMessageService(ctx, internalMessageRepo, internalMessageCategoryRepo, internalMessageRecipientRepo, userRepo, notificationPreferenceRepo, authenticator, clientType)
 	internalMessageCategoryService := service.NewInternalMessageCategoryService(ctx, internalMessageCategoryRepo)
 	internalMessageRecipientService := service.NewInternalMessageRecipientService(ctx, internalMessageRepo, internalMessageRecipientRepo)
+	notificationPreferenceService := service.NewNotificationPreferenceService(ctx, notificationPreferenceRepo, internalMessageCategoryRepo)
 
 	// 站内信 ⇄ 通知域接线（两条边互为依赖，只能装配期后贴）：
 	//   NotificationService --Registry--> InternalMessageSender --> InternalMessageService（投递内核）
@@ -308,6 +310,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		scriptService, scriptLogService,
 		// register:rest-arg ── 新模块服务实参在此行后追加(make register 工具锚点,勿删)
 		notificationRuleService,
+		notificationPreferenceService,
 		accessKeyService,
 		configService,
 		aiProviderService,

@@ -67,6 +67,7 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 		"InternalMessageService":          identityV1.Module_INTERNAL_MESSAGE,
 		"InternalMessageCategoryService":  identityV1.Module_INTERNAL_MESSAGE,
 		"InternalMessageRecipientService": identityV1.Module_INTERNAL_MESSAGE,
+		"NotificationPreferenceService":   identityV1.Module_INTERNAL_MESSAGE,
 	}
 	assert.Equal(t, expected, ServiceTagToBusinessModule,
 		"ServiceTagToBusinessModule 内容漂移；如为有意变更请同步更新本测试")
@@ -86,7 +87,7 @@ func TestServiceTagToBusinessModuleReverseMapping(t *testing.T) {
 		identityV1.Module_TASK:             {"TaskService"},
 		identityV1.Module_TENANT:           {"TenantService", "PlanService", "PlanQuotaService"},
 		identityV1.Module_LOG:              {"ApiAuditLogService", "LoginAuditLogService", "OperationAuditLogService", "DataAccessAuditLogService", "PermissionAuditLogService", "PolicyEvaluationLogService", "RedisCacheMonitorService"},
-		identityV1.Module_INTERNAL_MESSAGE: {"InternalMessageService", "InternalMessageCategoryService", "InternalMessageRecipientService"},
+		identityV1.Module_INTERNAL_MESSAGE: {"InternalMessageService", "InternalMessageCategoryService", "InternalMessageRecipientService", "NotificationPreferenceService"},
 		identityV1.Module_AI:               {"AiProviderService", "AiConversationService", "AiMessageService", "AiChatService", "AiUsageLogService", "AiKnowledgeBaseService", "AiQueryService"},
 	}
 

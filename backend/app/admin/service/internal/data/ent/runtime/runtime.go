@@ -33,6 +33,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/menu"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationdelivery"
+	"go-wind-admin/app/admin/service/internal/data/ent/notificationpreference"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationrule"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
@@ -807,6 +808,27 @@ func init() {
 	notificationdeliveryDescID := notificationdeliveryMixinFields0[0].Descriptor()
 	// notificationdelivery.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	notificationdelivery.IDValidator = notificationdeliveryDescID.Validators[0].(func(uint32) error)
+	notificationpreferenceMixin := schema.NotificationPreference{}.Mixin()
+	notificationpreferenceMixinFields0 := notificationpreferenceMixin[0].Fields()
+	_ = notificationpreferenceMixinFields0
+	notificationpreferenceFields := schema.NotificationPreference{}.Fields()
+	_ = notificationpreferenceFields
+	// notificationpreferenceDescQuietEnabled is the schema descriptor for quiet_enabled field.
+	notificationpreferenceDescQuietEnabled := notificationpreferenceFields[1].Descriptor()
+	// notificationpreference.DefaultQuietEnabled holds the default value on creation for the quiet_enabled field.
+	notificationpreference.DefaultQuietEnabled = notificationpreferenceDescQuietEnabled.Default.(bool)
+	// notificationpreferenceDescQuietStartMinute is the schema descriptor for quiet_start_minute field.
+	notificationpreferenceDescQuietStartMinute := notificationpreferenceFields[2].Descriptor()
+	// notificationpreference.DefaultQuietStartMinute holds the default value on creation for the quiet_start_minute field.
+	notificationpreference.DefaultQuietStartMinute = notificationpreferenceDescQuietStartMinute.Default.(int32)
+	// notificationpreferenceDescQuietEndMinute is the schema descriptor for quiet_end_minute field.
+	notificationpreferenceDescQuietEndMinute := notificationpreferenceFields[3].Descriptor()
+	// notificationpreference.DefaultQuietEndMinute holds the default value on creation for the quiet_end_minute field.
+	notificationpreference.DefaultQuietEndMinute = notificationpreferenceDescQuietEndMinute.Default.(int32)
+	// notificationpreferenceDescID is the schema descriptor for id field.
+	notificationpreferenceDescID := notificationpreferenceMixinFields0[0].Descriptor()
+	// notificationpreference.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	notificationpreference.IDValidator = notificationpreferenceDescID.Validators[0].(func(uint32) error)
 	notificationruleMixin := schema.NotificationRule{}.Mixin()
 	notificationruleMixinFields0 := notificationruleMixin[0].Fields()
 	_ = notificationruleMixinFields0

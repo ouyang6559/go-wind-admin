@@ -68,6 +68,8 @@ type Tx struct {
 	NotificationChannel *NotificationChannelClient
 	// NotificationDelivery is the client for interacting with the NotificationDelivery builders.
 	NotificationDelivery *NotificationDeliveryClient
+	// NotificationPreference is the client for interacting with the NotificationPreference builders.
+	NotificationPreference *NotificationPreferenceClient
 	// NotificationRule is the client for interacting with the NotificationRule builders.
 	NotificationRule *NotificationRuleClient
 	// OperationAuditLog is the client for interacting with the OperationAuditLog builders.
@@ -287,6 +289,7 @@ func (tx *Tx) init() {
 	tx.Menu = NewMenuClient(tx.config)
 	tx.NotificationChannel = NewNotificationChannelClient(tx.config)
 	tx.NotificationDelivery = NewNotificationDeliveryClient(tx.config)
+	tx.NotificationPreference = NewNotificationPreferenceClient(tx.config)
 	tx.NotificationRule = NewNotificationRuleClient(tx.config)
 	tx.OperationAuditLog = NewOperationAuditLogClient(tx.config)
 	tx.OrgUnit = NewOrgUnitClient(tx.config)

@@ -344,6 +344,18 @@ func (f NotificationDeliveryFunc) Mutate(ctx context.Context, m ent.Mutation) (e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationDeliveryMutation", m)
 }
 
+// The NotificationPreferenceFunc type is an adapter to allow the use of ordinary
+// function as NotificationPreference mutator.
+type NotificationPreferenceFunc func(context.Context, *ent.NotificationPreferenceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NotificationPreferenceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NotificationPreferenceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationPreferenceMutation", m)
+}
+
 // The NotificationRuleFunc type is an adapter to allow the use of ordinary
 // function as NotificationRule mutator.
 type NotificationRuleFunc func(context.Context, *ent.NotificationRuleMutation) (ent.Value, error)

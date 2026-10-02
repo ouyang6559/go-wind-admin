@@ -3980,6 +3980,50 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/NotificationDelivery'
+    /admin/v1/notification-preference:
+        get:
+            tags:
+                - NotificationPreferenceService
+            description: 获取当前用户的通知偏好；从未配置过时返回默认值（未启用静音、无退订）。
+            operationId: NotificationPreferenceService_GetMyNotificationPreference
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationPreference'
+        post:
+            tags:
+                - NotificationPreferenceService
+            description: 更新当前用户的通知偏好，返回保存后的完整状态。
+            operationId: NotificationPreferenceService_UpdateMyNotificationPreference
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateNotificationPreferenceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationPreference'
+    /admin/v1/notification-preference/categories:
+        get:
+            tags:
+                - NotificationPreferenceService
+            description: 当前用户可退订的启用分类清单（本租户内）。
+            operationId: NotificationPreferenceService_ListMyNotificationCategories
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListMyNotificationCategoriesResponse'
     /admin/v1/notification-rules:
         get:
             tags:
@@ -9562,6 +9606,14 @@ components:
                 total:
                     type: string
             description: 查询菜单列表 - 回应
+        ListMyNotificationCategoriesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/NotificationCategoryItem'
+            description: 当前用户可见的启用分类清单（退订选择器的数据源）。
         ListNotificationChannelResponse:
             type: object
             properties:
@@ -10323,6 +10375,15 @@ components:
                 meta:
                     $ref: '#/components/schemas/MenuMeta'
             description: 路由项
+        NotificationCategoryItem:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: uint32
+                name:
+                    type: string
+            description: 可退订分类的精简项（只取 id + 名称，避免拖整个分类实体）。
         NotificationChannel:
             type: object
             properties:
@@ -10481,6 +10542,41 @@ components:
                     type: string
                     format: date-time
             description: 一条通知 × 一个渠道 × 一个收件人 = 一行投递台账
+        NotificationPreference:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    format: uint32
+                quietEnabled:
+                    type: boolean
+                    description: |-
+                        是否启用实时推送静音时段：只抑制 SSE 实时推送（桌面通知/角标即时性），
+                         收件行照常落库，用户打开收件箱仍能看到全部消息。
+                quietStartMinute:
+                    type: integer
+                    description: 静音开始：自当日 00:00 起的分钟数（0-1439），默认 1320（22:00）。
+                    format: int32
+                quietEndMinute:
+                    type: integer
+                    description: |-
+                        静音结束：自当日 00:00 起的分钟数（0-1439），默认 480（08:00）。
+                         跨零点窗口（start > end，如 22:00→08:00）合法；start == end 且启用视为无效配置。
+                    format: int32
+                mutedCategoryIds:
+                    type: array
+                    items:
+                        type: integer
+                        format: uint32
+                    description: |-
+                        退订的站内信分类 ID 列表：仅约束全员广播（targetAll），
+                         点对点定向发送不受退订影响（直接指名发给你的消息不可拒收）。
+                updatedAt:
+                    type: string
+                    format: date-time
+            description: |-
+                用户通知偏好（每用户一行）。
+                 服务端从操作人/收件人钉定 user_id，客户端传入的 user_id 一律忽略。
         NotificationRule:
             type: object
             properties:
@@ -12530,6 +12626,23 @@ components:
                     type: string
                     description: Webhook 签名密钥，留空不修改
             description: 更新通知渠道 - 请求
+        UpdateNotificationPreferenceRequest:
+            type: object
+            properties:
+                quietEnabled:
+                    type: boolean
+                quietStartMinute:
+                    type: integer
+                    format: int32
+                quietEndMinute:
+                    type: integer
+                    format: int32
+                mutedCategoryIds:
+                    type: array
+                    items:
+                        type: integer
+                        format: uint32
+            description: 更新自己的通知偏好（字段全量提交；未登录不可用）。
         UpdateNotificationRuleRequest:
             type: object
             properties:
@@ -13156,6 +13269,8 @@ tags:
          登录挑战侧 RPC（VerifyMFAChallenge）免鉴权，加 security:{} 并加入 rest_server 白名单。
     - name: NotificationChannelService
       description: 通知渠道管理服务（平台级配置）
+    - name: NotificationPreferenceService
+      description: 用户通知偏好服务（自助：读写的都是当前操作人自己的偏好，无管理面）。
     - name: NotificationRuleService
       description: 通知路由规则管理服务（平台级配置，菜单 authority 为 sys:platform_admin）。
     - name: NotificationService

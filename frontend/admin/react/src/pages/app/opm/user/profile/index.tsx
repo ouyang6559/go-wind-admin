@@ -14,6 +14,7 @@ import { getCharColor, getRandomColor } from '@/utils/color';
 import { getGenderOptions } from '../constants';
 import MfaManagement from './MfaManagement';
 import MySessions from './MySessions';
+import NotificationPreference from './NotificationPreference';
 
 /** 格式化 wellKnownTimestamp */
 function formatTimestamp(ts: any): string {
@@ -287,6 +288,11 @@ const UserProfile = () => {
               key: 'sessions',
               label: t('tab.sessions'),
               children: <MySessions />,
+            },
+            {
+              key: 'notification',
+              label: t('tab.notification'),
+              children: <NotificationPreference />,
             },
           ]}
         />

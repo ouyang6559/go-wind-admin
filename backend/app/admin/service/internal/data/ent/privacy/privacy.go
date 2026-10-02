@@ -783,6 +783,30 @@ func (f NotificationDeliveryMutationRuleFunc) EvalMutation(ctx context.Context, 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.NotificationDeliveryMutation", m)
 }
 
+// The NotificationPreferenceQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type NotificationPreferenceQueryRuleFunc func(context.Context, *ent.NotificationPreferenceQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f NotificationPreferenceQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.NotificationPreferenceQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.NotificationPreferenceQuery", q)
+}
+
+// The NotificationPreferenceMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type NotificationPreferenceMutationRuleFunc func(context.Context, *ent.NotificationPreferenceMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f NotificationPreferenceMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.NotificationPreferenceMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.NotificationPreferenceMutation", m)
+}
+
 // The NotificationRuleQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type NotificationRuleQueryRuleFunc func(context.Context, *ent.NotificationRuleQuery) error
@@ -1594,6 +1618,8 @@ func queryFilter(q ent.Query) (Filter, error) {
 		return q.Filter(), nil
 	case *ent.NotificationDeliveryQuery:
 		return q.Filter(), nil
+	case *ent.NotificationPreferenceQuery:
+		return q.Filter(), nil
 	case *ent.NotificationRuleQuery:
 		return q.Filter(), nil
 	case *ent.OperationAuditLogQuery:
@@ -1716,6 +1742,8 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	case *ent.NotificationChannelMutation:
 		return m.Filter(), nil
 	case *ent.NotificationDeliveryMutation:
+		return m.Filter(), nil
+	case *ent.NotificationPreferenceMutation:
 		return m.Filter(), nil
 	case *ent.NotificationRuleMutation:
 		return m.Filter(), nil

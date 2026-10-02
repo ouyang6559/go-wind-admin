@@ -1707,6 +1707,28 @@ var (
 			},
 		},
 	}
+	// NotificationPreferencesColumns holds the columns for the "notification_preferences" table.
+	NotificationPreferencesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true, Comment: "更新时间"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "删除时间"},
+		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
+		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
+		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
+		{Name: "user_id", Type: field.TypeUint32, Unique: true, Comment: "用户ID（唯一，每用户一行）"},
+		{Name: "quiet_enabled", Type: field.TypeBool, Comment: "是否启用实时推送静音时段（只抑制 SSE 实时推送，收件行照常落库）", Default: false},
+		{Name: "quiet_start_minute", Type: field.TypeInt32, Comment: "静音开始：自当日 00:00 起的分钟数（0-1439）", Default: 1320},
+		{Name: "quiet_end_minute", Type: field.TypeInt32, Comment: "静音结束：自当日 00:00 起的分钟数（0-1439）；跨零点窗口 start > end 合法", Default: 480},
+		{Name: "muted_category_ids", Type: field.TypeJSON, Nullable: true, Comment: "退订的站内信分类ID列表（仅约束全员广播，点对点定向发送不受影响）"},
+	}
+	// NotificationPreferencesTable holds the schema information for the "notification_preferences" table.
+	NotificationPreferencesTable = &schema.Table{
+		Name:       "notification_preferences",
+		Comment:    "用户通知偏好表（静音时段 + 分类退订）",
+		Columns:    NotificationPreferencesColumns,
+		PrimaryKey: []*schema.Column{NotificationPreferencesColumns[0]},
+	}
 	// SysNotificationRulesColumns holds the columns for the "sys_notification_rules" table.
 	SysNotificationRulesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -3579,6 +3601,7 @@ var (
 		SysMenusTable,
 		SysNotificationChannelsTable,
 		SysNotificationDeliveriesTable,
+		NotificationPreferencesTable,
 		SysNotificationRulesTable,
 		SysOperationAuditLogsTable,
 		SysOrgUnitsTable,
@@ -3756,6 +3779,11 @@ func init() {
 	}
 	SysNotificationDeliveriesTable.Annotation = &entsql.Annotation{
 		Table:     "sys_notification_deliveries",
+		Charset:   "utf8mb4",
+		Collation: "utf8mb4_bin",
+	}
+	NotificationPreferencesTable.Annotation = &entsql.Annotation{
+		Table:     "notification_preferences",
 		Charset:   "utf8mb4",
 		Collation: "utf8mb4_bin",
 	}

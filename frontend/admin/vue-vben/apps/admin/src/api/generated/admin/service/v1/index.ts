@@ -7057,6 +7057,89 @@ export type notification_channelservicev1_SendTestEmailRequest = {
   recipient: string | undefined;
 };
 
+// 用户通知偏好服务（自助：读写的都是当前操作人自己的偏好，无管理面）。
+export interface NotificationPreferenceService {
+  // 获取当前用户的通知偏好；从未配置过时返回默认值（未启用静音、无退订）。
+  GetMyNotificationPreference(
+    request: wellKnownEmpty,
+  ): Promise<notificationservicev1_NotificationPreference>;
+  // 更新当前用户的通知偏好，返回保存后的完整状态。
+  UpdateMyNotificationPreference(
+    request: notificationservicev1_UpdateNotificationPreferenceRequest,
+  ): Promise<notificationservicev1_NotificationPreference>;
+  // 当前用户可退订的启用分类清单（本租户内）。
+  ListMyNotificationCategories(
+    request: wellKnownEmpty,
+  ): Promise<notificationservicev1_ListMyNotificationCategoriesResponse>;
+}
+
+export function createNotificationPreferenceServiceClient(
+  transport: ClientTransport,
+): NotificationPreferenceService {
+  return {
+    GetMyNotificationPreference(_request) {
+      const path = `admin/v1/notification-preference`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'NotificationPreferenceService',
+        method: 'GetMyNotificationPreference',
+      }) as Promise<notificationservicev1_NotificationPreference>;
+    },
+    UpdateMyNotificationPreference(request) {
+      const path = `admin/v1/notification-preference`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationPreferenceService',
+        method: 'UpdateMyNotificationPreference',
+      }) as Promise<notificationservicev1_NotificationPreference>;
+    },
+    ListMyNotificationCategories(_request) {
+      const path = `admin/v1/notification-preference/categories`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'NotificationPreferenceService',
+        method: 'ListMyNotificationCategories',
+      }) as Promise<notificationservicev1_ListMyNotificationCategoriesResponse>;
+    },
+  };
+}
+// 用户通知偏好（每用户一行）。
+// 服务端从操作人/收件人钉定 user_id，客户端传入的 user_id 一律忽略。
+export type notificationservicev1_NotificationPreference = {
+  // 退订的站内信分类 ID 列表：仅约束全员广播（targetAll），
+  // 点对点定向发送不受退订影响（直接指名发给你的消息不可拒收）。
+  mutedCategoryIds: number[] | undefined;
+  // 是否启用实时推送静音时段：只抑制 SSE 实时推送（桌面通知/角标即时性），
+  // 收件行照常落库，用户打开收件箱仍能看到全部消息。
+  quietEnabled?: boolean;
+  // 静音结束：自当日 00:00 起的分钟数（0-1439），默认 480（08:00）。
+  // 跨零点窗口（start > end，如 22:00→08:00）合法；start == end 且启用视为无效配置。
+  quietEndMinute?: number;
+  // 静音开始：自当日 00:00 起的分钟数（0-1439），默认 1320（22:00）。
+  quietStartMinute?: number;
+  updatedAt?: wellKnownTimestamp;
+  userId?: number;
+};
+
+// 更新自己的通知偏好（字段全量提交；未登录不可用）。
+export type notificationservicev1_UpdateNotificationPreferenceRequest = {
+  mutedCategoryIds: number[] | undefined;
+  quietEnabled?: boolean;
+  quietEndMinute?: number;
+  quietStartMinute?: number;
+};
+
+// 当前用户可见的启用分类清单（退订选择器的数据源）。
+export type notificationservicev1_ListMyNotificationCategoriesResponse = {
+  items: notificationservicev1_NotificationCategoryItem[] | undefined;
+};
+
+// 可退订分类的精简项（只取 id + 名称，避免拖整个分类实体）。
+export type notificationservicev1_NotificationCategoryItem = {
+  id?: number;
+  name?: string;
+};
+
 // 通知路由规则管理服务（平台级配置，菜单 authority 为 sys:platform_admin）。
 export interface NotificationRuleService {
   // 查询路由规则列表
@@ -12351,6 +12434,7 @@ export class ApiClient {
   private _menuService?: MenuService;
   private _mfaService?: MfaService;
   private _notificationChannelService?: NotificationChannelService;
+  private _notificationPreferenceService?: NotificationPreferenceService;
   private _notificationRuleService?: NotificationRuleService;
   private _notificationService?: NotificationService;
   private _onlineSessionService?: OnlineSessionService;
@@ -12493,6 +12577,10 @@ export class ApiClient {
 
   get notificationChannelService(): NotificationChannelService {
     return this._notificationChannelService ??= createNotificationChannelServiceClient(this._transport);
+  }
+
+  get notificationPreferenceService(): NotificationPreferenceService {
+    return this._notificationPreferenceService ??= createNotificationPreferenceServiceClient(this._transport);
   }
 
   get notificationRuleService(): NotificationRuleService {
