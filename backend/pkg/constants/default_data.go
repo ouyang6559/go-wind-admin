@@ -108,7 +108,7 @@ var DefaultPermissions = []*permissionV1.Permission{
 			60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
 			72, 73, 74,
 			80, 81, 82, 83, 84,
-			101,
+			101, 102,
 		},
 		ApiIds: []uint32{
 			1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -1032,6 +1032,22 @@ var DefaultMenus = []*permissionV1.Menu{
 			Title:     trans.Ptr("menu.notification.templates"),
 			Icon:      trans.Ptr("lucide:layout-template"),
 			Order:     trans.Ptr(int32(4)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		// 监控告警规则：指标阈值 → 触发通知（联动通知域，平台管理员）
+		Id:        trans.Ptr(uint32(102)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("MonitorAlertRule"),
+		Path:      trans.Ptr("monitor-alerts"),
+		Component: trans.Ptr("app/system/monitor_alert/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.monitorAlerts"),
+			Icon:      trans.Ptr("lucide:bell-plus"),
+			Order:     trans.Ptr(int32(10)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},

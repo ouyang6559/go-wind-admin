@@ -93,6 +93,9 @@ const (
 	// 它与其他三个事件的区别：那三个由业务动作触发、渠道由路由表决定；这一个本身就是
 	// "站内信内容域经缝投递了一次"，related_id 必填，否则台账行无法回答"发的是哪条消息"。
 	EventType_INTERNAL_MESSAGE EventType = 4
+	// 监控告警：监控扫描任务对规则求值后触发（explicit channel + target，不经路由表）。
+	// related_id 指向 sys_monitor_alert_rules.id。
+	EventType_MONITOR_ALERT EventType = 5
 )
 
 // Enum value maps for EventType.
@@ -103,6 +106,7 @@ var (
 		2: "CONTACT_BIND_CODE",
 		3: "CHANNEL_TEST_EMAIL",
 		4: "INTERNAL_MESSAGE",
+		5: "MONITOR_ALERT",
 	}
 	EventType_value = map[string]int32{
 		"EVENT_TYPE_UNSPECIFIED": 0,
@@ -110,6 +114,7 @@ var (
 		"CONTACT_BIND_CODE":      2,
 		"CHANNEL_TEST_EMAIL":     3,
 		"INTERNAL_MESSAGE":       4,
+		"MONITOR_ALERT":          5,
 	}
 )
 
@@ -759,13 +764,14 @@ const file_notification_service_v1_notification_proto_rawDesc = "" +
 	"\x05EMAIL\x10\x01\x12\a\n" +
 	"\x03SMS\x10\x02\x12\v\n" +
 	"\aWEBHOOK\x10\x03\x12\f\n" +
-	"\bINTERNAL\x10\x04*\x85\x01\n" +
+	"\bINTERNAL\x10\x04*\x98\x01\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PASSWORD_RESET_CODE\x10\x01\x12\x15\n" +
 	"\x11CONTACT_BIND_CODE\x10\x02\x12\x16\n" +
 	"\x12CHANNEL_TEST_EMAIL\x10\x03\x12\x14\n" +
-	"\x10INTERNAL_MESSAGE\x10\x04*a\n" +
+	"\x10INTERNAL_MESSAGE\x10\x04\x12\x11\n" +
+	"\rMONITOR_ALERT\x10\x05*a\n" +
 	"\x0eDeliveryStatus\x12\x1f\n" +
 	"\x1bDELIVERY_STATUS_UNSPECIFIED\x10\x00\x12\v\n" +
 	"\aSENDING\x10\x01\x12\b\n" +

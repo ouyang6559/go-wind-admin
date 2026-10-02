@@ -390,6 +390,17 @@ func (s *TaskService) startAllTask(ctx context.Context) (int32, error) {
 			s.log.Infof(ctx, "通知台账清扫定时任务已注册（cron=%s）", task.NotificationDeliverySweepCronSpec)
 		}
 
+		// 监控告警扫描：每 5 分钟评估全部启用的告警规则（handler 属监控告警域）。
+		if _, err := s.taskScheduler.NewPeriodicTask(
+			task.MonitorAlertScanCronSpec,
+			task.MonitorAlertScanTaskType,
+			&task.MonitorAlertScanTaskData{},
+		); err != nil {
+			s.log.Errorf(ctx, "注册监控告警扫描定时任务失败: %s", err.Error())
+		} else {
+			s.log.Infof(ctx, "监控告警扫描定时任务已注册（cron=%s）", task.MonitorAlertScanCronSpec)
+		}
+
 		// 审计日报 AI 摘要：昨日操作审计统计 → 默认模型摘要 → 站内信投递平台用户。
 		// handler 属 AI 域（AiDigestService.AsyncAiAuditDigest），调度项在此注册（同上理由）。
 		if _, err := s.taskScheduler.NewPeriodicTask(

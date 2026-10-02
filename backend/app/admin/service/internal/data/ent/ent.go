@@ -32,6 +32,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/membershipposition"
 	"go-wind-admin/app/admin/service/internal/data/ent/membershiprole"
 	"go-wind-admin/app/admin/service/internal/data/ent/menu"
+	"go-wind-admin/app/admin/service/internal/data/ent/monitoralertrule"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationdelivery"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationpreference"
@@ -158,6 +159,7 @@ func checkColumn(t, c string) error {
 			membershipposition.Table:       membershipposition.ValidColumn,
 			membershiprole.Table:           membershiprole.ValidColumn,
 			menu.Table:                     menu.ValidColumn,
+			monitoralertrule.Table:         monitoralertrule.ValidColumn,
 			notificationchannel.Table:      notificationchannel.ValidColumn,
 			notificationdelivery.Table:     notificationdelivery.ValidColumn,
 			notificationpreference.Table:   notificationpreference.ValidColumn,

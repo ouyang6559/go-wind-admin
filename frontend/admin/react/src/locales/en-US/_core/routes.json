@@ -30,6 +30,8 @@
   "login-policies": "Login Policy",
   "menus": "Menu Management",
   "mfaChallenge": "MFA Verification",
+  "monitor-alert-rule": "Monitor Alerts",
+  "monitor-alerts": "Monitor Alerts",
   "not-found": "404",
   "notification": "Notifications",
   "notification-channels": "Notification Channels",

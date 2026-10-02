@@ -151,6 +151,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
 	notificationRuleRepo := data.NewNotificationRuleRepo(ctx, entClient)
 	notificationTemplateRepo := data.NewNotificationTemplateRepo(ctx, entClient)
+	monitorAlertRuleRepo := data.NewMonitorAlertRuleRepo(ctx, entClient)
 	accessKeyRepo := data.NewAccessKeyRepo(ctx, entClient)
 
 	// AI（提供商 / 会话 / 消息 / 用量流水）
@@ -176,6 +177,9 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	channelRegistry.Register(channel.NewWebhookSender(notificationChannelRepo))
 	notificationService := service.NewNotificationService(ctx, notificationDeliveryRepo, notificationRuleRepo, notificationTemplateRepo, channelRegistry)
 	notificationTemplateService := service.NewNotificationTemplateService(ctx, notificationTemplateRepo)
+	// 监控告警：评估器依赖通知出口，装配顺序在 NotificationService 之后
+	monitorAlertService := service.NewMonitorAlertService(ctx, monitorAlertRuleRepo, serverMonitorRepo, redisCacheMonitorRepo)
+	monitorAlertService.RegisterNotifier(notificationService)
 
 	// 认证与登录策略
 	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, vcodeCache, notificationService)
@@ -314,6 +318,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		notificationRuleService,
 		notificationPreferenceService,
 		notificationTemplateService,
+		monitorAlertService,
 		accessKeyService,
 		configService,
 		aiProviderService,
@@ -330,7 +335,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, notificationService, scriptRuntime, aiKnowledgeService, auditDigestService)
+	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, notificationService, monitorAlertService, scriptRuntime, aiKnowledgeService, auditDigestService)
 	if err != nil {
 		rollback()
 		return nil, nil, err

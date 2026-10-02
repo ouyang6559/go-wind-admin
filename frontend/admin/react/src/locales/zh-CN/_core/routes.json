@@ -30,6 +30,8 @@
   "login-policies": "登录策略",
   "menus": "菜单管理",
   "mfaChallenge": "MFA 验证",
+  "monitor-alert-rule": "监控告警",
+  "monitor-alerts": "监控告警",
   "not-found": "404",
   "notification": "通知管理",
   "notification-channels": "通知渠道",

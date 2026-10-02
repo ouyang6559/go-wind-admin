@@ -17,7 +17,7 @@ import (
 )
 
 // NewAsynqServer creates a new asynq server.
-func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService, aiDigestService *service.AiDigestService) (*asynqServer.Server, error) {
+func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, monitorAlertService *service.MonitorAlertService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService, aiDigestService *service.AiDigestService) (*asynqServer.Server, error) {
 	cfg := ctx.GetConfig()
 
 	if cfg == nil || cfg.Server == nil || cfg.Server.Asynq == nil {
@@ -120,6 +120,14 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 	if err = asynqServer.RegisterSubscriberWithCtx(srv, task.NotificationDispatchTaskType, notificationService.AsyncNotificationDispatch); err != nil {
 		log.Error(err)
 		return nil, err
+	}
+
+	// 监控告警扫描 handler（系统级常驻 cron，每 5 分钟评估一轮全部启用的告警规则）。
+	if monitorAlertService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.MonitorAlertScanTaskType, monitorAlertService.AsyncMonitorAlertScan); err != nil {
+			log.Error(err)
+			return nil, err
+		}
 	}
 
 	// 通知台账超时清扫 handler（系统级常驻任务，不写入 sys_tasks 表）。

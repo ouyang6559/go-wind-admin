@@ -175,6 +175,7 @@ func NewRestServer(
 	notificationRuleService *service.NotificationRuleService,
 	notificationPreferenceService *service.NotificationPreferenceService,
 	notificationTemplateService *service.NotificationTemplateService,
+	monitorAlertService *service.MonitorAlertService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
 	aiProviderService *service.AiProviderService,
@@ -264,6 +265,7 @@ func NewRestServer(
 	adminV1.RegisterNotificationRuleServiceHTTPServer(srv, notificationRuleService)
 	adminV1.RegisterNotificationPreferenceServiceHTTPServer(srv, notificationPreferenceService)
 	adminV1.RegisterNotificationTemplateServiceHTTPServer(srv, notificationTemplateService)
+	adminV1.RegisterMonitorAlertServiceHTTPServer(srv, monitorAlertService)
 	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
 	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
 	adminV1.RegisterAiProviderServiceHTTPServer(srv, aiProviderService)

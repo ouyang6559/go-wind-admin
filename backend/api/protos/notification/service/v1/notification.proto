@@ -48,6 +48,10 @@ enum EventType {
   // 它与其他三个事件的区别：那三个由业务动作触发、渠道由路由表决定；这一个本身就是
   // "站内信内容域经缝投递了一次"，related_id 必填，否则台账行无法回答"发的是哪条消息"。
   INTERNAL_MESSAGE = 4;
+
+  // 监控告警：监控扫描任务对规则求值后触发（explicit channel + target，不经路由表）。
+  // related_id 指向 sys_monitor_alert_rules.id。
+  MONITOR_ALERT = 5;
 }
 
 // 投递状态
