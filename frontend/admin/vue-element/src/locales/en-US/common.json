@@ -154,9 +154,10 @@
     "searchMenu": "Search Menu",
     "openSearch": "Open search panel",
     "close": "Close",
-    "noHistory": "No search history",
+    "noHistory": "No recent searches",
     "noResults": "No matching pages found",
-    "semanticBadge": "AI",
+    "recent": "Recent",
+    "semanticTitle": "Semantic Search",
     "searching": "Searching…",
     "switch": "Switch",
     "select": "Select"

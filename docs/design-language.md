@@ -305,6 +305,11 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
 - **图表**：数据色板 = 主色阶梯（-300~-700）+ 语义色；枚举分类名本地化复用既有 i18n 命名空间，不新增同义 key。
 - **空态**：文字性空态，不引入插画资源。
 - **错误/兜底页（401/403/404/500/offline/coming-soon）**（2026-09-16 定稿）：插画填色一律走 `--fb-*` 插画语义变量（`primary/ink/paper/mist/mist-2/line/navy/navy-deep/skin/skin-light`），SVG 内禁用裸色值。亮色为"纸墨日光"原色；暗色为"月夜"版——装饰件压暗至画布上方一档（mist `#182136` / mist-2 `#22304a` / line `#33405e`）、藏青物件提亮保形（navy `#46547a` / navy-deep `#38456a`）、主色提亮一档（`color-mix(in srgb, 主色 78%, white)`）。主色锚点接线：react 由 ThemeProvider 写 `--app-color-primary` 到 `<html>`，ele 复用 `--primary-hsl`。插画后方垫主色柔光晕（radial-gradient `--fb-glow`，暗色更明显）；进场 fade+上浮 450ms 依次错峰 + 插画 6s 悬浮呼吸，动效尊重 `preferences.transition.enable` 与 `prefers-reduced-motion`。
+- **全局搜索面板（2026-10-02 定稿，基准 = vben SearchPanel/global-search）**：三端同形——
+  - **容器**：居中模态 600px（非 popover/抽屉）；头部 = 搜索图标 + 无边框大输入（同一 baseline，底部 1px 分隔线）；结果区限高 ~450px 内滚；底部键位提示条（`↵` 选择 · `↑↓` 切换 · `ESC` 关闭，muted 小字）与正文 1px 分隔。触发 = 顶栏胶囊条（放大镜 + "搜索" + `Ctrl K` kbd 徽标）与 Ctrl/Cmd+K，三端一致。
+  - **结果行**：图标 + 标题一行为一项（路径不入行文，行紧凑、圆角 6px）；键盘/悬停选中 = **主色实底 + 白字**（同"侧栏菜单选中"惯例，禁止淡底 + 主色文字——暗色淡底与面板差仅 ~1:1 铺不出选中块）；行尾可带删除按钮（仅历史行）。
+  - **分区**：无关键词 = "最近"历史（localStorage，上限 5，可单条删）；有关键词 = 本地菜单命中在前，**语义搜索独立小节**（12px muted 小节标题"语义搜索" + 语义行 = 标题 + 右侧灰字 route；搜索中显示"搜索中…"；失败 console.error 降级为仅本地，不弹错）。空态统一文案（"暂无最近搜索" / "未找到相关页面"），纯文字不配插画。
+  - **本地化**：菜单标题在**建索引时翻译**（ele 教训：`meta.title` 是 i18n key，裸 key 入索引 = 中文永远搜不到）；搜索匹配口径 = 标题或路径 contains。
 
 ---
 

@@ -176,3 +176,12 @@ input:-webkit-autofill:active {
     min-width: 0 !important;
     padding: 0 !important;
 }
+
+/* 全局搜索面板头部输入（vben 同款无边框形态）：暗色下表单描边惯例
+   （[data-theme=dark] .ant-input-affix-wrapper(:focus-within) + !important，
+   (0,3,0)）会盖过 variant="borderless"，这里以 (0,4,0) + !important 压平 */
+.ant-modal .global-search-input.ant-input-affix-wrapper.ant-input-affix-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}

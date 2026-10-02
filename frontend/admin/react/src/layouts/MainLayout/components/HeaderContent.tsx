@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import React from 'react';
-import { Avatar, Dropdown, Badge, Tooltip, Button, Breadcrumb, Input, Popover, Empty, Spin, App as AntdApp } from 'antd';
+import { Avatar, Dropdown, Badge, Tooltip, Button, Breadcrumb, Input, Popover, Modal, Empty, Spin, App as AntdApp } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   UserOutlined,
@@ -17,6 +17,7 @@ import {
   FullscreenExitOutlined,
   BellOutlined,
   CheckOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -36,6 +37,109 @@ import { PaginationQuery, queryClient } from '@/core';
 import { globalSSEClient, SSE_EVENT } from '@/core/transport/sse';
 
 dayjs.extend(relativeTime);
+
+/** 键位提示条的小 kbd 徽标（与触发条上的 Ctrl K 同族样式） */
+const searchHintKbdStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 18,
+  padding: '1px 5px',
+  fontSize: 11,
+  fontFamily: 'monospace',
+  lineHeight: 1.4,
+  color: 'var(--ant-color-text-secondary)',
+  backgroundColor: 'var(--ant-color-bg-container)',
+  border: '1px solid var(--ant-color-border)',
+  borderRadius: 4,
+};
+
+/** 全局搜索结果行（形态对齐 vben SearchPanel：图标 + 标题，选中主色实底白字） */
+const SearchRow = ({
+  iconNode,
+  title,
+  active,
+  onMouseEnter,
+  onClick,
+  onRemove,
+}: {
+  iconNode?: React.ReactNode;
+  title: string;
+  active: boolean;
+  onMouseEnter: () => void;
+  onClick: () => void;
+  onRemove?: () => void;
+}) => (
+  <div
+    className="semantic-search-item"
+    onMouseEnter={onMouseEnter}
+    onClick={onClick}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '8px 10px',
+      borderRadius: 6,
+      cursor: 'pointer',
+      ...(active ? { backgroundColor: 'var(--ant-color-primary)' } : {}),
+    }}
+  >
+    {iconNode && (
+      <span
+        style={{
+          display: 'inline-flex',
+          fontSize: 14,
+          flexShrink: 0,
+          color: active ? 'var(--ant-color-white)' : 'var(--ant-color-text-secondary)',
+        }}
+      >
+        {iconNode}
+      </span>
+    )}
+    <span
+      style={{
+        flex: 1,
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        fontSize: 13,
+        ...(active ? { color: 'var(--ant-color-white)' } : {}),
+      }}
+    >
+      {title}
+    </span>
+    {onRemove && (
+      <span
+        role="button"
+        tabIndex={-1}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        style={{
+          display: 'inline-flex',
+          padding: 3,
+          fontSize: 11,
+          lineHeight: 1,
+          borderRadius: 4,
+          color: active ? 'var(--ant-color-white)' : 'var(--ant-color-text-secondary)',
+          backgroundColor: active ? 'transparent' : 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = active
+            ? 'color-mix(in srgb, var(--ant-color-white) 20%, transparent)'
+            : 'var(--ant-color-fill-tertiary)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        <CloseOutlined />
+      </span>
+    )}
+  </div>
+);
 
 /** 通知列表的相对时间（如"5 分钟前"）；跟随界面语言 */
 const fromNow = (value?: string, locale?: string): string => {
@@ -443,13 +547,18 @@ export const HeaderContent = ({
     </div>
   );
 
-  // ── 全局搜索（本地菜单匹配 + 语义搜索；形态对齐 vue-element CommandPalette / vue-vben SearchPanel）──
+  // ── 全局搜索（本地菜单匹配 + 语义搜索；视觉形态对齐 vben SearchPanel，
+  // 规格见 docs/design-language.md「全局搜索面板」条）──
   const [semanticSearchOpen, setSemanticSearchOpen] = useState(false);
   const [semanticQuery, setSemanticQuery] = useState('');
-  const [semanticResults, setSemanticResults] = useState<{title: string; route: string; score: number}[]>([]);
+  const [semanticResults, setSemanticResults] = useState<{title: string; route: string}[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [searchHistory, setSearchHistory] = useState<{title: string; path: string; icon?: string}[]>([]);
   const semanticTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const SEARCH_HISTORY_KEY = 'menu_search_history';
+  const SEARCH_HISTORY_MAX = 5;
 
   // 菜单标题翻译：与面包屑（tRoutes(title)）同语义——i18next 对 'routes:xxx' /
   // 'menu:xxx' 形态的 key 自动按「命名空间:键」解析，无需剥前缀
@@ -459,7 +568,7 @@ export const HeaderContent = ({
   // 扁平化菜单树为可搜索的叶子页列表（i18n 相关：语言切换时重建）
   const searchableMenus = useMemo(() => {
     const excluded = ['/login', '/401', '/403', '/404', '/500'];
-    const out: { title: string; path: string }[] = [];
+    const out: { title: string; path: string; icon?: string }[] = [];
     const walk = (items: any[]) => {
       for (const item of items) {
         if (item.children?.length) {
@@ -469,7 +578,11 @@ export const HeaderContent = ({
         const raw = item.name || item.label;
         if (!item.path || !raw || excluded.includes(item.path)) continue;
         if (out.some((o) => o.path === item.path)) continue;
-        out.push({ title: resolveMenuTitle(raw), path: item.path });
+        out.push({
+          title: resolveMenuTitle(raw),
+          path: item.path,
+          icon: typeof item.icon === 'string' ? item.icon : undefined,
+        });
       }
     };
     walk(menuData);
@@ -486,11 +599,36 @@ export const HeaderContent = ({
     );
   }, [semanticQuery, searchableMenus]);
 
-  // 键盘导航作用于「本地 + 语义」合并列表（与展示顺序一致）
+  // 键盘导航作用于「与展示一致」的合并列表：有关键词=本地+语义，无关键词=历史
   const combinedResults = useMemo(
-    () => [...localResults, ...semanticResults],
-    [localResults, semanticResults],
+    () => (semanticQuery.trim() ? [...localResults, ...semanticResults] : searchHistory),
+    [semanticQuery, localResults, semanticResults, searchHistory],
   );
+
+  const loadSearchHistory = () => {
+    try {
+      const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
+      setSearchHistory(raw ? JSON.parse(raw) : []);
+    } catch (error) {
+      console.error('load search history failed:', error);
+      setSearchHistory([]);
+    }
+  };
+
+  useEffect(() => {
+    loadSearchHistory();
+  }, []);
+
+  const saveSearchHistory = (list: {title: string; path: string; icon?: string}[]) => {
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(list));
+    setSearchHistory(list);
+  };
+
+  const removeSearchHistory = (index: number) => {
+    const next = [...searchHistory];
+    next.splice(index, 1);
+    saveSearchHistory(next);
+  };
 
   const closeSearch = () => {
     setSemanticSearchOpen(false);
@@ -514,7 +652,6 @@ export const HeaderContent = ({
             .map((item) => ({
               title: item.title ?? item.route ?? '',
               route: item.route ?? '',
-              score: item.score ?? 0,
             })),
         );
       } catch (error) {
@@ -525,9 +662,18 @@ export const HeaderContent = ({
     }, 500);
   };
 
-  const goSearchItem = (item: { path?: string; route?: string }) => {
+  const goSearchItem = (item: { path?: string; route?: string; title?: string; icon?: string }) => {
     const path = item.path || item.route;
     if (!path) return;
+    // 写入最近搜索（去重置顶，上限 5，语义命中按 route 收敛成菜单项形态）
+    const matched = searchableMenus.find((m) => m.path === path);
+    const entry = {
+      title: item.title || matched?.title || path,
+      path,
+      icon: matched?.icon,
+    };
+    const next = [entry, ...searchHistory.filter((h) => h.path !== path)].slice(0, SEARCH_HISTORY_MAX);
+    saveSearchHistory(next);
     closeSearch();
     navigate(path);
   };
@@ -542,6 +688,7 @@ export const HeaderContent = ({
         e.preventDefault();
         setSemanticSearchOpen((open) => {
           if (!open) {
+            loadSearchHistory();
             setSemanticResults([]);
             setSemanticQuery('');
             setActiveIndex(-1);
@@ -672,16 +819,32 @@ export const HeaderContent = ({
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
         {/* 搜索按钮（带快捷键提示） */}
         {widgetConfig.globalSearch && (
-          <Popover
-            trigger="click"
-            placement="bottomRight"
-            open={semanticSearchOpen}
-            onOpenChange={(v) => { if (v) { setSemanticSearchOpen(true); } else { closeSearch(); } }}
-            content={
-              <div style={{ width: 360, padding: 8 }}>
-                <Input.Search
+          <>
+            <Modal
+              open={semanticSearchOpen}
+              onCancel={closeSearch}
+              footer={null}
+              width={600}
+              closable={false}
+              centered
+              destroyOnHidden
+              styles={{ body: { padding: 0 } }}
+            >
+              {/* 头部：搜索图标 + 无边框大输入 */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 16px',
+                  borderBottom: '1px solid var(--ant-color-border-secondary)',
+                }}
+              >
+                <SearchOutlined style={{ color: 'var(--ant-color-text-secondary)', fontSize: 16 }} />
+                <Input
+                  variant="borderless"
+                  className="global-search-input"
                   placeholder={t('header.searchPlaceholder')}
-                  size="large"
                   value={semanticQuery}
                   onChange={(e) => handleSemanticSearch(e.target.value)}
                   onKeyDown={(e) => {
@@ -697,87 +860,123 @@ export const HeaderContent = ({
                       e.preventDefault();
                       const target = list[activeIndex >= 0 ? activeIndex : 0];
                       if (target) goSearchItem(target);
-                    } else if (e.key === 'Escape') {
-                      closeSearch();
                     }
                   }}
                   autoFocus
                   allowClear
+                  style={{ fontSize: 15 }}
                 />
-                {semanticLoading && (
-                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
-                    {t('header.searching')}
+              </div>
+
+              {/* 结果区（限高内滚） */}
+              <div style={{ maxHeight: 450, overflowY: 'auto', padding: '8px' }}>
+                {/* 无关键词：最近搜索 */}
+                {!semanticQuery.trim() && searchHistory.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
+                    {t('header.noHistory')}
                   </div>
                 )}
-                {!semanticLoading && localResults.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    {localResults.map((item, i) => (
-                      <div
+                {!semanticQuery.trim() && searchHistory.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)', padding: '4px 10px 6px' }}>
+                      {t('header.searchRecent')}
+                    </div>
+                    {searchHistory.map((item, i) => (
+                      <SearchRow
                         key={item.path}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
-                          ...(activeIndex === i ? { backgroundColor: 'var(--ant-color-fill-tertiary)' } : {}),
-                        }}
-                        className="semantic-search-item"
+                        iconNode={item.icon ? getIconFromName(item.icon) : undefined}
+                        title={item.title}
+                        active={activeIndex === i}
                         onMouseEnter={() => setActiveIndex(i)}
                         onClick={() => goSearchItem(item)}
-                      >
-                        <span style={{ fontSize: 13 }}>{item.title}</span>
-                        <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>
-                          {item.path}
-                        </span>
-                      </div>
+                        onRemove={() => removeSearchHistory(i)}
+                      />
                     ))}
-                  </div>
+                  </>
                 )}
-                {!semanticLoading && semanticResults.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    {semanticResults.map((item, i) => (
-                      <div
+
+                {/* 有关键词：本地菜单命中 */}
+                {semanticQuery.trim() && !semanticLoading && localResults.length > 0 && (
+                  <>
+                    {localResults.map((item, i) => (
+                      <SearchRow
+                        key={item.path}
+                        iconNode={item.icon ? getIconFromName(item.icon) : undefined}
+                        title={item.title}
+                        active={activeIndex === i}
+                        onMouseEnter={() => setActiveIndex(i)}
+                        onClick={() => goSearchItem(item)}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {/* 有关键词：语义搜索小节（独立分区，失败降级不弹错） */}
+                {semanticQuery.trim() && (semanticLoading || semanticResults.length > 0) && (
+                  <>
+                    <div style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)', padding: '6px 10px 6px', marginTop: localResults.length > 0 ? 6 : 0 }}>
+                      {t('header.semanticTitle')}
+                    </div>
+                    {semanticLoading && (
+                      <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
+                        {t('header.searching')}
+                      </div>
+                    )}
+                    {!semanticLoading && semanticResults.map((item, i) => (
+                      <SearchRow
                         key={`${item.route}-${i}`}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '6px 8px', borderRadius: 6, cursor: 'pointer',
-                          ...(activeIndex === localResults.length + i ? { backgroundColor: 'var(--ant-color-fill-tertiary)' } : {}),
-                        }}
-                        className="semantic-search-item"
+                        title={item.title}
+                        active={activeIndex === localResults.length + i}
                         onMouseEnter={() => setActiveIndex(localResults.length + i)}
                         onClick={() => goSearchItem(item)}
-                      >
-                        <span style={{ fontSize: 13 }}>
-                          {item.title}
-                          <span
-                            style={{
-                              marginLeft: 6,
-                              padding: '0 5px',
-                              fontSize: 11,
-                              lineHeight: '17px',
-                              color: 'var(--ant-color-primary)',
-                              backgroundColor: 'var(--ant-color-primary-bg)',
-                              borderRadius: 4,
-                            }}
-                          >
-                            {t('header.semanticBadge')}
-                          </span>
-                        </span>
-                        <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>
-                          {(item.score * 100).toFixed(0)}%
-                        </span>
-                      </div>
+                      />
                     ))}
-                  </div>
+                  </>
                 )}
-                {!semanticLoading && semanticQuery.trim() && combinedResults.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
+
+                {/* 有关键词且无任何结果 */}
+                {semanticQuery.trim() && !semanticLoading && combinedResults.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
                     {t('header.noResults')}
                   </div>
                 )}
               </div>
-            }
-          >
+
+              {/* 底部键位提示条 */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  padding: '8px 16px',
+                  borderTop: '1px solid var(--ant-color-border-secondary)',
+                  fontSize: 12,
+                  color: 'var(--ant-color-text-secondary)',
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <kbd style={searchHintKbdStyle}>↵</kbd>
+                  {t('header.searchSelect')}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <kbd style={searchHintKbdStyle}>↑</kbd>
+                  <kbd style={searchHintKbdStyle}>↓</kbd>
+                  {t('header.searchSwitch')}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <kbd style={searchHintKbdStyle}>ESC</kbd>
+                  {t('header.searchClose')}
+                </span>
+              </div>
+            </Modal>
+
             <div
               className="search-trigger-btn"
+              onClick={() => {
+                loadSearchHistory();
+                setActiveIndex(-1);
+                setSemanticSearchOpen(true);
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -826,7 +1025,7 @@ export const HeaderContent = ({
                 {t('header.searchShortcut')}
               </kbd>
             </div>
-          </Popover>
+          </>
         )}
 
         {/* 设置按钮 */}

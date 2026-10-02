@@ -30,7 +30,12 @@
     "searchShortcut": "Ctrl K",
     "searching": "搜索中…",
     "noResults": "未找到相关页面",
-    "semanticBadge": "AI"
+    "noHistory": "暂无最近搜索",
+    "searchRecent": "最近",
+    "semanticTitle": "语义搜索",
+    "searchSelect": "选择",
+    "searchSwitch": "切换",
+    "searchClose": "关闭"
   },
   "refresh": "刷新",
   "iframe": {

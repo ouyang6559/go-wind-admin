@@ -29,7 +29,12 @@
     "searchShortcut": "Ctrl K",
     "searching": "Searching…",
     "noResults": "No matching pages found",
-    "semanticBadge": "AI"
+    "noHistory": "No recent searches",
+    "searchRecent": "Recent",
+    "semanticTitle": "Semantic Search",
+    "searchSelect": "Select",
+    "searchSwitch": "Switch",
+    "searchClose": "Close"
   },
   "refresh": "Refresh",
   "home": "Home",

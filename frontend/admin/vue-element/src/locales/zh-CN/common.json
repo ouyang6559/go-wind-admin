@@ -154,9 +154,10 @@
     "searchMenu": "搜索菜单",
     "openSearch": "打开搜索面板",
     "close": "关闭",
-    "noHistory": "没有搜索历史",
+    "noHistory": "暂无最近搜索",
     "noResults": "未找到相关页面",
-    "semanticBadge": "AI",
+    "recent": "最近",
+    "semanticTitle": "语义搜索",
     "searching": "正在搜索…",
     "switch": "切换",
     "select": "选择"
