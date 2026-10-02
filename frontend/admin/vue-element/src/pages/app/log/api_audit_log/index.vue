@@ -43,12 +43,36 @@ import {
   createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
+import { exportAuditLogsServer } from "@/api/composables";
 import { $t } from "@/core/i18n";
 
 const pageRef = ref();
 const drawerRef = ref();
 
+const exporting = ref(false);
+
+async function handleServerExport() {
+  if (exporting.value) return;
+  exporting.value = true;
+  try {
+    await exportAuditLogsServer('api', '');
+    ElMessage.success($t("pages.api_audit_log.exportServerSuccess"));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error("server-side audit export failed", error);
+    ElMessage.error(error?.message || $t("pages.api_audit_log.exportServerFailed"));
+  } finally {
+    exporting.value = false;
+  }
+}
+
 function handleOperate(data: { name: string; row: any }) {
+  // 服务端全量导出（XLSX，上限 50 万行）：不带搜索条件，突破导出弹窗
+  // 客户端聚合的 1 万行上限；带条件的导出走右侧既有的导出弹窗
+  if (data.name === "exportServer") {
+    handleServerExport();
+    return;
+  }
   if (data.name === "detail") {
     drawerRef.value?.open({ row: data.row });
   }
@@ -170,7 +194,13 @@ const pageConfig = computed<ProPageConfig>(() => ({
       );
       return { items: result.items || [], total: result.total || 0 };
     },
-    toolbar: [],
+    toolbar: [
+      {
+        name: "exportServer",
+        label: $t("pages.api_audit_log.exportServer"),
+        icon: "lucide:download",
+      },
+    ],
     toolbarRight: [],
     defaultToolbar: ["refresh", "exports", "filter"],
     tableAttrs: { border: true, stripe: true },

@@ -69,6 +69,7 @@ export * from './notification-delivery';
 export * from './notification-rule';
 export * from './notification-template';
 export * from './monitor-alert';
+export * from './audit-export';
 export * from './role';
 // 通用枚举与工具函数
 export * from './shared';

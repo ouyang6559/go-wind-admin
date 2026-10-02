@@ -8,7 +8,10 @@ import dayjs from 'dayjs';
 
 import { h } from 'vue';
 
+import { message } from 'ant-design-vue';
+
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { exportAuditLogsServer } from '#/api';
 import {
   fetchListOperationAuditLogs,
   operationAuditLogActionList,
@@ -243,8 +246,23 @@ function handleView(row: OperationAuditLog) {
 }
 
 // 导出全部：按当前条件聚合拉取（上限 1 万行）生成 CSV
+async function handleServerExport() {
+  try {
+    await exportAuditLogsServer('operation', '');
+    message.success($t('page.auditExport.serverSuccess'));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error('[audit-export] server-side export failed', error);
+    message.error(error?.message || $t('page.auditExport.serverFailed'));
+  }
+}
+
 async function handleExportAll(info: { key: string | number }) {
   const format = String(info.key);
+  if (format === 'server-xlsx') {
+    await handleServerExport();
+    return;
+  }
   if (format !== 'csv' && format !== 'xlsx') return;
   const pageSize = 1000;
   const maxRows = 10000;
@@ -276,6 +294,8 @@ async function handleExportAll(info: { key: string | number }) {
             <a-menu @click="handleExportAll">
               <a-menu-item key="csv">{{ $t('ui.button.exportFormatCsv') }}</a-menu-item>
               <a-menu-item key="xlsx">{{ $t('ui.button.exportFormatXlsx') }}</a-menu-item>
+              <a-menu-divider />
+              <a-menu-item key="server-xlsx">{{ $t('page.auditExport.serverFull') }}</a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
