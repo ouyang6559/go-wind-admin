@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -184,7 +182,8 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 	}
 	messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: content})
 
-	// 6. 客户端与流
+	// 6. 客户端 + Function Call 多轮循环：模型请求工具 → 本地执行 → 结果回传，
+	//    直到给出文本答案（最终答案轮才经 onDelta 推给前端）。
 	client, err := newOpenAIClientForProvider(ctx, provider)
 	if err != nil {
 		return nil, err
@@ -193,51 +192,34 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 	streamCtx, cancel := context.WithTimeout(ctx, chatCallTimeout)
 	defer cancel()
 
-	stream, err := client.CreateChatCompletionStream(streamCtx, openai.ChatCompletionRequest{
-		Model:    ptrStrOr(provider.ModelName, "gpt-4o-mini"),
-		Messages: messages,
-		StreamOptions: &openai.StreamOptions{
-			IncludeUsage: true, // 让最后一帧带 Usage（OpenAI 兼容语义，DeepSeek/通义/Ollama 均支持）
-		},
-	})
-	if err != nil {
-		s.log.Errorf(ctx, "create ai chat stream failed: %v", err)
-		return nil, adminV1.ErrorInternalServerError("ai chat failed: %v", err)
-	}
-
-	// 7. 消费流：累积文本 + 逐 chunk 尽力推送
 	streamId := strconv.FormatUint(uint64(operator.UserId), 10)
 	var full strings.Builder
 	var seq uint32
 	var usage openai.Usage
 	start := time.Now()
-	for {
-		chunk, recvErr := stream.Recv()
-		if recvErr != nil {
-			if errors.Is(recvErr, io.EOF) {
-				break
-			}
-			_ = stream.Close()
-			s.log.Errorf(ctx, "ai chat stream failed: conversation=%d: %v", conversation.ID, recvErr)
-			return nil, adminV1.ErrorInternalServerError("ai chat failed: %v", recvErr)
-		}
-		if len(chunk.Choices) > 0 {
-			delta := chunk.Choices[0].Delta.Content
-			if delta != "" {
-				full.WriteString(delta)
-				s.publishChunk(ctx, streamId, conversation.ID, seq, delta)
-				seq++
-			}
-		}
-		if chunk.Usage != nil {
-			usage = *chunk.Usage
-		}
+
+	runner := &aiToolLoop{
+		client:    client,
+		model:     ptrStrOr(provider.ModelName, "gpt-4o-mini"),
+		tools:     aiBuiltinToolDefs(),
+		exec:      execAiTool,
+		maxRounds: aiToolMaxRounds,
+		onDelta: func(delta string) {
+			full.WriteString(delta)
+			s.publishChunk(ctx, streamId, conversation.ID, seq, delta)
+			seq++
+		},
 	}
-	_ = stream.Close()
+	fullText, usage, toolErr := runner.run(streamCtx, messages)
+	if toolErr != nil {
+		s.log.Errorf(ctx, "ai chat stream failed: conversation=%d: %v", conversation.ID, toolErr)
+		return nil, adminV1.ErrorInternalServerError("ai chat failed: %v", toolErr)
+	}
+	_ = fullText
 	durationMs := uint32(time.Since(start).Milliseconds())
 
 	// 8. 落 assistant 消息与用量流水
-	assistantContent := full.String()
+	assistantContent := fullText
 	modelName := ptrStrOr(provider.ModelName, "")
 	promptTokens := uint32(usage.PromptTokens)
 	completionTokens := uint32(usage.CompletionTokens)

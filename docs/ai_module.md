@@ -130,4 +130,4 @@
 
 - e2e 与本地演示用 `mock_llm.py`（OpenAI 兼容；对话 echo、洞察请求按事实清单生成分析要点、RAG 请求引用片段、embeddings 为 bigram 词袋向量可断言检索）验证；真实云端模型（DeepSeek/通义）与本地 Ollama 走同一 OpenAI 兼容协议，未逐家实测。
 - 会话标题默认取首条消息前 30 字符；重命名三端均已落地（react/vben 内联编辑 + ele prompt 弹窗，走 Update conversation + title 掩码；2026-10-03 核实）。
-- 图像/多模态、Function Call、agent 编排未做（eino/langchaingo 插件能力在上游已备，按需接入）。
+- 图像/多模态、agent 编排未做（eino/langchaingo 插件能力在上游已备，按需接入）。**Function Call 协议层已落地（2026-10-03）**：ai_tools.go 内置工具注册表（get_current_time 起步）+ aiToolLoop 多轮循环接入流式对话（工具轮不推 SSE、只流最终答案；轮数耗尽强制文本；用量跨轮累计）。新增工具 = defs 加定义 + execAiTool 加分支。前端无需改动。
