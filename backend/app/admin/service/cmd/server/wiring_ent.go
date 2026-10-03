@@ -183,7 +183,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	notificationService := service.NewNotificationService(ctx, notificationDeliveryRepo, notificationRuleRepo, notificationTemplateRepo, channelRegistry)
 	notificationTemplateService := service.NewNotificationTemplateService(ctx, notificationTemplateRepo)
 	// 监控告警：评估器依赖通知出口，装配顺序在 NotificationService 之后
-	monitorAlertService := service.NewMonitorAlertService(ctx, monitorAlertRuleRepo, serverMonitorRepo, redisCacheMonitorRepo)
+	monitorAlertService := service.NewMonitorAlertService(ctx, monitorAlertRuleRepo, serverMonitorRepo, redisCacheMonitorRepo, entClient)
 	monitorAlertService.RegisterNotifier(notificationService)
 
 	// 审计日志服务端导出（XLSX/CSV）：手动注册二进制响应路由，见 rest_server 的 registerFileTransfer 同段

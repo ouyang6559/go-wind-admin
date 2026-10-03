@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -13,6 +15,7 @@ import (
 	"github.com/tx7do/go-utils/trans"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
+	entCrud "github.com/tx7do/go-crud/entgo"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	monitorAlertV1 "go-wind-admin/api/gen/go/monitor_alert/service/v1"
@@ -21,6 +24,9 @@ import (
 	serverMonitorV1 "go-wind-admin/api/gen/go/server_monitor/service/v1"
 
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/user"
+	"go-wind-admin/pkg/mailtext"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
 
@@ -39,6 +45,7 @@ type MonitorAlertService struct {
 	serverRepo *data.ServerMonitorRepo
 	redisRepo  *data.RedisCacheMonitorRepo
 	notifier   Notifier
+	entClient  *entCrud.EntClient[*ent.Client]
 	log        *bLogger.Helper
 
 	// 采集函数默认绑 repo；测试桩直接覆写这两个字段注入假样本
@@ -51,11 +58,13 @@ func NewMonitorAlertService(
 	repo *data.MonitorAlertRuleRepo,
 	serverRepo *data.ServerMonitorRepo,
 	redisRepo *data.RedisCacheMonitorRepo,
+	entClient *entCrud.EntClient[*ent.Client],
 ) *MonitorAlertService {
 	svc := &MonitorAlertService{
 		repo:       repo,
 		serverRepo: serverRepo,
 		redisRepo:  redisRepo,
+		entClient:  entClient,
 		log:        ctx.NewLoggerHelper("monitor-alert/service/admin-service"),
 		// notifier 默认"未装配"占位：装配期由 RegisterNotifier 换成 NotificationService
 		// （与 InternalMessageService 同模式）。
@@ -371,7 +380,8 @@ func cooldownElapsed(rule *monitorAlertV1.MonitorAlertRule, now time.Time) bool 
 // 失败不中断评估循环——一次 SMTP/Webhook 失败不该拦住其余规则，
 // 本轮的缺口由下一轮扫描补发（firing 状态没变，下次仍会命中发送分支）。
 func (s *MonitorAlertService) sendAlert(ctx context.Context, rule *monitorAlertV1.MonitorAlertRule, value float64, resolved bool, now time.Time) bool {
-	title, content := alertText(rule, value, resolved, now)
+	locale := s.alertLocale(ctx, rule)
+	title, content := alertTextFor(locale, rule, value, resolved, now)
 	resp, err := s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
 		EventType:      notificationV1.EventType_MONITOR_ALERT,
 		Channel:        rule.Channel,
@@ -391,20 +401,98 @@ func (s *MonitorAlertService) sendAlert(ctx context.Context, rule *monitorAlertV
 	return true
 }
 
-// alertText 告警文案（Go 侧拼装；指标名用枚举字面量，平台运营看得懂）。
-func alertText(rule *monitorAlertV1.MonitorAlertRule, value float64, resolved bool, now time.Time) (string, string) {
-	if resolved {
-		title := fmt.Sprintf("[已恢复] %s", rule.GetName())
-		content := fmt.Sprintf("监控指标 %s 已回到阈值内（当前值 %.2f，阈值 %s %.2f），时间 %s。",
-			rule.GetMetric().String(), value, rule.GetOp().String(), rule.GetThreshold(),
-			now.Format("2006-01-02 15:04:05"))
-		return title, content
+// ---- 告警文案（按收件人偏好语言渲染，2026-10-04 接 lang） ----
+//
+// 与 ai_digest_service.go 的日报文案同一条链：语言标签归一复用
+// mailtext.Locale/LocaleOfTag，文案表留在本服务内、是其唯一出口，
+// 未设置/未识别回落中文。指标与比较符用枚举字面量（DB_PING_FAIL/GE），
+// 与闸门报错、用量页的口径一致，两语言不做翻译。
+type alertCopy struct {
+	resolvedTitle string // %s=规则名
+	resolvedBody  string // %s=指标 %.2f=当前值 %s=比较符 %.2f=阈值 %s=时间
+	alertTitle    string // %s=规则名
+	alertBody     string // %s=指标 %.2f=当前值 %s=比较符 %.2f=阈值 %s=时间 %d=冷却分钟
+}
+
+var alertTables = map[mailtext.Locale]alertCopy{
+	mailtext.LocaleZhCN: {
+		resolvedTitle: "[已恢复] %s",
+		resolvedBody:  "监控指标 %s 已回到阈值内（当前值 %.2f，阈值 %s %.2f），时间 %s。",
+		alertTitle:    "[告警] %s",
+		alertBody:     "监控指标 %s 当前值 %.2f，越过阈值 %s %.2f，时间 %s。持续越限时每 %d 分钟重发一次。",
+	},
+	mailtext.LocaleEnUS: {
+		resolvedTitle: "[Resolved] %s",
+		resolvedBody:  "Metric %s is back within threshold (current value %.2f, threshold %s %.2f), at %s.",
+		alertTitle:    "[Alert] %s",
+		alertBody:     "Metric %s current value %.2f crossed the threshold %s %.2f at %s. Re-alerts every %d minutes while it keeps crossing.",
+	},
+}
+
+func alertCopyOf(locale mailtext.Locale) alertCopy {
+	if cp, ok := alertTables[locale]; ok {
+		return cp
 	}
-	title := fmt.Sprintf("[告警] %s", rule.GetName())
-	content := fmt.Sprintf("监控指标 %s 当前值 %.2f，越过阈值 %s %.2f，时间 %s。持续越限时每 %d 分钟重发一次。",
-		rule.GetMetric().String(), value, rule.GetOp().String(), rule.GetThreshold(),
-		now.Format("2006-01-02 15:04:05"), rule.GetCooldownMinutes())
-	return title, content
+	return alertTables[mailtext.LocaleZhCN]
+}
+
+// alertTextFor 按语言的告警/恢复文案（原固定中文 alertText 的多语言形态）。
+func alertTextFor(locale mailtext.Locale, rule *monitorAlertV1.MonitorAlertRule, value float64, resolved bool, now time.Time) (string, string) {
+	cp := alertCopyOf(locale)
+	ts := now.Format("2006-01-02 15:04:05")
+	if resolved {
+		return fmt.Sprintf(cp.resolvedTitle, rule.GetName()),
+			fmt.Sprintf(cp.resolvedBody, rule.GetMetric().String(), value, rule.GetOp().String(), rule.GetThreshold(), ts)
+	}
+	return fmt.Sprintf(cp.alertTitle, rule.GetName()),
+		fmt.Sprintf(cp.alertBody, rule.GetMetric().String(), value, rule.GetOp().String(), rule.GetThreshold(), ts, rule.GetCooldownMinutes())
+}
+
+// alertLocale 解析告警收件人的偏好语言，解析不到一律回落默认（中文）：
+//   - INTERNAL：target 为收件用户 ID 的十进制串，读该用户的 locale；
+//   - EMAIL：target 按用户邮箱反查（收件邮箱是注册用户时能对上偏好）；
+//   - WEBHOOK：对端没有用户身份，无偏好可循。
+//
+// 与日报的收件人分组同取向：语言解析是锦上添花，任何失败都回落默认、
+// 绝不影响告警送达。
+func (s *MonitorAlertService) alertLocale(ctx context.Context, rule *monitorAlertV1.MonitorAlertRule) mailtext.Locale {
+	const fallback = mailtext.LocaleZhCN
+	if s.entClient == nil {
+		return fallback // 旧测试装配未注入 ent
+	}
+
+	var q *ent.UserQuery
+	switch rule.GetChannel() {
+	case notificationV1.Channel_INTERNAL:
+		id, perr := strconv.ParseUint(strings.TrimSpace(rule.GetTarget()), 10, 32)
+		if perr != nil || id == 0 {
+			return fallback // target 不是用户 ID 形态，无偏好可循
+		}
+		q = s.entClient.Client().User.Query().Where(user.IDEQ(uint32(id)))
+	case notificationV1.Channel_EMAIL:
+		target := strings.TrimSpace(rule.GetTarget())
+		if target == "" {
+			return fallback
+		}
+		q = s.entClient.Client().User.Query().Where(user.EmailEQ(target))
+	default:
+		return fallback
+	}
+
+	u, err := q.Where(user.DeletedAtIsNil()).
+		Only(appViewer.NewSystemViewerContext(ctx))
+	if err != nil && !ent.IsNotFound(err) {
+		// 真查询故障才记日志（带原始错误）；查无此人是预期回落，不刷屏
+		s.log.Errorf(ctx, "monitor alert locale: query recipient user failed (channel=%s target=%s): %v",
+			rule.GetChannel().String(), rule.GetTarget(), err)
+	}
+	if u == nil || u.Locale == nil {
+		return fallback
+	}
+	if l, ok := mailtext.LocaleOfTag(*u.Locale); ok {
+		return l
+	}
+	return fallback
 }
 
 // ==== 周期任务 ====
