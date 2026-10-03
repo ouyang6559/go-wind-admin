@@ -6940,6 +6940,54 @@ export type monitor_alertservicev1_EvaluateMonitorAlertsResponse_RuleOutcome = {
   ruleId: number | undefined;
 };
 
+// 租户自助用量服务：租户管理员查看本租户的套餐用量与配额。
+// 与 TenantService.GetUsage（平台管理员按租户 ID 查任意租户）互补——
+// 本服务 server 钉定 operator 的租户，不接受客户端传入租户 ID。
+export interface MyTenantUsageService {
+  // 获取当前租户的套餐用量与配额（配额硬限制 403 时，租户管理员可在此看到原因）
+  GetMyTenantUsage(
+    request: wellKnownEmpty,
+  ): Promise<identityservicev1_TenantUsage>;
+}
+
+export function createMyTenantUsageServiceClient(
+  transport: ClientTransport,
+): MyTenantUsageService {
+  return {
+    GetMyTenantUsage(_request) {
+      const path = `admin/v1/my-tenant-usage`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'MyTenantUsageService',
+        method: 'GetMyTenantUsage',
+      }) as Promise<identityservicev1_TenantUsage>;
+    },
+  };
+}
+// 租户用量与配额
+export type identityservicev1_TenantUsage = {
+  apiCallCount: number | undefined;
+  planId?: number;
+  planName?: string;
+  quotas: identityservicev1_QuotaUsage[] | undefined;
+  storageUsedBytes: number | undefined;
+  tenantId: number | undefined;
+  userCount: number | undefined;
+};
+
+// 配额用量项
+export type identityservicev1_QuotaUsage = {
+  quotaType: identityservicev1_PlanQuota_QuotaType | undefined;
+  quotaValue: number | undefined;
+};
+
+// 配额类型
+export type identityservicev1_PlanQuota_QuotaType =
+  | 'AI_TOKENS'
+  | 'API_CALL'
+  | 'PLAN_QUOTA_TYPE_UNSPECIFIED'
+  | 'STORAGE'
+  | 'USER_LIMIT';
 // 通知投递台账管理服务（平台级只读视图）。
 // 本域不含"发一条通知"的通用 HTTP 路由：SendDirect 只由进程内的业务 service 经 Notifier 接口调用。
 // 把它开放成端点等于给任意已登录操作员一个"向任意邮箱发信"的能力。
@@ -10117,13 +10165,6 @@ export type identityservicev1_PlanQuota = {
   updatedBy?: number;
 };
 
-// 配额类型
-export type identityservicev1_PlanQuota_QuotaType =
-  | 'AI_TOKENS'
-  | 'API_CALL'
-  | 'PLAN_QUOTA_TYPE_UNSPECIFIED'
-  | 'STORAGE'
-  | 'USER_LIMIT';
 // 创建套餐配额 - 请求
 export type identityservicev1_CreatePlanQuotaRequest = {
   data: identityservicev1_PlanQuota | undefined;
@@ -12649,23 +12690,6 @@ export type identityservicev1_GetTenantUsageRequest = {
   id: number | undefined;
 };
 
-// 租户用量与配额
-export type identityservicev1_TenantUsage = {
-  apiCallCount: number | undefined;
-  planId?: number;
-  planName?: string;
-  quotas: identityservicev1_QuotaUsage[] | undefined;
-  storageUsedBytes: number | undefined;
-  tenantId: number | undefined;
-  userCount: number | undefined;
-};
-
-// 配额用量项
-export type identityservicev1_QuotaUsage = {
-  quotaType: identityservicev1_PlanQuota_QuotaType | undefined;
-  quotaValue: number | undefined;
-};
-
 // 清理租户数据 - 请求
 export type identityservicev1_CleanupTenantDataRequest = {
   id: number | undefined;
@@ -13154,6 +13178,7 @@ export class ApiClient {
   private _menuService?: MenuService;
   private _mfaService?: MfaService;
   private _monitorAlertService?: MonitorAlertService;
+  private _myTenantUsageService?: MyTenantUsageService;
   private _notificationChannelService?: NotificationChannelService;
   private _notificationPreferenceService?: NotificationPreferenceService;
   private _notificationRuleService?: NotificationRuleService;
@@ -13300,6 +13325,10 @@ export class ApiClient {
 
   get monitorAlertService(): MonitorAlertService {
     return this._monitorAlertService ??= createMonitorAlertServiceClient(this._transport);
+  }
+
+  get myTenantUsageService(): MyTenantUsageService {
+    return this._myTenantUsageService ??= createMyTenantUsageServiceClient(this._transport);
   }
 
   get notificationChannelService(): NotificationChannelService {

@@ -155,6 +155,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	notificationRuleRepo := data.NewNotificationRuleRepo(ctx, entClient)
 	notificationTemplateRepo := data.NewNotificationTemplateRepo(ctx, entClient)
 	transactionalMailer := &service.TransactionMailer{TemplateRepo: notificationTemplateRepo}
+	myTenantUsageService := service.NewMyTenantUsageService(ctx, tenantUsageRepo)
 	monitorAlertRuleRepo := data.NewMonitorAlertRuleRepo(ctx, entClient)
 	accessKeyRepo := data.NewAccessKeyRepo(ctx, entClient)
 
@@ -328,6 +329,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		notificationPreferenceService,
 		notificationTemplateService,
 		monitorAlertService,
+		myTenantUsageService,
 		auditExportService,
 		taskMonitorService,
 		accessKeyService,

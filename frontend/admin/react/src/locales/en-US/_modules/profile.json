@@ -4,7 +4,8 @@
     "basicInfo": "Basic Info",
     "security": "Security",
     "sessions": "Active Sessions",
-    "notification": "Notifications"
+    "notification": "Notifications",
+    "tenantUsage": "Plan Usage"
   },
   "avatar": "Avatar",
   "username": "Username",
@@ -93,5 +94,17 @@
     "transactionalNote": "Transactional emails such as verification codes are not affected by this page and are always sent.",
     "on": "ON",
     "off": "OFF"
+  },
+  "tenantUsage": {
+    "plan": "Current plan: ",
+    "noPlan": "No plan subscribed",
+    "empty": "No plan usage data for this account.",
+    "reached": "limit reached",
+    "quota": {
+      "USER_LIMIT": "Users",
+      "STORAGE": "Storage (MB)",
+      "API_CALL": "API calls",
+      "AI_TOKENS": "AI tokens"
+    }
   }
 }

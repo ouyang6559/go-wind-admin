@@ -4,7 +4,8 @@
     "basicInfo": "基本信息",
     "security": "安全设置",
     "sessions": "活跃会话",
-    "notification": "通知偏好"
+    "notification": "通知偏好",
+    "tenantUsage": "套餐用量"
   },
   "avatar": "头像",
   "username": "用户名",
@@ -93,5 +94,17 @@
     "transactionalNote": "验证码等事务性邮件不受本页配置影响，始终照常发送。",
     "on": "开",
     "off": "关"
+  },
+  "tenantUsage": {
+    "plan": "当前套餐：",
+    "noPlan": "未订阅套餐",
+    "empty": "当前账号无套餐用量数据。",
+    "reached": "已达上限",
+    "quota": {
+      "USER_LIMIT": "用户数",
+      "STORAGE": "存储空间 (MB)",
+      "API_CALL": "API 调用次数",
+      "AI_TOKENS": "AI Token 用量"
+    }
   }
 }

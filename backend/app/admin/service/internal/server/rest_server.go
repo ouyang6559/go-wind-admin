@@ -182,6 +182,7 @@ func NewRestServer(
 	notificationPreferenceService *service.NotificationPreferenceService,
 	notificationTemplateService *service.NotificationTemplateService,
 	monitorAlertService *service.MonitorAlertService,
+	myTenantUsageService *service.MyTenantUsageService,
 	auditExportService *service.AuditExportService,
 	taskMonitorService *service.TaskMonitorService,
 	accessKeyService *service.AccessKeyService,
@@ -283,6 +284,7 @@ func NewRestServer(
 	adminV1.RegisterNotificationPreferenceServiceHTTPServer(srv, notificationPreferenceService)
 	adminV1.RegisterNotificationTemplateServiceHTTPServer(srv, notificationTemplateService)
 	adminV1.RegisterMonitorAlertServiceHTTPServer(srv, monitorAlertService)
+	adminV1.RegisterMyTenantUsageServiceHTTPServer(srv, myTenantUsageService)
 	adminV1.RegisterTaskMonitorServiceHTTPServer(srv, taskMonitorService)
 	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
 	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
