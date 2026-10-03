@@ -18,7 +18,7 @@ import { fetchListPermissionGroups } from '@/api/hooks/permission-group';
 import { fetchListPermissions } from '@/api/hooks/permission';
 import { fetchListOrgUnits } from '@/api/hooks/org-unit';
 import { PaginationQuery } from '@/core';
-import { getStatusOptions, getDataScopeOptions, buildPermissionTree, extractLeafIds, buildOrgUnitTree, getUserFieldPermissionOptions } from '../constants';
+import { getStatusOptions, getDataScopeOptions, buildPermissionTree, extractLeafIds, buildOrgUnitTree, ROLE_FIELD_RESOURCES } from '../constants';
 import AiGenerateButton from '@/components/common/AiGenerateButton';
 
 interface RoleDrawerProps {
@@ -47,7 +47,8 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
   const [unitCheckedKeys, setUnitCheckedKeys] = useState<number[]>([]);
   const [unitTreeVersion, setUnitTreeVersion] = useState(0);
   // 字段权限：User 资源上勾选隐藏的字段（json_name）
-  const [userHiddenFields, setUserHiddenFields] = useState<string[]>([]);
+  // 字段权限：资源名 → 隐藏字段集（多资源，按 ROLE_FIELD_RESOURCES 登记渲染）
+  const [hiddenByResource, setHiddenByResource] = useState<Record<string, string[]>>({});
 
   // 加载权限树数据
   useEffect(() => {
@@ -113,15 +114,16 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
           setUnitCheckedKeys(units.filter((v: any) => typeof v === 'number'));
         }
       }
-      // 回填字段权限（User 资源的隐藏字段集）
-      const fpEntry = Array.isArray((data as any).fieldPermissions)
-        ? (data as any).fieldPermissions.find((e: any) => e?.resource === 'User')
-        : undefined;
-      setUserHiddenFields(
-        Array.isArray(fpEntry?.hiddenFields)
-          ? fpEntry.hiddenFields.filter((v: any) => typeof v === 'string')
-          : [],
-      );
+      // 回填字段权限（多资源：fieldPermissions 数组逐资源回填隐藏字段集）
+      const byResource: Record<string, string[]> = {};
+      if (Array.isArray((data as any).fieldPermissions)) {
+        for (const e of (data as any).fieldPermissions) {
+          if (e?.resource && Array.isArray(e.hiddenFields)) {
+            byResource[e.resource] = e.hiddenFields.filter((v: any) => typeof v === 'string');
+          }
+        }
+      }
+      setHiddenByResource(byResource);
     }
   }, [open, mode, data]);
 
@@ -166,9 +168,10 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
       }
 
       // 字段权限始终随表单提交（含清空场景）：抽屉所见即保存后的最终态。
-      payload.fieldPermissions = userHiddenFields.length > 0
-        ? [{ resource: 'User', hiddenFields: userHiddenFields }]
-        : [];
+      payload.fieldPermissions = ROLE_FIELD_RESOURCES.map(({ resource }) => ({
+        resource,
+        hiddenFields: hiddenByResource[resource] ?? [],
+      })).filter((e: any) => e.hiddenFields.length > 0);
 
       if (mode === 'create') {
         await createMutation.mutateAsync({ data: payload });
@@ -190,7 +193,7 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
           formRef.current?.resetFields();
           setCheckedKeys([]);
           setUnitCheckedKeys([]);
-          setUserHiddenFields([]);
+          setHiddenByResource({});
           onClose();
         }
       }}
@@ -339,12 +342,23 @@ const RoleDrawer: React.FC<RoleDrawerProps> = ({ open, mode, data, onClose, onSu
           <p className="mb-2 text-xs text-[color:var(--ant-color-text-quaternary)]">
             {t('fieldPerm.hint')}
           </p>
-          <Checkbox.Group
-            value={userHiddenFields}
-            onChange={(vals) => setUserHiddenFields(vals as string[])}
-            options={getUserFieldPermissionOptions(t)}
-            className="flex flex-col gap-2"
-          />
+          <div className="flex flex-col gap-3">
+            {ROLE_FIELD_RESOURCES.map(({ resource, options }) => (
+              <div key={resource}>
+                <p className="mb-1.5 text-xs font-medium text-[color:var(--ant-color-text-secondary)]">
+                  {resource}
+                </p>
+                <Checkbox.Group
+                  value={hiddenByResource[resource] ?? []}
+                  onChange={(vals) =>
+                    setHiddenByResource((prev) => ({ ...prev, [resource]: vals as string[] }))
+                  }
+                  options={options(t)}
+                  className="flex flex-col gap-2"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </DrawerForm>

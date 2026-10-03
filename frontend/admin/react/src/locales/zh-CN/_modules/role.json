@@ -55,7 +55,8 @@
       "address": "地址",
       "region": "区域",
       "lastLoginAt": "最后登录时间",
-      "lastLoginIp": "最后登录 IP"
+      "lastLoginIp": "最后登录 IP",
+      "permissions": "权限集（角色绑定的权限列表）"
     }
   }
 }

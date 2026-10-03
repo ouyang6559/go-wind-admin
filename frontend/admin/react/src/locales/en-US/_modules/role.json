@@ -55,7 +55,8 @@
       "address": "Address",
       "region": "Region",
       "lastLoginAt": "Last Login At",
-      "lastLoginIp": "Last Login IP"
+      "lastLoginIp": "Last Login IP",
+      "permissions": "Permission set"
     }
   }
 }

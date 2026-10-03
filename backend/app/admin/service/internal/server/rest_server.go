@@ -236,6 +236,9 @@ func NewRestServer(
 	adminV1.RegisterUserServiceHTTPServer(srv, adminV1.RedactedUserServiceServer(
 		service.NewFieldPermissionUserServiceServer(&userServiceServerAdapter{UserServiceHTTPServer: userService}),
 		nil))
+	// Role 资源同款装饰器（字段权限铺开第二个资源）：可管控字段 permissions
+	// （角色权限集，权限体系的元权限）。
+	adminV1.RegisterRoleServiceHTTPServer(srv, service.NewFieldPermissionRoleServiceServer(roleService))
 	adminV1.RegisterOrgUnitServiceHTTPServer(srv, orgUnitService)
 	adminV1.RegisterRoleServiceHTTPServer(srv, roleService)
 	adminV1.RegisterPositionServiceHTTPServer(srv, positionService)
