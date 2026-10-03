@@ -9,6 +9,7 @@ import (
 
 	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/captcha"
+	"github.com/tx7do/go-utils/geoip/geolite"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
@@ -184,6 +185,7 @@ type AuthenticationService struct {
 	mfaFactorRepo     *data.UserMfaFactorRepo
 	mfaChallengeCache *data.MfaChallengeCache
 	ssoStateCache     *data.SsoStateCache
+	geoClient         *geolite.Client
 
 	vcodeCache *data.VCodeCache
 	// notifier 是唯一的对外通知出口（找回密码验证码邮件）。
@@ -211,6 +213,7 @@ func NewAuthenticationService(
 	mfaFactorRepo *data.UserMfaFactorRepo,
 	mfaChallengeCache *data.MfaChallengeCache,
 	ssoStateCache *data.SsoStateCache,
+	geoClient *geolite.Client,
 	vcodeCache *data.VCodeCache,
 	notifier Notifier,
 ) *AuthenticationService {
@@ -233,6 +236,7 @@ func NewAuthenticationService(
 		mfaFactorRepo:           mfaFactorRepo,
 		mfaChallengeCache:       mfaChallengeCache,
 		ssoStateCache:           ssoStateCache,
+		geoClient:               geoClient,
 		vcodeCache:              vcodeCache,
 		notifier:                notifier,
 	}
@@ -248,7 +252,21 @@ func (s *AuthenticationService) checkLoginPolicies(ctx context.Context, tenantID
 		s.log.Errorf(ctx, "list login policies failed for tenant [%d]: %s", tenantID, err.Error())
 		return false, ""
 	}
-	return data.MatchLoginPolicy(policies, userId, clientIP, deviceId, time.Now())
+	return data.MatchLoginPolicy(policies, userId, clientIP, deviceId, s.resolveRegionFromIP(ctx, clientIP), time.Now())
+}
+
+// resolveRegionFromIP 把客户端 IP 解析为归属地串（取省，空=解析失败）。
+// REGION 策略值与此串精确相等（大小写不敏感）即命中。
+// geolite 客户端内嵌库，失败不阻断登录（REGION 维度按未判定处理）。
+func (s *AuthenticationService) resolveRegionFromIP(ctx context.Context, clientIP string) string {
+	if clientIP == "" || s.geoClient == nil {
+		return ""
+	}
+	res, err := s.geoClient.Query(clientIP)
+	if err != nil {
+		return ""
+	}
+	return res.Province
 }
 
 func (s *AuthenticationService) resetContextForLogin(ctx context.Context) context.Context {

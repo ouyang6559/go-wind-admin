@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/go-kratos/kratos/v2"
+	"github.com/tx7do/go-utils/geoip/geolite"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 
 	"go-wind-admin/app/admin/service/internal/data"
@@ -73,6 +74,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	loginRateLimiter := data.NewLoginRateLimiter(ctx, redisClient)
 	mfaChallengeCache := data.NewMfaChallengeCache(ctx, redisClient)
 	ssoStateCache := data.NewSsoStateCache(ctx, redisClient)
+	geoClient, _ := geolite.NewClient()
 	vcodeCache := data.NewVCodeCache(ctx, redisClient)
 
 	// ═══════════════════════ 二、仓储层(internal/data) ═══════════════════════
@@ -188,7 +190,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	taskMonitorService := service.NewTaskMonitorService(ctx)
 
 	// 认证与登录策略
-	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, ssoStateCache, vcodeCache, notificationService)
+	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, ssoStateCache, geoClient, vcodeCache, notificationService)
 	mfaService := service.NewMfaService(ctx, userMfaFactorRepo, mfaChallengeCache, authenticator, loginRateLimiter, userRepo)
 	loginPolicyService := service.NewLoginPolicyService(ctx, loginPolicyRepo)
 
