@@ -2771,6 +2771,10 @@ export interface AuthenticationService {
   SsoLogin(
     request: authenticationservicev1_SsoLoginRequest,
   ): Promise<authenticationservicev1_LoginResponse>;
+  // 租户白标查询（免鉴权；登录前按租户编号取名称/Logo 等展示信息）
+  GetTenantBranding(
+    request: authenticationservicev1_GetTenantBrandingRequest,
+  ): Promise<authenticationservicev1_GetTenantBrandingResponse>;
 }
 
 export function createAuthenticationServiceClient(
@@ -2856,6 +2860,14 @@ export function createAuthenticationServiceClient(
         service: 'AuthenticationService',
         method: 'SsoLogin',
       }) as Promise<authenticationservicev1_LoginResponse>;
+    },
+    GetTenantBranding(request) {
+      const path = `admin/v1/tenant-branding`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AuthenticationService',
+        method: 'GetTenantBranding',
+      }) as Promise<authenticationservicev1_GetTenantBrandingResponse>;
     },
   };
 }
@@ -2969,6 +2981,19 @@ export type authenticationservicev1_SsoLoginRequest = {
   code: string | undefined;
   // GetSsoLoginUrl 返回的 state
   state: string | undefined;
+};
+
+// 租户白标查询（免鉴权；登录前按租户编号取展示信息）。
+// 只暴露展示字段（名称/Logo），不泄露任何运营/配置数据。
+export type authenticationservicev1_GetTenantBrandingRequest = {
+  // 租户编号（登录页 tenant_code 输入框的值）
+  code: string | undefined;
+};
+
+export type authenticationservicev1_GetTenantBrandingResponse = {
+  found: boolean | undefined;
+  logoUrl: string | undefined;
+  name: string | undefined;
 };
 
 // 系统参数管理服务

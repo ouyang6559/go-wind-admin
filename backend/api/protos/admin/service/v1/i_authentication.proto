@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 
 import "authentication/service/v1/authentication.proto";
 import "authentication/service/v1/sso.proto";
+import "authentication/service/v1/tenant_branding.proto";
 
 // 用户后台登录认证服务
 service AuthenticationService {
@@ -112,6 +113,18 @@ service AuthenticationService {
   rpc SsoLogin (authentication.service.v1.SsoLoginRequest) returns (authentication.service.v1.LoginResponse) {
     option (google.api.http) = {
       post: "/admin/v1/sso/login"
+      body: "*"
+    };
+
+    option(gnostic.openapi.v3.operation) = {
+      security: {}
+    };
+  }
+
+  // 租户白标查询（免鉴权；登录前按租户编号取名称/Logo 等展示信息）
+  rpc GetTenantBranding (authentication.service.v1.GetTenantBrandingRequest) returns (authentication.service.v1.GetTenantBrandingResponse) {
+    option (google.api.http) = {
+      post: "/admin/v1/tenant-branding"
       body: "*"
     };
 

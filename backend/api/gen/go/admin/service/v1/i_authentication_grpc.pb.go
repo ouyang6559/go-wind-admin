@@ -31,6 +31,7 @@ const (
 	AuthenticationService_GetSsoLoginInfo_FullMethodName     = "/admin.service.v1.AuthenticationService/GetSsoLoginInfo"
 	AuthenticationService_GetSsoLoginUrl_FullMethodName      = "/admin.service.v1.AuthenticationService/GetSsoLoginUrl"
 	AuthenticationService_SsoLogin_FullMethodName            = "/admin.service.v1.AuthenticationService/SsoLogin"
+	AuthenticationService_GetTenantBranding_FullMethodName   = "/admin.service.v1.AuthenticationService/GetTenantBranding"
 )
 
 // AuthenticationServiceClient is the client API for AuthenticationService service.
@@ -59,6 +60,8 @@ type AuthenticationServiceClient interface {
 	GetSsoLoginUrl(ctx context.Context, in *v1.GetSsoLoginUrlRequest, opts ...grpc.CallOption) (*v1.GetSsoLoginUrlResponse, error)
 	// OIDC 回调换本系统令牌（免鉴权）
 	SsoLogin(ctx context.Context, in *v1.SsoLoginRequest, opts ...grpc.CallOption) (*v1.LoginResponse, error)
+	// 租户白标查询（免鉴权；登录前按租户编号取名称/Logo 等展示信息）
+	GetTenantBranding(ctx context.Context, in *v1.GetTenantBrandingRequest, opts ...grpc.CallOption) (*v1.GetTenantBrandingResponse, error)
 }
 
 type authenticationServiceClient struct {
@@ -169,6 +172,16 @@ func (c *authenticationServiceClient) SsoLogin(ctx context.Context, in *v1.SsoLo
 	return out, nil
 }
 
+func (c *authenticationServiceClient) GetTenantBranding(ctx context.Context, in *v1.GetTenantBrandingRequest, opts ...grpc.CallOption) (*v1.GetTenantBrandingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetTenantBrandingResponse)
+	err := c.cc.Invoke(ctx, AuthenticationService_GetTenantBranding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthenticationServiceServer is the server API for AuthenticationService service.
 // All implementations must embed UnimplementedAuthenticationServiceServer
 // for forward compatibility.
@@ -195,6 +208,8 @@ type AuthenticationServiceServer interface {
 	GetSsoLoginUrl(context.Context, *v1.GetSsoLoginUrlRequest) (*v1.GetSsoLoginUrlResponse, error)
 	// OIDC 回调换本系统令牌（免鉴权）
 	SsoLogin(context.Context, *v1.SsoLoginRequest) (*v1.LoginResponse, error)
+	// 租户白标查询（免鉴权；登录前按租户编号取名称/Logo 等展示信息）
+	GetTenantBranding(context.Context, *v1.GetTenantBrandingRequest) (*v1.GetTenantBrandingResponse, error)
 	mustEmbedUnimplementedAuthenticationServiceServer()
 }
 
@@ -234,6 +249,9 @@ func (UnimplementedAuthenticationServiceServer) GetSsoLoginUrl(context.Context, 
 }
 func (UnimplementedAuthenticationServiceServer) SsoLogin(context.Context, *v1.SsoLoginRequest) (*v1.LoginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SsoLogin not implemented")
+}
+func (UnimplementedAuthenticationServiceServer) GetTenantBranding(context.Context, *v1.GetTenantBrandingRequest) (*v1.GetTenantBrandingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTenantBranding not implemented")
 }
 func (UnimplementedAuthenticationServiceServer) mustEmbedUnimplementedAuthenticationServiceServer() {}
 func (UnimplementedAuthenticationServiceServer) testEmbeddedByValue()                               {}
@@ -436,6 +454,24 @@ func _AuthenticationService_SsoLogin_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthenticationService_GetTenantBranding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetTenantBrandingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthenticationServiceServer).GetTenantBranding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthenticationService_GetTenantBranding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthenticationServiceServer).GetTenantBranding(ctx, req.(*v1.GetTenantBrandingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthenticationService_ServiceDesc is the grpc.ServiceDesc for AuthenticationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -482,6 +518,10 @@ var AuthenticationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SsoLogin",
 			Handler:    _AuthenticationService_SsoLogin_Handler,
+		},
+		{
+			MethodName: "GetTenantBranding",
+			Handler:    _AuthenticationService_GetTenantBranding_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

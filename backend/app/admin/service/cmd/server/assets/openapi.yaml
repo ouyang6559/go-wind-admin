@@ -7120,6 +7120,27 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListTaskTypeNameResponse'
+    /admin/v1/tenant-branding:
+        post:
+            tags:
+                - AuthenticationService
+            description: 租户白标查询（免鉴权；登录前按租户编号取名称/Logo 等展示信息）
+            operationId: AuthenticationService_GetTenantBranding
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GetTenantBrandingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTenantBrandingResponse'
+            security:
+                - {}
     /admin/v1/tenants:
         get:
             tags:
@@ -9477,6 +9498,24 @@ components:
                 state:
                     type: string
                     description: 本次登录的 state（前端原样带到回调，SsoLogin 时一并提交）
+        GetTenantBrandingRequest:
+            type: object
+            properties:
+                code:
+                    type: string
+                    description: 租户编号（登录页 tenant_code 输入框的值）
+            description: |-
+                租户白标查询（免鉴权；登录前按租户编号取展示信息）。
+                 只暴露展示字段（名称/Logo），不泄露任何运营/配置数据。
+        GetTenantBrandingResponse:
+            type: object
+            properties:
+                found:
+                    type: boolean
+                name:
+                    type: string
+                logoUrl:
+                    type: string
         GoRuntimeInfo:
             type: object
             properties:
