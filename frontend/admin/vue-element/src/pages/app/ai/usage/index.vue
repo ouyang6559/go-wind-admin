@@ -17,24 +17,28 @@
 
     <!-- 流水列表：ProPage 统一搜索/分页/导出约定（与其余管理页一致） -->
     <div class="flex-1 min-h-0">
-      <ProPage ref="pageRef" :config="pageConfig" />
+      <ProPage ref="pageRef" :config="pageConfig" @toolbar="handleToolbar" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from "vue";
-import { ElCard, ElCol, ElProgress, ElRow } from "element-plus";
+import { ElCard, ElCol, ElProgress, ElRow, ElMessage } from "element-plus";
 import { useI18n } from "@/core/i18n";
 import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import { PaginationQuery } from "@/core/transport/rest";
 import { apiClient } from "@/api/client";
 import { createPagedExportAction } from "@/api/composables";
+import { serverExportFile } from "@/api/composables/server-export";
 
 const { t } = useI18n();
 
 const pageRef = ref();
+
+// 当前搜索条件（服务端导出透传用，与列表 listAction 同源——"导出的就是当前搜索看到的"）
+const latestFormValuesRef = ref<Record<string, unknown>>({});
 
 const monthTokens = ref(0);
 const monthCalls = ref(0);
@@ -71,6 +75,37 @@ async function fetchUsageLogs(query: PaginationQuery) {
   return apiClient.aiUsageLogService.List(query.toRawParams());
 }
 
+// 服务端全量导出：当前搜索条件经 PaginationQuery 同源序列化透传，
+// 导出的即当前搜索看到的；行范围由后端 viewer 语义决定（租户=本租户）。
+const exportingServer = ref(false);
+async function handleServerExport() {
+  if (exportingServer.value) return;
+  exportingServer.value = true;
+  try {
+    await serverExportFile(
+      "admin/v1/ai/usage-logs:export",
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
+    ElMessage.success(t("pages.ai_usage.exportServerSuccess"));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error("server-side export failed", error);
+    ElMessage.error(error?.message || t("pages.ai_usage.exportServerFailed"));
+  } finally {
+    exportingServer.value = false;
+  }
+}
+
+// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
+// exportServer 是工具栏按钮，此处承接。
+function handleToolbar(name: string) {
+  if (name === "exportServer") {
+    handleServerExport();
+    return;
+  }
+}
+
+
 const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
   exportFilename: "ai-usage-logs",
@@ -88,6 +123,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
   table: {
     listAction: async (query: any) => {
       const { page, pageSize, ...rest } = query;
+      latestFormValuesRef.value = rest;
       // formValues 字符串值由 PaginationQuery 统一转 __contains（搜索铁律）
       const result = await fetchUsageLogs(
         new PaginationQuery({
@@ -98,7 +134,13 @@ const pageConfig = computed<ProPageConfig>(() => ({
       return { items: result.items || [], total: Number(result.total || 0) };
     },
     exportsAction: createPagedExportAction(fetchUsageLogs),
-    toolbar: [],
+    toolbar: [
+      {
+        name: "exportServer",
+        label: t("pages.ai_usage.exportServer"),
+        icon: "lucide:download",
+      },
+    ],
     toolbarRight: [],
     defaultToolbar: ["refresh", "exports", "filter"],
     tableAttrs: { border: true, stripe: true },

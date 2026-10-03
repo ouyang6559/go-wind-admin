@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
+import { ref } from 'vue';
+
 import { Page, type VbenFormProps } from '@vben/common-ui';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -16,6 +18,8 @@ import {
   notificationDeliveryStatusToName,
   PaginationQuery,
 } from '#/api';
+import { serverExportFile } from '#/api';
+import { message } from 'ant-design-vue';
 import type {
   notificationservicev1_NotificationDelivery as NotificationDelivery,
 } from '#/api';
@@ -117,6 +121,12 @@ const gridOptions: VxeGridProps<NotificationDelivery> = {
     ajax: {
       query: async ({ page, sorts }, formValues) => {
         const values = (formValues ?? {}) as Record<string, any>;
+        latestFormValuesRef.value = {
+          channel: values.channel,
+          eventType: values.eventType,
+          status: values.status,
+          target: values.target,
+        };
         // 排序：只传裸字段名给后端，前缀 '-' 表示倒序
         const sort = sorts?.[0];
         const sortField = sort?.field
@@ -228,12 +238,49 @@ const gridOptions: VxeGridProps<NotificationDelivery> = {
   ],
 };
 
+// 当前搜索条件（服务端导出透传用，与 Grid proxy 查询同源——"导出的就是当前搜索看到的"）
+const latestFormValuesRef = ref<Record<string, unknown>>({});
+
+// 服务端全量导出（平台管理员专属闸在后端；本页与台账读接口同权限语义）。
+async function handleServerExport() {
+  try {
+    await serverExportFile(
+      'admin/v1/notification-deliveries:export',
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
+    message.success($t('page.auditExport.serverSuccess'));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error('[export] server-side export failed', error);
+    message.error(error?.message || $t('page.auditExport.serverFailed'));
+  }
+}
+
+function handleExportMenu(info: { key: string | number }) {
+  if (String(info.key) === 'server-xlsx') {
+    handleServerExport();
+    return;
+  }
+}
+
 const [Grid] = useVbenVxeGrid({ gridOptions, formOptions });
 </script>
 
 <template>
   <Page auto-content-height>
     <Grid :table-title="$t('page.notificationDelivery.moduleName')">
+      <template #toolbar-tools>
+        <a-dropdown class="mr-2">
+          <a-button>{{ $t('ui.button.exportAll') }}</a-button>
+          <template #overlay>
+            <a-menu @click="handleExportMenu">
+              <a-menu-item key="server-xlsx">{{
+                $t('page.auditExport.serverFull')
+              }}</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </template>
       <template #eventType="{ row }">
         {{ notificationDeliveryEventTypeToName(row.eventType) || '-' }}
       </template>

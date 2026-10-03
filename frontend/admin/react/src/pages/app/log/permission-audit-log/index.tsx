@@ -107,7 +107,16 @@ const PermissionAuditLogPage = () => {
   // 突破客户端聚合导出的 1 万行上限
   const handleServerExport = async () => {
     try {
-      await exportAuditLogsServer('permission', JSON.stringify(latestParamsRef.current ?? {}));
+      await exportAuditLogsServer('permission', JSON.stringify(
+        // 只带搜索条件：ProTable 的 params 里混着分页键（current/pageSize），
+        // 后端 repo 对非表列字段直接报错（unknown field → 500），与客户端
+        // 聚合导出（utils/csv.ts）同款剔除。
+        Object.fromEntries(
+          Object.entries(latestParamsRef.current ?? {}).filter(
+            ([k]) => !['current', 'pageSize'].includes(k),
+          ),
+        ),
+      ));
       message.success(t('exportServerSuccess'));
     } catch (error: any) {
       console.error('server-side audit export failed', error);

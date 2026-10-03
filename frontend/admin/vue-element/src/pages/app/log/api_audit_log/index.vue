@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full flex flex-1 flex-col">
-    <ProPage ref="pageRef" :config="pageConfig" @operate="handleOperate">
+    <ProPage ref="pageRef" :config="pageConfig" @operate="handleOperate" @toolbar="handleToolbar">
       <!-- 是否成功 -->
       <template #success="scope: any">
         <ElTag size="small" round :type="successToType(scope.row.success)">
@@ -66,13 +66,18 @@ async function handleServerExport() {
   }
 }
 
-function handleOperate(data: { name: string; row: any }) {
-  // 服务端全量导出（XLSX，上限 50 万行）：不带搜索条件，突破导出弹窗
-  // 客户端聚合的 1 万行上限；带条件的导出走右侧既有的导出弹窗
-  if (data.name === "exportServer") {
+// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
+// exportServer 是工具栏按钮，此处承接。
+function handleToolbar(name: string) {
+  if (name === "exportServer") {
     handleServerExport();
     return;
   }
+}
+
+function handleOperate(data: { name: string; row: any }) {
+  // 服务端全量导出（XLSX，上限 50 万行）：不带搜索条件，突破导出弹窗
+  // 客户端聚合的 1 万行上限；带条件的导出走右侧既有的导出弹窗
   if (data.name === "detail") {
     drawerRef.value?.open({ row: data.row });
   }

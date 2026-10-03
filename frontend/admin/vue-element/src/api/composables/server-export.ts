@@ -1,36 +1,29 @@
 import { useAccessStore } from "@/stores";
-
-/** 服务端审计导出支持的日志类型（与后端 ExportService 的 type 参数一致） */
-export type AuditExportLogType =
-  | "api"
-  | "data_access"
-  | "login"
-  | "operation"
-  | "permission";
+import type { PaginationQuery } from "@/core/transport/rest";
 
 /**
- * 审计日志服务端导出：走 /admin/v1/audit-logs:export（XLSX/CSV，突破 ProPage
- * 导出弹窗客户端聚合的 1 万行上限，服务端上限 50 万）。
- * query 与列表页同源（contains 条件），导出的即当前搜索看到的。
+ * 服务端全量导出（XLSX，后端统一行数上限）：URL 指向各资源的 :export 手动锚点，
+ * query 经 PaginationQuery 的同源序列化（contains 转换/租户字段清理与列表页一致）
+ * 透传——导出的即当前搜索看到的。
  *
  * 手动 fetch 而非走 RequestClient：需要 blob 响应 + 触发浏览器下载，
  * axios 拦截器的 JSON 错误处理对二进制响应不适用。
  */
-export async function exportAuditLogsServer(
-  type: AuditExportLogType,
-  queryJson: string,
-  format: "csv" | "xlsx" = "xlsx"
+export async function serverExportFile(
+  url: string,
+  query: PaginationQuery
 ): Promise<void> {
   const accessStore = useAccessStore();
   const token = accessStore.accessToken;
-  const params = new URLSearchParams({ format, type });
+  const params = new URLSearchParams({ format: "xlsx" });
+  const queryJson = query.queryString;
   if (queryJson) {
     params.set("query", queryJson);
   }
   // 基址与 RequestClient.init 同源（直连后端）：裸相对路径会被本端 vite 代理剥前缀，404。
   const apiBase = (import.meta.env.VITE_APP_API_URL ?? "").replace(/\/$/, "");
   const res = await fetch(
-    `${apiBase}/admin/v1/audit-logs:export?${params.toString()}`,
+    `${apiBase}/${url}?${params.toString()}`,
     {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
@@ -41,7 +34,7 @@ export async function exportAuditLogsServer(
   const disposition = res.headers.get("Content-Disposition") || "";
   const filename =
     disposition.match(/filename="(.+)"/)?.[1] ??
-    `audit-logs-${Date.now()}.${format}`;
+    `export-${Date.now()}.xlsx`;
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;

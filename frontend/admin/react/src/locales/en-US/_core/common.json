@@ -255,6 +255,9 @@
     "csv": "CSV (Comma Separated)",
     "xlsx": "Excel Workbook",
     "success": "Exported {count} rows",
-    "failed": "Export failed"
+    "failed": "Export failed",
+    "serverXlsx": "Server-side full (XLSX)",
+    "serverSuccess": "Export file generated",
+    "serverFailed": "Server-side export failed"
   }
 }

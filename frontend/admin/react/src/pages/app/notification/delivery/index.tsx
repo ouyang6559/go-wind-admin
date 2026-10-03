@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import ListTable from '@/components/common/ListTable';
+import TableExportButton from '@/components/common/TableExportButton';
 import { Tag, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -69,6 +70,8 @@ const NotificationDeliveryPage = () => {
   const actionRef = useRef<ActionType>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tableScrollY = useProTableScrollY(containerRef);
+  // 当前搜索条件（服务端导出透传用，与列表 request 同源——"导出的就是当前搜索看到的"）
+  const latestFormValuesRef = useRef<Record<string, unknown>>({});
 
   const columns: ProColumns<NotificationDelivery>[] = [
     {
@@ -200,16 +203,18 @@ const NotificationDeliveryPage = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params, sorter) => {
+            const formValues = Object.fromEntries(
+              Object.entries(params).filter(
+                ([key]) => !['current', 'pageSize'].includes(key),
+              ),
+            );
+            latestFormValuesRef.current = formValues;
             const query = new PaginationQuery({
               paging: {
                 page: params.current || 1,
                 pageSize: params.pageSize || 20,
               },
-              formValues: Object.fromEntries(
-                Object.entries(params).filter(
-                  ([key]) => !['current', 'pageSize'].includes(key),
-                ),
-              ),
+              formValues,
               orderBy:
                 sorter && Object.keys(sorter).length > 0
                   ? Object.entries(sorter).map(([key, value]) =>
@@ -236,6 +241,20 @@ const NotificationDeliveryPage = () => {
             showSizeChanger: true,
             showQuickJumper: true,
           }}
+          toolBarRender={() => [
+            // 导出：客户端聚合（小数据量快速路径）+ 服务端全量（当前搜索条件透传，
+            // 与列表同源；本页与台账读接口同为平台管理员专属，闸在后端）
+            <TableExportButton
+              key="export"
+              fetcher={fetchListNotificationDeliveries}
+              columns={columns}
+              filename="notification-deliveries"
+              serverExport={{
+                url: 'admin/v1/notification-deliveries:export',
+                buildQuery: () => new PaginationQuery({ formValues: latestFormValuesRef.current }),
+              }}
+            />,
+          ]}
           options={{
             density: true,
             fullScreen: true,

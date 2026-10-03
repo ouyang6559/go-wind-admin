@@ -184,6 +184,7 @@ func NewRestServer(
 	monitorAlertService *service.MonitorAlertService,
 	myTenantUsageService *service.MyTenantUsageService,
 	auditExportService *service.AuditExportService,
+	dataExportService *service.DataExportService,
 	taskMonitorService *service.TaskMonitorService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
@@ -270,6 +271,17 @@ func NewRestServer(
 	// 手动路由无 Operation → auth 中间件不应用 → 鉴权在 handler 内显式做（平台管理员）。
 	srv.Route("/").GET("admin/v1/audit-logs:export", func(ctx http.Context) error {
 		return auditExportService.ServeExport(ctx.Response(), ctx.Request())
+	})
+
+	// AI 用量流水服务端导出（手动注册，理由同上；租户管理员按 viewer 语义导本租户，
+	// 与 /admin/v1/ai/usage-logs 列表口径一致）。
+	srv.Route("/").GET("admin/v1/ai/usage-logs:export", func(ctx http.Context) error {
+		return dataExportService.ServeAiUsageExport(ctx.Response(), ctx.Request())
+	})
+
+	// 通知投递台账服务端导出（手动注册；平台管理员专属，同台账读接口的闸）。
+	srv.Route("/").GET("admin/v1/notification-deliveries:export", func(ctx http.Context) error {
+		return dataExportService.ServeNotificationDeliveryExport(ctx.Response(), ctx.Request())
 	})
 
 	adminV1.RegisterInternalMessageServiceHTTPServer(srv, internalMessageService)
