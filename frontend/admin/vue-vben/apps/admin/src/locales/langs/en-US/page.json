@@ -1120,5 +1120,14 @@
     "serverFull": "Server-side full (XLSX)",
     "serverSuccess": "Download started",
     "serverFailed": "Server-side export failed"
+  },
+  "sso": {
+    "title": "SSO Callback",
+    "failed": "SSO login failed",
+    "backToLogin": "Back to login",
+    "redirecting": "Signing in with SSO…",
+    "missingParams": "Missing code or state parameter",
+    "button": "Sign in with SSO",
+    "or": "or"
   }
 }

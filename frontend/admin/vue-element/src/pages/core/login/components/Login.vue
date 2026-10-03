@@ -94,12 +94,23 @@
           {{ t("core.login.login") }}
         </el-button>
       </el-form-item>
+
+      <!-- SSO 登录（后端未配置时不渲染） -->
+      <template v-if="ssoOn">
+        <div class="sso-divider">
+          <span>{{ t("core.sso.or") }}</span>
+        </div>
+        <el-button class="w-full" @click="handleSsoLogin">
+          {{ t("core.sso.button") }}
+        </el-button>
+      </template>
     </el-form>
   </div>
 </template>
 <script setup lang="ts">
 import type { FormInstance } from "element-plus";
 import { useAuth } from "@/composables/use-auth";
+import { ssoEnabled, startSsoLogin } from "@/composables/sso";
 import { router } from "@/router";
 
 const { t } = useI18n();
@@ -110,6 +121,13 @@ const loginFormRef = ref<FormInstance>();
 const loading = ref(false);
 // 是否大写锁定
 const isCapsLock = ref(false);
+
+// SSO 开关（后端未配置 OIDC 时按钮不渲染）
+const ssoOn = ref(false);
+
+onMounted(() => {
+  ssoEnabled().then((v) => (ssoOn.value = v)).catch(() => (ssoOn.value = false));
+});
 // 验证码状态
 const captchaId = ref("");
 const captchaImage = ref("");
@@ -173,6 +191,16 @@ onMounted(() => {
 /**
  * 登录提交
  */
+async function handleSsoLogin() {
+  try {
+    await startSsoLogin();
+  } catch (err: any) {
+    // 原始错误必须留在控制台：展示给用户的是归一化文案
+    console.error("start sso login failed", err);
+    ElMessage.error(err?.message || t("core.sso.failed"));
+  }
+}
+
 async function handleLoginSubmit() {
   // 函数入口即同步捕获 redirect：此时当前路由必然是登录页，读取最可靠。
   // 登录请求返回后到 onSuccess 之间存在响应式更新时序竞态（route 与

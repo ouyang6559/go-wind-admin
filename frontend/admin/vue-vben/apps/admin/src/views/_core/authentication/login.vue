@@ -6,8 +6,11 @@ import { computed, h, onMounted, ref } from 'vue';
 import { AuthenticationLogin, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
+import { message } from 'ant-design-vue';
+
 import { useAuthStore } from '#/stores';
 import { fetchGenerateCaptcha } from '#/api/composables';
+import { ssoEnabled, startSsoLogin } from '#/api/composables/sso';
 
 defineOptions({ name: 'Login' });
 
@@ -17,6 +20,9 @@ const authStore = useAuthStore();
 const captchaId = ref('');
 const captchaImage = ref('');
 const captchaLoading = ref(false);
+
+// SSO 开关（后端未配置 OIDC 时按钮不渲染）
+const ssoOn = ref(false);
 
 async function refreshCaptcha() {
   captchaLoading.value = true;
@@ -33,7 +39,21 @@ async function refreshCaptcha() {
 
 onMounted(() => {
   refreshCaptcha();
+  // SSO 开关探测：失败/未配置都不显示按钮（非关键路径，静默降级）
+  ssoEnabled()
+    .then((v) => (ssoOn.value = v))
+    .catch(() => (ssoOn.value = false));
 });
+
+async function handleSsoLogin() {
+  try {
+    await startSsoLogin();
+  } catch (err: any) {
+    // 原始错误必须留在控制台：展示给用户的是归一化文案
+    console.error('start sso login failed', err);
+    message.error(err?.message || $t('page.sso.failed'));
+  }
+}
 
 // 验证码图片渲染函数（响应式读取 captchaImage / captchaLoading）
 // 作为函数式组件传入 suffix，由 VbenRenderContent 通过 h() 渲染
@@ -177,6 +197,17 @@ async function handleSubmit(values: Record<string, any>) {
         <!-- 内置标题已移到卡片外，置空默认标题块 -->
         <template #title><span class="hidden"></span></template>
       </AuthenticationLogin>
+
+      <template v-if="ssoOn">
+        <div class="my-4 flex items-center gap-3">
+          <div class="h-px flex-1 bg-border"></div>
+          <span class="text-muted-foreground text-xs">{{ $t('page.sso.or') }}</span>
+          <div class="h-px flex-1 bg-border"></div>
+        </div>
+        <a-button block size="large" @click="handleSsoLogin">
+          {{ $t('page.sso.button') }}
+        </a-button>
+      </template>
     </div>
   </div>
 </template>
