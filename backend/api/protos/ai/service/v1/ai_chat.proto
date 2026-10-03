@@ -58,3 +58,15 @@ message ChatChunkEvent {
   uint32 seq = 2;                                            // 片段序号（会话内单调递增，从 0 开始）
   string delta = 3;                                          // 增量文本片段
 }
+
+// SSE `ai_chat_tool` 事件 data 形状（protojson，camelCase 键）。
+//
+// 仅在服务层用于构造事件载荷，不挂 HTTP 路由。
+// 模型每发起一次本地工具调用并执行完成后推一帧，供前端展示
+// "模型正在调工具"；工具轮不进消息落库（落库的 assistant 消息只有最终答案）。
+message ChatToolEvent {
+  uint32 conversation_id = 1 [json_name = "conversationId"]; // 所属会话
+  string name = 2;                                           // 工具名（如 get_current_time）
+  string arguments = 3;                                      // 模型给出的请求参数 JSON 串
+  string result = 4;                                         // 执行结果文本；执行失败为 "tool error: ..." 文本
+}

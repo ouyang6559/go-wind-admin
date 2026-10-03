@@ -209,6 +209,79 @@ func (x *ChatChunkEvent) GetDelta() string {
 	return ""
 }
 
+// SSE `ai_chat_tool` 事件 data 形状（protojson，camelCase 键）。
+//
+// 仅在服务层用于构造事件载荷，不挂 HTTP 路由。
+// 模型每发起一次本地工具调用并执行完成后推一帧，供前端展示
+// "模型正在调工具"；工具轮不进消息落库（落库的 assistant 消息只有最终答案）。
+type ChatToolEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId uint32                 `protobuf:"varint,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 所属会话
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                            // 工具名（如 get_current_time）
+	Arguments      string                 `protobuf:"bytes,3,opt,name=arguments,proto3" json:"arguments,omitempty"`                                  // 模型给出的请求参数 JSON 串
+	Result         string                 `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`                                        // 执行结果文本；执行失败为 "tool error: ..." 文本
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ChatToolEvent) Reset() {
+	*x = ChatToolEvent{}
+	mi := &file_ai_service_v1_ai_chat_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatToolEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatToolEvent) ProtoMessage() {}
+
+func (x *ChatToolEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_ai_service_v1_ai_chat_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChatToolEvent.ProtoReflect.Descriptor instead.
+func (*ChatToolEvent) Descriptor() ([]byte, []int) {
+	return file_ai_service_v1_ai_chat_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ChatToolEvent) GetConversationId() uint32 {
+	if x != nil {
+		return x.ConversationId
+	}
+	return 0
+}
+
+func (x *ChatToolEvent) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ChatToolEvent) GetArguments() string {
+	if x != nil {
+		return x.Arguments
+	}
+	return ""
+}
+
+func (x *ChatToolEvent) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
 var File_ai_service_v1_ai_chat_proto protoreflect.FileDescriptor
 
 const file_ai_service_v1_ai_chat_proto_rawDesc = "" +
@@ -231,7 +304,12 @@ const file_ai_service_v1_ai_chat_proto_rawDesc = "" +
 	"\x0eChatChunkEvent\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\rR\x0econversationId\x12\x10\n" +
 	"\x03seq\x18\x02 \x01(\rR\x03seq\x12\x14\n" +
-	"\x05delta\x18\x03 \x01(\tR\x05delta2R\n" +
+	"\x05delta\x18\x03 \x01(\tR\x05delta\"\x82\x01\n" +
+	"\rChatToolEvent\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\rR\x0econversationId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
+	"\targuments\x18\x03 \x01(\tR\targuments\x12\x16\n" +
+	"\x06result\x18\x04 \x01(\tR\x06result2R\n" +
 	"\rAiChatService\x12A\n" +
 	"\x04Chat\x12\x1a.ai.service.v1.ChatRequest\x1a\x1b.ai.service.v1.ChatResponse\"\x00B\xa3\x01\n" +
 	"\x11com.ai.service.v1B\vAiChatProtoP\x01Z+go-wind-admin/api/gen/go/ai/service/v1;aipb\xa2\x02\x03ASX\xaa\x02\rAi.Service.V1\xca\x02\rAi\\Service\\V1\xe2\x02\x19Ai\\Service\\V1\\GPBMetadata\xea\x02\x0fAi::Service::V1b\x06proto3"
@@ -248,17 +326,18 @@ func file_ai_service_v1_ai_chat_proto_rawDescGZIP() []byte {
 	return file_ai_service_v1_ai_chat_proto_rawDescData
 }
 
-var file_ai_service_v1_ai_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_ai_service_v1_ai_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_ai_service_v1_ai_chat_proto_goTypes = []any{
 	(*ChatRequest)(nil),    // 0: ai.service.v1.ChatRequest
 	(*ChatResponse)(nil),   // 1: ai.service.v1.ChatResponse
 	(*ChatChunkEvent)(nil), // 2: ai.service.v1.ChatChunkEvent
-	(*AiConversation)(nil), // 3: ai.service.v1.AiConversation
-	(*AiMessage)(nil),      // 4: ai.service.v1.AiMessage
+	(*ChatToolEvent)(nil),  // 3: ai.service.v1.ChatToolEvent
+	(*AiConversation)(nil), // 4: ai.service.v1.AiConversation
+	(*AiMessage)(nil),      // 5: ai.service.v1.AiMessage
 }
 var file_ai_service_v1_ai_chat_proto_depIdxs = []int32{
-	3, // 0: ai.service.v1.ChatResponse.conversation:type_name -> ai.service.v1.AiConversation
-	4, // 1: ai.service.v1.ChatResponse.message:type_name -> ai.service.v1.AiMessage
+	4, // 0: ai.service.v1.ChatResponse.conversation:type_name -> ai.service.v1.AiConversation
+	5, // 1: ai.service.v1.ChatResponse.message:type_name -> ai.service.v1.AiMessage
 	0, // 2: ai.service.v1.AiChatService.Chat:input_type -> ai.service.v1.ChatRequest
 	1, // 3: ai.service.v1.AiChatService.Chat:output_type -> ai.service.v1.ChatResponse
 	3, // [3:4] is the sub-list for method output_type
@@ -282,7 +361,7 @@ func file_ai_service_v1_ai_chat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ai_service_v1_ai_chat_proto_rawDesc), len(file_ai_service_v1_ai_chat_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -18,7 +18,8 @@ import (
 //     本地执行 → 结果回传 → 继续生成，直到给出文本答案或轮数耗尽。
 //
 // 轮数耗尽前的最后一轮强制不带 tools（模型必须给文本答案，不允许无限工具循环）。
-// 中间轮的工具请求/结果不进 SSE 与消息落库（V1 只流式最终答案）；
+// 工具调用经 onToolCall 回调推 SSE（ai_chat_tool 事件）供前端展示"模型正在调工具"；
+// 工具轮不进消息落库（落库的 assistant 消息只有最终答案）；
 // 用量跨轮累加（每轮的 prompt/completion 计入同一条用量流水）。
 
 // aiToolMaxRounds 工具调用循环的最大轮数。
@@ -51,12 +52,13 @@ func execAiTool(_ context.Context, name, args string) (string, error) {
 
 // aiToolLoop 单次流式对话的多轮工具调用循环。
 type aiToolLoop struct {
-	client    *openai.Client
-	model     string
-	tools     []openai.Tool
-	exec      func(ctx context.Context, name, args string) (string, error)
-	onDelta   func(delta string) // 最终答案的文本增量回调（SSE 推送）
-	maxRounds int
+	client     *openai.Client
+	model      string
+	tools      []openai.Tool
+	exec       func(ctx context.Context, name, args string) (string, error)
+	onDelta    func(delta string)                   // 最终答案的文本增量回调（SSE 推送）
+	onToolCall func(name, arguments, result string) // 每次工具执行完成后的可见化回调（SSE 推送）
+	maxRounds  int
 }
 
 // run 执行循环，返回最终答案全文与跨轮累计用量。
@@ -137,6 +139,9 @@ func (r *aiToolLoop) run(ctx context.Context, messages []openai.ChatCompletionMe
 			if execErr != nil {
 				// 错误文本回传模型：让它知道工具失败并自行调整，而不是中断对话
 				result = fmt.Sprintf("tool error: %v", execErr)
+			}
+			if r.onToolCall != nil {
+				r.onToolCall(tc.Function.Name, tc.Function.Arguments, result)
 			}
 			messages = append(messages, openai.ChatCompletionMessage{
 				Role:       openai.ChatMessageRoleTool,

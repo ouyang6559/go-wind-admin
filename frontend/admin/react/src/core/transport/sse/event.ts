@@ -24,4 +24,14 @@ export const SSE_EVENT = {
    * 完整回复，以响应为准校正累积文本。
    */
   AIChatChunk: 'ai_chat_chunk',
+
+  /**
+   * AI 对话的工具调用可见化推送。
+   *
+   * data 为 `ChatToolEvent` 的 protojson：camelCase 键（`conversationId` /
+   * `name` / `arguments` / `result`）。模型每发起一次本地工具调用并执行完成
+   * 后推一帧；工具轮不进消息落库（落库的 assistant 消息只有最终答案），
+   * 本事件是前端展示"模型正在调工具"的唯一信息源（尽力而为，丢帧可容忍）。
+   */
+  AIChatTool: 'ai_chat_tool',
 } as const;

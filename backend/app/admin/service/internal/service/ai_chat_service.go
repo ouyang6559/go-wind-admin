@@ -209,6 +209,9 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 			s.publishChunk(ctx, streamId, conversation.ID, seq, delta)
 			seq++
 		},
+		onToolCall: func(name, arguments, result string) {
+			s.publishToolEvent(ctx, streamId, conversation.ID, name, arguments, result)
+		},
 	}
 	fullText, usage, toolErr := runner.run(streamCtx, messages)
 	if toolErr != nil {
@@ -408,6 +411,29 @@ func (s *AiChatService) publishChunk(ctx context.Context, streamId string, conve
 		ID:    []byte(id.NewGUIDv4(false)),
 		Data:  data,
 		Event: []byte(sseevent.AIChatChunk),
+	}); !ok {
+		// 丢帧可容忍：同步响应携带完整回复；不刷日志避免慢客户端制造噪音。
+	}
+}
+
+// publishToolEvent 尽力而为地推送一帧工具调用可见化事件（protojson 序列化，camelCase 键）。
+// 与 publishChunk 同为丢帧可容忍：同步响应携带完整回复，工具帧只服务实时观感。
+func (s *AiChatService) publishToolEvent(ctx context.Context, streamId string, conversationId uint32, name, arguments, result string) {
+	event := &aiV1.ChatToolEvent{
+		ConversationId: conversationId,
+		Name:           name,
+		Arguments:      arguments,
+		Result:         result,
+	}
+	data, err := protojson.Marshal(event)
+	if err != nil {
+		s.log.Errorf(ctx, "marshal ai chat tool event failed, skip push: %v", err)
+		return
+	}
+	if ok := s.chatPublisher.TryPublish(ctx, sse.StreamID(streamId), &sse.Event{
+		ID:    []byte(id.NewGUIDv4(false)),
+		Data:  data,
+		Event: []byte(sseevent.AIChatTool),
 	}); !ok {
 		// 丢帧可容忍：同步响应携带完整回复；不刷日志避免慢客户端制造噪音。
 	}

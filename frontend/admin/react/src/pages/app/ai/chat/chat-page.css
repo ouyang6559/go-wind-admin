@@ -635,3 +635,28 @@
   font-weight: 600;
   background: var(--ant-color-fill-secondary);
 }
+
+/* 工具调用可见化：ai_chat_tool 帧的展示条（模型调工具期间的中间过程，流式结束即清） */
+.ai-chat-page .tool-call {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: min(680px, 100%);
+  margin: 6px 0 6px 44px;
+  padding: 6px 10px;
+  font-family: var(--ant-font-family-code, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  border: 1px dashed var(--ant-color-border-secondary);
+  border-radius: var(--ant-border-radius-lg);
+  background: var(--ant-color-fill-quaternary);
+}
+
+.ai-chat-page .tool-call__head {
+  color: var(--ant-color-text-secondary);
+}
+
+.ai-chat-page .tool-call__result {
+  color: var(--ant-color-text);
+  word-break: break-all;
+}

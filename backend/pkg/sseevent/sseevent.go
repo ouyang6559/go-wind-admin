@@ -33,3 +33,11 @@ const Notification = "notification"
 // conversationId 归组、按 seq 顺序累积渲染；POST /admin/v1/ai/chat/completions
 // 的同步响应携带完整回复，以响应为准校正累积文本（chunk 尽力而为，缓冲满即丢帧）。
 const AIChatChunk = "ai_chat_chunk"
+
+// AIChatTool AI 对话的工具调用可见化推送。
+//
+// data: 为 ai.service.v1.ChatToolEvent 的 protojson（camelCase 键：
+// conversationId / name / arguments / result）。模型每发起一次本地工具调用
+// 并执行完成后推一帧；工具轮不进消息落库（落库的 assistant 消息只有最终
+// 答案），本事件是前端展示"模型正在调工具"的唯一信息源（尽力而为，丢帧可容忍）。
+const AIChatTool = "ai_chat_tool"

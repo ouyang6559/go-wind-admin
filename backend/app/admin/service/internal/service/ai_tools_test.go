@@ -96,6 +96,7 @@ func TestAiToolLoopToolCallRoundTrip(t *testing.T) {
 	client := openai.NewClientWithConfig(cfg)
 
 	var deltas []string
+	var toolCalls [][3]string // [name, arguments, result]
 	runner := &aiToolLoop{
 		client:    client,
 		model:     "test-model",
@@ -103,6 +104,9 @@ func TestAiToolLoopToolCallRoundTrip(t *testing.T) {
 		exec:      execAiTool,
 		maxRounds: aiToolMaxRounds,
 		onDelta:   func(delta string) { deltas = append(deltas, delta) },
+		onToolCall: func(name, arguments, result string) {
+			toolCalls = append(toolCalls, [3]string{name, arguments, result})
+		},
 	}
 
 	full, usage, err := runner.run(context.Background(), []openai.ChatCompletionMessage{
@@ -111,6 +115,12 @@ func TestAiToolLoopToolCallRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "当前时间是 2026-10-03 12:00:00", full, "最终答案应拼接自文本增量")
 	require.Len(t, deltas, 2, "文本增量应经 onDelta 推送")
+
+	// 工具调用可见化回调：一次调用，参数与执行结果齐全（结果为服务端时间文本）
+	require.Len(t, toolCalls, 1, "工具执行完成应经 onToolCall 回调一帧")
+	require.Equal(t, "get_current_time", toolCalls[0][0])
+	require.Equal(t, "{}", toolCalls[0][1])
+	require.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$`, toolCalls[0][2])
 
 	// 累计用量字段存在（假服务不带 usage，保持零值即可）
 	require.Zero(t, usage.TotalTokens)

@@ -38,6 +38,13 @@ interface ChatChunk {
   delta?: string;
 }
 
+interface ChatToolEvent {
+  conversationId?: number;
+  name?: string;
+  arguments?: string;
+  result?: string;
+}
+
 export default function AiChatPage() {
   const { t } = useTranslation('aiChat');
   const { message: antdMessage } = App.useApp();
@@ -126,6 +133,8 @@ export default function AiChatPage() {
 
   // ── 流式累积 ──────────────────────────────────────────────────────
   const [streamingText, setStreamingText] = useState('');
+  // 工具调用可见化：ai_chat_tool 帧按到达顺序累积，随流式气泡一并渲染
+  const [toolCalls, setToolCalls] = useState<ChatToolEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -147,10 +156,23 @@ export default function AiChatPage() {
     };
   }, []);
 
+  // SSE 订阅：ai_chat_tool —— 模型每次本地工具执行完成后的一帧
+  useEffect(() => {
+    const handler = (data: unknown) => {
+      const ev = data as ChatToolEvent;
+      if (!ev || typeof ev !== 'object' || !ev.name) return;
+      setToolCalls((prev) => [...prev, ev]);
+    };
+    globalSSEClient.on(SSE_EVENT.AIChatTool, handler);
+    return () => {
+      globalSSEClient.off(SSE_EVENT.AIChatTool, handler);
+    };
+  }, []);
+
   // 内容变化时滚到底
   useEffect(() => {
     scrollToBottom();
-  }, [messages.length, streamingText, scrollToBottom]);
+  }, [messages.length, streamingText, toolCalls.length, scrollToBottom]);
 
   // ── 发送 ──────────────────────────────────────────────────────────
   const [input, setInput] = useState('');
@@ -158,6 +180,7 @@ export default function AiChatPage() {
     onSuccess: (resp) => {
       setInput('');
       setStreamingText('');
+      setToolCalls([]);
       if (resp.conversation?.id) {
         setActiveId(resp.conversation.id);
       }
@@ -166,6 +189,7 @@ export default function AiChatPage() {
     },
     onError: (error: Error) => {
       setStreamingText('');
+      setToolCalls([]);
       antdMessage.error(error.message || t('chatFailed'));
     },
   });
@@ -331,7 +355,17 @@ export default function AiChatPage() {
                   {messages.map((msg) => (
                     <MessageBubble key={msg.id} message={msg} />
                   ))}
-                  {isStreaming && <StreamingBubble text={streamingText} />}
+                  {isStreaming && (
+                    <>
+                      {toolCalls.map((tc, i) => (
+                        <div key={`${i}-${tc.name}`} className="tool-call">
+                          <span className="tool-call__head">🛠 {tc.name}({tc.arguments})</span>
+                          <span className="tool-call__result">{tc.result}</span>
+                        </div>
+                      ))}
+                      <StreamingBubble text={streamingText} />
+                    </>
+                  )}
                 </>
               )}
             </div>
