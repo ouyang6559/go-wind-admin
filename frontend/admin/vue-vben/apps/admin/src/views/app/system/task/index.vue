@@ -1,7 +1,7 @@
 ﻿<script lang="ts" setup>
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, useVbenDrawer, type VbenFormProps } from '@vben/common-ui';
 import {
@@ -15,6 +15,7 @@ import {
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import SystemTasksModal from './system-tasks-modal.vue';
 import {
   type taskservicev1_ControlTaskRequest_ControlType as ControlTaskRequest_ControlType,
   type taskservicev1_Task as Task,
@@ -169,6 +170,8 @@ const gridOptions: VxeGridProps<Task> = {
 
 const exportFetcher = (page: number, pageSize: number) =>
   fetchListTasks(new PaginationQuery({ paging: { page, pageSize } }));
+
+const sysTasksOpen = ref(false);
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -342,6 +345,10 @@ async function handleEnableChanged(row: any, checked: boolean) {
           {{ $t('page.task.button.create') }}
         </a-button>
 
+        <a-button class="mr-2" @click="sysTasksOpen = true">
+          {{ $t('page.task.sysTasksButton') }}
+        </a-button>
+
         <a-popconfirm
           :cancel-text="$t('ui.button.cancel')"
           :ok-text="$t('ui.button.ok')"
@@ -465,6 +472,7 @@ async function handleEnableChanged(row: any, checked: boolean) {
         </a-popconfirm>
       </template>
     </Grid>
+    <SystemTasksModal v-model:open="sysTasksOpen" />
     <Drawer />
   </Page>
 </template>
