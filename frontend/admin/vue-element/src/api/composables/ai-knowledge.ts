@@ -1,5 +1,5 @@
 import { apiClient } from "@/api/client";
-import { PaginationQuery } from "@/core/transport/rest";
+import { makeUpdateMask, type PaginationQuery } from "@/core/transport/rest";
 
 // ==============================
 // AI 知识库（RAG：文档切片 → embedding → 向量检索）
@@ -15,13 +15,12 @@ export async function createAiKnowledgeBase(values: Record<string, any>) {
   return apiClient.aiKnowledgeBaseService.Create({ data: values as any });
 }
 
-/** 更新知识库（updateMask 显式列举业务字段） */
+/** 更新知识库 */
 export async function updateAiKnowledgeBase(id: number, values: Record<string, any>) {
-  const maskFields = ["name", "description", "providerId", "embeddingModel"];
   return apiClient.aiKnowledgeBaseService.Update({
     id,
-    data: values as any,
-    updateMask: maskFields.filter((f) => f in values).join(","),
+    data: { ...values } as any,
+    updateMask: makeUpdateMask(Object.keys(values ?? {})),
   });
 }
 

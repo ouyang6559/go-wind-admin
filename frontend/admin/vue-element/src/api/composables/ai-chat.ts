@@ -1,5 +1,5 @@
 import { apiClient } from "@/api/client";
-import { PaginationQuery } from "@/core/transport/rest";
+import { makeUpdateMask, type PaginationQuery } from "@/core/transport/rest";
 
 // ==============================
 // AI 对话（会话 / 消息 / 对话发起）
@@ -15,7 +15,7 @@ export async function updateAiConversation(id: number, values: Record<string, an
   return apiClient.aiConversationService.Update({
     id,
     data: values as any,
-    updateMask: Object.keys(values ?? {}).join(","),
+    updateMask: makeUpdateMask(Object.keys(values ?? {})),
   });
 }
 

@@ -1,5 +1,5 @@
 import { apiClient } from "@/api/client";
-import { PaginationQuery } from "@/core/transport/rest";
+import { makeUpdateMask, type PaginationQuery } from "@/core/transport/rest";
 
 // ==============================
 // AI 模型提供商（平台级配置）
@@ -19,35 +19,15 @@ export async function createAiProvider(values: Record<string, any>) {
 }
 
 /**
- * 更新 AI 提供商：apiKey 留空表示不修改已存值（此时该字段不进 updateMask，
- * 避免空值经 FieldMask 被当成"显式清空"把已存的 Key 抹掉）。
+ * 更新 AI 提供商。apiKey 空值/非空的语义由服务端 Update 分支统一裁决
+ * （空值→摘 mask 清 DTO、保留已存 key；非空→加密落库并刷新 hint），
+ * 前端不做预处理，按传入键统一构建 updateMask。
  */
 export async function updateAiProvider(id: number, values: Record<string, any>) {
-  const payload: Record<string, any> = { ...values };
-  const maskFields = [
-    "name",
-    "modelType",
-    "modelName",
-    "baseUrl",
-    "organization",
-    "localHost",
-    "localPort",
-    "timeoutSeconds",
-    "systemPrompt",
-    "isDefault",
-    "isEnabled",
-    "remark",
-  ];
-  if (payload.apiKey) {
-    maskFields.push("apiKey");
-  } else {
-    delete payload.apiKey;
-  }
-  delete payload.apiKeyHint;
   return apiClient.aiProviderService.Update({
     id,
-    data: payload as any,
-    updateMask: maskFields.join(","),
+    data: { ...values } as any,
+    updateMask: makeUpdateMask(Object.keys(values ?? {})),
   });
 }
 
