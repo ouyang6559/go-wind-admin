@@ -43,6 +43,9 @@ import AccountBindPage from "./account-bind-page.vue";
 import SecureSettingPage from "./secure-setting-page.vue";
 import MySessionsPage from "./my-sessions-page.vue";
 import NotificationPreferencePage from "./notification-preference-page.vue";
+import TenantUsagePanel from "./tenant-usage-panel.vue";
+import { useMyTenantUsage } from "@/api/composables";
+import { useAppUserStore } from "@/stores";
 
 import { $t } from "@/core/i18n";
 
@@ -86,6 +89,14 @@ const settingList = [
     name: $t("pages.user.profile.tab.notification"),
     component: NotificationPreferencePage,
   },
+  // 套餐用量：仅租户用户展示（平台用户 tenantId=0 无套餐语义）
+  ...((useAppUserStore().userInfo?.tenantId ?? 0) > 0
+    ? [{
+        key: "7",
+        name: $t("pages.user.profile.tab.tenantUsage"),
+        component: TenantUsagePanel,
+      }]
+    : []),
 ];
 </script>
 

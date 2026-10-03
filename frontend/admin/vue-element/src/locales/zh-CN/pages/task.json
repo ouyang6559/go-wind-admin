@@ -52,5 +52,14 @@
   "sysTaskNoFailures": "没有失败记录。",
   "sysTaskLoading": "读取中…",
   "sysTaskLoadFailed": "读取失败",
-  "sysTaskRefresh": "刷新"
+  "sysTaskRefresh": "刷新",
+  "tenantUsagePlan": "当前套餐：",
+  "tenantUsageNoPlan": "未订阅套餐",
+  "tenantUsageEmpty": "当前账号无套餐用量数据。",
+  "tenantUsageLoading": "加载中…",
+  "tenantUsageReached": "已达上限",
+  "quota_USER_LIMIT": "用户数",
+  "quota_STORAGE": "存储空间 (MB)",
+  "quota_API_CALL": "API 调用次数",
+  "quota_AI_TOKENS": "AI Token 用量"
 }

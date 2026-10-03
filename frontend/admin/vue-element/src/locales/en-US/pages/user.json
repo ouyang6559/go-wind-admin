@@ -7,7 +7,8 @@
       "securitySettings": "Security Settings",
       "accountBind": "Account Bind",
       "activeSessions": "Active Sessions",
-      "notification": "Notifications"
+      "notification": "Notifications",
+      "tenantUsage": "Plan Usage"
     },
     "notification": {
       "quietTitle": "Quiet Hours",

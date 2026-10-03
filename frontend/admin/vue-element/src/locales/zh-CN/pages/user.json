@@ -7,7 +7,8 @@
       "securitySettings": "安全设置",
       "accountBind": "账号绑定",
       "activeSessions": "活跃会话",
-      "notification": "通知偏好"
+      "notification": "通知偏好",
+      "tenantUsage": "套餐用量"
     },
     "notification": {
       "quietTitle": "静音时段",

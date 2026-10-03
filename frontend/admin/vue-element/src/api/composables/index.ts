@@ -79,6 +79,7 @@ export * from "./notification-template";
 export * from "./monitor-alert";
 export * from "./audit-export";
 export * from "./task-monitor";
+export * from "./my-tenant-usage";
 
 // 首页分析概览
 export * from "./dashboard";

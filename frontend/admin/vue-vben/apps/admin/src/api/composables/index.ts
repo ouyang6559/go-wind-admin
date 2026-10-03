@@ -70,6 +70,7 @@ export * from './notification-rule';
 export * from './notification-template';
 export * from './monitor-alert';
 export * from './audit-export';
+export * from './my-tenant-usage';
 export * from './task-monitor';
 export * from './sso';
 export * from './tenant-branding';
