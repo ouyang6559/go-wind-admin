@@ -259,10 +259,12 @@ func (s *AiQueryService) generateSQL(ctx context.Context, client *openai.Client,
 				"GROUP BY r.id, r.name ORDER BY user_count DESC LIMIT 100",
 		},
 	)
-	for _, h := range history {
+	// 下标访问而非按值 range：AiQueryHistoryItem 内嵌 protoimpl.MessageState
+	// （含 sync.Mutex），按值拷贝会连带复制锁。
+	for i := range history {
 		messages = append(messages,
-			openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: h.GetQuestion()},
-			openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: h.GetSql()},
+			openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: history[i].GetQuestion()},
+			openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant, Content: history[i].GetSql()},
 		)
 	}
 	messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleUser, Content: question})
