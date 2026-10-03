@@ -40,6 +40,9 @@
 | `broadcast_message` | `InternalMessageService.AsyncBroadcastMessage` | 一次性、幂等（见 5.4） |
 | `notification_dispatch` | `NotificationService.AsyncNotificationDispatch` | 一次性、幂等（见 5.5） |
 | `notification_delivery_sweep` | `NotificationService.AsyncDeliverySweep` | 系统级 cron，每 5 分钟（见 5.6） |
+| `monitor_alert_scan` | `MonitorAlertService.AsyncMonitorAlertScan` | 系统级 cron，每 5 分钟（评估启用的告警规则；handler 在监控告警域） |
+| `ai_audit_digest` | `AiDigestService.AsyncAiAuditDigest` | 系统级 cron，每日 08:00（见 [ai_module.md](./ai_module.md)「审计日报」） |
+| `plan_quota_watermark_scan` | `PlanQuotaWatermarkService.AsyncPlanQuotaWatermarkScan` | 系统级 cron，每日 09:00（见 5.7、[plan_billing.md](./plan_billing.md) §7.3） |
 | `script_task` | `ScriptRuntime.RunScriptTaskHandler`（经桥） | sys_tasks 型 PERIODIC，载荷带处理器名（见 6） |
 
 订阅有两种形态：`RegisterSubscriber[T]` 的 handler 签名不带 ctx，`RegisterSubscriberWithCtx[T]`
@@ -163,6 +166,17 @@ cron `*/5 * * * *`（`pkg/task/notification_delivery_sweep.go`）。把 `sys_not
 - **运行期实测（2026-09-20）**：见通知域 §4 P2-4 的观测表。P2-5 又跑了一轮更狠的：结论回写被 Postgres
   触发器挡下 ⇒ 同一行 4 次尝试全部写不回、最后由本任务定案（`attempts=4` 保留），期间清扫任务自己也被
   同一个故障咬了一次并靠 asynq 重试自愈 —— 见通知域 §4 P2-5 的观测表。
+
+### 5.7 套餐配额水位扫描（`plan_quota_watermark_scan`）
+
+系统级常驻 cron（每日 09:00，`pkg/task/plan_quota_watermark.go`），不写入 `sys_tasks`；调度项在
+`startAllTask` 末尾与其他系统级任务同构注册（`RestartAllTask` 后必然恢复），handler 在
+`NewAsynqServer` 注册订阅（本节上方表格）。
+
+语义、阈值与投递形态的全部细节见 [plan_billing.md](./plan_billing.md) §7.3。要点：只读扫描，用量源与
+该文档 §7.1 计量完全同源；达到 80% 水位的 ON 租户按其管理员偏好语言投递站内信告警（一个租户一条消息）；
+扫描频率即告警频率上限。投递复用审计日报的站内信内核（消息行 + 收件行；单收件人失败不阻断、全部失败才
+报错重试）。判定与百分数是纯函数、有单测；扫描另有 SQLite 接线级单测与文案表双语单测。
 
 ## 6. 脚本任务桥（`script_task`）
 

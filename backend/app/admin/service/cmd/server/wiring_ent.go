@@ -290,6 +290,10 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 依赖 scriptRuntime 与 internalMessageService，故置二者之后。
 	auditDigestService := service.NewAiDigestService(ctx, operationAuditLogRepo, internalMessageService, internalMessageRepo, scriptRuntime, entClient)
 
+	// 套餐配额水位通知：用量扫描（tenantUsageRepo/aiUsageLogRepo）+ 站内信投递内核。
+	// 依赖 internalMessageService，故置其后。
+	planQuotaWatermarkService := service.NewPlanQuotaWatermarkService(ctx, tenantUsageRepo, aiUsageLogRepo, internalMessageService, internalMessageRepo, entClient)
+
 	// 智能问数：NL→只读 SQL→结构化结果（四重护栏）+ 定时问数任务
 	aiQueryService := service.NewAiQueryService(ctx, aiProviderRepo, aiUsageLogRepo, entClient, internalMessageService, internalMessageRepo)
 	aiContentService := service.NewAiContentService(ctx, aiProviderRepo, aiUsageLogRepo, menuRepo, roleRepo, userRepo, entClient)
@@ -351,7 +355,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, notificationService, monitorAlertService, scriptRuntime, aiKnowledgeService, auditDigestService)
+	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService, notificationService, monitorAlertService, scriptRuntime, aiKnowledgeService, auditDigestService, planQuotaWatermarkService)
 	if err != nil {
 		rollback()
 		return nil, nil, err

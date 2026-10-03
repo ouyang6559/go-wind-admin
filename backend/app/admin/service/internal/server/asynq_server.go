@@ -17,7 +17,7 @@ import (
 )
 
 // NewAsynqServer creates a new asynq server.
-func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, monitorAlertService *service.MonitorAlertService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService, aiDigestService *service.AiDigestService) (*asynqServer.Server, error) {
+func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, monitorAlertService *service.MonitorAlertService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService, aiDigestService *service.AiDigestService, planQuotaWatermarkService *service.PlanQuotaWatermarkService) (*asynqServer.Server, error) {
 	cfg := ctx.GetConfig()
 
 	if cfg == nil || cfg.Server == nil || cfg.Server.Asynq == nil {
@@ -83,6 +83,15 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 	// 审计日报 AI 摘要 handler（系统级常驻 cron，每日 08:00）。
 	if aiDigestService != nil {
 		if err = asynqServer.RegisterSubscriber(srv, task.AiAuditDigestTaskType, aiDigestService.AsyncAiAuditDigest); err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
+	// 套餐配额水位扫描 handler（系统级常驻 cron，每日 09:00）：
+	// 扫描全部 ON 租户四类配额水位，命中租户的告警站内信投递其管理员。
+	if planQuotaWatermarkService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.PlanQuotaWatermarkTaskType, planQuotaWatermarkService.AsyncPlanQuotaWatermarkScan); err != nil {
 			log.Error(err)
 			return nil, err
 		}

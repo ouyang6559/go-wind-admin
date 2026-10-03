@@ -31,6 +31,7 @@
 | BLOCK_LOGIN/FREEZE 执行 | 状态映射 + 令牌吊销 | `internal/data/tenant_usage_repo.go` `EnforceExpiryPolicies` + `internal/service/task_service.go` `AsyncTenantExpiryScan` |
 | 用量计量 | 用户数 / 存储字节 / API 调用次数聚合 | `tenant_usage_repo.go` `GetUsage`——**只有 ent 一套是真的**；gorm 镜像是未实现脚手架（见 §4 末） |
 | 配额硬执行 | 见 §7.2：USER_LIMIT / STORAGE 在资源创建入口、API_CALL 在租户闸门第 4 段（`internal/data/quota_gate.go`）；AI_TOKENS 在 AI 对话路径（[ai_module.md](./ai_module.md)） | `quota_enforcer.go`、`internal/data/quota_gate.go`、`ai_chat_service.go` `checkTokenQuota` |
+| 水位扫描与通知 | 见 §7.3：只读扫描（与 §7.1 计量同源）+ 站内信告警租户管理员；调度链见 [task_system.md](./task_system.md) §5.7 | `internal/data/quota_watermark_scan.go`、`plan_quota_watermark_service.go` |
 | 租户数据清理 | **29 张**带租户表事务硬删（全部 33 张里缺 4 张，见 §8） | `tenant_usage_repo.go` `CleanupTenantData` |
 
 ## 2. 数据模型
@@ -225,6 +226,30 @@ handler 为 `TaskService.AsyncTenantExpiryScan`。它**不在** sys_tasks 表（
   quota_enforcer.go）、`checkApiCallQuota`（data 层 quota_gate.go——闸门实现
   所在包，接口形状与 service 层不同、语义同一套）可单测；service 层新增受控
   类型 = quotaLimitFromUsages 复用 + 入口接线。
+
+### 7.3 水位通知（`plan_quota_watermark_scan`，2026-10-03）
+
+与 §7.2 的超限拒绝互补的**提前告警**：系统级常驻任务（每日 09:00，调度链见
+[task_system.md](./task_system.md) §5.7）扫描全部 ON 租户四类配额的用量水位，
+把达到阈值的租户情况经站内信通知租户管理员，让租户在到达上限、被 §7.2 拒绝之前
+有机会扩容。
+
+- 用量源与 §7.1 完全同源：用户数 / 存储字节 / API 调用行数复用
+  `CountUsersInTenant` / `SumStorageInTenant` / `CountApiCallsInTenant`
+  （API 调用一项自此从 GetUsage 内联抽取为独立访问器，两处共用），AI_TOKENS
+  为月度口径（`SumTokensByTenantSince`，本月 1 日起）；
+- 阈值 80% 是运维口径常量（`data.QuotaWatermarkThreshold`，无配置面）；
+  limit==0 且已有用量视为 100% 命中（配 0 上限且已用量 = 事实超限）；
+- 只读扫描：不拒绝请求、不写业务行；单维度计量查询失败记日志后跳过该维度，
+  扫描不因计量抖动中断，也不因缺数据误报其余维度；
+- 投递：命中按租户归组（一租户一条消息、多维度命中合并为同一张清单），按租户
+  管理员（`sys_tenants.admin_user_id`）的偏好语言（zh-CN/en-US，未设置或未识别
+  回落中文）渲染并投递站内信——投递内核与审计日报同一条（消息行 + 收件行、
+  静音时段只抑制实时推送、单人失败不阻断其余、全部失败才报错重试）；
+  未设管理员的命中租户只留运维日志、不投递；
+- 告警频率上限 = 扫描频率（每日至多一条/租户），无"已通知"状态；
+- 测试：判定与百分数纯函数单测、SQLite 接线级扫描单测（四租户布局：命中 /
+  未达阈值 / OFF 状态过滤 / 无配额套餐跳过）、文案表双语单测。
 
 ## 8. 租户数据清理（`CleanupTenantData`）
 

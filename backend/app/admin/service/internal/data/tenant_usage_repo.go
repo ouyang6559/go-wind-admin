@@ -97,6 +97,15 @@ func (r *TenantUsageRepo) SumStorageInTenant(ctx context.Context, tenantID uint3
 	return 0, nil
 }
 
+// CountApiCallsInTenant 统计租户 API 调用行数（API_CALL 配额检查与水位扫描用）。
+// 与 GetUsage 的 ApiCallCount 同源（sys_api_audit_logs 按租户 COUNT）。
+func (r *TenantUsageRepo) CountApiCallsInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
+	cnt, err := r.entClient.Client().ApiAuditLog.Query().
+		Where(apiauditlog.TenantIDEQ(tenantID)).
+		Count(ctx)
+	return uint64(cnt), err
+}
+
 func (r *TenantUsageRepo) GetUsage(ctx context.Context, tenantId uint32) (*identityV1.TenantUsage, error) {
 	sysCtx := appViewer.NewSystemViewerContext(ctx)
 
@@ -157,14 +166,12 @@ func (r *TenantUsageRepo) GetUsage(ctx context.Context, tenantId uint32) (*ident
 	usage.StorageUsedBytes = storageSum
 
 	// 5. API 调用量统计
-	apiCount, aerr := r.entClient.Client().ApiAuditLog.Query().
-		Where(apiauditlog.TenantIDEQ(tenantId)).
-		Count(sysCtx)
+	apiCount, aerr := r.CountApiCallsInTenant(sysCtx, tenantId)
 	if aerr != nil {
 		r.log.Errorf(ctx, "get usage: count api audit logs failed: %v", aerr)
 		apiCount = 0
 	}
-	usage.ApiCallCount = uint64(apiCount)
+	usage.ApiCallCount = apiCount
 
 	return usage, nil
 }
