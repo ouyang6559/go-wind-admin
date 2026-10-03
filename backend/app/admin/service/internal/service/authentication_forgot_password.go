@@ -13,7 +13,6 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
-	"go-wind-admin/pkg/mailtext"
 )
 
 // generateVCode 生成 6 位数字验证码。
@@ -49,7 +48,7 @@ func (s *AuthenticationService) ForgotPassword(ctx context.Context, req *authent
 
 	// 文案按请求的 Accept-Language 选语言：这一步在免鉴权白名单上，上下文里没有
 	// token 级的 locale 可用，请求头是唯一入口（见 pkg/mailtext 包注释）。
-	title, content := mailtext.PasswordResetCode(ctx, code)
+	title, content := renderPwdResetCode(ctx, s.mailer, code)
 	resp, err := s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
 		EventType:       notificationV1.EventType_PASSWORD_RESET_CODE,
 		Target:          identifier,

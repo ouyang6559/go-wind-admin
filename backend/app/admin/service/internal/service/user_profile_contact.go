@@ -11,7 +11,6 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
-	"go-wind-admin/pkg/mailtext"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -22,7 +21,7 @@ func (s *UserProfileService) sendContactVCode(ctx context.Context, contact strin
 		return authenticationV1.ErrorInternalServerError("save verification code failed")
 	}
 
-	title, content := mailtext.ContactBindCode(ctx, code)
+	title, content := renderContactBindCode(ctx, s.mailer, code)
 	resp, err := s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
 		EventType: notificationV1.EventType_CONTACT_BIND_CODE,
 		Target:    contact,

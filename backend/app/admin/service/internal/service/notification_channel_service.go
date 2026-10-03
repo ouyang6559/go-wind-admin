@@ -14,7 +14,6 @@ import (
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 	notificationChannelV1 "go-wind-admin/api/gen/go/notification_channel/service/v1"
 
-	"go-wind-admin/pkg/mailtext"
 	"go-wind-admin/pkg/middleware/auth"
 
 	"go-wind-admin/app/admin/service/internal/data"
@@ -30,17 +29,20 @@ type NotificationChannelService struct {
 	repo *data.NotificationChannelRepo
 
 	notifier Notifier
+	mailer   *TransactionMailer
 }
 
 func NewNotificationChannelService(
 	ctx *bootstrap.Context,
 	repo *data.NotificationChannelRepo,
 	notifier Notifier,
+	mailer *TransactionMailer,
 ) *NotificationChannelService {
 	return &NotificationChannelService{
 		log:      ctx.NewLoggerHelper("notification-channel/service/admin-service"),
 		repo:     repo,
 		notifier: notifier,
+		mailer:   mailer,
 	}
 }
 
@@ -142,7 +144,7 @@ func (s *NotificationChannelService) SendTestEmail(ctx context.Context, req *not
 		return nil, err
 	}
 
-	title, body := mailtext.ChannelTestEmail(ctx, req.GetId(), operator.UserId)
+	title, body := renderChannelTestEmail(ctx, s.mailer, req.GetId(), operator.UserId)
 
 	if _, err = s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
 		EventType:      notificationV1.EventType_CHANNEL_TEST_EMAIL,

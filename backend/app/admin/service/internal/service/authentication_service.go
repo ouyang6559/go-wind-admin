@@ -192,6 +192,7 @@ type AuthenticationService struct {
 	// 此前这里持有 notificationChannelRepo 并直接调 mailer.SendMail——渠道选择策略
 	// 与 SMTP 细节因此散落到登录链路里，改一处漏一处。
 	notifier Notifier
+	mailer   *TransactionMailer
 }
 
 func NewAuthenticationService(
@@ -214,6 +215,7 @@ func NewAuthenticationService(
 	mfaChallengeCache *data.MfaChallengeCache,
 	ssoStateCache *data.SsoStateCache,
 	geoClient *geolite.Client,
+	mailer *TransactionMailer,
 	vcodeCache *data.VCodeCache,
 	notifier Notifier,
 ) *AuthenticationService {
@@ -237,6 +239,7 @@ func NewAuthenticationService(
 		mfaChallengeCache:       mfaChallengeCache,
 		ssoStateCache:           ssoStateCache,
 		geoClient:               geoClient,
+		mailer:                  mailer,
 		vcodeCache:              vcodeCache,
 		notifier:                notifier,
 	}

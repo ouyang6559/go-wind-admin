@@ -32,7 +32,8 @@ type UserProfileService struct {
 	vcodeCache *data.VCodeCache
 	mc         *oss.MinIOClient
 
-	log *bLogger.Helper
+	log    *bLogger.Helper
+	mailer *TransactionMailer
 }
 
 func NewUserProfileService(
@@ -44,6 +45,7 @@ func NewUserProfileService(
 	notifier Notifier,
 	vcodeCache *data.VCodeCache,
 	mc *oss.MinIOClient,
+	mailer *TransactionMailer,
 ) *UserProfileService {
 	return &UserProfileService{
 		log:                ctx.NewLoggerHelper("user-profile/service/admin-service"),
@@ -54,6 +56,7 @@ func NewUserProfileService(
 		notifier:           notifier,
 		vcodeCache:         vcodeCache,
 		mc:                 mc,
+		mailer:             mailer,
 	}
 }
 

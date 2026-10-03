@@ -1197,6 +1197,8 @@ user_id 从操作人钉定，映射进 INTERNAL_MESSAGE 模块供 Api 表闸门�
 种子菜单 id 101（/notification/templates）；已部署实例落地 = 「接口同步」+「菜单同步」+ 权限勾选。
 react 先行页面已落（/notification/templates，预览弹窗结果就地展示）；ele/vben 页面移植待做。
 
+**事务性邮件已接入模板覆写（2026-10-03）**：找回密码/换绑验证码/渠道测试/规则测试通知四类出站按约定 code（pwd_reset_code / contact_bind_code / channel_test_email / rule_test_notification）查模板渲染，缺失/停用/渲染失败静默回落 mailtext 内置文案——事务性邮件是认证关键路径，模板配置问题绝不阻断发送（与 SendDirect 显式 template_code 的报错语义分级不同：隐式覆写回落、显式点名报错）。实现 transactional_mail.go，TransactionMailer 注入 AuthenticationService/UserProfileService/NotificationChannelService。
+
 ## 5. 与 go-wind-im 的可抄性对照
 
 | IM 的做法 | 结论 |

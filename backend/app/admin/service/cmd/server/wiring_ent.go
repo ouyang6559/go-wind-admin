@@ -154,6 +154,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// ── register:repo ── 新模块仓储在此行后注册(make register 工具锚点,勿删)
 	notificationRuleRepo := data.NewNotificationRuleRepo(ctx, entClient)
 	notificationTemplateRepo := data.NewNotificationTemplateRepo(ctx, entClient)
+	transactionalMailer := &service.TransactionMailer{TemplateRepo: notificationTemplateRepo}
 	monitorAlertRuleRepo := data.NewMonitorAlertRuleRepo(ctx, entClient)
 	accessKeyRepo := data.NewAccessKeyRepo(ctx, entClient)
 
@@ -190,13 +191,13 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	taskMonitorService := service.NewTaskMonitorService(ctx)
 
 	// 认证与登录策略
-	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, ssoStateCache, geoClient, vcodeCache, notificationService)
+	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, ssoStateCache, geoClient, transactionalMailer, vcodeCache, notificationService)
 	mfaService := service.NewMfaService(ctx, userMfaFactorRepo, mfaChallengeCache, authenticator, loginRateLimiter, userRepo)
 	loginPolicyService := service.NewLoginPolicyService(ctx, loginPolicyRepo)
 
 	// 身份与组织
 	userService := service.NewUserService(ctx, userRepo, roleRepo, userCredentialRepo, positionRepo, orgUnitRepo, tenantRepo, tenantUsageRepo, membershipRepo, authenticator)
-	userProfileService := service.NewUserProfileService(ctx, userRepo, roleRepo, userCredentialRepo, authenticator, notificationService, vcodeCache, minioClient)
+	userProfileService := service.NewUserProfileService(ctx, userRepo, roleRepo, userCredentialRepo, authenticator, notificationService, vcodeCache, minioClient, transactionalMailer)
 	positionService := service.NewPositionService(ctx, positionRepo, orgUnitRepo)
 	orgUnitService := service.NewOrgUnitService(ctx, orgUnitRepo, userRepo)
 
@@ -234,7 +235,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 运维观测与门户
 	redisCacheMonitorService := service.NewRedisCacheMonitorService(ctx, redisCacheMonitorRepo)
 	serverMonitorService := service.NewServerMonitorService(ctx, serverMonitorRepo)
-	notificationChannelService := service.NewNotificationChannelService(ctx, notificationChannelRepo, notificationService)
+	notificationChannelService := service.NewNotificationChannelService(ctx, notificationChannelRepo, notificationService, transactionalMailer)
 	onlineSessionService := service.NewOnlineSessionService(ctx, authenticator)
 	adminPortalService := service.NewAdminPortalService(ctx, menuRepo, roleRepo, userRepo, permissionRepo, planModuleRepo, tenantRepo)
 
