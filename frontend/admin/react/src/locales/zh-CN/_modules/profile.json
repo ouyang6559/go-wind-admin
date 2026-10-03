@@ -106,5 +106,7 @@
       "API_CALL": "API 调用次数",
       "AI_TOKENS": "AI Token 用量"
     }
-  }
+  },
+  "locale": "偏好语言",
+  "localePlaceholder": "跟随浏览器语言"
 }

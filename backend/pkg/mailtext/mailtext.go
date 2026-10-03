@@ -69,13 +69,41 @@ var tables = map[Locale]mailCopy{
 	},
 }
 
-// Resolve 取 ctx 所在请求的邮件语言。
+// Resolve 取邮件语言：显式 locale（WithLocale 注入，来自收件用户的偏好设置）
+// 优先；未设置时回落请求 Accept-Language 头；均无则默认 zh-CN。
 func Resolve(ctx context.Context) Locale {
+	if v := ctx.Value(localeContextKey{}); v != nil {
+		if loc, ok := v.(Locale); ok {
+			return loc
+		}
+	}
 	header := netutil.HeaderFromContext(ctx)
 	if header == nil {
 		return defaultLocale
 	}
 	return localeOf(header.Get(headerAcceptLanguage))
+}
+
+// localeContextKey WithLocale 注入的显式语言键。
+type localeContextKey struct{}
+
+// WithLocale 显式指定邮件语言（如收件用户的偏好设置），覆盖请求头判定。
+// 找回密码这类免鉴权流程在拿到用户后调用，验证码邮件即按用户偏好渲染。
+func WithLocale(ctx context.Context, locale Locale) context.Context {
+	return context.WithValue(ctx, localeContextKey{}, locale)
+}
+
+// LocaleOfTag 把 BCP-47 风格标签（zh-CN/en-US/zh/en）归一为受支持的 Locale；
+// 不识别返回 ok=false（调用方保持默认）。
+func LocaleOfTag(tag string) (Locale, bool) {
+	base, _, _ := strings.Cut(strings.ToLower(strings.TrimSpace(tag)), "-")
+	switch base {
+	case "zh":
+		return LocaleZhCN, true
+	case "en":
+		return LocaleEnUS, true
+	}
+	return defaultLocale, false
 }
 
 // localeOf 按列表顺序取第一个受支持的语言，只比主语言子标签（zh / en），不解析 q 权重：

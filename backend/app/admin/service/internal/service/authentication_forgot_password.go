@@ -13,6 +13,8 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
+
+	"go-wind-admin/pkg/mailtext"
 )
 
 // generateVCode 生成 6 位数字验证码。
@@ -46,8 +48,15 @@ func (s *AuthenticationService) ForgotPassword(ctx context.Context, req *authent
 		return nil, authenticationV1.ErrorInternalServerError("save verification code failed")
 	}
 
-	// 文案按请求的 Accept-Language 选语言：这一步在免鉴权白名单上，上下文里没有
-	// token 级的 locale 可用，请求头是唯一入口（见 pkg/mailtext 包注释）。
+	// 文案语言：优先收件用户的偏好 locale（个人中心设置），未设置回落请求
+	// Accept-Language（mailtext.Resolve 的兜底链）。
+	if user, uErr := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
+		QueryBy: &identityV1.GetUserRequest_Id{Id: userId},
+	}); uErr == nil && user.GetLocale() != "" {
+		if loc, ok := mailtext.LocaleOfTag(user.GetLocale()); ok {
+			ctx = mailtext.WithLocale(ctx, loc)
+		}
+	}
 	title, content := renderPwdResetCode(ctx, s.mailer, code)
 	resp, err := s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
 		EventType:       notificationV1.EventType_PASSWORD_RESET_CODE,

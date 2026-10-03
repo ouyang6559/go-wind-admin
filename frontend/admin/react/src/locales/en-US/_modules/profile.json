@@ -106,5 +106,7 @@
       "API_CALL": "API calls",
       "AI_TOKENS": "AI tokens"
     }
-  }
+  },
+  "locale": "Preferred language",
+  "localePlaceholder": "Follow browser language"
 }

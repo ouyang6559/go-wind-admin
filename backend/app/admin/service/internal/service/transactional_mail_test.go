@@ -10,6 +10,8 @@ import (
 
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/pkg/mailtext"
+
 	"go-wind-admin/app/admin/service/internal/data/enttest"
 )
 
@@ -83,4 +85,22 @@ func TestRenderChannelTestEmailTemplate(t *testing.T) {
 	title, content := renderChannelTestEmail(ctx, mailer, 42, 7)
 	require.Equal(t, "渠道 42 测试", title)
 	require.Equal(t, "操作人 7 发起的测试邮件。", content)
+}
+
+// TestRenderRespectsWithLocale 邮件语言显式指定：mailtext.WithLocale 注入后
+// 内置文案走对应语言表（模板缺失回落路径）。
+func TestRenderRespectsWithLocale(t *testing.T) {
+	entClient := enttest.NewEntClientForTest(t)
+	mailer := &TransactionMailer{TemplateRepo: data.NewNotificationTemplateRepoForTest(entClient)}
+	ctx := enttest.NewSystemViewerCtx(context.Background())
+
+	// en locale + 无模板 → mailtext 内置英文文案
+	ctxEn := mailtext.WithLocale(ctx, mailtext.LocaleEnUS)
+	title, content := renderPwdResetCode(ctxEn, mailer, "ABC123")
+	require.Contains(t, title, "password reset", "en locale 应回落英文内置文案")
+	require.Contains(t, content, "ABC123")
+
+	// 默认（无显式 locale）→ 中文
+	titleZh, _ := renderPwdResetCode(ctx, mailer, "ABC123")
+	require.Contains(t, titleZh, "重置", "默认 zh-CN 内置文案")
 }

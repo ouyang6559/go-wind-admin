@@ -174,6 +174,7 @@ const UserProfile = () => {
                         region: user?.region || '',
                         address: user?.address || '',
                         remark: user?.remark || '',
+                        locale: user?.locale || '',
                       }}
                       style={{ maxWidth: 500 }}
                     >
@@ -203,6 +204,17 @@ const UserProfile = () => {
 
                       <Form.Item name="region" label={t('region')}>
                         <Input placeholder={t('regionPlaceholder')} />
+                      </Form.Item>
+
+                      <Form.Item name="locale" label={t('locale')}>
+                        <Select
+                          placeholder={t('localePlaceholder')}
+                          allowClear
+                          options={[
+                            { value: 'zh-CN', label: '中文' },
+                            { value: 'en-US', label: 'English' },
+                          ]}
+                        />
                       </Form.Item>
 
                       <Form.Item name="address" label={t('address')}>

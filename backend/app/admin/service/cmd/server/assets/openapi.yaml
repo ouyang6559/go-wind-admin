@@ -13866,6 +13866,9 @@ components:
                 region:
                     type: string
                     description: 国家地区
+                locale:
+                    type: string
+                    description: 偏好语言（zh-CN/en-US，空=跟随请求）
                 description:
                     type: string
                     description: 个人描述

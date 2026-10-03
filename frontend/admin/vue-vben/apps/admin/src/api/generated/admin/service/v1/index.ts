@@ -12634,6 +12634,8 @@ export type identityservicev1_User = {
   id?: number;
   lastLoginAt?: wellKnownTimestamp;
   lastLoginIp?: string;
+  // 偏好语言：事务性邮件（找回密码/换绑验证码）按此渲染；空 = 按请求 Accept-Language。
+  locale?: string;
   lockedUntil?: wellKnownTimestamp;
   mobile?: string;
   nickname?: string;
