@@ -3,13 +3,13 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
 import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, Switch, App } from 'antd';
-import {
-  EditOutlined,
+import { EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   CaretRightOutlined,
   PauseOutlined,
   ReloadOutlined,
+  CloudServerOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ import {
 } from '@/api/hooks/task';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import SystemTasksModal from './SystemTasksModal';
 import { getTaskTypeMap, getTaskTypeOptions } from './constants';
 import TaskDrawer from './components/TaskDrawer';
 
@@ -42,6 +43,7 @@ const TaskManagement = () => {
   const tableScrollY = useProTableScrollY(containerRef);
 
   // Drawer 状态管理
+const [sysTasksOpen, setSysTasksOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [selectedTask, setSelectedTask] = useState<Task | undefined>();
@@ -305,6 +307,13 @@ const TaskManagement = () => {
             toolBarRender={() => [
               <TableExportButton key="export" fetcher={fetchListTasks} columns={columns} filename="tasks" />,
               <Button
+                key="sysTasks"
+                icon={<CloudServerOutlined />}
+                onClick={() => setSysTasksOpen(true)}
+              >
+                {t('sysTasksButton')}
+              </Button>,
+              <Button
                 key="create"
                 type="primary"
                 icon={<PlusOutlined />}
@@ -380,6 +389,10 @@ const TaskManagement = () => {
           />
         </div>
       </ContentContainer>
+      <SystemTasksModal
+        open={sysTasksOpen}
+        onClose={() => setSysTasksOpen(false)}
+      />
 
       {/* 任务编辑/创建 Drawer */}
       <TaskDrawer

@@ -183,6 +183,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// 审计日志服务端导出（XLSX/CSV）：手动注册二进制响应路由，见 rest_server 的 registerFileTransfer 同段
 	auditExportService := service.NewAuditExportService(ctx, loginAuditLogRepo, apiAuditLogRepo, operationAuditLogRepo, dataAccessAuditLogRepo, permissionAuditLogRepo, accessTokenChecker)
+	// 系统级常驻任务监控（只读 asynq Inspector）
+	taskMonitorService := service.NewTaskMonitorService(ctx)
 
 	// 认证与登录策略
 	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, vcodeCache, notificationService)
@@ -323,6 +325,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		notificationTemplateService,
 		monitorAlertService,
 		auditExportService,
+		taskMonitorService,
 		accessKeyService,
 		configService,
 		aiProviderService,
