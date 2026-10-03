@@ -13,7 +13,8 @@
                         ├─ auth.NewContext（operator，业务层读）
                         ├─ viewer.WithContext(UserViewer)   ← 隔离层的判定依据
                         └─ metadata（OperatorMetadata）
-                [租户闸门]   tid>0 时：租户状态 → 到期只读 → 套餐模块白名单   ← 全 fail-closed
+                [租户闸门]   tid>0 时：租户状态 → 到期只读 → 套餐模块白名单 → API_CALL 配额
+                             （前三段 fail-closed；配额段 fail-open——无配额条目/计量失败放行）
                 [authz 引擎] 接口级授权（见 frontend_authority/教程05）
                         │
                         ▼
@@ -24,7 +25,7 @@
 
 | 层 | 拦什么 | 实现位置 |
 |---|---|---|
-| HTTP 闸门 | 租户身份下的**接口可达性**（状态/到期/套餐白名单） | `pkg/middleware/auth/auth.go`（调用方）+ `internal/data/tenant_access_checker.go`（实现） |
+| HTTP 闸门 | 租户身份下的**接口可达性**（状态/到期/套餐白名单/API_CALL 配额） | `pkg/middleware/auth/auth.go`（调用方）+ `internal/data/tenant_access_checker.go`（实现） |
 | ent 读隔离 | 查询行的 **tenant_id 归属** | go-crud `rule.TenantPrivacy.EvalQuery`（v0.0.55，经 `mixin.TenantID` 编译） |
 | ent 写隔离 | 变更行（Update/UpdateOne/Delete/DeleteOne）的 tenant_id 归属 + tenant_id 改值防护 | 库层 `TenantPrivacy.EvalMutation`（v0.0.55 起）+ 仓内 `schema/tenant_mutation_guard.go`（全部带租户表的冗余层） |
 | Create 防伪造 | 租户上下文 Create 强制覆盖 tenant_id 为 viewer.tid | 库层 `TenantPrivacy.EvalMutation` Create 分支 |
@@ -43,7 +44,7 @@
 | `sys_tenants` | 租户行：`status`（ON/OFF/EXPIRED/FREEZE，仅 ON 可用）、`type`、`audit_status`、`expired_at`、套餐关联 |
 | `sys_plans` | 套餐：`version`、`expiry_policy`（READONLY / BLOCK_LOGIN / FREEZE，默认 READONLY） |
 | `sys_plan_modules` | 套餐 → 业务模块白名单（闸门第 3 段的判定源） |
-| `sys_plan_quotas` | 套餐配额（另行核查，不参与闸门） |
+| `sys_plan_quotas` | 套餐配额：闸门第 4 段经第 1 段预载读其 API_CALL 上限；其余类型在各资源入口与 AI 对话路径执行（[plan_billing.md](./plan_billing.md) §7.2、[ai_module.md](./ai_module.md)） |
 
 平台级表（无 tenant_id，跨租户可见）：`sys_tenants`/`sys_plans` 本身、`sys_apis`、菜单、权限点/权限组、
 语言等。租户表与平台表的划分**以 schema 是否装配 `mixin.TenantID[uint32]{}` 为准**，不靠命名约定。
@@ -114,13 +115,14 @@ UNSPECIFIED 剔除、空集不兜底（交库规则 fail-closed），语义见 d
 - 匹配键是 **`htr.PathTemplate()`（路由模板）+ HTTP method**，不是原始 path——
   Api 表存的是 OpenAPI 文档里的路由模板（如 `/admin/v1/users/{id}`），带路径参数的请求按模板命中。
 
-### 4.2 三段检查（`tenant_access_checker.go`，全部 fail-closed）
+### 4.2 四段检查（`tenant_access_checker.go`；第 1–3 段 fail-closed，第 4 段 fail-open）
 
 | 段 | 检查 | 拒绝条件 |
 |---|---|---|
-| 1 | 租户行 + WithPlan 预载 | 查不到 / `status != ON` → 403（OFF/EXPIRED/FREEZE 一律拒）。边界：判定是 `t.Status != nil && *t.Status != On`（`internal/data/tenant_access_checker.go:56`），**status 为 NULL 的租户行放行** |
+| 1 | 租户行 + WithPlan(WithQuotas) 预载（expiry_policy 供第 2 段、API_CALL 上限供第 4 段） | 查不到 / `status != ON` → 403（OFF/EXPIRED/FREEZE 一律拒）。边界：判定是 `t.Status != nil && *t.Status != On`（`internal/data/tenant_access_checker.go:59`），**status 为 NULL 的租户行放行** |
 | 2 | 到期只读判定 | `expired_at` 已过 **且** 套餐 `expiry_policy == READONLY` 时：非 GET/HEAD/OPTIONS → 403 |
 | 3 | Api 表 `(path, method)` → `business_module` → 套餐白名单 | Api 表缺行 → 403；模块 UNSPECIFIED（未归类）→ 403；租户未挂套餐 → 拒全部业务模块；白名单 `sys_plan_modules` 计数为 0 → 403 |
+| 4 | 套餐配额（API_CALL 调用量）：上限取自第 1 段预载的配额边，当前计数 = `sys_api_audit_logs` 按租户 COUNT（与 [plan_billing.md](./plan_billing.md) §7.1 `ApiCallCount` 同源同语义，含被闸门拒绝的请求） | 上限存在且计数已达上限 → 403 `plan quota exceeded: API_CALL ...`。**fail-open**：无套餐配额条目 / 计量查询失败 → 放行——与第 1–3 段的 fail-closed 取向相反（配额缺失 = 未限售），语义见 [plan_billing.md](./plan_billing.md) §7.2 |
 
 枚举映射：ent `api.BusinessModule` ↔ proto `identityV1.Module`（checker 内两张 switch 表）。
 白名单查询用 `SystemViewerContext`（闸门自身跨租户查询的合法通道）。
