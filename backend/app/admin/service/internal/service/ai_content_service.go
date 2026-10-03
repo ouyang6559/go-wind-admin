@@ -1,6 +1,8 @@
 package service
 
 import (
+	"database/sql"
+
 	"context"
 	"fmt"
 	"strings"
@@ -18,6 +20,8 @@ import (
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
+	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
+	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
@@ -41,7 +45,13 @@ type AiContentService struct {
 	providerRepo *data.AiProviderRepo
 	usageRepo    *data.AiUsageLogRepo
 	menuRepo     *data.MenuRepo
-	entClient    *entCrud.EntClient[*ent.Client]
+	roleRepo     interface {
+		GetRolesPermissionMenuIDs(ctx context.Context, roleIDs []uint32) ([]uint32, error)
+	}
+	userRepo interface {
+		Get(ctx context.Context, req *identityV1.GetUserRequest) (*identityV1.User, error)
+	}
+	entClient *entCrud.EntClient[*ent.Client]
 }
 
 func NewAiContentService(
@@ -49,6 +59,8 @@ func NewAiContentService(
 	providerRepo *data.AiProviderRepo,
 	usageRepo *data.AiUsageLogRepo,
 	menuRepo *data.MenuRepo,
+	roleRepo *data.RoleRepo,
+	userRepo data.UserRepo,
 	entClient *entCrud.EntClient[*ent.Client],
 ) *AiContentService {
 	return &AiContentService{
@@ -57,6 +69,8 @@ func NewAiContentService(
 		usageRepo:    usageRepo,
 		menuRepo:     menuRepo,
 		entClient:    entClient,
+		roleRepo:     roleRepo,
+		userRepo:     userRepo,
 	}
 }
 
@@ -347,6 +361,18 @@ func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.Semanti
 		limit = 8
 	}
 
+	// 权限裁剪前置：非平台用户按其可见菜单集过滤索引行（item_id = menu_id）。
+	// 平台管理员（tenantId==0）不过滤——与 GetNavigation 的口径一致。
+	// 放在 embedding 之前：无可见菜单直接返回空结果，省一次向量调用。
+	allowedMenuIDs, filterErr := s.visibleMenuIDs(ctx, operator)
+	if filterErr != nil {
+		s.log.Errorf(ctx, "semantic search: resolve visible menus failed: %v", filterErr)
+		return nil, adminV1.ErrorInternalServerError("resolve accessible menus failed")
+	}
+	if operator.GetTenantId() != 0 && len(allowedMenuIDs) == 0 {
+		return &aiV1.SemanticSearchResponse{Items: []*aiV1.SemanticSearchItem{}}, nil
+	}
+
 	provider, err := s.providerRepo.GetEnabledDefault(ctx)
 	if err != nil {
 		return nil, err
@@ -389,10 +415,29 @@ func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.Semanti
 	}
 
 	db := s.entClient.DB()
-	rows, dbErr := db.QueryContext(ctx,
-		"SELECT title, route, 1 - (embedding <=> $1::vector) AS score FROM sys_ai_search_index WHERE item_type = 'menu' ORDER BY embedding <=> $1::vector LIMIT $2",
-		queryVec, limit,
-	)
+	var rows *sql.Rows
+	var dbErr error
+	if operator.GetTenantId() == 0 {
+		rows, dbErr = db.QueryContext(ctx,
+			"SELECT title, route, 1 - (embedding <=> $1::vector) AS score FROM sys_ai_search_index WHERE item_type = 'menu' ORDER BY embedding <=> $1::vector LIMIT $2",
+			queryVec, limit,
+		)
+	} else {
+		// 动态 IN 占位：menuIDs 量级小（菜单树），直接展开
+		placeholders := make([]string, len(allowedMenuIDs))
+		args := make([]any, 0, len(allowedMenuIDs)+2)
+		args = append(args, queryVec)
+		for i, id := range allowedMenuIDs {
+			placeholders[i] = fmt.Sprintf("$%d", i+2)
+			args = append(args, id)
+		}
+		args = append(args, limit)
+		sqlText := fmt.Sprintf(
+			"SELECT title, route, 1 - (embedding <=> $1::vector) AS score FROM sys_ai_search_index WHERE item_type = 'menu' AND item_id IN (%s) ORDER BY embedding <=> $1::vector LIMIT $%d",
+			strings.Join(placeholders, ", "), len(args),
+		)
+		rows, dbErr = db.QueryContext(ctx, sqlText, args...)
+	}
 	if dbErr != nil {
 		s.log.Errorf(ctx, "semantic search query failed: %s", dbErr.Error())
 		return nil, adminV1.ErrorInternalServerError("semantic search failed")
@@ -411,6 +456,26 @@ func (s *AiContentService) SemanticSearch(ctx context.Context, req *aiV1.Semanti
 		})
 	}
 	return resp, rows.Err()
+}
+
+// visibleMenuIDs 解析调用者可见的菜单 ID 集。
+// 平台管理员返回 nil（调用方不过滤）；普通用户经 角色ID → 权限 → 菜单 链路解析。
+// userRepo.Get 拿用户角色集；解析失败返回错误（fail-closed：AI 搜索不应泄露
+// 越权菜单，解析不出来宁可不返回结果）。
+func (s *AiContentService) visibleMenuIDs(ctx context.Context, operator *authenticationV1.UserTokenPayload) ([]uint32, error) {
+	if operator.GetTenantId() == 0 {
+		return nil, nil // 平台管理员：不过滤
+	}
+	user, err := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
+		QueryBy: &identityV1.GetUserRequest_Id{Id: operator.GetUserId()},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || len(user.GetRoleIds()) == 0 {
+		return []uint32{}, nil
+	}
+	return s.roleRepo.GetRolesPermissionMenuIDs(ctx, user.GetRoleIds())
 }
 
 // RebuildSearchIndex 重建搜索索引 RPC。
