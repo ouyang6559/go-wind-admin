@@ -39,7 +39,22 @@
 - **用量页摘要与流水同口径（2026-09-29）**：`GetUsageSummary` 的 `MonthStats` 只在 `tenantId>0` 时加租户谓词——租户管理员按本租户统计，平台管理员统计全量，与他下方看到的全量流水列表一致（此前无条件 `TenantIDEQ(tid)`，平台管理员的卡是 47 条/3,259 tokens 而列表是 48 条，同屏两个数字对不上）。配额不受影响：租户分支谓词不变，平台侧本就跳过检查（上一条）且卡上显示 ∞。
 - **套餐模块白名单**：AI 六服务已登记进 `pkg/constants/module_mapping.go`（Module 枚举 `AI=11`），租户访问 AI 端点要求租户套餐的白名单里有 `AI` 模块行（`sys_plan_modules`），否则 403 "module not allowed"。漏登记的后果是 fail-closed 拒绝，不是放行。
 - 菜单归类：`ComponentToModule` 已加 `app/ai/` 前缀 → AI 模块。
-- **新部署注意**：`sys_plan_modules` 不会自动出现 `AI` 行——需在「套餐管理」给目标套餐手动添加 AI 模块白名单（或 SQL 直插），否则租户访问 AI 一律 403。
+### 新部署注意：给租户放行 AI
+
+`sys_plan_modules` 不会自动出现 `AI` 行，Api 表里 AI 端点的模块归类也不会自动出现——两步都要手动做，缺任何一步租户访问 AI 端点一律 403：
+
+1. **接口同步（Api 表）**：在管理页触发「接口同步」。全量重建读的是打进二进制的 `assets/openapi.yaml`——若本版本比已部署版本新增了 AI 相关 proto，必须先 `make openapi`、重启进程、再触发同步，否则同步"成功"而新端点依旧不在表里。同步后 AI 六服务的端点以 `business_module=AI` 落进 Api 表（模块归类由 openapi 的服务标记经 `pkg/constants/module_mapping.go` 的映射而来，AI 服务已登记）。
+2. **套餐白名单加 `AI` 行**：管理页 → 租户管理 → 套餐管理（路由 `/tenant/plans`，仅平台管理员）→ 目标套餐行「编辑」→ 模块多选框勾选 `AI` → 保存。该多选框直接增删 `sys_plan_modules` 行；保存即生效——租户闸门每个请求实时查这张表，没有缓存、无需重启。无管理页的环境（直接操作数据库）SQL 等价直插：`INSERT INTO sys_plan_modules (plan_id, module) VALUES (<套餐ID>, 'AI');`（该表其余列均可空）。
+3. **验证**：以该套餐下的租户用户调用任一 AI 端点（如 `GET /admin/v1/ai/providers`）。加行前 403；加行后应为 200。
+
+仍 403 时按响应体 `message` 字段定位卡点。注意：前端界面对 403 一律按 reason 统一翻译、看不出区别，区分必须看 HTTP 响应体本身（curl 或浏览器网络面板）：
+
+| message | 卡点 | 处置 |
+|---|---|---|
+| `access denied` | Api 表没有该 (path, method) 行（同步未触发、或 openapi 落后于代码），或白名单查询本身出错 | 重做第 1 步（含 `make openapi` + 重启）；仍如此则看服务日志的白名单查询报错 |
+| `module not allowed` | 端点行存在但 `business_module` 归类缺失，或套餐白名单缺 `AI` 行 | 先确认第 1 步真把 `business_module=AI` 写进去了，再补第 2 步 |
+| `no subscription plan` | 租户未关联任何套餐 | 租户管理里把套餐关联到该租户 |
+| `tenant is not active` / `tenant is read-only due to expiry` | 租户停用 / 套餐到期只读策略挡住写操作 | 与 AI 白名单无关，按租户与套餐状态处置 |
 
 ## 知识库 RAG
 
@@ -49,7 +64,7 @@
 
 **重索引**：更换知识库 embedding 模型后，经「任务管理」创建 `ai_doc_reindex` 类型任务（payload `{"baseId":N}`，0=全部库）触发全量重算——切片文本不变只换向量，分批 32 条/次。启动迁移因维度不匹配整列重建 `embedding` 后（见「部署要求」），该任务是恢复检索的唯一途径。
 
-**审计日报**：系统常驻任务 `ai_audit_digest`（每日 08:00）聚合昨日操作审计（总数/失败/用户/动作分布），经默认模型生成 150 字中文摘要，站内信投递平台侧用户；LLM 失败自动降级为纯统计文本。
+**审计日报**：系统常驻任务 `ai_audit_digest`（每日 08:00）聚合昨日操作审计（总数/失败/用户/动作分布），经默认模型生成 150 字摘要——按收件用户的偏好语言（个人中心 locale，中文/英文，未设置回落中文）分组渲染，每组一条消息行；LLM 失败自动降级为该语言的纯统计文本。
 
 **部署要求（pgvector）**：
 
