@@ -71,6 +71,32 @@ func NewTenantUsageRepo(
 
 // GetUsage 聚合查询指定租户的当前用量与套餐配额上限。
 // 使用 SystemViewerContext 绕过租户隔离以跨表聚合。
+// CountUsersInTenant 数租户用户数（USER_LIMIT 配额检查用）。
+func (r *TenantUsageRepo) CountUsersInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
+	count, err := r.entClient.Client().User.Query().
+		Where(user.TenantIDEQ(tenantID)).
+		Count(ctx)
+	return uint64(count), err
+}
+
+// SumStorageInTenant 汇总租户文件字节数（STORAGE 配额检查用）。
+func (r *TenantUsageRepo) SumStorageInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
+	var rows []struct {
+		Total uint64 `sql:"total"`
+	}
+	err := r.entClient.Client().File.Query().
+		Where(file.TenantIDEQ(tenantID)).
+		Aggregate(ent.As(ent.Sum(file.FieldSize), "total")).
+		Scan(ctx, &rows)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) > 0 {
+		return rows[0].Total, nil
+	}
+	return 0, nil
+}
+
 func (r *TenantUsageRepo) GetUsage(ctx context.Context, tenantId uint32) (*identityV1.TenantUsage, error) {
 	sysCtx := appViewer.NewSystemViewerContext(ctx)
 

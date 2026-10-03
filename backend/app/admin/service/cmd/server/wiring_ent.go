@@ -195,7 +195,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	loginPolicyService := service.NewLoginPolicyService(ctx, loginPolicyRepo)
 
 	// 身份与组织
-	userService := service.NewUserService(ctx, userRepo, roleRepo, userCredentialRepo, positionRepo, orgUnitRepo, tenantRepo, membershipRepo, authenticator)
+	userService := service.NewUserService(ctx, userRepo, roleRepo, userCredentialRepo, positionRepo, orgUnitRepo, tenantRepo, tenantUsageRepo, membershipRepo, authenticator)
 	userProfileService := service.NewUserProfileService(ctx, userRepo, roleRepo, userCredentialRepo, authenticator, notificationService, vcodeCache, minioClient)
 	positionService := service.NewPositionService(ctx, positionRepo, orgUnitRepo)
 	orgUnitService := service.NewOrgUnitService(ctx, orgUnitRepo, userRepo)
@@ -220,7 +220,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// 文件与任务
 	fileService := service.NewFileService(ctx, fileRepo, minioClient)
-	fileTransferService := service.NewFileTransferService(ctx, minioClient, fileRepo)
+	fileTransferService := service.NewFileTransferService(ctx, minioClient, fileRepo, tenantUsageRepo)
 	taskService := service.NewTaskService(ctx, taskRepo, userRepo, backupRepo, tenantUsageRepo, auditLogArchiveRepo, minioClient)
 
 	// 审计日志

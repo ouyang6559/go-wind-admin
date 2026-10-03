@@ -38,6 +38,7 @@ type UserService struct {
 	positionRepo *data.PositionRepo
 	orgUnitRepo  *data.OrgUnitRepo
 	tenantRepo   *data.TenantRepo
+	usageRepo    *data.TenantUsageRepo
 
 	membershipRepo *data.MembershipRepo
 
@@ -52,6 +53,7 @@ func NewUserService(
 	positionRepo *data.PositionRepo,
 	orgUnitRepo *data.OrgUnitRepo,
 	tenantRepo *data.TenantRepo,
+	usageRepo *data.TenantUsageRepo,
 	membershipRepo *data.MembershipRepo,
 	authenticator *data.Authenticator,
 ) *UserService {
@@ -63,6 +65,7 @@ func NewUserService(
 		positionRepo:       positionRepo,
 		orgUnitRepo:        orgUnitRepo,
 		tenantRepo:         tenantRepo,
+		usageRepo:          usageRepo,
 		membershipRepo:     membershipRepo,
 		authenticator:      authenticator,
 	}
@@ -417,6 +420,22 @@ func (s *UserService) Create(ctx context.Context, req *identityV1.CreateUserRequ
 
 	req.Data.RoleId = nil
 	req.Data.RoleIds = roleIds
+
+	// 套餐 USER_LIMIT 硬限制：租户用户创建前检查配额（平台用户/计量失败 fail-open）
+	targetTenantID := req.Data.GetTenantId()
+	if targetTenantID == 0 {
+		targetTenantID = operator.GetTenantId()
+	}
+	if targetTenantID > 0 && s.usageRepo != nil {
+		usage, uerr := s.usageRepo.GetUsage(ctx, targetTenantID)
+		if uerr == nil {
+			if limit, ok := quotaLimitFromUsages(usage.GetQuotas(), identityV1.PlanQuota_USER_LIMIT); ok {
+				if uint64(usage.GetUserCount()) >= limit {
+					return nil, quotaExceededError("USER_LIMIT", limit, usage.GetUserCount())
+				}
+			}
+		}
+	}
 
 	// 创建用户
 	var user *identityV1.User
