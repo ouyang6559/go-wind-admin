@@ -654,6 +654,13 @@ func (s *TaskService) AsyncBackup(taskType string, taskData *task.BackupTaskData
 	}
 
 	s.log.Infof(context.Background(), "backup: completed successfully, object=%s", objectName)
+
+	// 5. 顺手清理超过保留期的旧备份（best-effort）：备份本体已成功，
+	// 清理失败只留日志，不影响任务结论（否则告警指向错误的故障点）。
+	if cleaner := newMinioBackupCleaner(s.mc); cleaner != nil {
+		s.cleanupOldBackups(ctx, cleaner)
+	}
+
 	return nil
 }
 
