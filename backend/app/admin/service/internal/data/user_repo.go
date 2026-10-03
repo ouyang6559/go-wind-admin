@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
@@ -628,6 +629,12 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 	// maskPathInUpdate：无 mask 视为全量更新（true）；有 mask 则按路径精确匹配。
 	// 注意 User 同时有单数（role_id）和复数（role_ids）字段，两者任一在 mask 内即视为
 	// 本类关联参与本次更新（与下方收集逻辑一致：RoleIds + RoleId 都会被收集）。
+	// nil mask 守卫：无 mask = 全量更新语义，但后续 FilterBlacklist 需要
+	// 非 nil mask 做赋值/剔除，故此处初始化空 mask（panic 修复，e2e 揪出）。
+	if req.GetUpdateMask() == nil {
+		req.UpdateMask = &fieldmaskpb.FieldMask{}
+	}
+
 	maskPathInUpdate := func(paths ...string) bool {
 		fm := req.GetUpdateMask()
 		if fm == nil || len(fm.Paths) == 0 {

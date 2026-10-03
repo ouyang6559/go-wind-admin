@@ -199,6 +199,10 @@ func (s *AuthenticationService) SsoLogin(ctx context.Context, req *authenticatio
 		return nil, authenticationV1.ErrorInternalServerError("sso state cache is not wired")
 	}
 
+	// 与 doGrantTypePassword 同款：登录链路的用户查询需要绕过隐私层
+	//（此时无 viewer，TenantPrivacy 会拒绝查询）。SSO 是登录入口，同权。
+	ctx = s.resetContextForLogin(ctx)
+
 	// 1. state 单次验证取删（防 CSRF 与回调重放）
 	ok, err := s.ssoStateCache.Take(ctx, req.GetState())
 	if err != nil {
