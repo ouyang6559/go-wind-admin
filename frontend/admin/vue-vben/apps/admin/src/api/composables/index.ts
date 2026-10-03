@@ -72,6 +72,7 @@ export * from './monitor-alert';
 export * from './audit-export';
 export * from './task-monitor';
 export * from './sso';
+export * from './tenant-branding';
 export * from './role';
 // 通用枚举与工具函数
 export * from './shared';

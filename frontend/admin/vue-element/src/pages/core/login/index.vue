@@ -27,17 +27,33 @@
       <div class="login-form-wrapper">
         <div class="login-form-container">
           <div class="form-header">
-            <h2 class="form-title">
-              {{ t("core.login.welcomeTitle") }}
-              <span class="wave">👋</span>
-            </h2>
-            <p class="form-subtitle">{{ t("core.login.welcomeSubtitle") }}</p>
+            <template v-if="tenantBranding">
+              <img
+                v-if="tenantBranding.logoUrl"
+                :src="tenantBranding.logoUrl"
+                :alt="tenantBranding.name"
+                class="tenant-logo"
+              />
+              <h2 class="form-title">{{ tenantBranding.name }}</h2>
+              <p class="form-subtitle">{{ t("core.login.welcomeTitle") }}</p>
+            </template>
+            <template v-else>
+              <h2 class="form-title">
+                {{ t("core.login.welcomeTitle") }}
+                <span class="wave">👋</span>
+              </h2>
+              <p class="form-subtitle">{{ t("core.login.welcomeSubtitle") }}</p>
+            </template>
           </div>
 
           <!-- 登录表单卡片（对齐 react：24px 圆角 + 边框 + 主色柔影） -->
           <div class="form-card">
             <transition name="fade-slide" mode="out-in">
-              <component :is="formComponents[component]" class="auth-panel__form" />
+              <component
+                :is="formComponents[component]"
+                class="auth-panel__form"
+                @tenant-branding="tenantBranding = $event"
+              />
             </transition>
           </div>
         </div>
@@ -60,6 +76,10 @@ const { t } = useI18n();
 type LayoutMap = "login";
 
 const component = ref<LayoutMap>("login");
+
+// 租户白标：由 Login 子组件在租户编号失焦时经 provide/inject 上报。
+// 更简单的做法：白标状态放这里，经 props 传给子组件由其触发回调。
+const tenantBranding = ref<{ found: boolean; name: string; logoUrl: string } | null>(null);
 
 const formComponents = {
   login: defineAsyncComponent(() => import("./components/Login.vue")),
@@ -234,7 +254,14 @@ const formComponents = {
     .form-header {
       margin-bottom: 24px;
 
-      .form-title {
+      .tenant-logo {
+  max-height: 48px;
+  max-width: 200px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.form-title {
         font-size: 22px;
         font-weight: 600;
         color: #e5eaf3;

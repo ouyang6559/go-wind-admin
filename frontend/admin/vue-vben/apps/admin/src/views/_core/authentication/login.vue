@@ -11,6 +11,7 @@ import { message } from 'ant-design-vue';
 import { useAuthStore } from '#/stores';
 import { fetchGenerateCaptcha } from '#/api/composables';
 import { ssoEnabled, startSsoLogin } from '#/api/composables/sso';
+import { fetchTenantBranding } from '#/api/composables/tenant-branding';
 
 defineOptions({ name: 'Login' });
 
@@ -23,6 +24,25 @@ const captchaLoading = ref(false);
 
 // SSO 开关（后端未配置 OIDC 时按钮不渲染）
 const ssoOn = ref(false);
+
+// 租户白标：租户编号输入失焦后拉取，命中替换欢迎标题
+const tenantBranding = ref<{ found: boolean; name: string; logoUrl: string } | null>(null);
+
+async function applyTenantBranding(event: any) {
+  const trimmed = (event?.target?.value ?? '').trim();
+  if (!trimmed) {
+    tenantBranding.value = null;
+    return;
+  }
+  try {
+    const branding = await fetchTenantBranding(trimmed);
+    tenantBranding.value = branding.found ? branding : null;
+  } catch (brandingError) {
+    // 白标是非关键路径：失败静默保持默认品牌，原始错误留控制台
+    console.warn('fetch tenant branding failed', brandingError);
+    tenantBranding.value = null;
+  }
+}
 
 async function refreshCaptcha() {
   captchaLoading.value = true;
@@ -107,6 +127,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       componentProps: {
         placeholder: $t('authentication.tenantCode'),
         autocomplete: 'off',
+        onBlur: applyTenantBranding,
       },
       fieldName: 'tenant_code',
       label: $t('authentication.tenantCode'),
@@ -171,14 +192,32 @@ async function handleSubmit(values: Record<string, any>) {
   <!-- 对齐 react：标题/描述在卡片外，登录表单包一张 24px 圆角卡片（边框 + 主色柔影） -->
   <div>
     <div class="mb-7">
-      <h2
-        class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
-      >
-        {{ $t('authentication.welcomeBack') }} 👋🏻
-      </h2>
-      <p class="text-muted-foreground text-sm lg:text-md">
-        {{ $t('authentication.loginSubtitle') }}
-      </p>
+      <template v-if="tenantBranding">
+        <img
+          v-if="tenantBranding.logoUrl"
+          :src="tenantBranding.logoUrl"
+          :alt="tenantBranding.name"
+          class="mb-3 max-h-12 max-w-[200px] object-contain"
+        />
+        <h2
+          class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
+        >
+          {{ tenantBranding.name }}
+        </h2>
+        <p class="text-muted-foreground text-sm lg:text-md">
+          {{ $t('authentication.welcomeBack') }}
+        </p>
+      </template>
+      <template v-else>
+        <h2
+          class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
+        >
+          {{ $t('authentication.welcomeBack') }} 👋🏻
+        </h2>
+        <p class="text-muted-foreground text-sm lg:text-md">
+          {{ $t('authentication.loginSubtitle') }}
+        </p>
+      </template>
     </div>
 
     <div

@@ -1129,5 +1129,8 @@
     "missingParams": "Missing code or state parameter",
     "button": "Sign in with SSO",
     "or": "or"
+  },
+  "branding": {
+    "tenantName": "Tenant"
   }
 }
