@@ -7,7 +7,7 @@ import {
   ProFormTextArea,
   ProFormSwitch,
 } from '@ant-design/pro-components';
-import { App, Button, Descriptions, Popconfirm, Tag } from 'antd';
+import { App, Button, Descriptions, Popconfirm, Tag, Alert } from 'antd';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -275,6 +275,13 @@ const NotificationTemplatePage = () => {
             : { ...selected }
         }
       >
+        <Alert
+          type="info"
+          showIcon
+          message={t('txCodeHintTitle')}
+          description={t('txCodeHint')}
+          style={{ marginBottom: 16 }}
+        />
         <ProFormText
           name="name"
           label={t('name')}
