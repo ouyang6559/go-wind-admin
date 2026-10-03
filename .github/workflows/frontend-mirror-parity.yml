@@ -8,6 +8,8 @@ on:
       - 'frontend/admin/vue-vben/apps/admin/src/transport/sse/**'
       - 'frontend/admin/react/src/core/transport/rest/pagination.ts'
       - 'frontend/admin/vue-element/src/core/transport/rest/pagination.ts'
+      - 'frontend/admin/react/src/core/transport/rest/preset-interceptors.ts'
+      - 'frontend/admin/vue-element/src/core/transport/rest/preset-interceptors.ts'
       - 'scripts/check-frontend-mirror.mjs'
   pull_request:
     paths:
@@ -16,6 +18,8 @@ on:
       - 'frontend/admin/vue-vben/apps/admin/src/transport/sse/**'
       - 'frontend/admin/react/src/core/transport/rest/pagination.ts'
       - 'frontend/admin/vue-element/src/core/transport/rest/pagination.ts'
+      - 'frontend/admin/react/src/core/transport/rest/preset-interceptors.ts'
+      - 'frontend/admin/vue-element/src/core/transport/rest/preset-interceptors.ts'
       - 'scripts/check-frontend-mirror.mjs'
 
 jobs:

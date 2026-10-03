@@ -29,13 +29,19 @@ const PROVENANCE_MARKERS = [
 // file. Adding a group here requires that the copies really are mirrors —
 // reconcile any real divergence first, then register the group.
 //
-// A group may list a subset of the three frontends: the vue-vben copy of
-// pagination.ts keeps a structurally different shape (module-level helper
-// instead of class methods, different member ordering), so it cannot pass
-// text normalization; its semantic parity (67-entry operator guard table
-// and all transformation logic set-identical across frontends) was audited
-// by hand in October 2026. The two structurally identical copies below are
-// the ones this check pins.
+// A group may list a subset of the three frontends. The vue-vben copies of
+// the transport/rest files are excluded from that group, each for a reason
+// recorded here (October 2026 hand audit): the vue-vben pagination.ts keeps
+// a structurally different shape (module-level helper instead of class
+// methods, different member ordering) that cannot pass text normalization —
+// its 67-entry operator guard table and transformation logic were audited
+// set-identical across frontends by hand; the vue-vben preset-interceptors.ts
+// carries deliberate vben-local semantics on top of a different shape
+// (business-code 401 detection, login-request exclusion from the refresh
+// flow, dual-spelling refresh URL matching) — its empty-token and
+// queue-timeout guards were audited present with outcomes equivalent to the
+// registered copies. The two structurally identical copies registered below
+// are the ones this check pins.
 const GROUPS = [
   {
     name: 'transport/sse',
@@ -47,12 +53,12 @@ const GROUPS = [
     files: ['event.ts', 'index.ts', 'sse_client.ts', 'types.ts'],
   },
   {
-    name: 'transport/rest/pagination',
+    name: 'transport/rest',
     roots: [
       'frontend/admin/react/src/core/transport/rest',
       'frontend/admin/vue-element/src/core/transport/rest',
     ],
-    files: ['pagination.ts'],
+    files: ['pagination.ts', 'preset-interceptors.ts'],
   },
 ];
 
