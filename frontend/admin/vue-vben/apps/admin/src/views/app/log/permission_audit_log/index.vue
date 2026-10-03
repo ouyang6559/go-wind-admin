@@ -6,7 +6,7 @@ import { LucideEye } from '@vben/icons';
 
 import dayjs from 'dayjs';
 
-import { h } from 'vue';
+import { h, ref } from 'vue';
 
 import { message } from 'ant-design-vue';
 
@@ -154,17 +154,21 @@ const gridOptions: VxeGridProps<PermissionAuditLog> = {
           );
         }
 
+        // 列表与导出共用同一份搜索条件：服务端导出透传的就是这里看到的
+        const conditions = {
+          username: formValues.username,
+          action: formValues.action,
+          path: formValues.path,
+          ipAddress: formValues.ipAddress,
+          created_at__gte: startTime,
+          created_at__lte: endTime,
+        };
+        latestFormValuesRef.value = conditions;
+
         return await fetchListPermissionAuditLogs(
           new PaginationQuery({
             paging: { page: page.currentPage, pageSize: page.pageSize },
-            formValues: {
-              username: formValues.username,
-              action: formValues.action,
-              path: formValues.path,
-              ipAddress: formValues.ipAddress,
-              created_at__gte: startTime,
-              created_at__lte: endTime,
-            },
+            formValues: conditions,
             orderBy: ['-created_at'],
           }),
         );
@@ -206,6 +210,9 @@ const gridOptions: VxeGridProps<PermissionAuditLog> = {
   ],
 };
 
+// 当前搜索条件（服务端导出透传用，与 Grid proxy 查询同源——"导出的就是当前搜索看到的"）
+const latestFormValuesRef = ref<Record<string, unknown>>({});
+
 const [Grid] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -220,7 +227,10 @@ function handleView(row: PermissionAuditLog) {
 // 导出全部：按当前条件聚合拉取（上限 1 万行）生成 CSV
 async function handleServerExport() {
   try {
-    await exportAuditLogsServer('permission', '');
+    await exportAuditLogsServer(
+      'permission',
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
     message.success($t('page.auditExport.serverSuccess'));
   } catch (error: any) {
     // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因

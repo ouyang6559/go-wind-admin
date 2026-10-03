@@ -1,17 +1,19 @@
 import { useAuthStore } from '@/stores';
+import type { PaginationQuery } from '@/core';
 
 /**
- * 审计日志服务端导出：走 /admin/v1/audit-logs:export（XLSX/CSV，突破客户端
- * 聚合导出的 1 万行上限，服务端上限 50 万）。query 与列表页同源（contains 条件），
- * 导出的即当前搜索看到的。
+ * 审计日志服务端导出：走 /admin/v1/audit-logs:export（XLSX，突破客户端
+ * 聚合导出的 1 万行上限，服务端上限 50 万）。query 经 PaginationQuery 的
+ * 同源序列化（contains 转换/空值清理与列表页一致）透传——导出的即当前
+ * 搜索看到的。
  */
 export async function exportAuditLogsServer(
-  type: 'api' | 'data_access' | 'login' | 'operation' | 'permission',
-  queryJson: string,
-  format: 'csv' | 'xlsx' = 'xlsx',
+  type: 'api' | 'data_access' | 'login' | 'operation' | 'permission' | 'policy_evaluation',
+  query: PaginationQuery,
 ): Promise<void> {
   const token = useAuthStore.getState().accessToken;
-  const params = new URLSearchParams({ format, type });
+  const params = new URLSearchParams({ format: 'xlsx', type });
+  const queryJson = query.queryString;
   if (queryJson) {
     params.set('query', queryJson);
   }
@@ -28,7 +30,7 @@ export async function exportAuditLogsServer(
   }
   const blob = await res.blob();
   const disposition = res.headers.get('content-disposition') || '';
-  const filename = disposition.match(/filename="(.+)"/)?.[1] ?? `audit-logs-${Date.now()}.${format}`;
+  const filename = disposition.match(/filename="(.+)"/)?.[1] ?? `audit-logs-${Date.now()}.xlsx`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;

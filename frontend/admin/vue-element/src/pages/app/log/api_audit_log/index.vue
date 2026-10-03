@@ -48,6 +48,7 @@ import { $t } from "@/core/i18n";
 
 const pageRef = ref();
 const drawerRef = ref();
+const latestFormValuesRef = ref<Record<string, unknown>>({});
 
 const exporting = ref(false);
 
@@ -55,7 +56,10 @@ async function handleServerExport() {
   if (exporting.value) return;
   exporting.value = true;
   try {
-    await exportAuditLogsServer('api', '');
+    await exportAuditLogsServer(
+      'api',
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
     ElMessage.success($t("pages.api_audit_log.exportServerSuccess"));
   } catch (error: any) {
     // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
@@ -182,18 +186,22 @@ const pageConfig = computed<ProPageConfig>(() => ({
         endTime = dayjs(createdAt[1]).format("YYYY-MM-DD HH:mm:ss");
       }
 
+      // 列表与导出共用同一份搜索条件：服务端导出透传的就是这里看到的
+      const formValues = {
+        username: queryParams.username,
+        httpMethod: queryParams.httpMethod,
+        path: queryParams.path,
+        ipAddress: queryParams.ipAddress,
+        success: queryParams.success,
+        created_at__gte: startTime,
+        created_at__lte: endTime,
+      };
+      latestFormValuesRef.value = formValues;
+
       const result = await fetchListApiAuditLogs(
         new PaginationQuery({
           paging: { page: page || 1, pageSize: pageSize || 10 },
-          formValues: {
-            username: queryParams.username,
-            httpMethod: queryParams.httpMethod,
-            path: queryParams.path,
-            ipAddress: queryParams.ipAddress,
-            success: queryParams.success,
-            created_at__gte: startTime,
-            created_at__lte: endTime,
-          },
+          formValues,
           orderBy: ["-created_at"],
         })
       );

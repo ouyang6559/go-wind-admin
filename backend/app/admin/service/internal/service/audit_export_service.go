@@ -8,6 +8,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
+	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
@@ -22,12 +23,13 @@ const auditExportMaxRows = 500000
 // 五类审计日志共用一个端点，按 type 分派；条件与列表页同源（query JSON 透传），
 // 因此"导出的就是当前搜索看到的"。
 type AuditExportService struct {
-	loginRepo      *data.LoginAuditLogRepo
-	apiRepo        *data.ApiAuditLogRepo
-	operationRepo  *data.OperationAuditLogRepo
-	dataAccessRepo *data.DataAccessAuditLogRepo
-	permissionRepo *data.PermissionAuditLogRepo
-	log            *bLogger.Helper
+	loginRepo            *data.LoginAuditLogRepo
+	apiRepo              *data.ApiAuditLogRepo
+	operationRepo        *data.OperationAuditLogRepo
+	dataAccessRepo       *data.DataAccessAuditLogRepo
+	permissionRepo       *data.PermissionAuditLogRepo
+	policyEvaluationRepo *data.PolicyEvaluationLogRepo
+	log                  *bLogger.Helper
 
 	// tokenChecker 手动路由的鉴权锚：导出端点未设 Operation，auth 中间件的
 	// selector 不会应用（也就不会注入操作人），须自行验 Bearer token。
@@ -41,16 +43,18 @@ func NewAuditExportService(
 	operationRepo *data.OperationAuditLogRepo,
 	dataAccessRepo *data.DataAccessAuditLogRepo,
 	permissionRepo *data.PermissionAuditLogRepo,
+	policyEvaluationRepo *data.PolicyEvaluationLogRepo,
 	tokenChecker auth.AccessTokenChecker,
 ) *AuditExportService {
 	return &AuditExportService{
-		loginRepo:      loginRepo,
-		apiRepo:        apiRepo,
-		operationRepo:  operationRepo,
-		dataAccessRepo: dataAccessRepo,
-		permissionRepo: permissionRepo,
-		log:            ctx.NewLoggerHelper("audit-export/service/admin-service"),
-		tokenChecker:   tokenChecker,
+		loginRepo:            loginRepo,
+		apiRepo:              apiRepo,
+		operationRepo:        operationRepo,
+		dataAccessRepo:       dataAccessRepo,
+		permissionRepo:       permissionRepo,
+		policyEvaluationRepo: policyEvaluationRepo,
+		log:                  ctx.NewLoggerHelper("audit-export/service/admin-service"),
+		tokenChecker:         tokenChecker,
 	}
 }
 
@@ -146,8 +150,21 @@ func (s *AuditExportService) ServeExport(w http.ResponseWriter, r *http.Request)
 		for _, row := range resp.GetItems() {
 			rows = append(rows, colValues(cols, row))
 		}
+	case "policy_evaluation":
+		resp, listErr := s.policyEvaluationRepo.List(ctx, req)
+		if listErr != nil {
+			s.log.Errorf(ctx, "audit export [%s] query failed: %s", logType, listErr.Error())
+			http.Error(w, "query failed", http.StatusInternalServerError)
+			return nil
+		}
+		fileName, sheet = "policy-evaluation-logs", "policy_evaluation"
+		cols := policyEvaluationExportColumns()
+		headers = colHeaders(cols)
+		for _, row := range resp.GetItems() {
+			rows = append(rows, colValues(cols, row))
+		}
 	default:
-		http.Error(w, "type must be one of login/api/operation/data_access/permission", http.StatusBadRequest)
+		http.Error(w, "type must be one of login/api/operation/data_access/permission/policy_evaluation", http.StatusBadRequest)
 		return nil
 	}
 
@@ -157,7 +174,6 @@ func (s *AuditExportService) ServeExport(w http.ResponseWriter, r *http.Request)
 
 // ==== 各类型列定义（表头用英文字段名：导出文件没有运行时语言上下文，
 // 后端文案不进 i18n 是仓库铁律的边界）====
-
 
 func loginExportColumns() []exportColumn[*auditV1.LoginAuditLog] {
 	return []exportColumn[*auditV1.LoginAuditLog]{
@@ -219,6 +235,36 @@ func dataAccessExportColumns() []exportColumn[*auditV1.DataAccessAuditLog] {
 		{header: "affectedRows", value: func(r *auditV1.DataAccessAuditLog) string { return strconv.FormatInt(int64(r.GetAffectedRows()), 10) }},
 		{header: "sqlDigest", value: func(r *auditV1.DataAccessAuditLog) string { return r.GetSqlDigest() }},
 		{header: "ipAddress", value: func(r *auditV1.DataAccessAuditLog) string { return r.GetIpAddress() }},
+	}
+}
+
+// policyEvaluationExportColumns 与策略评估日志页展示列一致
+// （logHash/signature 为完整性校验字段，页面不展示，不进导出）。
+func policyEvaluationExportColumns() []exportColumn[*permissionV1.PolicyEvaluationLog] {
+	return []exportColumn[*permissionV1.PolicyEvaluationLog]{
+		{header: "id", value: func(r *permissionV1.PolicyEvaluationLog) string { return strconv.FormatUint(uint64(r.GetId()), 10) }},
+		{header: "createdAt", value: func(r *permissionV1.PolicyEvaluationLog) string { return fmtTime(r.GetCreatedAt()) }},
+		{header: "tenantId", value: func(r *permissionV1.PolicyEvaluationLog) string {
+			return strconv.FormatUint(uint64(r.GetTenantId()), 10)
+		}},
+		{header: "userId", value: func(r *permissionV1.PolicyEvaluationLog) string { return strconv.FormatUint(uint64(r.GetUserId()), 10) }},
+		{header: "membershipId", value: func(r *permissionV1.PolicyEvaluationLog) string {
+			return strconv.FormatUint(uint64(r.GetMembershipId()), 10)
+		}},
+		{header: "permissionId", value: func(r *permissionV1.PolicyEvaluationLog) string {
+			return strconv.FormatUint(uint64(r.GetPermissionId()), 10)
+		}},
+		{header: "policyId", value: func(r *permissionV1.PolicyEvaluationLog) string {
+			return strconv.FormatUint(uint64(r.GetPolicyId()), 10)
+		}},
+		{header: "requestPath", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetRequestPath() }},
+		{header: "requestMethod", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetRequestMethod() }},
+		{header: "result", value: func(r *permissionV1.PolicyEvaluationLog) string { return boolStr(r.Result) }},
+		{header: "effectDetails", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetEffectDetails() }},
+		{header: "scopeSql", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetScopeSql() }},
+		{header: "ipAddress", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetIpAddress() }},
+		{header: "traceId", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetTraceId() }},
+		{header: "evaluationContext", value: func(r *permissionV1.PolicyEvaluationLog) string { return r.GetEvaluationContext() }},
 	}
 }
 
