@@ -25,9 +25,17 @@ const PROVENANCE_MARKERS = [
   [/（vue-vben 端副本）/g, '（端副本）'],
 ];
 
-// Groups of mirrored files: every root carries an exact copy of every file.
-// Adding a group here requires that the copies really are mirrors —
+// Groups of mirrored files: every listed root carries an exact copy of every
+// file. Adding a group here requires that the copies really are mirrors —
 // reconcile any real divergence first, then register the group.
+//
+// A group may list a subset of the three frontends: the vue-vben copy of
+// pagination.ts keeps a structurally different shape (module-level helper
+// instead of class methods, different member ordering), so it cannot pass
+// text normalization; its semantic parity (67-entry operator guard table
+// and all transformation logic set-identical across frontends) was audited
+// by hand in October 2026. The two structurally identical copies below are
+// the ones this check pins.
 const GROUPS = [
   {
     name: 'transport/sse',
@@ -37,6 +45,14 @@ const GROUPS = [
       'frontend/admin/vue-vben/apps/admin/src/transport/sse',
     ],
     files: ['event.ts', 'index.ts', 'sse_client.ts', 'types.ts'],
+  },
+  {
+    name: 'transport/rest/pagination',
+    roots: [
+      'frontend/admin/react/src/core/transport/rest',
+      'frontend/admin/vue-element/src/core/transport/rest',
+    ],
+    files: ['pagination.ts'],
   },
 ];
 
