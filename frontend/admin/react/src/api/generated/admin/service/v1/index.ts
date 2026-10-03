@@ -2913,8 +2913,8 @@ export type authenticationservicev1_LoginResponse = {
   // 而是返回此 operation_id。前端据此跳转 MFA 挑战页，提交 TOTP 验证码到 MFAService.VerifyMFAChallenge。
   // 该字段非空时 access_token 必为空字符串；验证通过后由 VerifyMFAChallenge 返回真 token。
   mfa_operation_id?: string;
-  refresh_expires_in?: number;
-  refresh_token?: string;
+  // refresh token 已迁移 HttpOnly Cookie 传输（2026-08 迁移），不再进响应体：
+  // refresh_token / refresh_expires_in 字段已删除（历史残留，所有路径均未赋值）。
   scope?: string;
   token_type: authenticationservicev1_TokenType | undefined;
 };

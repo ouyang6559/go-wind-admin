@@ -270,7 +270,7 @@ SameSite=Lax 按站点判断——localhost 不同端口同站，dev 直连后�
 | 项 | 现状 | 影响 |
 |---|---|---|
 | ~~MFA 登录成功路径 refresh token 走响应体~~ | **已修复（2026-09-13）**：`VerifyMFAChallenge` 改调 `setRefreshCookies`，响应体不再携带 refresh 字段，与主登录路径一致 | 修复前：refresh 暴露在 JS 可读响应体 + MFA 用户会话静默续期丢失（前端只认 Cookie）。修复后 MFA 用户获得与其他用户一致的续期链路 |
-| `LoginResponse.RefreshToken`/`RefreshExpiresIn` 字段残留 | proto 字段仍在（历史形态），当前**所有路径均不再赋值** | 字段级清理（proto 删字段 + `make api`/`make ts` 三端重生成）属可选跟进，不影响行为 |
+| ~~`LoginResponse.RefreshToken`/`RefreshExpiresIn` 字段残留~~ | **已清理（2026-10-03）**：proto 删字段 + 三端重生成；核实三端零消费方（refresh 全走 HttpOnly Cookie）。`LoginRequest.refresh_token`（授权请求入参，另一语义）保留 | 无 |
 | oidc / preshared_key / oauth proto | 配置节与 proto 预留，未接线 | 接入前勿在生产配置里误以为已启用 |
 | MAC / REGION 登录策略维度 | 未实现（7.3） | 管理页如已展示该选项需对齐 |
 
