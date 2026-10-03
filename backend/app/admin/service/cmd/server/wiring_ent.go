@@ -72,6 +72,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	accessTokenChecker := data.NewTokenChecker(ctx, authenticator, clientType)
 	loginRateLimiter := data.NewLoginRateLimiter(ctx, redisClient)
 	mfaChallengeCache := data.NewMfaChallengeCache(ctx, redisClient)
+	ssoStateCache := data.NewSsoStateCache(ctx, redisClient)
 	vcodeCache := data.NewVCodeCache(ctx, redisClient)
 
 	// ═══════════════════════ 二、仓储层(internal/data) ═══════════════════════
@@ -187,7 +188,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	taskMonitorService := service.NewTaskMonitorService(ctx)
 
 	// 认证与登录策略
-	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, vcodeCache, notificationService)
+	authenticationService := service.NewAuthenticationService(ctx, userRepo, userCredentialRepo, roleRepo, tenantRepo, membershipRepo, orgUnitRepo, roleOrgUnitRepo, roleFieldPermissionRepo, permissionRepo, authenticator, clientType, captcha, loginRateLimiter, loginPolicyRepo, userMfaFactorRepo, mfaChallengeCache, ssoStateCache, vcodeCache, notificationService)
 	mfaService := service.NewMfaService(ctx, userMfaFactorRepo, mfaChallengeCache, authenticator, loginRateLimiter, userRepo)
 	loginPolicyService := service.NewLoginPolicyService(ctx, loginPolicyRepo)
 

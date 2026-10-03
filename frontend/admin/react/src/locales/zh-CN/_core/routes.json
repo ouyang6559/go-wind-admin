@@ -53,6 +53,7 @@
   "scripts": "脚本管理",
   "server-error": "服务器错误",
   "server-monitor": "服务监控",
+  "ssoCallback": "SSO 回调",
   "system": "系统管理",
   "tasks": "任务管理",
   "tenant": "租户管理",

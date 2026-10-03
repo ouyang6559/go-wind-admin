@@ -183,6 +183,7 @@ type AuthenticationService struct {
 
 	mfaFactorRepo     *data.UserMfaFactorRepo
 	mfaChallengeCache *data.MfaChallengeCache
+	ssoStateCache     *data.SsoStateCache
 
 	vcodeCache *data.VCodeCache
 	// notifier 是唯一的对外通知出口（找回密码验证码邮件）。
@@ -209,6 +210,7 @@ func NewAuthenticationService(
 	loginPolicyRepo *data.LoginPolicyRepo,
 	mfaFactorRepo *data.UserMfaFactorRepo,
 	mfaChallengeCache *data.MfaChallengeCache,
+	ssoStateCache *data.SsoStateCache,
 	vcodeCache *data.VCodeCache,
 	notifier Notifier,
 ) *AuthenticationService {
@@ -230,6 +232,7 @@ func NewAuthenticationService(
 		loginPolicyRepo:         loginPolicyRepo,
 		mfaFactorRepo:           mfaFactorRepo,
 		mfaChallengeCache:       mfaChallengeCache,
+		ssoStateCache:           ssoStateCache,
 		vcodeCache:              vcodeCache,
 		notifier:                notifier,
 	}

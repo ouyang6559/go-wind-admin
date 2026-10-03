@@ -94,6 +94,10 @@ func NewRestMiddleware(
 		adminV1.OperationAccessKeyServiceIssueToken,
 		adminV1.OperationAuthenticationServiceForgotPassword,
 		adminV1.OperationAuthenticationServiceResetPasswordByCode,
+		// OIDC SSO 三端点免鉴权：它们本身就是认证入口（未登录态使用）
+		adminV1.OperationAuthenticationServiceGetSsoLoginInfo,
+		adminV1.OperationAuthenticationServiceGetSsoLoginUrl,
+		adminV1.OperationAuthenticationServiceSsoLogin,
 		//OperationFileTransferServiceDownloadFile,
 		//OperationFileTransferServicePostUploadFile,
 		//OperationFileTransferServicePutUploadFile,

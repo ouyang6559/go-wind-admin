@@ -5,6 +5,7 @@ import { UserOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/stores';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchGenerateCaptcha } from '@/api';
+import { ssoEnabled, startSsoLogin } from '@/api/hooks/sso';
 
 const Login: React.FC = () => {
   const { t } = useTranslation('auth');
@@ -17,6 +18,9 @@ const Login: React.FC = () => {
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaImage, setCaptchaImage] = useState<string>('');
   const [captchaLoading, setCaptchaLoading] = useState(false);
+
+  // SSO 开关（后端未配置 OIDC 时按钮不渲染）
+  const [ssoOn, setSsoOn] = useState(false);
 
   // 获取验证码
   const refreshCaptcha = useCallback(async () => {
@@ -56,6 +60,11 @@ const Login: React.FC = () => {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // SSO 开关探测：失败/未配置都不显示按钮（非关键路径，静默降级）
+  useEffect(() => {
+    ssoEnabled().then(setSsoOn).catch(() => setSsoOn(false));
   }, []);
 
   const handleSubmit = async (values: {
@@ -236,6 +245,28 @@ const Login: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
+
+        {ssoOn && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--ant-color-split)' }} />
+              <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>或</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--ant-color-split)' }} />
+            </div>
+            <Button
+              block
+              size="large"
+              onClick={() => {
+                startSsoLogin().catch((err: any) => {
+                  console.error('start sso login failed', err);
+                  message.error(err?.message || t('ssoLoginFailed'));
+                });
+              }}
+            >
+              {t('ssoButton')}
+            </Button>
+          </>
+        )}
       </div>
 
       {/* 底部链接 */}

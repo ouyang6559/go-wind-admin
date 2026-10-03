@@ -53,6 +53,7 @@
   "scripts": "Scripts",
   "server-error": "Server Error",
   "server-monitor": "Server Monitor",
+  "ssoCallback": "SSO Callback",
   "system": "System Management",
   "tasks": "Task Management",
   "tenant": "Tenant Management",
