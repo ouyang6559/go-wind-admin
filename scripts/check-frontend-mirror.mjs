@@ -40,7 +40,13 @@ const PROVENANCE_MARKERS = [
 // (business-code 401 detection, login-request exclusion from the refresh
 // flow, dual-spelling refresh URL matching) — its empty-token and
 // queue-timeout guards were audited present with outcomes equivalent to the
-// registered copies. The two structurally identical copies registered below
+// registered copies. Those vben-local branches are inert for this backend
+// (October 2026 finding: the server normalizes every credential failure to
+// HTTP 400 via normalizeLoginVerifyError, so no login response carries 401
+// and the login-exclusion branch is dead code; kratos errors never arrive
+// as a 2xx body with code 401; the refresh endpoint exposes a single
+// kebab-case path) — do not port them to the registered copies for
+// parity's sake. The two structurally identical copies registered below
 // are the ones this check pins.
 const GROUPS = [
   {
