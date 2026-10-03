@@ -100,11 +100,14 @@ async function loadMessages() {
 
 watch(activeId, () => {
   streamingText.value = '';
+  toolCalls.value = [];
   loadMessages();
 });
 
 // ── 流式 ──────────────────────────────────────────────────────────
 const streamingText = ref('');
+// 工具调用可见化：ai_chat_tool 帧按到达顺序累积，随流式气泡一并渲染
+const toolCalls = ref<ChatToolEvent[]>([]);
 const scrollRef = ref<HTMLElement>();
 
 function scrollToBottom() {
@@ -122,11 +125,27 @@ interface ChatChunk {
   delta?: string;
 }
 
+interface ChatToolEvent {
+  conversationId?: number;
+  name?: string;
+  arguments?: string;
+  result?: string;
+}
+
 function handleChunk(data: ChatChunk) {
   if (!data || typeof data !== 'object' || !data.conversationId) return;
-  // 只渲染当前打开会话的片段；其余会话的 chunk 静默丢弃（响应到达后列表刷新）
-  if (data.conversationId !== activeId.value) return;
+  // 只渲染当前打开会话的片段；其余会话的 chunk 静默丢弃（响应到达后列表刷新）。
+  // 新会话（activeId 未定）放行：首条消息的会话由响应才创建，过滤会让新会话流式全丢。
+  if (activeId.value !== undefined && data.conversationId !== activeId.value) return;
   streamingText.value += data.delta || '';
+  scrollToBottom();
+}
+
+function handleToolEvent(data: ChatToolEvent) {
+  if (!data || typeof data !== 'object' || !data.name) return;
+  // 同 handleChunk：新会话（activeId 未定）放行，工具帧才对首条消息可见
+  if (activeId.value !== undefined && data.conversationId !== activeId.value) return;
+  toolCalls.value.push(data);
   scrollToBottom();
 }
 
@@ -135,10 +154,12 @@ onMounted(() => {
   loadMessages();
   // 必须按回调引用显式注销：组件重挂载反复 on() 会让回调累加（同 useNotice 的坑）
   globalSSEClient.on<ChatChunk>(SSE_EVENT.AIChatChunk, handleChunk);
+  globalSSEClient.on<ChatToolEvent>(SSE_EVENT.AIChatTool, handleToolEvent);
 });
 
 onBeforeUnmount(() => {
   globalSSEClient.off(SSE_EVENT.AIChatChunk, handleChunk);
+  globalSSEClient.off(SSE_EVENT.AIChatTool, handleToolEvent);
 });
 
 // ── 会话重命名（内联编辑） ────────────────────────────────────────
@@ -190,6 +211,7 @@ async function handleSend() {
   const content = input.value.trim();
   if (!content || sending.value) return;
   streamingText.value = '';
+  toolCalls.value = [];
   sending.value = true;
   scrollToBottom();
   try {
@@ -200,6 +222,7 @@ async function handleSend() {
     });
     input.value = '';
     streamingText.value = '';
+    toolCalls.value = [];
     if (resp.conversation?.id) {
       const exists = conversations.value.some(
         (c) => c.id === resp.conversation!.id,
@@ -212,6 +235,8 @@ async function handleSend() {
     await loadMessages();
   } catch (error) {
     console.error('send ai chat failed:', error);
+    streamingText.value = '';
+    toolCalls.value = [];
     message.error(
       error instanceof Error ? error.message : $t('page.aiChat.chatFailed'),
     );
@@ -242,6 +267,7 @@ function handleNewConversation() {
   activeId.value = undefined;
   messages.value = [];
   streamingText.value = '';
+  toolCalls.value = [];
   loadConversations();
 }
 </script>
@@ -429,6 +455,17 @@ function handleNewConversation() {
                   }}</span>
                 </div>
                 <div class="msg__bubble msg__bubble--ai">
+                  <!-- 工具调用可见化：模型调工具期间的中间过程帧 -->
+                  <div
+                    v-for="(tc, i) in toolCalls"
+                    :key="`${i}-${tc.name}`"
+                    class="tool-call"
+                  >
+                    <span class="tool-call__head">
+                      🛠 {{ tc.name }}({{ tc.arguments }})
+                    </span>
+                    <span class="tool-call__result">{{ tc.result }}</span>
+                  </div>
                   <!-- eslint-disable-next-line vue/no-v-html -- 已经过 DOMPurify 消毒，见 renderMarkdown -->
                   <div
                     v-if="streamingText"
@@ -1153,5 +1190,30 @@ function handleNewConversation() {
 .markdown-body :deep(th) {
   font-weight: 600;
   background: hsl(var(--muted));
+}
+
+/* 工具调用可见化：ai_chat_tool 帧的展示条（模型调工具期间的中间过程，流式结束即清） */
+.tool-call {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  border: 1px dashed hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--muted));
+}
+
+.tool-call__head {
+  color: hsl(var(--muted-foreground));
+}
+
+.tool-call__result {
+  color: hsl(var(--foreground));
+  word-break: break-all;
 }
 </style>
