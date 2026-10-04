@@ -16,7 +16,7 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 // ---- inQuietWindow 单元 ----
@@ -105,7 +105,7 @@ func TestBroadcastRespectsMutedCategoriesAndQuietHours(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	prefRepo := data.NewNotificationPreferenceRepoForTest(entClient)
 	pub := &payloadRecordingPublisher{}
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	im := &InternalMessageService{
 		log:                          bLogger.NewHelper(bLogger.NopLogger()),
@@ -164,7 +164,7 @@ func TestBroadcastUnmutedCategoryDeliversAll(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	prefRepo := data.NewNotificationPreferenceRepoForTest(entClient)
 	pub := &payloadRecordingPublisher{}
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	im := &InternalMessageService{
 		log:                          bLogger.NewHelper(bLogger.NopLogger()),

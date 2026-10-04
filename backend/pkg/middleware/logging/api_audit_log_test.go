@@ -145,7 +145,7 @@ func TestApiAuditLogHandleFieldMapping(t *testing.T) {
 	// 落库不变量。
 	require.Len(t, env.capture.apiMeta, 1)
 	assert.True(t, env.capture.apiMeta[0].Sinking, "落库阶段必须带 sink 标记")
-	assert.True(t, env.capture.apiMeta[0].SystemViewer, "落库必须以系统 viewer 执行")
+	assert.True(t, env.capture.apiMeta[0].SystemContext, "落库必须以系统 viewer 执行")
 }
 
 // TestApiAuditLogHandleErrorStatusMapping 验证中间件错误到

@@ -26,7 +26,7 @@ func TestIsPostgresDriver(t *testing.T) {
 // （SQLite 的 rowid 会自己抬到 max+1，这正是它不需要修复的原因）。
 func TestAlignIdentitySequenceSqliteIsNoop(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, entClient.Client().Menu.Create().
 		SetID(9001).
@@ -55,7 +55,7 @@ func TestAlignIdentitySequenceNilHandle(t *testing.T) {
 // 以 "postgres" 调用时确实会去跑那条 PG 语法（setval），在 SQLite 库上必然失败。
 func TestAlignIdentitySequenceRunsOnlyOnPostgresBranch(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := alignIdentitySequence(ctx, entClient.DB(), "postgres", identityTableMenus)
 	require.Error(t, err, "PG 分支的 setval 语句在 SQLite 上应失败")
@@ -66,7 +66,7 @@ func TestAlignIdentitySequenceRunsOnlyOnPostgresBranch(t *testing.T) {
 // 因此按"非 PG"处理并成功返回——菜单服务启动期的那次调用在 SQLite 集成测试里应无副作用。
 func TestMenuRepoAlignIdentitySequenceSqlite(t *testing.T) {
 	repo := newMenuRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.AlignIdentitySequence(ctx))
 }

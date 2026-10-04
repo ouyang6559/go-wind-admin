@@ -83,7 +83,7 @@ func Server(opts ...Option) middleware.Middleware {
 					traceID = spanContext.TraceID().String()
 				}
 
-				userViewer := appViewer.NewUserViewer(
+				userViewer := viewer.NewUserContext(
 					uint64(tokenPayload.GetUserId()),
 					uint64(tokenPayload.GetTenantId()),
 					uint64(tokenPayload.GetOrgUnitId()),

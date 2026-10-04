@@ -172,7 +172,7 @@ SameSite=Lax 按站点判断——localhost 不同端口同站，dev 直连后�
 `access_key_service.go IssueToken`（`POST`，白名单端点——AK/SK 本身即凭据）：
 
 1. 复用登录限流器（IP+AK 双维度，防爆破）；
-2. `GetByAccessKeyBySystem`（SystemViewer 通道）查 AK 行；不存在/密钥错误统一文案；
+2. `GetByAccessKeyBySystem`（SystemContext 通道）查 AK 行；不存在/密钥错误统一文案；
 3. 状态 OFF / `expires_at` 已过 → 拒；
 4. SHA-256(secret) 摘要 `subtle.ConstantTimeCompare` 恒定时间比对（明文不落库）；
 5. 成功：清限流计数、`CreateMachineToken`（纯 access、入缓存、

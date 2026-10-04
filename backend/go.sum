@@ -716,8 +716,8 @@ github.com/tx7do/go-crud/gorm v0.0.24 h1:ZbR576OjR9dP/E27y4T8gfLl8bCIGbpywU88859
 github.com/tx7do/go-crud/gorm v0.0.24/go.mod h1:C4qUg3cDmNtQm2nRUCwehJO1SJBxTwPxz9TEnRsM3ro=
 github.com/tx7do/go-crud/pagination v0.0.16 h1:vzj50KnqeZTMjm+bf/hvpTy7X/0+1cQyqUIMKNkt4wo=
 github.com/tx7do/go-crud/pagination v0.0.16/go.mod h1:d8zSInft//2K6i3Gk320L//COCMXC5zrtcyh7XGroD4=
-github.com/tx7do/go-crud/viewer v0.0.7 h1:HF/1d85fv+fhZ8cNHtFCOOEQDEZUDQFUX3V0+RK5RJk=
-github.com/tx7do/go-crud/viewer v0.0.7/go.mod h1:t5MGistb4OfREu9aMj85eeYJqswnNpFRWgbL4nHTXiY=
+github.com/tx7do/go-crud/viewer v0.0.8 h1:z0/oRsOhvDs41P0Lm5d3KUHVAS9f5ZVzyPQlOi39k8s=
+github.com/tx7do/go-crud/viewer v0.0.8/go.mod h1:t5MGistb4OfREu9aMj85eeYJqswnNpFRWgbL4nHTXiY=
 github.com/tx7do/go-scripts v0.0.9 h1:QCLmyGAgj/QKECcLEsqgAwKQy2STNUuGlwk//EZfw9Q=
 github.com/tx7do/go-scripts v0.0.9/go.mod h1:OxJCiXouVGS36CZd29UvDClyEQfOCTxHPJ2jSlMf/GI=
 github.com/tx7do/go-scripts/hostmodule v0.0.1 h1:J9Q5kwlfSsKHuo4CXnNVFRk6beIXe82RVLrzeZaa23E=

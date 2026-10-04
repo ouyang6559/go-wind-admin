@@ -51,7 +51,7 @@ func menuIDByName(t *testing.T, entClient *entCrud.EntClient[*ent.Client], ctx c
 func TestMenuServiceSqlite_CreateAndGet_ParentChild(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newMenuServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreateMenuRequest{
@@ -110,7 +110,7 @@ func TestMenuServiceSqlite_CreateAndGet_ParentChild(t *testing.T) {
 func TestMenuServiceSqlite_List_FlatWithContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newMenuServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	for _, name := range []string{"MARKERMENUALPHA 菜单", "无关菜单乙"} {
@@ -158,7 +158,7 @@ func TestMenuServiceSqlite_List_FlatWithContainsFilter(t *testing.T) {
 func TestMenuServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newMenuServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreateMenuRequest{
@@ -194,7 +194,7 @@ func TestMenuServiceSqlite_Update(t *testing.T) {
 func TestMenuServiceSqlite_Delete_ParentRowOnlyUnderSqlite(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newMenuServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreateMenuRequest{
@@ -240,7 +240,7 @@ func TestMenuServiceSqlite_Delete_ParentRowOnlyUnderSqlite(t *testing.T) {
 func TestMenuServiceSqlite_SyncMenus_MergeInsertsTree(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newMenuServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.SyncMenus(opCtx, &permissionV1.SyncMenusRequest{

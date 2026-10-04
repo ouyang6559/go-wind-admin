@@ -20,9 +20,9 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/channel"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/task"
 )
 
@@ -538,8 +538,8 @@ const (
 //
 // 阈值走 NOTIFICATION_DELIVERY_STALE_MINUTES（分钟），缺省 15、下限 10。
 func (s *NotificationService) AsyncDeliverySweep(taskType string, taskData *task.NotificationDeliverySweepTaskData) error {
-	// SystemViewer 与同族的两个系统级任务保持一致；台账本身没有租户列，这一层今天不改变读写范围。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	// SystemContext 与同族的两个系统级任务保持一致；台账本身没有租户列，这一层今天不改变读写范围。
+	ctx := viewer.WithSystemContext(context.Background())
 
 	staleAfter := s.deliveryStaleAfter(ctx)
 	reason := fmt.Sprintf("swept by %s: still SENDING %s after creation, no delivery conclusion written back",

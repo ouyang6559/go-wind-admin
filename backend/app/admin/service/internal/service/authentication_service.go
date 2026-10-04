@@ -28,7 +28,6 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/netutil"
 )
@@ -737,7 +736,7 @@ func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req
 	// ViewerContext，而下方 userRepo.Get 等查询走 ent privacy（缺 viewer 直接 500
 	// "missing ViewerContext"）。uid 来自已验签的自描述 JWT 且按主键精确查询，
 	// 注入系统级 viewer 查询不会越权。
-	ctx = appViewer.NewSystemViewerContext(ctx)
+	ctx = viewer.WithSystemContext(ctx)
 
 	// 获取用户信息
 	user, err := s.userRepo.Get(ctx, &identityV1.GetUserRequest{

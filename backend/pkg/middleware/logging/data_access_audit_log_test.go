@@ -169,7 +169,7 @@ func TestDataAccessAuditLogHandleDirectRecords(t *testing.T) {
 	// 依赖 Server 包装植入的其他审计）。
 	for i := range metas {
 		assert.True(t, metas[i].Sinking, "数据访问审计落库必须自带 sink 标记")
-		assert.True(t, metas[i].SystemViewer, "数据访问审计落库必须切系统 viewer")
+		assert.True(t, metas[i].SystemContext, "数据访问审计落库必须切系统 viewer")
 	}
 }
 
@@ -201,7 +201,7 @@ func TestDataAccessAuditLogHandleViaServer(t *testing.T) {
 		require.Len(t, *env.acc, 0, "落库后 accumulator 必须清空")
 		for _, m := range env.capture.dataAccessMeta {
 			require.True(t, m.Sinking)
-			require.True(t, m.SystemViewer)
+			require.True(t, m.SystemContext)
 		}
 	})
 

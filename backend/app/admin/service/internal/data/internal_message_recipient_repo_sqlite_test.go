@@ -16,7 +16,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	entInternalMessageRecipient "go-wind-admin/app/admin/service/internal/data/ent/internalmessagerecipient"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 // newInternalMessageRecipientRepoSqlite 用 enttest helper 构造一个可直接做 CRUD 的
@@ -52,7 +51,7 @@ func newInternalMessageRecipientRepoSqlite(t *testing.T) *InternalMessageRecipie
 // 读视图的退化（丢值或零值伪造）将被本测试捕获。
 func TestInternalMessageRecipientRepoSqlite_EnumReadback(t *testing.T) {
 	repo := newInternalMessageRecipientRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// marker 经 RecipientUserId 落库并读回，用于在 List/Get 结果中定位各行。
 	type enumCase struct {
@@ -166,13 +165,13 @@ func TestInternalMessageRecipientRepoSqlite_EnumReadback(t *testing.T) {
 // 为什么要跑出来而不是读代码：repo 统一写 SetNillableTenantID(req.TenantId)，
 // 但落库结果取决于 viewer 而不取决于调用方是否"记得传"——go-crud TenantPrivacy 在
 // Create 上分平台/租户两套行为，留空时由 ent 的 DefaultTenantID=0 兜底。
-// 全员广播在 asynq handler 里以 SystemViewer 运行，一旦不显式传收件用户的租户，
+// 全员广播在 asynq handler 里以 SystemContext 运行，一旦不显式传收件用户的租户，
 // 整批收件行会静默落到 0，收件人（租户用户）的查询被租户谓词过滤后一行也读不到——
 // 不报错、不丢日志。本测试同时是 InternalMessageService 广播路径传租户的回归护栏。
 func TestInternalMessageRecipientTenantSqlite(t *testing.T) {
 	repo := newInternalMessageRecipientRepoSqlite(t)
-	sysCtx := enttest.NewSystemViewerCtx(context.Background())
-	tenantCtx := crudViewer.WithContext(context.Background(), appViewer.NewUserViewer(1, 5, 0, "", nil))
+	sysCtx := enttest.NewSystemContext(context.Background())
+	tenantCtx := crudViewer.WithContext(context.Background(), crudViewer.NewUserContext(1, 5, 0, "", nil))
 
 	newRecipient := func(messageID, recipientUserID uint32, tenantID *uint32) *internalMessageV1.InternalMessageRecipient {
 		return &internalMessageV1.InternalMessageRecipient{
@@ -187,7 +186,7 @@ func TestInternalMessageRecipientTenantSqlite(t *testing.T) {
 		t.Helper()
 		// 收件箱读取被服务端钉成"viewer 自己的收件行"（见 repo.List 的归属谓词），
 		// 所以这里必须按要读的那个人构造 viewer，而不是只给租户。
-		ctx := crudViewer.WithContext(context.Background(), appViewer.NewUserViewer(uint64(uid), 5, 0, "", nil))
+		ctx := crudViewer.WithContext(context.Background(), crudViewer.NewUserContext(uint64(uid), 5, 0, "", nil))
 		inbox, err := repo.List(ctx, &paginationV1.PagingRequest{})
 		require.NoError(t, err)
 		seen := make(map[uint32]bool, len(inbox.GetItems()))
@@ -200,7 +199,7 @@ func TestInternalMessageRecipientTenantSqlite(t *testing.T) {
 	t.Run("平台上下文留空落0且租户读者读不到", func(t *testing.T) {
 		created, err := repo.Create(sysCtx, newRecipient(101, 201, nil))
 		require.NoError(t, err)
-		require.Equal(t, uint32(0), created.GetTenantId(), "SystemViewer 下未显式传租户 → 落 DefaultTenantID=0")
+		require.Equal(t, uint32(0), created.GetTenantId(), "SystemContext 下未显式传租户 → 落 DefaultTenantID=0")
 		require.False(t, listAs(t, 201)[201], "tenant_id=0 的收件行对租户 5 不可见（这就是广播丢投递的机理）")
 	})
 
@@ -241,7 +240,7 @@ func TestInternalMessageRecipientInboxWritesSqlite(t *testing.T) {
 		t.Helper()
 
 		repo := newInternalMessageRecipientRepoSqlite(t)
-		sysCtx := enttest.NewSystemViewerCtx(context.Background())
+		sysCtx := enttest.NewSystemContext(context.Background())
 
 		var ownID, otherID uint32
 		for _, uid := range []uint32{201, 202} {
@@ -267,7 +266,7 @@ func TestInternalMessageRecipientInboxWritesSqlite(t *testing.T) {
 	statusOf := func(t *testing.T, repo *InternalMessageRecipientRepo, recipientRowID uint32) (entInternalMessageRecipient.Status, bool) {
 		t.Helper()
 
-		sysCtx := enttest.NewSystemViewerCtx(context.Background())
+		sysCtx := enttest.NewSystemContext(context.Background())
 		row, err := repo.entClient.Client().InternalMessageRecipient.Query().
 			Where(entInternalMessageRecipient.IDEQ(recipientRowID)).Only(sysCtx)
 		if ent.IsNotFound(err) {
@@ -280,7 +279,7 @@ func TestInternalMessageRecipientInboxWritesSqlite(t *testing.T) {
 	}
 
 	asUser := func(uid uint32) context.Context {
-		return crudViewer.WithContext(context.Background(), appViewer.NewUserViewer(uint64(uid), 5, 0, "", nil))
+		return crudViewer.WithContext(context.Background(), crudViewer.NewUserContext(uint64(uid), 5, 0, "", nil))
 	}
 
 	t.Run("标已读碰不到别人的行", func(t *testing.T) {
@@ -360,7 +359,7 @@ func TestInternalMessageRecipientInboxWritesSqlite(t *testing.T) {
 		repo, _, otherID := newEnv(t)
 
 		require.NoError(t, repo.MarkNotificationAsRead(
-			crudViewer.WithContext(context.Background(), appViewer.NewUserViewer(1, 0, 0, "", nil)),
+			crudViewer.WithContext(context.Background(), crudViewer.NewUserContext(1, 0, 0, "", nil)),
 			&internalMessageV1.MarkNotificationAsReadRequest{UserId: 202, RecipientIds: []uint32{otherID}},
 		))
 		other, _ := statusOf(t, repo, otherID)

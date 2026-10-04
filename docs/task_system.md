@@ -18,7 +18,7 @@
           ├─ RegisterTaskScheduler：把调度器句柄注入 TaskService（后续所有调度动作经它）
           ├─ RegisterTaskEnqueuer：站内信服务（广播 fan-out）与通知域服务（异步派发）
           │  各自获得一次性任务入队能力；未注入时两处都退回同步路径
-          └─ StartAllTask（SystemViewer 上下文）：装载 sys_tasks + 重注册系统级 cron
+          └─ StartAllTask（SystemContext 上下文）：装载 sys_tasks + 重注册系统级 cron
 数据      sys_tasks（任务表，带租户列）+ task_options（asynq 选项映射）
 执行      asynq 调度器（Redis 队列，周期任务 cron entry + 一次性任务队列）
 管理页    三端「系统管理 → 任务管理」（system/task）：任务 CRUD + 行内启停
@@ -96,7 +96,7 @@ cron `30 3 * * *`。把超过保留期的六类审计行导出 JSONL 归档文�
 
 ### 5.3 备份（`backup`，一次性）
 
-`AsyncBackup`：SystemViewer 全量导出核心表 → JSON 序列化 → gzip → 上传 MinIO 桶
+`AsyncBackup`：SystemContext 全量导出核心表 → JSON 序列化 → gzip → 上传 MinIO 桶
 `backups`（对象名 `<日期>/<名称>-<时间>.json.gz`）。**这是应用级逻辑备份**，
 与 `scripts/backup/pg_backup.sh`（pg_dump 物理备份，30 份轮换）互补、互不替代。
 桶内对象的保留/清理策略当前无自动化（见第 10 节）。
@@ -197,7 +197,7 @@ asynq mux 的"Start 后不能注册 handler"约束 vs 脚本处理器运行期�
 ## 8. 多租户语义与调度器限制
 
 - `sys_tasks` 带租户列：管理页的列表/详情查询按租户隔离（ent 隐私层，见 tenant_isolation 第 5 节）；
-  `StartAllTask` 用 **SystemViewer** 跨租户装载全部任务（调度装载必须全量）。
+  `StartAllTask` 用 **SystemContext** 跨租户装载全部任务（调度装载必须全量）。
 - **typeName 全局命名空间限制**：调度器用 typeName 既做路由又做调度项去重键（`entryIDs[typeName]`
   单条目）。跨租户同名 PERIODIC 任务会互相覆盖产生"无法注销的孤儿 entry"——`startAllTask`
   按 typeName 去重、**只调度首个**并告警跳过。彻底隔离需调度器支持"路由类型/调度键分离"

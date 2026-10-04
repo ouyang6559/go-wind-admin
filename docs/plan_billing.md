@@ -116,7 +116,7 @@ AsyncTenantExpiryScan（系统级周期任务）
   │        cron = "0 * * * *"（每小时整点，pkg/task/tenant_expiry.go 常量），
   │        系统级常驻——不写入 sys_tasks 表、不经任务管理页
   ▼
-EnforceExpiryPolicies（tenant_usage_repo，SystemViewerContext 跨租户）
+EnforceExpiryPolicies（tenant_usage_repo，SystemContext 跨租户）
   ├─ 圈定：status==ON 且 expired_at<=now，WithPlan 预载套餐
   ├─ 无套餐 → 跳过（保持 ON；但其业务模块本就被闸门"无套餐即拒"全拒）
   ├─ BLOCK_LOGIN → status := EXPIRED
@@ -189,7 +189,7 @@ handler 为 `TaskService.AsyncTenantExpiryScan`。它**不在** sys_tasks 表（
 
 ### 7.1 `GetUsage`（GET `/admin/v1/tenants/{id}/usage`）
 
-`TenantUsageRepo.GetUsage`（SystemViewerContext，跨租户合法聚合通道）：
+`TenantUsageRepo.GetUsage`（SystemContext，跨租户合法聚合通道）：
 
 - 套餐与配额上限：`WithPlan(WithQuotas())` 预载（plan 名 + 三类 quota_value）；
 - `UserCount`：`sys_users` 按租户 COUNT；
@@ -267,7 +267,7 @@ POST `/admin/v1/tenants/{id}/cleanup`：
 - 事务提交后吊销该租户全部用户双端令牌（用户 ID 列表在事务内先收集）。
 
 **不可逆**：清理前确认（无软删、无备份联动——备份靠 pg_backup 外部兜底）。
-SystemViewerContext 通道。清理动作走租户模块端点，受租户闸门/权限面管控。
+SystemContext 通道。清理动作走租户模块端点，受租户闸门/权限面管控。
 
 ## 9. 运维注意
 

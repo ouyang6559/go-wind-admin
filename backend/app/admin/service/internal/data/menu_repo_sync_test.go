@@ -37,7 +37,7 @@ func newMenuRepoSqlite(t *testing.T) *MenuRepo {
 // （ID 与 status 保留），缺失才新增——这是"同步不废角色-菜单授权"的关键语义。
 func TestMenuRepoSyncMenus_MergePreservesIDs(t *testing.T) {
 	repo := newMenuRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 种子：/system 目录（手工停用）+ 子菜单 dict
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateMenuRequest{Data: &permissionV1.Menu{
@@ -104,7 +104,7 @@ func TestMenuRepoSyncMenus_MergePreservesIDs(t *testing.T) {
 // TestMenuRepoSyncMenus_RebuildReplace 全量重建：清空后重建，旧 ID 全部变化（兼容旧行为）。
 func TestMenuRepoSyncMenus_RebuildReplace(t *testing.T) {
 	repo := newMenuRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateMenuRequest{Data: &permissionV1.Menu{
 		Name: trans.Ptr("Old"),

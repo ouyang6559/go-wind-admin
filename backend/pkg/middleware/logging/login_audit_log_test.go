@@ -120,7 +120,7 @@ func TestLoginAuditLogHandleLoginOpWithToken(t *testing.T) {
 
 	require.Len(t, env.capture.loginMeta, 1)
 	assert.True(t, env.capture.loginMeta[0].Sinking)
-	assert.True(t, env.capture.loginMeta[0].SystemViewer)
+	assert.True(t, env.capture.loginMeta[0].SystemContext)
 }
 
 // TestLoginAuditLogHandleMFAVerifyStatus 验证 MFA 验证 operation 的
@@ -286,7 +286,7 @@ func TestLoginAuditLogHandleDirectEmptySources(t *testing.T) {
 		requireLogHashHex(t, rec.GetLogHash())
 		requireDERSig(t, rec.GetSignature())
 		requireTimestampNearNow(t, rec.GetCreatedAt())
-		assert.True(t, meta.SystemViewer, "直调落库同样必须切系统 viewer")
+		assert.True(t, meta.SystemContext, "直调落库同样必须切系统 viewer")
 		assert.False(t, meta.Sinking, "直调路径无 Server 包装时无 sink 标记（由 Server 落库阶段统一植入）")
 	})
 

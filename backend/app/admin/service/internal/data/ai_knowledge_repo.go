@@ -16,7 +16,7 @@ import (
 	"github.com/tx7do/go-utils/copierutil"
 	"github.com/tx7do/go-utils/mapper"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/aidoc"
@@ -460,7 +460,7 @@ func (r *AiKnowledgeRepo) FillDocCounts(ctx context.Context, bases []*aiV1.AiKno
 		BaseID uint32 `sql:"base_id"`
 		Count  uint64 `sql:"count"`
 	}
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 	if err := r.entClient.Client().AiDoc.Query().
 		Where(aidoc.BaseIDIn(ids...)).
 		GroupBy(aidoc.FieldBaseID).
@@ -491,7 +491,7 @@ type ChunkRef struct {
 
 // ListBases 全量知识库（系统查看器；重索引任务无请求上下文）。
 func (r *AiKnowledgeRepo) ListBases(ctx context.Context) ([]*ent.AiKnowledgeBase, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 	return r.entClient.Client().AiKnowledgeBase.Query().All(sysCtx)
 }
 

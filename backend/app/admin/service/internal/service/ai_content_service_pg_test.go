@@ -12,19 +12,19 @@ import (
 
 	"entgo.io/ent/dialect"
 	entSql "entgo.io/ent/dialect/sql"
-	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/stretchr/testify/require"
 	"github.com/tx7do/go-utils/trans"
+	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	entCrud "github.com/tx7do/go-crud/entgo"
 
-	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
+	"github.com/tx7do/go-crud/viewer"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
+	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiprovider"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -122,8 +122,8 @@ func TestAiContentServiceMenuSearchLoop(t *testing.T) {
 	db := entCrudClient.DB()
 	client := entCrudClient.Client()
 
-	sysCtx := appViewer.NewSystemViewerContext(context.Background())
-	opCtx := auth.NewContext(appViewer.NewSystemViewerContext(context.Background()),
+	sysCtx := viewer.WithSystemContext(context.Background())
+	opCtx := auth.NewContext(viewer.WithSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: contentTestUserID})
 
 	titleA := "甲组仪表盘"

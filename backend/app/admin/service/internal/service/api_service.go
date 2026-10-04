@@ -23,9 +23,9 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -60,7 +60,7 @@ func NewApiService(
 }
 
 func (s *ApiService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	if count, _ := s.repo.Count(ctx, nil); count.Count == 0 {
 		_, _ = s.SyncApis(ctx, &emptypb.Empty{})
 	}

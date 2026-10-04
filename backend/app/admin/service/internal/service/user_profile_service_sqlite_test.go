@@ -169,7 +169,7 @@ func profileRowCredentialHash(t *testing.T, entClient *entCrud.EntClient[*ent.Cl
 // 查询 ID 必为操作人本人。
 func TestUserProfileServiceSqlite_GetUser_EnrichesRoleCodes(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 经真实 RoleRepo.Create 落库一枚角色（testkit 装配含其关联子 repo）。
 	require.NoError(t, env.svc.roleRepo.Create(ctx, &permissionV1.CreateRoleRequest{
@@ -204,7 +204,7 @@ func TestUserProfileServiceSqlite_GetUser_EnrichesRoleCodes(t *testing.T) {
 // 角色列表为空；用户查询失败与缺操作人声明均报错。
 func TestUserProfileServiceSqlite_GetUser_NoRolesAndErrors(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	env.stub.getUserResult = &identityV1.User{Id: trans.Ptr(uint32(4242))}
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 4242})
@@ -227,7 +227,7 @@ func TestUserProfileServiceSqlite_GetUser_NoRolesAndErrors(t *testing.T) {
 // 缺操作人声明报错且不触达仓储层。
 func TestUserProfileServiceSqlite_UpdateUser_OperatorInjection(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 4242})
 
 	_, err := env.svc.UpdateUser(opCtx, &identityV1.UpdateUserRequest{
@@ -251,7 +251,7 @@ func TestUserProfileServiceSqlite_UpdateUser_OperatorInjection(t *testing.T) {
 // 缺操作人声明报错且不触达仓储层。
 func TestUserProfileServiceSqlite_DeleteAvatar_ClearsAvatar(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 4242})
 
 	_, err := env.svc.DeleteAvatar(opCtx, &emptypb.Empty{})
@@ -273,7 +273,7 @@ func TestUserProfileServiceSqlite_DeleteAvatar_ClearsAvatar(t *testing.T) {
 // （非 base64 / 空 / 非图片 / 超限 / 无来源 / 缺操作人声明）。
 func TestUserProfileServiceSqlite_UploadAvatar_UrlPathAndValidation(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 4242})
 
 	// ImageUrl 路径：不触碰 OSS，原样写入并回显。
@@ -338,7 +338,7 @@ func TestUserProfileServiceSqlite_UploadAvatar_UrlPathAndValidation(t *testing.T
 // 访问令牌经 miniredis 清空（改密强制下线）。
 func TestUserProfileServiceSqlite_ChangePassword_HappyPath(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const uid = 4242
 	seedProfileUserCredential(t, env.entClient, ctx, uid, "profile-user-a", "OldPass@1234")
@@ -383,7 +383,7 @@ func TestUserProfileServiceSqlite_ChangePassword_HappyPath(t *testing.T) {
 // 且不改写已存凭证。
 func TestUserProfileServiceSqlite_ChangePassword_RejectsWeakNewPassword(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const uid = 4243
 	seedProfileUserCredential(t, env.entClient, ctx, uid, "profile-user-b", "OldPass@1234")
@@ -422,7 +422,7 @@ func TestUserProfileServiceSqlite_ChangePassword_RejectsWeakNewPassword(t *testi
 // 非法、旧口令错误、凭证不存在与缺操作人声明的拒绝分支；凭证均不被改写。
 func TestUserProfileServiceSqlite_ChangePassword_BadCredentials(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const uid = 4244
 	seedProfileUserCredential(t, env.entClient, ctx, uid, "profile-user-c", "OldPass@1234")
@@ -488,7 +488,7 @@ func TestUserProfileServiceSqlite_ChangePassword_BadCredentials(t *testing.T) {
 // 等保历史口令策略：改密成功后再改回近期用过的口令被拒，凭证保持新城。
 func TestUserProfileServiceSqlite_ChangePassword_HistoryReplayRejected(t *testing.T) {
 	env := newUserProfileServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const uid = 4245
 	seedProfileUserCredential(t, env.entClient, ctx, uid, "profile-user-d", "OldPass@1234")

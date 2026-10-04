@@ -15,13 +15,13 @@ import (
 
 	entCrud "github.com/tx7do/go-crud/entgo"
 
+	"github.com/tx7do/go-crud/viewer"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
 	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
 
@@ -563,7 +563,7 @@ func (s *AiQueryService) RunScheduledQuery(ctx context.Context, question, lang s
 
 // AsyncAiQueryRun 定时问数任务 handler：执行问题 → 站内信推送结果给任务创建人。
 func (s *AiQueryService) AsyncAiQueryRun(taskType string, data *task.AiQueryRunTaskData) error {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	question := data.Question
 	if question == "" {
 		return fmt.Errorf("question is required")

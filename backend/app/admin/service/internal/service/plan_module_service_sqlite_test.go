@@ -37,7 +37,7 @@ func newPlanModuleServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent
 func TestPlanModuleServiceSqlite_Create_AssociatesPlan(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanModuleServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parent, err := entClient.Client().Plan.Create().
@@ -75,7 +75,7 @@ func TestPlanModuleServiceSqlite_Create_AssociatesPlan(t *testing.T) {
 func TestPlanModuleServiceSqlite_List_BackfillsPlanId(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanModuleServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parent, err := entClient.Client().Plan.Create().
@@ -105,7 +105,7 @@ func TestPlanModuleServiceSqlite_List_BackfillsPlanId(t *testing.T) {
 func TestPlanModuleServiceSqlite_Create_MissingOperatorRejected(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanModuleServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.Create(ctx, &identityV1.CreatePlanModuleRequest{
 		Data: &identityV1.PlanModule{Module: identityV1.Module_LOG.Enum()},
@@ -121,7 +121,7 @@ func TestPlanModuleServiceSqlite_Create_MissingOperatorRejected(t *testing.T) {
 func TestPlanModuleServiceSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanModuleServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parent, err := entClient.Client().Plan.Create().
@@ -159,7 +159,7 @@ func TestPlanModuleServiceSqlite_Get(t *testing.T) {
 func TestPlanModuleServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanModuleServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parent, err := entClient.Client().Plan.Create().
@@ -205,7 +205,7 @@ func TestPlanModuleServiceSqlite_Update(t *testing.T) {
 func TestPlanModuleServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanModuleServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanModuleRequest{

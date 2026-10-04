@@ -13,7 +13,7 @@ import (
 	"github.com/tx7do/go-utils/copierutil"
 	"github.com/tx7do/go-utils/mapper"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
@@ -159,7 +159,7 @@ func (r *AiUsageLogRepo) FetchTenantTokenQuotaLimit(ctx context.Context, tenantI
 	}
 
 	// 系统查看器绕租户谓词读套餐链（与 tenant_usage_repo.GetUsage 同型）。
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	t, err := r.entClient.Client().Tenant.Query().
 		Where(tenant.IDEQ(tenantId)).
@@ -185,10 +185,10 @@ func (r *AiUsageLogRepo) FetchTenantTokenQuotaLimit(ctx context.Context, tenantI
 
 // MonthStats 聚合本月（自 monthStart 起）的用量：tokens 总和与调用次数。
 // 口径与本表列表一致：租户管理员只算本租户，平台管理员（tenantId=0）算全量。
-// 这里换 SystemViewer 是为了绕开 privacy 做聚合，谓词就得自己按 viewer 补——原先无条件
+// 这里换 SystemContext 是为了绕开 privacy 做聚合，谓词就得自己按 viewer 补——原先无条件
 // TenantIDEQ(tenantId) 让平台管理员的摘要只统计 tenant_id=0 的行，与它下方全量的流水列表对不上。
 func (r *AiUsageLogRepo) MonthStats(ctx context.Context, tenantId uint32, monthStart time.Time) (uint64, uint64, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 	var rows []struct {
 		Total uint64 `sql:"total"`
 		Cnt   uint64 `sql:"cnt"`

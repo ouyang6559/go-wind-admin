@@ -40,7 +40,7 @@ func newFileRepoSqlite(t *testing.T) *FileRepo {
 // size → size_format 的格式化推导（512B / 2KB / 1MB / 0B 四个分支）。
 func TestFileRepoSqlite_Create(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &storageV1.CreateFileRequest{
 		Data: &storageV1.File{
@@ -83,7 +83,7 @@ func TestFileRepoSqlite_Create(t *testing.T) {
 // 字节单位整数输出、跨单位换算后的两位小数去零、以及非正数输出 0B。
 func TestFileRepoSqlite_SizeFormatBranches(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		size uint64
@@ -121,7 +121,7 @@ func TestFileRepoSqlite_SizeFormatBranches(t *testing.T) {
 // 断言 proto → ent 与 ent → proto（List 路径）的双向映射逐对成立。
 func TestFileRepoSqlite_ProviderEnumPairs(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	expectedEnt := map[string]int{}
 	expectedProto := map[int32]int{}
 	serial := 0
@@ -161,7 +161,7 @@ func TestFileRepoSqlite_ProviderEnumPairs(t *testing.T) {
 // file_name 列 contains 模糊搜索、id 列等值过滤与分页语义。
 func TestFileRepoSqlite_ListFilterAndPaging(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	for i, marker := range []string{"MARKERNU", "MARKERXI"} {
 		require.NoError(t, repo.Create(ctx, &storageV1.CreateFileRequest{
@@ -243,7 +243,7 @@ func TestFileRepoSqlite_ListFilterAndPaging(t *testing.T) {
 // TestFileRepoSqlite_Get 验证 Get 按主键的命中与未命中。
 func TestFileRepoSqlite_Get(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &storageV1.CreateFileRequest{
 		Data: &storageV1.File{
@@ -276,7 +276,7 @@ func TestFileRepoSqlite_Get(t *testing.T) {
 // 掩码外字段保持原值、AllowMissing 对不存在 ID 走创建路径、参数校验分支。
 func TestFileRepoSqlite_UpdateMaskAndAllowMissing(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	require.NoError(t, repo.Create(ctx, &storageV1.CreateFileRequest{
 		Data: &storageV1.File{
 			FileGuid:  trans.Ptr("guid-sqlite-file-update-1"),
@@ -358,7 +358,7 @@ func TestFileRepoSqlite_UpdateMaskAndAllowMissing(t *testing.T) {
 // 以及 (tenant_id, file_guid) 唯一约束：同租户重复 guid 被拒、跨租户同 guid 允许。
 func TestFileRepoSqlite_DeleteAndUniqueGuid(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 同租户（tenant 0）同 guid：第二条被唯一索引拒绝
 	require.NoError(t, repo.Create(ctx, &storageV1.CreateFileRequest{
@@ -406,7 +406,7 @@ func TestFileRepoSqlite_DeleteAndUniqueGuid(t *testing.T) {
 // 与 IsExist 的命中/未命中。
 func TestFileRepoSqlite_CountAndIsExist(t *testing.T) {
 	repo := newFileRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &storageV1.CreateFileRequest{
 		Data: &storageV1.File{

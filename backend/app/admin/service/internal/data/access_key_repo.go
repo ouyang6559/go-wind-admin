@@ -15,16 +15,16 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/tx7do/go-crud/viewer"
 	accesskeyV1 "go-wind-admin/api/gen/go/access_key/service/v1"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 // AccessKeyRepo OpenAPI 访问凭证（AK/SK）仓储。
 // 租户隔离由 ent TenantPrivacy 编译策略保证；令牌交换（免鉴权流程）
-// 的查询经由 SystemViewerContext 旁路租户 scope（见 service 层）。
+// 的查询经由 SystemContext 旁路租户 scope（见 service 层）。
 type AccessKeyRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
 	log       *bLogger.Helper
@@ -251,7 +251,7 @@ func (r *AccessKeyRepo) UpdateSecretHash(ctx context.Context, id uint32, secretH
 // GetByAccessKeyBySystem 按访问键查询凭证（系统旁路视图，绕过租户 scope）——
 // 仅供令牌交换（免鉴权流程）使用：交换发生时请求尚无任何 viewer。
 func (r *AccessKeyRepo) GetByAccessKeyBySystem(ctx context.Context, accessKey string) (*ent.AccessKey, error) {
-	svCtx := appViewer.NewSystemViewerContext(ctx)
+	svCtx := viewer.WithSystemContext(ctx)
 	entity, err := r.entClient.Client().AccessKey.Query().
 		Where(accesskey.AccessKeyEQ(accessKey)).
 		Only(svCtx)
@@ -263,7 +263,7 @@ func (r *AccessKeyRepo) GetByAccessKeyBySystem(ctx context.Context, accessKey st
 
 // TouchLastUsedBySystem 刷新最近使用时间（系统旁路；尽力而为，失败不影响交换）。
 func (r *AccessKeyRepo) TouchLastUsedBySystem(ctx context.Context, id uint32) {
-	svCtx := appViewer.NewSystemViewerContext(ctx)
+	svCtx := viewer.WithSystemContext(ctx)
 	err := r.entClient.Client().AccessKey.UpdateOneID(id).
 		SetLastUsedAt(time.Now()).
 		Exec(svCtx)

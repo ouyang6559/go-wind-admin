@@ -6,7 +6,8 @@
 
 - 每个带租户维度的表有 `tenant_id` 列（ent `mixin.TenantID[uint32]{}` 装配，见第 03 章）；
 - 请求进入后端后，认证中间件（`pkg/middleware/auth`）从已验签的令牌构建
-  **ViewerContext**（租户 ID + 平台/系统上下文标志，实现在 `pkg/entgo/viewer`），
+  **ViewerContext**（租户 ID + 平台/系统上下文标志；标准实现在 `go-crud/viewer` 库，
+  本仓 `pkg/entgo/viewer` 仅做数据范围声明的映射适配），
   作为隔离层判定依据。平台管理员上下文（tid=0）跨租户可见；
 - 租户与其套餐的绑定由平台管理员在「租户管理 / 套餐管理」页维护；租户侧用户看到的数据范围由本章所述各层自动裁剪。
 

@@ -16,7 +16,7 @@ import (
 // 复现 Update 带 role_ids（mask 含 role_ids）时的空指针 panic。
 func TestReproNilPanicOnRoleIdsUpdate(t *testing.T) {
 	r := newUserRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	created, err := r.Create(ctx, &identityV1.CreateUserRequest{
 		Data: &identityV1.User{

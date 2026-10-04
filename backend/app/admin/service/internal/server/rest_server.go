@@ -26,8 +26,8 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/authorizer"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	applogging "go-wind-admin/pkg/middleware/logging"
 )
@@ -318,7 +318,7 @@ func NewRestServer(
 	}
 
 	if authorizer != nil {
-		if err = authorizer.ResetPolicies(appViewer.NewSystemViewerContext(ctx.Context())); err != nil {
+		if err = authorizer.ResetPolicies(viewer.WithSystemContext(ctx.Context())); err != nil {
 			log.Errorf("reset policies error: %v", err)
 		}
 	}

@@ -48,7 +48,7 @@ func createDictTypeParent(t *testing.T, entClient *entCrud.EntClient[*ent.Client
 func TestDictEntryServiceSqlite_Create_PersistsParentAssociation(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictEntryServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parentID := createDictTypeParent(t, entClient, ctx, "svc-de-create-type")
@@ -90,7 +90,7 @@ func TestDictEntryServiceSqlite_Create_PersistsParentAssociation(t *testing.T) {
 func TestDictEntryServiceSqlite_ListByTypeCode(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictEntryServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parentA := createDictTypeParent(t, entClient, ctx, "svc-de-list-type-a")
@@ -149,7 +149,7 @@ func TestDictEntryServiceSqlite_ListByTypeCode(t *testing.T) {
 func TestDictEntryServiceSqlite_List(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictEntryServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parentID := createDictTypeParent(t, entClient, ctx, "svc-de-update-type")
@@ -199,7 +199,7 @@ func TestDictEntryServiceSqlite_List(t *testing.T) {
 func TestDictEntryServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictEntryServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parentID := createDictTypeParent(t, entClient, ctx, "svc-de-update-type")
@@ -237,7 +237,7 @@ func TestDictEntryServiceSqlite_Update(t *testing.T) {
 func TestDictEntryServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictEntryServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parentID := createDictTypeParent(t, entClient, ctx, "svc-de-del-type")

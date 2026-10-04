@@ -20,7 +20,7 @@ func newTplMailerForTest(t *testing.T) (*TransactionMailer, context.Context) {
 	t.Helper()
 	entClient := enttest.NewEntClientForTest(t)
 	repo := data.NewNotificationTemplateRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	return &TransactionMailer{TemplateRepo: repo}, ctx
 }
 
@@ -92,7 +92,7 @@ func TestRenderChannelTestEmailTemplate(t *testing.T) {
 func TestRenderRespectsWithLocale(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	mailer := &TransactionMailer{TemplateRepo: data.NewNotificationTemplateRepoForTest(entClient)}
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// en locale + 无模板 → mailtext 内置英文文案
 	ctxEn := mailtext.WithLocale(ctx, mailtext.LocaleEnUS)

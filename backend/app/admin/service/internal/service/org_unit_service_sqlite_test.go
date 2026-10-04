@@ -66,7 +66,7 @@ func newOrgUnitServiceForTest(t *testing.T) *OrgUnitService {
 // 物化路径与 LeaderName 回填。
 func TestOrgUnitServiceSqlite_ListTreeAssemblyAndEnrichment(t *testing.T) {
 	svc := newOrgUnitServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 根节点：带 LeaderId（enrichment 命中）；子节点：无负责人（不回填）。
 	require.NoError(t, svc.orgUnitRepo.Create(ctx, &identityV1.CreateOrgUnitRequest{
@@ -122,7 +122,7 @@ func TestOrgUnitServiceSqlite_ListTreeAssemblyAndEnrichment(t *testing.T) {
 // LeaderName / ContactUserName 回填。
 func TestOrgUnitServiceSqlite_GetEnrichment(t *testing.T) {
 	svc := newOrgUnitServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, svc.orgUnitRepo.Create(ctx, &identityV1.CreateOrgUnitRequest{
 		Data: &identityV1.OrgUnit{
@@ -155,7 +155,7 @@ func TestOrgUnitServiceSqlite_GetEnrichment(t *testing.T) {
 // BuildTree 跳过——见文件头已知方言限制）。
 func TestOrgUnitServiceSqlite_CreateAndDelete(t *testing.T) {
 	svc := newOrgUnitServiceForTest(t)
-	baseCtx := enttest.NewSystemViewerCtx(context.Background())
+	baseCtx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(baseCtx, &authenticationV1.UserTokenPayload{UserId: 4242})
 
 	// Create：操作人注入 CreatedBy。

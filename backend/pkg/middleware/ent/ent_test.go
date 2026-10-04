@@ -2,10 +2,10 @@
 //
 // 该中间件是"认证层 → 数据层"的身份桥梁：从 kratos 服务端 metadata 的
 // x-md-global-operator 头里还原 OperatorMetadata（编码方式与 pkg/metadata 完全一致：
-// proto marshal + RawStd base64），据此构造 UserViewer 注入下游 ctx，
+// proto marshal + RawStd base64），据此构造 UserContext 注入下游 ctx，
 // 供 Ent privacy 层做租户隔离与数据范围过滤。
 // 这里锁定三条关键行为：
-//  1. 合法 operator 元数据注入的 UserViewer，其 UserID/TenantID/OrgUnitID 与
+//  1. 合法 operator 元数据注入的 UserContext，其 UserID/TenantID/OrgUnitID 与
 //     BuildDataScopes 映射结果必须与元数据逐字段一致（含旧单值回退与 UNSPECIFIED 剔除）；
 //  2. ctx 中存在有效 otel SpanContext 时 TraceID 必须透传（用于审计日志关联），否则为空；
 //  3. ctx 无有效 operator 元数据（无服务端 metadata / 无该头 / 头内容非法）时
@@ -50,11 +50,11 @@ func withOperatorMetadata(t *testing.T, base context.Context, op *authentication
 	})
 }
 
-// TestServer_InjectsUserViewerFromOperatorMetadata 表驱动验证：中间件包装后，
-// 下游 handler 的 ctx 里能经 viewer.FromContext 取回 UserViewer，
+// TestServer_InjectsUserContextFromOperatorMetadata 表驱动验证：中间件包装后，
+// 下游 handler 的 ctx 里能经 viewer.FromContext 取回 UserContext，
 // 且身份字段与数据范围映射（BuildDataScopes）与注入的 OperatorMetadata 逐字段一致。
 // 覆盖聚合范围、旧单值回退、UNIT 类目标集、UNSPECIFIED 剔除等映射路径。
-func TestServer_InjectsUserViewerFromOperatorMetadata(t *testing.T) {
+func TestServer_InjectsUserContextFromOperatorMetadata(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -166,7 +166,7 @@ func TestServer_InjectsUserViewerFromOperatorMetadata(t *testing.T) {
 			require.NotNil(t, captured, "下游 handler 必须被调用")
 
 			vc, ok := viewer.FromContext(captured)
-			require.True(t, ok, "中间件必须为下游注入 UserViewer")
+			require.True(t, ok, "中间件必须为下游注入 UserContext")
 			require.Equal(t, tc.wantUID, vc.UserID(), "UserID 必须来自 operator 元数据")
 			require.Equal(t, tc.wantTID, vc.TenantID(), "TenantID 必须来自 operator 元数据")
 			require.Equal(t, tc.wantOUID, vc.OrgUnitID(), "OrgUnitID 必须来自 operator 元数据")
@@ -181,7 +181,7 @@ func TestServer_InjectsUserViewerFromOperatorMetadata(t *testing.T) {
 }
 
 // TestServer_PropagatesOtelTraceID 验证 ctx 中存在有效 otel SpanContext 时，
-// 其 TraceID 必须透传到注入的 UserViewer（审计日志靠它做链路关联）。
+// 其 TraceID 必须透传到注入的 UserContext（审计日志靠它做链路关联）。
 // 这里用 trace API 直接构造非 recording 的 SpanContext，无需引入 otel SDK。
 func TestServer_PropagatesOtelTraceID(t *testing.T) {
 	t.Parallel()

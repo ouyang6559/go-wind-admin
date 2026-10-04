@@ -128,7 +128,7 @@ func TestScriptRuntime_Languages(t *testing.T) {
 func TestScriptRuntime_HookPoints_EmptyThenMounted(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, false)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.Empty(t, r.HookPoints(), "初始状态无任何钩子点挂载")
 
@@ -150,7 +150,7 @@ func TestScriptRuntime_HookPoints_EmptyThenMounted(t *testing.T) {
 func TestScriptRuntime_Resync_SkipsDisabled(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, false)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	createScriptRow(t, r, ctx, "rt_hook_disabled", "rt_disabled_hook", "return true", false)
 	require.NoError(t, r.Resync(ctx), "Resync 应成功（disabled 行被 ListEnabledScripts 排除）")
@@ -162,7 +162,7 @@ func TestScriptRuntime_Resync_SkipsDisabled(t *testing.T) {
 func TestScriptRuntime_Resync_BadScriptCountedFailed(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, false)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	createScriptRow(t, r, ctx, "rt_good_mounted", "rt_good_hook", "return true", true)
 	createScriptRow(t, r, ctx, "rt_bad_syntax", "", "this is (not lua", true)
@@ -220,7 +220,7 @@ func TestScriptRuntime_TaskRegistrar_And_OwnerlessHandler(t *testing.T) {
 func TestScriptRuntime_TaskHandler_FullRoundTrip(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, true)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	createScriptRow(t, r, ctx, "rt_task_reg", "", `
 local task = require "task"
@@ -303,7 +303,7 @@ return true
 	require.ErrorContains(t, err, "sandbox stop", "错误应透传停止原因")
 
 	// 两次 TestRun（成功一次+中止一次）各落一条执行日志（trigger=test_run）
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	rows, err := entClient.Client().ScriptLog.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, rows, 2, "两次 TestRun 各应落一条执行日志")

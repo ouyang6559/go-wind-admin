@@ -59,7 +59,7 @@ func TestRatioPct(t *testing.T) {
 // aiRepo 传 nil（AI 维度跳过，其余三维度照常）。
 func TestScanQuotaWatermarksSqlite(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	client := entClient.Client()
 
 	planWithQuota, err := client.Plan.Create().Save(ctx)

@@ -15,7 +15,7 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 type LoginAuditLogMiddleware struct {
@@ -136,7 +136,7 @@ func (l *LoginAuditLogMiddleware) Handle(ctx context.Context, htr *http.Transpor
 
 	// 写入日志
 	if l.op.writeLoginLogFunc != nil {
-		ctx = appViewer.NewSystemViewerContext(ctx)
+		ctx = viewer.WithSystemContext(ctx)
 		_ = l.op.writeLoginLogFunc(ctx, loginAuditLog)
 	}
 }

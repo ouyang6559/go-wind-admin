@@ -114,7 +114,7 @@ func (s *userServiceUserRepoStub) AssignUserRole(_ context.Context, data *permis
 type userServiceEnv struct {
 	svc  *UserService
 	stub *userServiceUserRepoStub
-	ctx  context.Context // SystemViewer（仅用于种子数据写入）
+	ctx  context.Context // SystemContext（仅用于种子数据写入）
 }
 
 // newUserServiceForTest 白盒复刻 NewUserService 的字段初始化：log 换 NopLogger，
@@ -154,7 +154,7 @@ func newUserServiceForTest(t *testing.T) *userServiceEnv {
 	return &userServiceEnv{
 		svc:  svc,
 		stub: stub,
-		ctx:  enttest.NewSystemViewerCtx(context.Background()),
+		ctx:  enttest.NewSystemContext(context.Background()),
 	}
 }
 

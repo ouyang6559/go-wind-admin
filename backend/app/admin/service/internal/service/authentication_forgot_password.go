@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 	"strings"
 	"time"
 
@@ -27,7 +27,7 @@ func generateVCode() string {
 // ForgotPassword 忘记密码：向 identifier（必须为已绑定的邮箱凭证）发送
 // 重置验证码。用户不存在时同样返回成功，防止通过接口枚举有效邮箱。
 func (s *AuthenticationService) ForgotPassword(ctx context.Context, req *authenticationV1.ForgotPasswordRequest) (*emptypb.Empty, error) {
-	ctx = appViewer.NewSystemViewerContext(ctx)
+	ctx = viewer.WithSystemContext(ctx)
 	identifier := strings.TrimSpace(req.GetIdentifier())
 	if identifier == "" {
 		return nil, authenticationV1.ErrorBadRequest("identifier is required")
@@ -83,7 +83,7 @@ func (s *AuthenticationService) ForgotPassword(ctx context.Context, req *authent
 // ResetPasswordByCode 凭邮箱验证码重置密码（免鉴权）。
 // 校验通过后重置密码（密码策略/加密在 repo 层处理）并吊销该用户全部会话。
 func (s *AuthenticationService) ResetPasswordByCode(ctx context.Context, req *authenticationV1.ResetPasswordByCodeRequest) (*emptypb.Empty, error) {
-	ctx = appViewer.NewSystemViewerContext(ctx)
+	ctx = viewer.WithSystemContext(ctx)
 	identifier := strings.TrimSpace(req.GetIdentifier())
 	code := strings.TrimSpace(req.GetCode())
 	newPassword := req.GetNewPassword()

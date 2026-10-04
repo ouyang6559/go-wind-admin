@@ -33,7 +33,7 @@
 │   ├── authorizer     # 策略引擎（Casbin / OPA / noop 可切换）
 │   ├── constants      # 全仓常量 + 启动播种默认数据
 │   ├── crypto         # 应用层 AES 加解密与 HMAC 签名
-│   ├── entgo          # Ent 查看者上下文（SystemViewer / UserViewer）
+│   ├── entgo          # 令牌数据范围声明到库层结构的映射适配（上下文实现在 go-crud/viewer）
 │   ├── eventbus       # 进程内事件总线
 │   ├── fieldperm      # 字段级权限消息裁剪原语
 │   ├── jwt            # JWT 签发与校验（RS256）
@@ -94,7 +94,7 @@
     - `authorizer`：策略引擎抽象，Casbin / OPA / noop 三实现可切换（默认 noop，见根 AGENTS.md）
     - `constants`：全仓常量与启动播种的默认数据（admin 用户、菜单、角色、权限、语言等，`count == 0` 守卫）
     - `crypto`：应用层 AES 加解密（`enc:` 前缀）与 HMAC-SHA256 签名（`GOWIND_CRYPTO_KEY`）
-    - `entgo`：Ent 查看者上下文（SystemViewer / UserViewer，供 Privacy 层判定系统态/用户态）
+    - `entgo`：令牌数据范围声明到 go-crud/viewer 库层结构的映射适配（用户/系统上下文的标准实现由该库提供）
     - `eventbus`：进程内事件总线（如 `email.received`），支持异步 handler
     - `fieldperm`：字段级权限的通用消息裁剪原语（黑名单字段集）
     - `jwt`：JWT 签发与校验（RS256 非对称签名）

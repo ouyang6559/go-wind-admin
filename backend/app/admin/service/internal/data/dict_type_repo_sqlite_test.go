@@ -35,7 +35,7 @@ func newDictTypeRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Clien
 func TestDictTypeRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictTypeRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &dictV1.CreateDictTypeRequest{
 		Data: &dictV1.DictType{
@@ -57,7 +57,7 @@ func TestDictTypeRepoSqlite_Create(t *testing.T) {
 func TestDictTypeRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictTypeRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 两行携带互斥标记，只有第一行含 "markerqwe"
 	require.NoError(t, repo.Create(ctx, &dictV1.CreateDictTypeRequest{
@@ -124,7 +124,7 @@ func TestDictTypeRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestDictTypeRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictTypeRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &dictV1.CreateDictTypeRequest{
 		Data: &dictV1.DictType{
@@ -163,7 +163,7 @@ func TestDictTypeRepoSqlite_Get(t *testing.T) {
 func TestDictTypeRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictTypeRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &dictV1.CreateDictTypeRequest{
 		Data: &dictV1.DictType{
@@ -196,7 +196,7 @@ func TestDictTypeRepoSqlite_Update(t *testing.T) {
 func TestDictTypeRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictTypeRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &dictV1.CreateDictTypeRequest{
 		Data: &dictV1.DictType{

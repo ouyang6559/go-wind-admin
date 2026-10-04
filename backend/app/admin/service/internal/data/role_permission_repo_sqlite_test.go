@@ -50,7 +50,7 @@ func newRolePermissionRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent
 func TestRolePermissionRepoSqlite_EnumReadViewBackfill(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newRolePermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const roleID uint32 = 7001
 

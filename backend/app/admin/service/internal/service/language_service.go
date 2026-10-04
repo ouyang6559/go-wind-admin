@@ -15,8 +15,8 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	dictV1 "go-wind-admin/api/gen/go/dict/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -43,7 +43,7 @@ func NewLanguageService(
 }
 
 func (s *LanguageService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	if count, _ := s.languageRepo.Count(ctx, []func(s *sql.Selector){}); count == 0 {
 		_ = s.createDefaultLanguage(ctx)
 	}

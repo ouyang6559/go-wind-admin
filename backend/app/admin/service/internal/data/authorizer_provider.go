@@ -13,9 +13,9 @@ import (
 
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 // AuthorizerProvider 权限数据提供者
@@ -53,8 +53,8 @@ func (p *AuthorizerProvider) ProvideModels(engineName string) authorizer.ModelDa
 
 // ProvidePolicies 提供策略数据
 func (p *AuthorizerProvider) ProvidePolicies(_ context.Context) (authorizer.PermissionDataMap, error) {
-	// 策略装载需要全量角色/权限数据，统一以 SystemViewer 跑，忽略调用方 ctx 的 viewer
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	// 策略装载需要全量角色/权限数据，统一以 SystemContext 跑，忽略调用方 ctx 的 viewer
+	ctx := viewer.WithSystemContext(context.Background())
 
 	roles, err := p.roleRepo.List(ctx, &paginationV1.PagingRequest{NoPaging: trans.Ptr(true)})
 	if err != nil {

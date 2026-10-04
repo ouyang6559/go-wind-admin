@@ -78,7 +78,7 @@ func TestCheckApiCallQuota(t *testing.T) {
 // 计数查询真的按租户 COUNT。
 func TestCheckTenantAccessApiCallQuotaGate(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	client := entClient.Client()
 
 	// 套餐（全字段默认）+ API_CALL 上限 2 + SYSTEM 模块白名单行

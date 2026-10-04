@@ -18,8 +18,8 @@ import (
 
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -43,7 +43,7 @@ func NewTenantAccessCheckerImpl(
 // CheckTenantAccess 实现 auth.TenantAccessChecker。
 // tenantId 由中间件保证 > 0。
 func (c *TenantAccessCheckerImpl) CheckTenantAccess(ctx context.Context, tenantId uint32, path string, method string) error {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	// 1. 查租户状态与到期时间（WithPlan(WithQuotas) 预载套餐及其配额边：
 	// expiry_policy 供第 2 步，API_CALL 上限供第 4 步——与 GetUsage 同一预载形态）

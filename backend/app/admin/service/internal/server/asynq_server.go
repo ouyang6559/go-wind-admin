@@ -12,7 +12,7 @@ import (
 
 	"go-wind-admin/app/admin/service/internal/service"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/task"
 )
 
@@ -148,7 +148,7 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 	}
 
 	// 启动所有的任务
-	if _, err = taskService.StartAllTask(appViewer.NewSystemViewerContext(ctx.Context()), &emptypb.Empty{}); err != nil {
+	if _, err = taskService.StartAllTask(viewer.WithSystemContext(ctx.Context()), &emptypb.Empty{}); err != nil {
 		log.Error(err)
 		return nil, err
 	}

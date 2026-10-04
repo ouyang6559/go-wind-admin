@@ -38,7 +38,7 @@ func newPlanQuotaServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.
 func TestPlanQuotaServiceSqlite_Create_AssociatesPlan(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanQuotaServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parent, err := entClient.Client().Plan.Create().
@@ -78,7 +78,7 @@ func TestPlanQuotaServiceSqlite_Create_AssociatesPlan(t *testing.T) {
 func TestPlanQuotaServiceSqlite_List_BackfillsPlanId(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanQuotaServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	parent, err := entClient.Client().Plan.Create().
@@ -109,7 +109,7 @@ func TestPlanQuotaServiceSqlite_List_BackfillsPlanId(t *testing.T) {
 func TestPlanQuotaServiceSqlite_Create_MissingOperatorRejected(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanQuotaServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.Create(ctx, &identityV1.CreatePlanQuotaRequest{
 		Data: &identityV1.PlanQuota{QuotaType: identityV1.PlanQuota_API_CALL.Enum()},
@@ -125,7 +125,7 @@ func TestPlanQuotaServiceSqlite_Create_MissingOperatorRejected(t *testing.T) {
 func TestPlanQuotaServiceSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanQuotaServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanQuotaRequest{
@@ -158,7 +158,7 @@ func TestPlanQuotaServiceSqlite_Get(t *testing.T) {
 func TestPlanQuotaServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanQuotaServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanQuotaRequest{
@@ -191,7 +191,7 @@ func TestPlanQuotaServiceSqlite_Update(t *testing.T) {
 func TestPlanQuotaServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanQuotaServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanQuotaRequest{

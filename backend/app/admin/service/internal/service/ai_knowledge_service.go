@@ -15,7 +15,7 @@ import (
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 
 	"github.com/tx7do/go-utils/doctext"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
@@ -431,7 +431,7 @@ const reindexEmbedBatchSize = 32
 // 场景是管理员更换了知识库的 embedding 模型（或 provider 端点）后需要重建。
 func (s *AiKnowledgeService) AsyncAiDocReindex(taskType string, data *task.AiDocReindexTaskData) error {
 	// asynq ctx 不携带 viewer，租户隔离 mixin 会拒绝无 viewer 查询；重索引是平台操作，用系统查看器。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	var baseIds []uint32
 	if data != nil && data.BaseID > 0 {

@@ -155,7 +155,7 @@ type authSvcEnv struct {
 	stub          *authSvcUserRepoStub
 	mr            *miniredis.Miniredis
 	captchaClient *captcha.Captcha
-	ctx           context.Context // SystemViewer（仅用于种子数据写入）
+	ctx           context.Context // SystemContext（仅用于种子数据写入）
 }
 
 // newAuthenticationServiceForTest 白盒复刻 NewAuthenticationService 的字段初始化：
@@ -223,7 +223,7 @@ func newAuthenticationServiceForTest(t *testing.T) *authSvcEnv {
 		stub:          stub,
 		mr:            mr,
 		captchaClient: captchaClient,
-		ctx:           enttest.NewSystemViewerCtx(context.Background()),
+		ctx:           enttest.NewSystemContext(context.Background()),
 	}
 }
 

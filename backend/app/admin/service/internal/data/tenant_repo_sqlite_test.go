@@ -52,7 +52,7 @@ func newTenantRepoSqlite(t *testing.T) *TenantRepo {
 // 再用 ent client 直查（System viewer）确认记录与各字段确实落库。
 func TestTenantRepoSqlite_Create(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// TenantRepo.Create 的真实签名直接接收 Tenant DTO（无 Request 包装）
 	_, err := repo.Create(ctx, &identityV1.Tenant{
@@ -84,7 +84,7 @@ func TestTenantRepoSqlite_Create(t *testing.T) {
 // contains 模糊搜索过滤语义（仓规：搜索条件一律 contains，不做 EQ）。
 func TestTenantRepoSqlite_List(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 两条带可区分标记的记录
 	_, err := repo.Create(ctx, &identityV1.Tenant{
@@ -126,7 +126,7 @@ func TestTenantRepoSqlite_List(t *testing.T) {
 // TestTenantRepoSqlite_Get 验证 TenantRepo.Get 按主键/编码查询的命中与未命中。
 func TestTenantRepoSqlite_Get(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("sqlite查询租户"),
@@ -178,7 +178,7 @@ func TestTenantRepoSqlite_Get(t *testing.T) {
 // 只更新掩码内字段，掩码外字段保持原值。
 func TestTenantRepoSqlite_Update(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
 		Name: trans.Ptr("更新前名称"),
@@ -208,7 +208,7 @@ func TestTenantRepoSqlite_Update(t *testing.T) {
 // 且删除不存在的记录返回错误。
 func TestTenantRepoSqlite_Delete(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
 		Name: trans.Ptr("待删除租户"),
@@ -241,7 +241,7 @@ func TestTenantRepoSqlite_Delete(t *testing.T) {
 // 三端租户编辑抽屉的「订阅套餐」下拉也随之恒空。
 func TestTenantRepoSqlite_PlanIdEdgeBackfill(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	plan, err := repo.entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_tenant_plan")).

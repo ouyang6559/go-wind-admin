@@ -76,7 +76,7 @@ func TestAlertTextLocalized(t *testing.T) {
 // WEBHOOK/未注入 ent 一律回落中文。
 func TestAlertLocaleResolution(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	client := entClient.Client()
 
 	require.NoError(t, client.User.Create().

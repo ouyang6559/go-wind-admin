@@ -39,7 +39,7 @@ func newConfigRepoSqlite(t *testing.T) *ConfigRepo {
 }
 
 func newConfigRepoCtx() context.Context {
-	return enttest.NewSystemViewerCtx(context.Background())
+	return enttest.NewSystemContext(context.Background())
 }
 
 // TestConfigRepoSqlite_AccessorTypedReads 端到端验证参数读取器：三种类型按声明类型解析，

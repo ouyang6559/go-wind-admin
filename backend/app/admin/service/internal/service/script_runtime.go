@@ -16,10 +16,10 @@ import (
 	"github.com/tx7do/go-scripts/hostmodule"
 	"github.com/tx7do/go-utils/trans"
 
+	"github.com/tx7do/go-crud/viewer"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
 	scriptV1 "go-wind-admin/api/gen/go/script/service/v1"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
@@ -485,7 +485,7 @@ func (r *ScriptRuntime) ChatForScript(ctx context.Context, providerId uint32, sy
 	// 用量记账（尽力而为：脚本调用以返回值为准，流水缺失只影响配额统计）。
 	// 走系统查看器：脚本调用无请求上下文，裸 context 过不了租户隔离 mixin 的写检查。
 	if r.aiUsageRepo != nil {
-		ctx = appViewer.NewSystemViewerContext(ctx)
+		ctx = viewer.WithSystemContext(ctx)
 		modelName := ptrStrOr(provider.ModelName, "")
 		promptTokens := uint32(resp.Usage.PromptTokens)
 		completionTokens := uint32(resp.Usage.CompletionTokens)

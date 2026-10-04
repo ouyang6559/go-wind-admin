@@ -11,7 +11,7 @@ import (
 
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 type OperationAuditLogMiddleware struct {
@@ -133,7 +133,7 @@ func (o *OperationAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tran
 	operationAuditLog.Signature = signature
 
 	if o.op.writeOperationAuditLogFunc != nil {
-		ctx = appViewer.NewSystemViewerContext(ctx)
+		ctx = viewer.WithSystemContext(ctx)
 		_ = o.op.writeOperationAuditLogFunc(ctx, operationAuditLog)
 	}
 }

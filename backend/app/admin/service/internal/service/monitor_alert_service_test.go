@@ -15,7 +15,7 @@ import (
 	redisCacheV1 "go-wind-admin/api/gen/go/redis_cache/service/v1"
 	serverMonitorV1 "go-wind-admin/api/gen/go/server_monitor/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
@@ -60,7 +60,7 @@ func newMonitorAlertEnv(t *testing.T) *monitorAlertEnv {
 		svc:      svc,
 		repo:     repo,
 		notifier: notifier,
-		ctx:      appViewer.NewSystemViewerContext(context.Background()),
+		ctx:      viewer.WithSystemContext(context.Background()),
 		serverInfo: &serverMonitorV1.ServerMonitorInfo{
 			Go:       &serverMonitorV1.GoRuntimeInfo{NumGoroutine: trans.Ptr(uint32(100)), MemAllocBytes: trans.Ptr(uint64(512 << 20))},
 			Database: &serverMonitorV1.DatabaseInfo{PingOk: trans.Ptr(true), OpenConnections: trans.Ptr(uint32(10))},

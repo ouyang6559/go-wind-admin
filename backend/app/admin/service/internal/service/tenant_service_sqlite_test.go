@@ -78,7 +78,7 @@ func newTenantServiceForTest(t *testing.T) *TenantService {
 // 带 adminUserId 的租户回填占位用户名，未带的保持空；MemberCount 对两条均回填桩计数。
 func TestTenantServiceSqlite_ListEnrichment(t *testing.T) {
 	svc := newTenantServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	withAdmin, err := svc.tenantRepo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("TenantSvc 富集租户甲"),
@@ -125,7 +125,7 @@ func TestTenantServiceSqlite_ListEnrichment(t *testing.T) {
 // TestTenantServiceSqlite_GetEnrichment 验证 Get 单条查询的 enrichment 回填。
 func TestTenantServiceSqlite_GetEnrichment(t *testing.T) {
 	svc := newTenantServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	created, err := svc.tenantRepo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("TenantSvc 富集租户丙"),
@@ -152,7 +152,7 @@ func TestTenantServiceSqlite_GetEnrichment(t *testing.T) {
 // 任一命中即存在；两者皆空时按存在任意行处理；未命中返回不存在。
 func TestTenantServiceSqlite_TenantExists(t *testing.T) {
 	svc := newTenantServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.tenantRepo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("TenantSvc 存在性租户甲"),
@@ -180,7 +180,7 @@ func TestTenantServiceSqlite_TenantExists(t *testing.T) {
 // Create 后列表可见且 CreatedBy 为操作人 ID；Delete 后列表清空。
 func TestTenantServiceSqlite_CreateAndDelete(t *testing.T) {
 	svc := newTenantServiceForTest(t)
-	baseCtx := enttest.NewSystemViewerCtx(context.Background())
+	baseCtx := enttest.NewSystemContext(context.Background())
 	// 操作人上下文：Create 走 auth.FromContext 取 operator.UserId 注入 CreatedBy。
 	opCtx := auth.NewContext(baseCtx, &authenticationV1.UserTokenPayload{UserId: 4242})
 

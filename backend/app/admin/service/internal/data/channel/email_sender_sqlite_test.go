@@ -40,7 +40,7 @@ func newEmailSenderEnv(t *testing.T) *emailSenderEnv {
 	return &emailSenderEnv{
 		sender: NewEmailSender(repo),
 		repo:   repo,
-		ctx:    enttest.NewSystemViewerCtx(context.Background()),
+		ctx:    enttest.NewSystemContext(context.Background()),
 	}
 }
 

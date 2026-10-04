@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 
 	entCrud "github.com/tx7do/go-crud/entgo"
 
@@ -63,7 +63,7 @@ func NewPlanQuotaWatermarkService(
 // 按租户管理员偏好语言渲染 → 站内信投递。
 func (s *PlanQuotaWatermarkService) AsyncPlanQuotaWatermarkScan(taskType string, payload *task.PlanQuotaWatermarkTaskData) error {
 	// asynq ctx 不带 viewer；跨租户扫描与站内信落库都需要 viewer，用系统查看器。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	now := time.Now()
 	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local)

@@ -14,9 +14,9 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/mailtext"
 	"go-wind-admin/pkg/middleware/auth"
 )
@@ -60,7 +60,7 @@ func NewNotificationRuleService(
 // 该事件的投递会立刻拿到"no enabled channel routing rule for event type X"这句报错
 // （缝在这里不静默丢弃），修法是在规则页手工新增一行 —— 这与菜单新增要靠「菜单同步」同理。
 func (s *NotificationRuleService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	count, err := s.repo.Count(ctx)
 	if err != nil {

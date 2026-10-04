@@ -16,7 +16,7 @@ import (
 func TestNotificationPreferenceRepoSqlite_UpsertRoundtrip(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationPreferenceRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 未配置：nil 而非错误，默认值由服务层补
 	pref, err := repo.GetByUserID(ctx, 1001)
@@ -61,7 +61,7 @@ func TestNotificationPreferenceRepoSqlite_UpsertRoundtrip(t *testing.T) {
 func TestNotificationPreferenceRepoSqlite_ListByUserIDs(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationPreferenceRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Upsert(ctx, 2001, &notificationV1.UpdateNotificationPreferenceRequest{
 		QuietEnabled:     trans.Ptr(true),

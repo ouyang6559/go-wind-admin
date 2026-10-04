@@ -36,7 +36,7 @@ func newApiAuditLogRepoSqlite(t *testing.T) *ApiAuditLogRepo {
 // API 审计日志，ent client 直查断言各字段按请求落库。
 func TestApiAuditLogRepoSqlite_Create(t *testing.T) {
 	repo := newApiAuditLogRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &auditV1.CreateApiAuditLogRequest{
 		Data: &auditV1.ApiAuditLog{
@@ -101,7 +101,7 @@ func TestApiAuditLogRepoSqlite_Create(t *testing.T) {
 // id 列等值过滤与 page/page_size 分页语义。
 func TestApiAuditLogRepoSqlite_ListFilterAndPaging(t *testing.T) {
 	repo := newApiAuditLogRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	for i, marker := range []string{"MARKERALPHA", "MARKERBETA"} {
 		require.NoError(t, repo.Create(ctx, &auditV1.CreateApiAuditLogRequest{
@@ -229,7 +229,7 @@ func TestApiAuditLogRepoSqlite_ListFilterAndPaging(t *testing.T) {
 // TestApiAuditLogRepoSqlite_Get 验证 Get 按主键的命中与未命中。
 func TestApiAuditLogRepoSqlite_Get(t *testing.T) {
 	repo := newApiAuditLogRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &auditV1.CreateApiAuditLogRequest{
 		Data: &auditV1.ApiAuditLog{
@@ -265,7 +265,7 @@ func TestApiAuditLogRepoSqlite_Get(t *testing.T) {
 // 与 IsExist 的命中/未命中。
 func TestApiAuditLogRepoSqlite_CountAndIsExist(t *testing.T) {
 	repo := newApiAuditLogRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &auditV1.CreateApiAuditLogRequest{
 		Data: &auditV1.ApiAuditLog{

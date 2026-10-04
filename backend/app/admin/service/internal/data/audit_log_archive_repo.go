@@ -21,7 +21,7 @@ import (
 	permissionauditlog "go-wind-admin/app/admin/service/internal/data/ent/permissionauditlog"
 	policyevaluationlog "go-wind-admin/app/admin/service/internal/data/ent/policyevaluationlog"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 // AuditLogArchiveRepo 审计日志归档：把超过保留期的审计行导出为本地 JSONL
@@ -45,7 +45,7 @@ const archiveBatch = 5000
 // ArchiveExpired 归档所有审计表中 created_at < before 的行。
 // 返回各表归档行数。导出成功才删除；单表失败跳过并记日志，不影响其他表。
 func (r *AuditLogArchiveRepo) ArchiveExpired(ctx context.Context, before time.Time, outDir string) (map[string]int, error) {
-	ctx = appViewer.NewSystemViewerContext(ctx)
+	ctx = viewer.WithSystemContext(ctx)
 	client := r.client
 	if err := os.MkdirAll(outDir, 0o750); err != nil {
 		return nil, fmt.Errorf("create archive dir: %w", err)

@@ -70,7 +70,7 @@ func newWebhookSenderEnv(t *testing.T, allowPrivate bool) *webhookSenderEnv {
 	return &webhookSenderEnv{
 		sender: NewWebhookSender(repo),
 		repo:   repo,
-		ctx:    enttest.NewSystemViewerCtx(context.Background()),
+		ctx:    enttest.NewSystemContext(context.Background()),
 	}
 }
 

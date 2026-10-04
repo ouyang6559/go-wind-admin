@@ -28,7 +28,6 @@ import (
 	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/sseevent"
 	"go-wind-admin/pkg/task"
@@ -571,7 +570,7 @@ func viewerTenantID(ctx context.Context) uint32 {
 // 注意 viewer：ent 的 TenantPrivacy 在 viewer 缺失时会返回 error，调用方必须传入带 viewer 的 ctx。
 //
 // 收件行的 tenant_id 逐行取自**收件用户自己**（受众 DTO 上的 tenant_id），不取 viewer 的：
-// 平台管理员的广播在 SystemViewer 下跑，viewer 租户恒为 0，用它打标会把全平台的收件行都写进
+// 平台管理员的广播在 SystemContext 下跑，viewer 租户恒为 0，用它打标会把全平台的收件行都写进
 // 租户 0，而收件箱读取按读者租户过滤 → 租户用户一行都读不到（父消息行本身也是 tenant 0，
 // 读侧的回填同因，见 internal_message_recipient_service.go 的 ListUserInbox）。
 // 租户管理员的广播不受影响：受众已被隐私层筛成本租户，逐行取值与 viewer 同值。
@@ -716,14 +715,14 @@ func (s *InternalMessageService) AsyncBroadcastMessage(taskType string, taskData
 	s.log.Infof(context.Background(), "AsyncBroadcastMessage [%s] messageId=%d tenantId=%d", taskType, taskData.MessageId, taskData.TenantId)
 
 	// asynq handler 的 ctx 不携带请求期的 viewer，ent 的 TenantPrivacy 会拒绝无 viewer 的查询。
-	// 平台管理员（tid==0）用 SystemViewer 保持"全平台受众"；租户管理员必须用本租户的 viewer，
+	// 平台管理员（tid==0）用 SystemContext 保持"全平台受众"；租户管理员必须用本租户的 viewer，
 	// 因为平台上下文不给 userRepo.List 注入租户谓词，全员广播会变成跨租户全平台投递。
 	// 升级前已入队的旧任务无 tenant_id 字段，按 tid==0 处理，退化为升级前的行为。
 	var ctx context.Context
 	if taskData.TenantId == 0 {
-		ctx = appViewer.NewSystemViewerContext(context.Background())
+		ctx = viewer.WithSystemContext(context.Background())
 	} else {
-		ctx = viewer.WithContext(context.Background(), appViewer.NewUserViewer(0, uint64(taskData.TenantId), 0, "", nil))
+		ctx = viewer.WithContext(context.Background(), viewer.NewUserContext(0, uint64(taskData.TenantId), 0, "", nil))
 	}
 
 	msg, err := s.internalMessageRepo.Get(ctx, &internalMessageV1.GetInternalMessageRequest{

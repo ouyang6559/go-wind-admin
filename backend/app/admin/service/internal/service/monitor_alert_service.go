@@ -30,7 +30,7 @@ import (
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 // MonitorAlertService 监控告警：规则 CRUD + 周期评估 + 告警通知分发。
@@ -480,7 +480,7 @@ func (s *MonitorAlertService) alertLocale(ctx context.Context, rule *monitorAler
 	}
 
 	u, err := q.Where(user.DeletedAtIsNil()).
-		Only(appViewer.NewSystemViewerContext(ctx))
+		Only(viewer.WithSystemContext(ctx))
 	if err != nil && !ent.IsNotFound(err) {
 		// 真查询故障才记日志（带原始错误）；查无此人是预期回落，不刷屏
 		s.log.Errorf(ctx, "monitor alert locale: query recipient user failed (channel=%s target=%s): %v",
@@ -497,9 +497,9 @@ func (s *MonitorAlertService) alertLocale(ctx context.Context, rule *monitorAler
 
 // ==== 周期任务 ====
 
-// AsyncMonitorAlertScan 周期扫描 handler（系统级常驻任务，SystemViewer 上下文）。
+// AsyncMonitorAlertScan 周期扫描 handler（系统级常驻任务，SystemContext 上下文）。
 func (s *MonitorAlertService) AsyncMonitorAlertScan(taskType string, _ *task.MonitorAlertScanTaskData) error {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	s.log.Infof(ctx, "[%s] scan start", taskType)
 
 	outcomes := s.evaluateOnce(ctx)

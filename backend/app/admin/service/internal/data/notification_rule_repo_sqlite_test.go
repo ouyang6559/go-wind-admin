@@ -41,7 +41,7 @@ func newRule(eventType notificationV1.EventType, channel notificationV1.Channel,
 func TestNotificationRuleRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationRuleRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	id, err := repo.Create(ctx, &notificationV1.NotificationRule{
 		EventType: notificationV1.EventType_PASSWORD_RESET_CODE.Enum(),
@@ -113,7 +113,7 @@ func TestNotificationRuleRepoSqlite_Create(t *testing.T) {
 func TestNotificationRuleRepoSqlite_CreateRejectsDuplicateEventType(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationRuleRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, newRule(notificationV1.EventType_CONTACT_BIND_CODE, notificationV1.Channel_EMAIL, true), 1)
 	require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestNotificationRuleRepoSqlite_CreateRejectsDuplicateEventType(t *testing.T
 func TestNotificationRuleRepoSqlite_GetByEventType(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationRuleRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 空表：未命中必须是 (nil, nil)，让调用方说人话而不是报"查询失败"
 	miss, err := repo.GetByEventType(ctx, notificationV1.EventType_PASSWORD_RESET_CODE)
@@ -174,7 +174,7 @@ func TestNotificationRuleRepoSqlite_GetByEventType(t *testing.T) {
 func TestNotificationRuleRepoSqlite_List(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationRuleRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &notificationV1.NotificationRule{
 		EventType: notificationV1.EventType_PASSWORD_RESET_CODE.Enum(),
@@ -222,7 +222,7 @@ func TestNotificationRuleRepoSqlite_List(t *testing.T) {
 func TestNotificationRuleRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationRuleRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	id, err := repo.Create(ctx, &notificationV1.NotificationRule{
 		EventType: notificationV1.EventType_PASSWORD_RESET_CODE.Enum(),
@@ -289,7 +289,7 @@ func TestNotificationRuleRepoSqlite_Update(t *testing.T) {
 func TestNotificationRuleRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := NewNotificationRuleRepoForTest(entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idA, err := repo.Create(ctx, newRule(notificationV1.EventType_PASSWORD_RESET_CODE, notificationV1.Channel_EMAIL, true), 1)
 	require.NoError(t, err)

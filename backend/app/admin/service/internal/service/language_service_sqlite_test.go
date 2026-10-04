@@ -37,7 +37,7 @@ func newLanguageServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.C
 func TestLanguageServiceSqlite_InitSeedsDefaultsOnEmptyTable(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newLanguageServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 
@@ -68,7 +68,7 @@ func TestLanguageServiceSqlite_InitSeedsDefaultsOnEmptyTable(t *testing.T) {
 func TestLanguageServiceSqlite_InitGuardSkipsReseedWhenNonEmpty(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newLanguageServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	svc.init()
@@ -108,7 +108,7 @@ func TestLanguageServiceSqlite_InitGuardSkipsReseedWhenNonEmpty(t *testing.T) {
 func TestLanguageServiceSqlite_Get_ByIdAndByCode(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newLanguageServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 
@@ -154,7 +154,7 @@ func TestLanguageServiceSqlite_Get_ByIdAndByCode(t *testing.T) {
 func TestLanguageServiceSqlite_Update_OnlyMaskedFields(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newLanguageServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	svc.init()
@@ -196,7 +196,7 @@ func TestLanguageServiceSqlite_Update_OnlyMaskedFields(t *testing.T) {
 func TestLanguageServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newLanguageServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 

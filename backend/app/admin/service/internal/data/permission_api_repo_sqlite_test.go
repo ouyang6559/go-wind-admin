@@ -30,7 +30,7 @@ func newPermissionApiRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.
 func TestPermissionApiRepoSqlite_AssignAndListAndDelete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 父行：权限点与 API 资源各一（表上 required 列：name/code 走必填 setter）
 	permRow, err := entClient.Client().Permission.Create().
@@ -76,7 +76,7 @@ func TestPermissionApiRepoSqlite_AssignAndListAndDelete(t *testing.T) {
 func TestPermissionApiRepoSqlite_AssignApisReplaces(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	permRow, err := entClient.Client().Permission.Create().
 		SetName("替换语义权限点").
@@ -122,7 +122,7 @@ func TestPermissionApiRepoSqlite_AssignApisReplaces(t *testing.T) {
 func TestPermissionApiRepoSqlite_DeleteByPermissionIDs(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	permA, err := entClient.Client().Permission.Create().
 		SetName("集合清理权限点A").

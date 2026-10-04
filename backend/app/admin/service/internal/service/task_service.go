@@ -23,7 +23,7 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	taskV1 "go-wind-admin/api/gen/go/task/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/oss"
 	"go-wind-admin/pkg/task"
@@ -589,7 +589,7 @@ func (s *TaskService) AsyncAuditLogArchive(taskType string, taskData *task.Audit
 	}
 	before := time.Now().AddDate(0, 0, -retentionDays)
 
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	results, err := s.auditLogArchiveRepo.ArchiveExpired(ctx, before, outDir)
 	if err != nil {
 		s.log.Errorf(ctx, "audit log archive failed: %s", err.Error())
@@ -614,10 +614,10 @@ func (s *TaskService) AsyncBackup(taskType string, taskData *task.BackupTaskData
 	}
 	s.log.Infof(context.Background(), "AsyncBackup [%s] [%+v] [%s]", taskType, taskData, backupName)
 
-	// 用 SystemViewerContext 包裹：备份需要导出全部租户的核心表，
+	// 用 SystemContext 包裹：备份需要导出全部租户的核心表，
 	// 而 TenantPrivacy 在 viewer 缺失时会返回 error 导致带 tenant_id 的表全部查询失败。
-	// SystemViewer 的 IsSystemContext()==true，使 TenantPrivacy.EvalQuery 放行全量数据。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	// SystemContext 的 IsSystemContext()==true，使 TenantPrivacy.EvalQuery 放行全量数据。
+	ctx := viewer.WithSystemContext(context.Background())
 	if backupName == "" {
 		backupName = fmt.Sprintf("backup-%s", time.Now().UTC().Format("20060102-150405"))
 	}
@@ -716,8 +716,8 @@ func (s *TaskService) AsyncTenantExpiryScan(taskType string, taskData *task.Tena
 		return errors.New("tenantUsageRepo is not configured")
 	}
 
-	// 用 SystemViewerContext 包裹：到期扫描需要跨租户查询。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	// 用 SystemContext 包裹：到期扫描需要跨租户查询。
+	ctx := viewer.WithSystemContext(context.Background())
 
 	count, err := s.tenantUsageRepo.EnforceExpiryPolicies(ctx)
 	if err != nil {

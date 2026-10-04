@@ -48,8 +48,8 @@ import (
 
 // auditCallMeta 记录单次写入发生时的上下文特征。
 type auditCallMeta struct {
-	Sinking      bool // ctx 是否带审计落库标记（防递归采集）
-	SystemViewer bool // ctx 是否为系统 viewer（审计写入须绕过租户隔离）
+	Sinking       bool // ctx 是否带审计落库标记（防递归采集）
+	SystemContext bool // ctx 是否为系统 viewer（审计写入须绕过租户隔离）
 }
 
 // auditCapture 以桩 write 函数身份记录每一条被落库的审计记录及其调用上下文，
@@ -71,8 +71,8 @@ type auditCapture struct {
 func (c *auditCapture) metaOf(ctx context.Context) auditCallMeta {
 	v, _ := crudviewer.FromContext(ctx)
 	return auditCallMeta{
-		Sinking:      audit.IsSinking(ctx),
-		SystemViewer: v != nil && v.IsSystemContext(),
+		Sinking:       audit.IsSinking(ctx),
+		SystemContext: v != nil && v.IsSystemContext(),
 	}
 }
 

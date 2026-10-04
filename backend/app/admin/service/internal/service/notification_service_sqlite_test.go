@@ -32,7 +32,7 @@ import (
 
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -91,7 +91,7 @@ func newNotificationServiceForTest(t *testing.T) *notificationSvcEnv {
 		// 台账读接口只对平台管理员开放（requirePlatformAdmin），而测试的断言几乎都是从
 		// GetNotificationDelivery 回读台账，所以这个 ctx 带平台管理员载荷。
 		ctx: auth.NewContext(
-			appViewer.NewSystemViewerContext(context.Background()),
+			viewer.WithSystemContext(context.Background()),
 			&authenticationV1.UserTokenPayload{UserId: 1, IsPlatformAdmin: trans.Ptr(true)},
 		),
 		email:  email,
@@ -110,7 +110,7 @@ func newSeededRuleRepoForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Cl
 	t.Helper()
 
 	repo := data.NewNotificationRuleRepoForTest(entClient)
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	for _, rule := range constants.DefaultNotificationRules {
 		if _, err := repo.Create(ctx, rule, 0); err != nil {

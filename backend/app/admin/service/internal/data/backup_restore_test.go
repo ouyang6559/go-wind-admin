@@ -19,7 +19,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	client := entClient.Client()
 	repo := &BackupRepo{entClient: entClient}
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 1. 播种：两个租户（带 Logo/时间字段）+ 一条菜单（父子结构）
 	t1, err := client.Tenant.Create().
@@ -89,7 +89,7 @@ func TestRestoreRefusesNonEmptyTables(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	client := entClient.Client()
 	repo := &BackupRepo{entClient: entClient}
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 造一个非空的 menus（目标表之一），其余全空
 	_, err := client.Menu.Create().

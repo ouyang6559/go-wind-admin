@@ -47,7 +47,7 @@ func newApiRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Client]) *
 func TestApiRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &permissionV1.CreateApiRequest{
 		Data: &permissionV1.Api{
@@ -89,7 +89,7 @@ func TestApiRepoSqlite_Create(t *testing.T) {
 func TestApiRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateApiRequest{
 		Data: &permissionV1.Api{
@@ -158,7 +158,7 @@ func TestApiRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestApiRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateApiRequest{
 		Data: &permissionV1.Api{
@@ -222,7 +222,7 @@ func TestApiRepoSqlite_Get(t *testing.T) {
 func TestApiRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateApiRequest{
 		Data: &permissionV1.Api{
@@ -256,7 +256,7 @@ func TestApiRepoSqlite_Update(t *testing.T) {
 func TestApiRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newApiRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateApiRequest{
 		Data: &permissionV1.Api{

@@ -36,7 +36,7 @@ import (
 func newCheckerSqlite(t *testing.T) (*TenantAccessCheckerImpl, *ent.Client, context.Context) {
 	t.Helper()
 	client := enttest.NewEntClientForTest(t).Client()
-	sysCtx := enttest.NewSystemViewerCtx(context.Background())
+	sysCtx := enttest.NewSystemContext(context.Background())
 	return &TenantAccessCheckerImpl{
 		entClient: client,
 		log:       bLogger.NewHelper(bLogger.NopLogger()),

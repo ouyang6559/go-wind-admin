@@ -76,7 +76,7 @@ func newApiServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Client
 func TestApiServiceSqlite_InitSeedsApiTableFromOpenAPI(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 
@@ -102,7 +102,7 @@ func TestApiServiceSqlite_InitSeedsApiTableFromOpenAPI(t *testing.T) {
 func TestApiServiceSqlite_GetWalkRouteData(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.GetWalkRouteData(ctx, &emptypb.Empty{})
 	require.Error(t, err, "未注册 RouteWalker 时应返回错误")
@@ -131,7 +131,7 @@ func TestApiServiceSqlite_GetWalkRouteData(t *testing.T) {
 func TestApiServiceSqlite_CreateGetUpdateDelete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreateApiRequest{

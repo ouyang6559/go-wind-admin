@@ -13,7 +13,7 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 type InternalMessageRecipientService struct {
@@ -47,7 +47,7 @@ func (s *InternalMessageRecipientService) ListUserInbox(ctx context.Context, req
 	// 一次 IN 查询批量回填消息本体：逐条 Get 是 N+1（每页 10 条 = 11 次查询），
 	// 且收件箱是头部徽标的轮询高频路径。
 	//
-	// 这一步必须以 SystemViewer 读，不能用读者的 viewer：平台公告的父消息行落在租户 0，
+	// 这一步必须以 SystemContext 读，不能用读者的 viewer：平台公告的父消息行落在租户 0，
 	// 而收件行的读取按读者租户过滤—— TenantPrivacy 会给本查询再 AND 上 tenant_id=读者租户，
 	// 于是公告进了收件箱却没有标题正文（推送侧从内存 DTO 取正文，反而是全的，两路径就此分叉）。
 	// messageIds 不是外部输入：它们全部来自上面已按读者租户过滤过的收件行，
@@ -59,7 +59,7 @@ func (s *InternalMessageRecipientService) ListUserInbox(ctx context.Context, req
 		}
 	}
 
-	messages, err := s.internalMessageRepo.ListByIds(appViewer.NewSystemViewerContext(ctx), messageIds)
+	messages, err := s.internalMessageRepo.ListByIds(viewer.WithSystemContext(ctx), messageIds)
 	if err != nil {
 		// 回填失败只影响 title/content 展示，不阻断整页返回，与此前逐条 Get 失败仅跳过保持一致。
 		s.log.Errorf(ctx, "list user inbox failed, batch get messages failed: %s", err)

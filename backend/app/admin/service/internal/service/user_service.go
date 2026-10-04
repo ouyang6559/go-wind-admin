@@ -20,8 +20,8 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -75,7 +75,7 @@ func NewUserService(
 }
 
 func (s *UserService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	if count, _ := s.userRepo.Count(ctx, nil); count == 0 {
 		if err := s.createDefaultUser(ctx); err != nil {

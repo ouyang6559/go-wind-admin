@@ -26,7 +26,7 @@ import (
 // newMenuRepoSqlite。
 func TestMenuRepoSqlite_EnumReadViewBackfill(t *testing.T) {
 	repo := newMenuRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 行 A：status/type/module 全部显式指定
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreateMenuRequest{

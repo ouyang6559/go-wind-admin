@@ -40,7 +40,7 @@ func newAccessKeyRepoSqlite(t *testing.T) *AccessKeyRepo {
 // expires_at 未指定时为 NULL。
 func TestAccessKeyRepoSqlite_Create(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	createdDefault, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},
 		&accesskeyV1.AccessKey{
@@ -79,7 +79,7 @@ func TestAccessKeyRepoSqlite_Create(t *testing.T) {
 // proto → ent 与 ent → proto（List 路径）双向映射逐对成立。
 func TestAccessKeyRepoSqlite_StatusEnumPairs(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	for value, name := range accesskeyV1.AccessKey_Status_name {
 		status := accesskeyV1.AccessKey_Status(value)
@@ -120,7 +120,7 @@ func TestAccessKeyRepoSqlite_StatusEnumPairs(t *testing.T) {
 // 本测试将该读视图行为钉死（List 路径与 StatusEnumPairs 的断言互为冗余备份）。
 func TestAccessKeyRepoSqlite_StatusReadView(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		protoStatus accesskeyV1.AccessKey_Status
@@ -172,7 +172,7 @@ func TestAccessKeyRepoSqlite_StatusReadView(t *testing.T) {
 // 命中与未命中、IsExist 的命中与未命中。
 func TestAccessKeyRepoSqlite_GetAndExistsByIdOrAccessKey(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	created, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},
 		&accesskeyV1.AccessKey{Name: trans.Ptr("getter凭证")},
@@ -221,7 +221,7 @@ func TestAccessKeyRepoSqlite_GetAndExistsByIdOrAccessKey(t *testing.T) {
 // 命中与未命中。
 func TestAccessKeyRepoSqlite_GetByAccessKeyBySystem(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	_, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},
 		&accesskeyV1.AccessKey{Name: trans.Ptr("systemview凭证")},
 		"AKSQLITE-SYSVIEW", "sh-sysview")
@@ -241,7 +241,7 @@ func TestAccessKeyRepoSqlite_GetByAccessKeyBySystem(t *testing.T) {
 // TouchLastUsedBySystem 刷新 last_used_at 与 UpdateSecretHash 轮换密钥摘要。
 func TestAccessKeyRepoSqlite_TouchLastUsedAndUpdateSecretHash(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	created, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},
 		&accesskeyV1.AccessKey{Name: trans.Ptr("rotate凭证")},
 		"AKSQLITE-ROTATE", "sh-rotate-old")
@@ -265,7 +265,7 @@ func TestAccessKeyRepoSqlite_TouchLastUsedAndUpdateSecretHash(t *testing.T) {
 // 掩码内 name 更新、掩码外 status 保持；status 掩码经 converter 更新。
 func TestAccessKeyRepoSqlite_UpdateMasked(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	created, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},
 		&accesskeyV1.AccessKey{Name: trans.Ptr("更新前凭证名")},
 		"AKSQLITE-UPDATE", "sh-update")
@@ -316,7 +316,7 @@ func TestAccessKeyRepoSqlite_UpdateMasked(t *testing.T) {
 // name 列 contains 模糊搜索、id 列等值过滤、分页语义，以及 Count 与 Delete。
 func TestAccessKeyRepoSqlite_ListCountPagingAndDelete(t *testing.T) {
 	repo := newAccessKeyRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	for i, marker := range []string{"MARKEROMICRON", "MARKERPI"} {
 		_, err := repo.Create(ctx, &accesskeyV1.CreateAccessKeyRequest{},

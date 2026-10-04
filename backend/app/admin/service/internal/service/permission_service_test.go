@@ -41,7 +41,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/utils/converter"
 )
@@ -89,7 +88,7 @@ func seedPermissionGroups(t *testing.T, svc *PermissionService, ctx context.Cont
 // CleanNotExist 与批量插入对缺失资源静默无操作），非空表二次 init 不重复播种。
 func TestPermissionService_InitSeeding(t *testing.T) {
 	svc, client := newPermissionServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 	cnt, err := client.Permission.Query().Count(ctx)
@@ -108,7 +107,7 @@ func TestPermissionService_InitSeeding(t *testing.T) {
 // 即使权限表为空播种后也不触发同步（menusCount==0 分支）。
 func TestPermissionService_InitSkipsSyncWhenNoApisOrMenus(t *testing.T) {
 	svc, client := newPermissionServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	seedPermissionGroups(t, svc, ctx, 5)
 
 	svc.init()
@@ -124,7 +123,7 @@ func TestPermissionService_InitSkipsSyncWhenNoApisOrMenus(t *testing.T) {
 func TestPermissionService_syncWithOpenAPI_EmptyPaths(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	apiSvc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	orig := assets.OpenApiData
 	defer func() { assets.OpenApiData = orig }()
@@ -165,7 +164,7 @@ func TestPermissionService_syncWithOpenAPI_EmptyPaths(t *testing.T) {
 // 权限-菜单、权限-接口）落库；未分类默认组恒建。
 func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 	svc, client := newPermissionServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	// 目录菜单（根）与页面菜单（子）
@@ -249,13 +248,13 @@ func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 // 与平台侧全量可见 + 组名富集。
 func TestPermissionService_ListAndGetTenantScoping(t *testing.T) {
 	svc, _ := newPermissionServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	seedPermissionGroups(t, svc, ctx, 5)
 	svc.init()
 	platformCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 	// 租户操作人：查看器须与令牌租户一致（生产由认证中间件成对注入）
 	tenantCtx := auth.NewContext(
-		crudViewer.WithContext(ctx, appViewer.NewUserViewer(8, 42, 0, "", nil)),
+		crudViewer.WithContext(ctx, crudViewer.NewUserContext(8, 42, 0, "", nil)),
 		&authenticationV1.UserTokenPayload{
 			UserId: 8, TenantId: trans.Ptr(uint32(42)), Roles: []string{"perm_svc_nonexistent_role"},
 		})
@@ -310,7 +309,7 @@ func TestPermissionService_ListAndGetTenantScoping(t *testing.T) {
 // 操作人盖章、单字段掩码更新（掩码外保持原值）、删除清空。
 func TestPermissionService_CreateUpdateDelete(t *testing.T) {
 	svc, client := newPermissionServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreatePermissionRequest{})

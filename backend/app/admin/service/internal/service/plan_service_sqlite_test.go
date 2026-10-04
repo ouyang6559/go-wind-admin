@@ -37,7 +37,7 @@ func newPlanServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Clien
 func TestPlanServiceSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanRequest{
@@ -70,7 +70,7 @@ func TestPlanServiceSqlite_Create(t *testing.T) {
 func TestPlanServiceSqlite_CreateGuards(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.Create(ctx, &identityV1.CreatePlanRequest{})
 	require.Error(t, err, "Data 为 nil 应返回错误")
@@ -94,7 +94,7 @@ func TestPlanServiceSqlite_CreateGuards(t *testing.T) {
 func TestPlanServiceSqlite_List(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	for i, name := range []string{"MARKERALPHA 套餐", "MARKERBETA 套餐"} {
@@ -133,7 +133,7 @@ func TestPlanServiceSqlite_List(t *testing.T) {
 func TestPlanServiceSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanRequest{
@@ -164,7 +164,7 @@ func TestPlanServiceSqlite_Get(t *testing.T) {
 func TestPlanServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanRequest{
@@ -201,7 +201,7 @@ func TestPlanServiceSqlite_Update(t *testing.T) {
 func TestPlanServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPlanServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePlanRequest{

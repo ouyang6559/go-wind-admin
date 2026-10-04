@@ -16,10 +16,10 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/authorizer"
 	"github.com/tx7do/go-utils/sliceutil"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -53,7 +53,7 @@ func NewRoleService(
 }
 
 func (s *RoleService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	if count, _ := s.roleRepo.Count(ctx, nil); count == 0 {
 		_ = s.createDefaultRoles(ctx)
 	}

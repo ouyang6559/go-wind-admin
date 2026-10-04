@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/planquota"
@@ -65,7 +65,7 @@ func ratioPct(used, limit uint64) uint64 {
 // ScanQuotaWatermarks 扫描全部 ON 租户的配额水位，返回命中清单。
 // 只读：不拒绝任何请求、不写任何业务行；投递由服务层（站内信）完成。
 func (r *TenantUsageRepo) ScanQuotaWatermarks(ctx context.Context, aiRepo *AiUsageLogRepo, monthStart time.Time) ([]QuotaWatermarkHit, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	tenants, err := r.entClient.Client().Tenant.Query().
 		Where(tenant.StatusEQ(tenant.StatusOn)).

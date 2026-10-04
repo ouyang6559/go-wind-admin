@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 
 	entCrud "github.com/tx7do/go-crud/entgo"
 
@@ -57,7 +57,7 @@ func NewAiDigestService(
 // （LLM 摘要或纯统计兜底）→ 站内信投递平台用户。
 func (s *AiDigestService) AsyncAiAuditDigest(taskType string, data *task.AiAuditDigestTaskData) error {
 	// asynq ctx 不带 viewer；统计是平台视角 + 站内信落库都需要 viewer，用系统查看器。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	now := time.Now()
 	yesterday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local).AddDate(0, 0, -1)

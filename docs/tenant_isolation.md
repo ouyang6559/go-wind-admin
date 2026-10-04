@@ -11,7 +11,7 @@
 请求 → [认证中间件]  JWT → UserTokenPayload
                         │
                         ├─ auth.NewContext（operator，业务层读）
-                        ├─ viewer.WithContext(UserViewer)   ← 隔离层的判定依据
+                        ├─ viewer.WithContext(UserContext)   ← 隔离层的判定依据
                         └─ metadata（OperatorMetadata）
                 [租户闸门]   tid>0 时：租户状态 → 到期只读 → 套餐模块白名单 → API_CALL 配额
                              （前三段 fail-closed；配额段 fail-open——无配额条目/计量失败放行）
@@ -87,16 +87,18 @@
 1. 取 Bearer token → `accessTokenChecker.IsValidAccessToken`（JWT 验签 + 过期 + **Redis 缓存吊销核对**，
    见 [authentication.md](./authentication.md) 第 3 章）→ 失败即 401；
 2. `NewContext(ctx, tokenPayload)`：业务层经 `auth.FromContext` 取 operator（`created_by` 注入源）；
-3. `viewer.WithContext(ctx, appViewer.NewUserViewer(uid, tid, ouid, traceID, BuildDataScopes(...)))`：
-   **隔离层判定依据**在此构建（`pkg/entgo/viewer/user_viewer.go`）；
+3. `viewer.WithContext(ctx, viewer.NewUserContext(uid, tid, ouid, traceID, appViewer.BuildDataScopes(...)))`：
+   **隔离层判定依据**在此构建——标准用户上下文由库 `go-crud/viewer` 提供（`UserContext`），
+   本仓 `pkg/entgo/viewer/data_scope_mapping.go` 仅承担令牌数据范围声明（dss/dsu/旧 ds）
+   到库层数据范围结构的映射；
 4. OperatorMetadata 注入（`pkg/metadata`，当前 REST 配置 `WithInjectMetadata(false)` 关闭）。
 
 ViewerContext 语义（`viewer.Context` 接口实现）：
 
 | 实现 | tid | IsPlatform | IsSystem | 用途 |
 |---|---|---|---|---|
-| `UserViewer` | 令牌 tid | tid==0 | false | 请求上下文；tid==0 平台管理员全量，tid>0 租户 |
-| `SystemViewer`（`pkg/entgo/viewer/system_viewer.go`） | 0 | true | true | 后台任务/闸门自查询（`NewSystemViewerContext`） |
+| `UserContext` | 令牌 tid | tid==0 | false | 请求上下文；tid==0 平台管理员全量，tid>0 租户 |
+| `SystemContext`（库 `go-crud/viewer`） | 0 | true | true | 后台任务/闸门自查询（`viewer.WithSystemContext`） |
 | `NoopContext`（库） | — | — | — | 登录/找回流程（配 `privacy.DecisionContext(Allow)` 显式绕过） |
 
 `BuildDataScopes`（同文件）把令牌 dss/dsu/旧 ds 聚合结果转成库层数据范围结构——
@@ -125,7 +127,7 @@ UNSPECIFIED 剔除、空集不兜底（交库规则 fail-closed），语义见 d
 | 4 | 套餐配额（API_CALL 调用量）：上限取自第 1 段预载的配额边，当前计数 = `sys_api_audit_logs` 按租户 COUNT（与 [plan_billing.md](./plan_billing.md) §7.1 `ApiCallCount` 同源同语义，含被闸门拒绝的请求） | 上限存在且计数已达上限 → 403 `plan quota exceeded: API_CALL ...`。**fail-open**：无套餐配额条目 / 计量查询失败 → 放行——与第 1–3 段的 fail-closed 取向相反（配额缺失 = 未限售），语义见 [plan_billing.md](./plan_billing.md) §7.2 |
 
 枚举映射：ent `api.BusinessModule` ↔ proto `identityV1.Module`（checker 内两张 switch 表）。
-白名单查询用 `SystemViewerContext`（闸门自身跨租户查询的合法通道）。
+白名单查询用 `SystemContext`（闸门自身跨租户查询的合法通道）。
 
 **注意**：闸门本体只实现 READONLY 档的只读降级——这是刻意的分工：BLOCK_LOGIN / FREEZE 两档
 经**小时级到期扫描任务**（`AsyncTenantExpiryScan` → `EnforceExpiryPolicies`）把租户状态置
@@ -190,7 +192,7 @@ Create 分支：租户上下文**强制覆盖** `SetTenantID(viewer.tid)`（防�
 | 跨服务出站（脚本 HTTP egress、Webhook） | ❌ | 按域名白名单管控，无租户维度（[script_system.md](./script_system.md)） |
 | **租户内跨用户**（同 tenant 下 A 读/写 B 的行） | ❌ 完全不覆盖 | 隔离谓词只有 `tenant_id` 一列，"只看自己的行"必须业务侧自己钉（收件箱读/写已钉，见下） |
 | 平台管理员上下文 | 放行 | 设计使然（tid==0 全量） |
-| 登录 / 刷新 / 找回重置 / 闸门自查询 | 例外通道 | NoopContext+privacy.Allow（登录起步的 ctx 复位）/ SystemViewerContext：闸门自查询、机器令牌交换的 AK 查询、**刷新链路**（`authentication_service.go:716`，注释 `:712-715` 说明为何必须跨租户读）、找回与重置密码两处（`authentication_forgot_password.go:29`、`:78`）——审计落库自身也经 SystemViewer 写入 |
+| 登录 / 刷新 / 找回重置 / 闸门自查询 | 例外通道 | NoopContext+privacy.Allow（登录起步的 ctx 复位）/ SystemContext：闸门自查询、机器令牌交换的 AK 查询、**刷新链路**（`authentication_service.go:716`，注释 `:712-715` 说明为何必须跨租户读）、找回与重置密码两处（`authentication_forgot_password.go:29`、`:78`）——审计落库自身也经 SystemContext 写入 |
 
 **"自己的行"没人钉过：收件箱越权读＋越权写（2026-09-20 实测并修）**。
 `GET /admin/v1/internal-message/inbox` 的过滤条件整个来自调用方 `query` 字符串，租户隔离只保证"读不到别租户的行"，

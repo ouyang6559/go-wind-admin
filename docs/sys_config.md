@@ -65,7 +65,7 @@ maxAge := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMaxAgeDays, pas
 
 ## 4. 内置参数播种（键级"缺一补一"）
 
-`ConfigService.init()`（进程启动，SystemViewer 上下文）调 `ConfigRepo.SeedDefaults(ctx, constants.DefaultConfigs)`。与其他默认数据的**表级 `count == 0` 守卫不同**，播种按**键**判断：
+`ConfigService.init()`（进程启动，SystemContext 上下文）调 `ConfigRepo.SeedDefaults(ctx, constants.DefaultConfigs)`。与其他默认数据的**表级 `count == 0` 守卫不同**，播种按**键**判断：
 
 - 键不存在 → 按默认值创建（缺一补一，管理员自建行不阻断补种）；
 - 键已存在 → 跳过，**绝不把管理员改过的值重置回默认**。

@@ -98,3 +98,73 @@ func TestBuildDataScopes(t *testing.T) {
 		})
 	}
 }
+
+// TestBuildDataScopes_EdgeCombinations 补充既有 TestBuildDataScopes 矩阵之外的
+// 边界组合：空列表配 UNSPECIFIED 旧值不回退、显式空切片仍触发旧单值回退、
+// UNSPECIFIED 与有效范围混排时只保留有效项、UNIT 类空目标集的映射。
+// 语义与源码注释一致：UNSPECIFIED 一律剔除、不做兜底放行。
+func TestBuildDataScopes_EdgeCombinations(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		scopes  []identityV1.DataScope
+		units   []uint64
+		legacy  identityV1.DataScope
+		wantLen int
+		want    []viewer.DataScope
+	}{
+		{
+			name:    "nil scopes with unspecified legacy stays empty",
+			scopes:  nil,
+			units:   nil,
+			legacy:  identityV1.DataScope_DATA_SCOPE_UNSPECIFIED,
+			wantLen: 0,
+			want:    []viewer.DataScope{},
+		},
+		{
+			name:    "explicit empty slice falls back to legacy single value",
+			scopes:  []identityV1.DataScope{},
+			units:   nil,
+			legacy:  identityV1.DataScope_SELF,
+			wantLen: 1,
+			want:    one(t, viewer.ScopeTypeSelf, nil),
+		},
+		{
+			name: "unspecified mixed with all keeps only all",
+			scopes: []identityV1.DataScope{
+				identityV1.DataScope_DATA_SCOPE_UNSPECIFIED,
+				identityV1.DataScope_ALL,
+			},
+			units:   nil,
+			legacy:  identityV1.DataScope_DATA_SCOPE_UNSPECIFIED,
+			wantLen: 1,
+			want:    one(t, viewer.ScopeTypeAll, nil),
+		},
+		{
+			name:    "unit and child with empty targets maps to unit with nil targets",
+			scopes:  []identityV1.DataScope{identityV1.DataScope_UNIT_AND_CHILD},
+			units:   nil,
+			legacy:  identityV1.DataScope_DATA_SCOPE_UNSPECIFIED,
+			wantLen: 1,
+			want:    one(t, viewer.ScopeTypeUnit, nil),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := BuildDataScopes(tc.scopes, tc.units, tc.legacy)
+			if len(got) != tc.wantLen {
+				t.Fatalf("len = %d, want %d", len(got), tc.wantLen)
+			}
+			for i := range tc.want {
+				if got[i].ScopeType != tc.want[i].ScopeType {
+					t.Fatalf("scope[%d].type = %v, want %v", i, got[i].ScopeType, tc.want[i].ScopeType)
+				}
+				if len(got[i].TargetIDs) != len(tc.want[i].TargetIDs) {
+					t.Fatalf("scope[%d].targets len = %d, want %d", i, len(got[i].TargetIDs), len(tc.want[i].TargetIDs))
+				}
+			}
+		})
+	}
+}

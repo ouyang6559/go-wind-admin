@@ -43,7 +43,7 @@ func newPlanQuotaRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Clie
 func TestPlanQuotaRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanQuotaRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pq_create_plan")).
@@ -80,7 +80,7 @@ func TestPlanQuotaRepoSqlite_Create(t *testing.T) {
 func TestPlanQuotaRepoSqlite_ListFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanQuotaRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pq_list_plan")).
@@ -141,7 +141,7 @@ func TestPlanQuotaRepoSqlite_ListFilter(t *testing.T) {
 func TestPlanQuotaRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanQuotaRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pq_get_plan")).
@@ -185,7 +185,7 @@ func TestPlanQuotaRepoSqlite_Get(t *testing.T) {
 func TestPlanQuotaRepoSqlite_QuotaTypeReadView(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanQuotaRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		protoQuotaType identityV1.PlanQuota_QuotaType
@@ -245,7 +245,7 @@ func TestPlanQuotaRepoSqlite_QuotaTypeReadView(t *testing.T) {
 func TestPlanQuotaRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanQuotaRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pq_update_plan")).
@@ -291,7 +291,7 @@ func TestPlanQuotaRepoSqlite_Update(t *testing.T) {
 func TestPlanQuotaRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanQuotaRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pq_del_plan")).

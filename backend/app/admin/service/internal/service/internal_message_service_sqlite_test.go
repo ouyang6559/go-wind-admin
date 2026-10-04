@@ -30,8 +30,6 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
-
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 // internalMessageServiceUserRepoStub：List 是 executeBroadcast 分页拉取用户的入口，
@@ -77,7 +75,7 @@ func newInternalMessageServiceForTest(t *testing.T) *InternalMessageService {
 // CategoryName 回填：挂了分类的消息回填分类名，未挂分类的保持空。
 func TestInternalMessageServiceSqlite_ListMessageEnrichment(t *testing.T) {
 	svc := newInternalMessageServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := svc.internalMessageCategoryRepo.Create(ctx, &internalMessageV1.CreateInternalMessageCategoryRequest{
 		Data: &internalMessageV1.InternalMessageCategory{
@@ -148,7 +146,7 @@ func TestInternalMessageServiceSqlite_ListMessageEnrichment(t *testing.T) {
 // CategoryName 回填。
 func TestInternalMessageServiceSqlite_GetMessageEnrichment(t *testing.T) {
 	svc := newInternalMessageServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := svc.internalMessageCategoryRepo.Create(ctx, &internalMessageV1.CreateInternalMessageCategoryRequest{
 		Data: &internalMessageV1.InternalMessageCategory{
@@ -278,7 +276,7 @@ func (r *broadcastUserRepoStub) List(ctx context.Context, _ *paginationV1.Paging
 // TestInternalMessageServiceSqlite_AsyncBroadcastTenantScoping 钉住全员广播的租户语义：
 // asynq handler 必须按 payload 里的发送方租户重建 viewer，并让收件行落在同一个租户上。
 //
-// 升级前的行为是两条静默缺陷：handler 一律贴 SystemViewer（平台上下文不加租户谓词），
+// 升级前的行为是两条静默缺陷：handler 一律贴 SystemContext（平台上下文不加租户谓词），
 // 于是 (1) 租户管理员的"全员广播"把收件行写给全平台每个租户的用户；(2) 收件行 tenant_id
 // 落 0，任何租户（包括收件人自己）的收件箱都读不到——不报错、不丢日志。
 func TestInternalMessageServiceSqlite_AsyncBroadcastTenantScoping(t *testing.T) {
@@ -300,7 +298,7 @@ func TestInternalMessageServiceSqlite_AsyncBroadcastTenantScoping(t *testing.T) 
 	}
 	svc.userRepo = stub
 
-	sysCtx := enttest.NewSystemViewerCtx(context.Background())
+	sysCtx := enttest.NewSystemContext(context.Background())
 
 	// 父消息由平台上下文显式落到租户 7（与真实链路里"租户管理员发送 → 强制覆盖为本租户"同值）。
 	msg, err := svc.internalMessageRepo.Create(sysCtx, &internalMessageV1.CreateInternalMessageRequest{
@@ -321,7 +319,7 @@ func TestInternalMessageServiceSqlite_AsyncBroadcastTenantScoping(t *testing.T) 
 	}))
 
 	require.Equal(t, []uint64{7}, stub.seenTenantIDs,
-		"handler 应以 payload 的租户重建 viewer（贴 SystemViewer 即为跨租户投递）")
+		"handler 应以 payload 的租户重建 viewer（贴 SystemContext 即为跨租户投递）")
 
 	// 逐个收件人各读一次：每人恰好一行。少钉归属谓词会一次返回三行（=同租户翻别人收件箱），
 	// 收件行没跟着收件人的租户打标则一行都读不到（=改动前的静默丢投递）。
@@ -339,7 +337,7 @@ func TestInternalMessageServiceSqlite_AsyncBroadcastTenantScoping(t *testing.T) 
 
 // inboxCtx 构造"某个租户用户正在读自己的收件箱"的 ctx。
 func inboxCtx(uid, tid uint32) context.Context {
-	return viewer.WithContext(context.Background(), appViewer.NewUserViewer(uint64(uid), uint64(tid), 0, "", nil))
+	return viewer.WithContext(context.Background(), viewer.NewUserContext(uint64(uid), uint64(tid), 0, "", nil))
 }
 
 // TestInternalMessageServiceSqlite_PlatformBroadcastIsReadableByTenantUser 钉住 §6 决策点 4：
@@ -347,7 +345,7 @@ func inboxCtx(uid, tid uint32) context.Context {
 //
 // 两条缺一不可，各自都是静默的：
 //   - 收件行按**收件用户**的租户打标 —— 否则行落在租户 0，读者的租户谓词把它滤掉（收件箱空）；
-//   - 父消息回填以 SystemViewer 读 —— 否则收件行读到了，title/content 仍是空串
+//   - 父消息回填以 SystemContext 读 —— 否则收件行读到了，title/content 仍是空串
 //     （公告的父消息行本身就属于租户 0，这是"平台"而不是"读者的租户"）。
 //
 // 改动前两条都不成立，所以现象是"平台发了公告、租户侧收件箱永远空"。
@@ -361,8 +359,8 @@ func TestInternalMessageServiceSqlite_PlatformBroadcastIsReadableByTenantUser(t 
 		},
 	}
 
-	// 平台公告：父消息属于租户 0（平台），广播任务 payload 的 TenantId 也是 0 → handler 用 SystemViewer。
-	msg, err := svc.internalMessageRepo.Create(enttest.NewSystemViewerCtx(context.Background()),
+	// 平台公告：父消息属于租户 0（平台），广播任务 payload 的 TenantId 也是 0 → handler 用 SystemContext。
+	msg, err := svc.internalMessageRepo.Create(enttest.NewSystemContext(context.Background()),
 		&internalMessageV1.CreateInternalMessageRequest{
 			Data: &internalMessageV1.InternalMessage{
 				Title:     trans.Ptr("平台公告"),

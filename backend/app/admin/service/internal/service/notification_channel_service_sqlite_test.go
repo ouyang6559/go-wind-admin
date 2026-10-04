@@ -68,7 +68,7 @@ func TestNotificationChannelServiceSqlite_CreateAndGet(t *testing.T) {
 	svc := newNotificationChannelServiceForTest(t, entClient)
 	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
 	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
-	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	ctx := auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71, IsPlatformAdmin: trans.Ptr(true)})
 
@@ -132,7 +132,7 @@ func TestNotificationChannelServiceSqlite_CreateAndGetValidation(t *testing.T) {
 	svc := newNotificationChannelServiceForTest(t, entClient)
 	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
 	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
-	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	ctx := auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71, IsPlatformAdmin: trans.Ptr(true)})
 
@@ -166,7 +166,7 @@ func TestNotificationChannelServiceSqlite_ListHasPasswordFlag(t *testing.T) {
 	svc := newNotificationChannelServiceForTest(t, entClient)
 	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
 	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
-	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	ctx := auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 71, IsPlatformAdmin: trans.Ptr(true)})
 
@@ -212,7 +212,7 @@ func TestNotificationChannelServiceSqlite_UpdateRename(t *testing.T) {
 	svc := newNotificationChannelServiceForTest(t, entClient)
 	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
 	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
-	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	ctx := auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 72, IsPlatformAdmin: trans.Ptr(true)})
 
@@ -265,7 +265,7 @@ func TestNotificationChannelServiceSqlite_Delete(t *testing.T) {
 	svc := newNotificationChannelServiceForTest(t, entClient)
 	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
 	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
-	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	ctx := auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 72, IsPlatformAdmin: trans.Ptr(true)})
 
@@ -308,7 +308,7 @@ func TestNotificationChannelServiceSqlite_SendTestEmailBranches(t *testing.T) {
 	svc := newNotificationChannelServiceForTest(t, entClient)
 	// 渠道是平台级配置、服务层 requirePlatformAdmin 挡租户侧，故基础 ctx 带平台管理员标志；
 	// opCtx 另换 UserId 只为断言 created_by/updated_by 落操作人。
-	ctx := auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	ctx := auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 70, IsPlatformAdmin: trans.Ptr(true)})
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 73, IsPlatformAdmin: trans.Ptr(true)})
 

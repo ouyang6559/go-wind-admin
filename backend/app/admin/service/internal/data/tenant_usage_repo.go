@@ -47,7 +47,7 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 // TenantUsageRepo 提供租户用量与配额的实时聚合查询，以及手动清理租户数据。
@@ -70,7 +70,7 @@ func NewTenantUsageRepo(
 }
 
 // GetUsage 聚合查询指定租户的当前用量与套餐配额上限。
-// 使用 SystemViewerContext 绕过租户隔离以跨表聚合。
+// 使用 SystemContext 绕过租户隔离以跨表聚合。
 // CountUsersInTenant 数租户用户数（USER_LIMIT 配额检查用）。
 func (r *TenantUsageRepo) CountUsersInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
 	count, err := r.entClient.Client().User.Query().
@@ -107,7 +107,7 @@ func (r *TenantUsageRepo) CountApiCallsInTenant(ctx context.Context, tenantID ui
 }
 
 func (r *TenantUsageRepo) GetUsage(ctx context.Context, tenantId uint32) (*identityV1.TenantUsage, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	// 1. 查租户记录，WithPlan(WithQuotas) 预载套餐及其配额。
 	t, err := r.entClient.Client().Tenant.Query().
@@ -196,9 +196,9 @@ func mapEntQuotaTypeToProto(qt planquota.QuotaType) identityV1.PlanQuota_QuotaTy
 //
 // 在一个事务中硬删所有带 tenant_id 的业务表数据，保留 sys_tenants 记录（status 改为 OFF），
 // 事务提交后吊销该租户全部用户的在线令牌（admin+app 双 ClientType）。
-// 使用 SystemViewerContext 绕过租户隔离以删除跨表数据。
+// 使用 SystemContext 绕过租户隔离以删除跨表数据。
 func (r *TenantUsageRepo) CleanupTenantData(ctx context.Context, tenantId uint32) error {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	tx, err := r.entClient.Client().Tx(sysCtx)
 	if err != nil {
@@ -362,9 +362,9 @@ func (r *TenantUsageRepo) CleanupTenantData(ctx context.Context, tenantId uint32
 //   - FREEZE     → status=FREEZE（同上）
 //   - READONLY   → 保持 ON，读写拦截交给 TenantAccessChecker 按过期+只读判定
 //
-// 使用 SystemViewerContext 跨租户扫描。返回被改状态的租户数量。
+// 使用 SystemContext 跨租户扫描。返回被改状态的租户数量。
 func (r *TenantUsageRepo) EnforceExpiryPolicies(ctx context.Context) (int, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 	now := time.Now()
 
 	// 查询所有 status==ON 且 expired_at<=now 的租户，WithPlan 预载套餐以读取 expiry_policy。

@@ -41,7 +41,7 @@ func newPositionServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.C
 func TestPositionServiceSqlite_CreateListCountAndGet(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPositionServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	for i, name := range []string{"服务层职位甲", "服务层职位乙"} {
@@ -95,7 +95,7 @@ func TestPositionServiceSqlite_CreateListCountAndGet(t *testing.T) {
 func TestPositionServiceSqlite_List_ContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPositionServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	for i, name := range []string{"MARKERPOSALPHA 职位", "无关职位乙"} {
@@ -134,7 +134,7 @@ func TestPositionServiceSqlite_List_ContainsFilter(t *testing.T) {
 func TestPositionServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPositionServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePositionRequest{
@@ -168,7 +168,7 @@ func TestPositionServiceSqlite_Update(t *testing.T) {
 func TestPositionServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPositionServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &identityV1.CreatePositionRequest{

@@ -104,10 +104,10 @@ SSE 扇出与 streamID 归属校验（`HandleAuthorize` 不匹配即 403）都�
 2. **收件行租户归属确实有 bug，但不是"从未赋值 / 落 NULL"。** 机制实测为：repo 会调
    `SetNillableTenantID`（值来自调用方），列上 `Default(0)` 所以缺值是 **0 而非 NULL**；
    租户上下文下 go-crud `TenantPrivacy` 还会强制覆盖为 viewer 租户。
-   真正的破口是 `AsyncBroadcastMessage` 无条件用 `SystemViewer` 重建 ctx：
+   真正的破口是 `AsyncBroadcastMessage` 无条件用 `SystemContext` 重建 ctx：
    平台上下文放行 → ① `userRepo.List` 不受租户约束，**租户管理员的"全员广播"实际向全平台用户扇出**；
    ② 收件行落成 `tenant_id=0`，而收件箱读取被强制过滤为本租户 → **谁都读不到**。
-   修复：任务载荷带 `TenantId`，handler 据此构造 `UserViewer` ctx；`executeBroadcast` 的租户
+   修复：任务载荷带 `TenantId`，handler 据此构造 `UserContext` ctx；`executeBroadcast` 的租户
    **从 ctx 的 viewer 反取**而非另传一份，使"受众范围"与"行打标"不可能分叉。回退 goroutine 路径
    本来就带着请求 viewer，无需改。
    （P2-2 之后这一句只对**受众范围**成立：viewer 租户决定扇出到哪，行打标改由**每个收件用户自己的**租户逐行决定，
@@ -413,9 +413,9 @@ vue-element 的 `if (!data.id || !data.messageId) return` 把**每一条广播�
 1. **写侧定向路径**：`sendNotification` 的收件行租户改为查收件用户（`recipientTenantID` → `userRepo.Get`），
    不再取操作人 viewer；查不到时回退 viewer 租户并留 error（回退成 0 会把行藏进"平台"这个谁都读不到的地方）。
 2. **写侧广播路径**：`executeBroadcast` 逐行取受众 DTO 自带的 `tenant_id`，不再整批取 viewer 租户。
-   平台管理员的广播在 SystemViewer 下跑，viewer 租户恒为 0，按它打标等于把全平台的收件行写进租户 0。
+   平台管理员的广播在 SystemContext 下跑，viewer 租户恒为 0，按它打标等于把全平台的收件行写进租户 0。
    受众没带租户时（`tenant_id=0` 而广播方是租户）按广播方租户兜底并留 error —— 这是 go-crud DTO 映射退化的唯一可察觉窗口。
-3. **读侧**：`ListUserInbox` 回填父消息改走 SystemViewer。平台公告的父消息行落在租户 0，而收件行按读者租户过滤，
+3. **读侧**：`ListUserInbox` 回填父消息改走 SystemContext。平台公告的父消息行落在租户 0，而收件行按读者租户过滤，
    用读者的 viewer 读父消息 → 收件箱有行、标题正文为空（推送侧从内存 DTO 取正文，反而是全的，两条路径就此分叉）。
    `messageIds` 全部来自已按读者租户过滤过的收件行，"能读到这条收件行"就是授权凭据，不构成跨租户读取口。
 
@@ -442,7 +442,7 @@ vue-element 的 `if (!data.id || !data.messageId) return` 把**每一条广播�
 **用户删除不级联凭证**是本次顺手发现的一个既有缺口（不在本次范围内，登录侧因用户已不存在而 fail-closed）。
 
 回归测试：`TestInternalMessageServiceSqlite_PlatformBroadcastIsReadableByTenantUser`（平台广播 → 两个租户的读者各读到自己的行 + 标题正文）、
-`TestNotifySeamDirectedSend`（收件行落在收件人租户而非 SystemViewer 的租户 0）、
+`TestNotifySeamDirectedSend`（收件行落在收件人租户而非 SystemContext 的租户 0）、
 `TestInternalMessageRecipientTenantSqlite` 的 `listAs(t, uid)`（同租户换一个收件人就读不到）。
 
 **环境发现（不是代码缺陷，但会让广播看起来"没发"**）：本机 `backend` 与同机其他项目的 asynq 共用同一个
@@ -509,7 +509,7 @@ asynq 消费者 —— 三种情况都会留下一行永远 `SENDING` 的台账�
 1. **落点形状 = 系统级常驻任务**（这条口径的权威说明在 `docs/task_system.md` §5.6）：类型与 cron 常量在
    `pkg/task/notification_delivery_sweep.go`（`notification_delivery_sweep` / `*/5 * * * *`），handler 是
    `NotificationService.AsyncDeliverySweep`，订阅在 `NewAsynqServer`，cron 重注册在 `TaskService.startAllTask`
-   末尾 —— 因此它不进 `sys_tasks`，任务管理页看不见也停不掉，跑在 SystemViewer 上下文下。
+   末尾 —— 因此它不进 `sys_tasks`，任务管理页看不见也停不掉，跑在 SystemContext 上下文下。
 2. **年龄锚点用 `created_at`，不是 `updated_at`**：本仓没有任何一处会写 `updated_at`（mixin 列
    `Optional().Nillable()` 且无默认值），下表里被扫过的那两行至今 `updated_at` 为空 —— 这就是证据。
    顺带复用已有的 `(status, created_at)` 索引。代价是"一行被合法地反复推进"这种场景扫不出来，目前没有这种场景。
@@ -1179,7 +1179,7 @@ react 与 ele 只读渲染（tooltip / 行内 help、五个风格选项、textar
 
 两片均已完成。**第一片（用户通知偏好 / 分类退订 / 静音时段）完成 2026-10-03**：
 每用户一行 `sys_notification_preferences`（ent schema `notification_preference.go`，**刻意无租户 mixin**——偏好跟人不跟租户，
-广播在 SystemViewer 下跨租户读偏好，挂租户 mixin 会让其他租户收件人的偏好永远查不到；访问锚是服务端钉定的 user_id），
+广播在 SystemContext 下跨租户读偏好，挂租户 mixin 会让其他租户收件人的偏好永远查不到；访问锚是服务端钉定的 user_id），
 字段为静音开关 + 起止分钟数（`[start, end)` 左闭右开、跨零点 start>end 合法、start==end 拒绝）+ 退订分类 ID JSON 列。
 执行语义两条，都钉在 SQLite 集成测试里：**分类退订只约束全员广播**（`executeBroadcast` 按页批量读偏好，退订者整行不落库不推送；
 点对点定向发送不受退订影响）；**静音时段只抑制 SSE 实时推送**（收件行照常落库，DND 语义；定向路径 `sendNotification` 同样生效）。
@@ -1255,7 +1255,7 @@ react 先行页面已落（/notification/templates，预览弹窗结果就地展
    已覆盖全平台，只需把每行的 tenant 换成**收件用户自己的** `tenant_id`）、收件箱读侧对 `tenant_id=0`
    开口（要改隔离层，风险大）、或明确"平台公告不进站内信、只走站内公告栏"。
    选了第一条：改动局限在站内信的写侧与读侧，不碰隔离层。**落地比原设想多一处**——收件行按受众打标之后，
-   父消息（平台公告本体）仍在租户 0，收件箱回填必须换 SystemViewer 才读得到，否则"有行没标题"（见 §4 P2-2 第 3 条）。
+   父消息（平台公告本体）仍在租户 0，收件箱回填必须换 SystemContext 才读得到，否则"有行没标题"（见 §4 P2-2 第 3 条）。
    **P2 补充事实（2026-09-20 实测）**：定向路径的收件行 `tenant_id` 取的是**操作人** viewer 的租户
    （改缝前后同形，实测 admin→tenant_admin 一次投递落 `tenant_id=0`），所以"平台公告租户读不到"
    这个缺陷在定向路径上同样存在，不止广播。已按同一规则一起覆盖两个入口。

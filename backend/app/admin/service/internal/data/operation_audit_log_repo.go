@@ -13,7 +13,7 @@ import (
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
@@ -197,7 +197,7 @@ type AuditActionCount struct {
 
 // DigestStats 聚合 [from, to) 区间的操作审计统计（系统查看器；日报任务无请求上下文）。
 func (r *OperationAuditLogRepo) DigestStats(ctx context.Context, from, to time.Time) (*AuditDigestStats, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 	client := r.entClient.Client().OperationAuditLog.Query().Where(
 		operationauditlog.CreatedAtGTE(from),
 		operationauditlog.CreatedAtLT(to),
