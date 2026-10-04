@@ -13,8 +13,6 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
-
-	passwordPolicy "go-wind-admin/pkg/password"
 )
 
 const (
@@ -22,7 +20,7 @@ const (
 	DefaultAdminUserName = "admin"
 
 	// DefaultUserPassword 系统初始化默认密码（管理员与普通用户统一，须满足
-	// pkg/password 复杂度策略：≥8位且至少3类字符——种子凭证经 prepareCredential
+	// 口令复杂度策略（go-utils/password）：≥8位且至少3类字符——种子凭证经 prepareCredential
 	// 入库时会做复杂度校验，不达标会被拒、初始化半途而废，admin 从此无法登录）
 	DefaultUserPassword = "Abcd@1234"
 
@@ -1148,27 +1146,27 @@ var DefaultMenus = []*permissionV1.Menu{
 }
 
 // DefaultConfigs 系统初始化内置平台参数（等保口令策略阈值）。
-// 键与默认值单源引自 pkg/password 的同名常量，保证种子行与 accessor 缺省回退一致；
+// 键与默认值单�源定义于本包，保证种子行与 accessor 缺省回退一致；
 // 服务启动时按键缺一补一（键已存在、值已被管理员改过的行不覆盖），is_built_in 可改不可删。
 var DefaultConfigs = []*configV1.Config{
 	{
-		Key:       trans.Ptr(passwordPolicy.ConfigKeyMinLen),
+		Key:       trans.Ptr(ConfigKeyPasswordMinLen),
 		Name:      trans.Ptr("Password minimum length"),
-		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultMinLen)),
+		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordMinLen)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
 	},
 	{
-		Key:       trans.Ptr(passwordPolicy.ConfigKeyMaxAgeDays),
+		Key:       trans.Ptr(ConfigKeyPasswordMaxAgeDays),
 		Name:      trans.Ptr("Password maximum age in days (0 disables expiry)"),
-		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultMaxAgeDays)),
+		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordMaxAgeDays)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
 	},
 	{
-		Key:       trans.Ptr(passwordPolicy.ConfigKeyHistoryCount),
+		Key:       trans.Ptr(ConfigKeyPasswordHistoryCount),
 		Name:      trans.Ptr("Password history retention count (0 disables history check)"),
-		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultHistoryCount)),
+		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordHistoryCount)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
 	},

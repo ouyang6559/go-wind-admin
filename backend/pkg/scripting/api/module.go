@@ -10,7 +10,7 @@ import (
 
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
-	"go-wind-admin/pkg/crypto"
+	"github.com/tx7do/go-utils/crypto"
 )
 
 // 本文件定义语言无关的模块（ModuleDef），供非 Lua 引擎（如 goja JS）使用。

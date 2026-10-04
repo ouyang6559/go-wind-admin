@@ -16,11 +16,11 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
+	"github.com/tx7do/go-utils/authorizer"
+	"github.com/tx7do/go-utils/sliceutil"
 	"go-wind-admin/pkg/constants"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
-	"go-wind-admin/pkg/utils"
 )
 
 type RoleService struct {
@@ -220,7 +220,7 @@ func (s *RoleService) Update(ctx context.Context, req *permissionV1.UpdateRoleRe
 	// 保护角色字段不可修改
 	if r.GetIsProtected() {
 		if len(req.GetUpdateMask().Paths) > 0 {
-			req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{
+			req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{
 				"is_protected",
 				"type",
 				"status",

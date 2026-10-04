@@ -32,7 +32,6 @@ import (
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
 	"go-wind-admin/pkg/constants"
-	"go-wind-admin/pkg/utils"
 )
 
 type UserRepo interface {
@@ -682,7 +681,7 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 		positionIds = sliceutil.Unique(positionIds)
 	}
 
-	req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{
+	req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{
 		"role_ids",
 		"role_id",
 		"position_ids",
@@ -698,11 +697,11 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 	// 若不加拦截会把掩码串当真实值入库造成数据损坏。含 '*' 即视为掩码，跳过写入。
 	if req.Data.Email != nil && strings.Contains(*req.Data.Email, "*") {
 		req.Data.Email = nil
-		req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{"email"})
+		req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{"email"})
 	}
 	if req.Data.Mobile != nil && strings.Contains(*req.Data.Mobile, "*") {
 		req.Data.Mobile = nil
-		req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{"mobile"})
+		req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{"mobile"})
 	}
 
 	var entity *identityV1.User

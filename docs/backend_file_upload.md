@@ -157,7 +157,7 @@ GET /admin/v1/file/image?path={bucket}/{object}&expires={unix}&sig={hmac}
 sig = HMAC-SHA256(GOWIND_CRYPTO_KEY, "{path}|{expires}")   // hex
 ```
 
-- **密钥**：`GOWIND_CRYPTO_KEY` 环境变量（`pkg/crypto/hmac.go` 的全局加密器）。
+- **密钥**：`GOWIND_CRYPTO_KEY` 环境变量（`go-utils/crypto` 的全局加密器与 HMAC 签名）。
   **未配置时 SignData 报错，PublicUrl 返回空串**——上传与下载不受影响，仅富文本内嵌预览不可用（前端编辑器拿不到公开 URL）。
 - **有效期**：`mediaURLTTL = 365 天`（常量，`file_transfer_service.go`）。已嵌入历史富文本的图片链接在该期限内可访问。
 - **验签**：`crypto.VerifyData`，内部 `hmac.Equal` **恒定时间比较**（防时序侧信道）。
@@ -219,7 +219,7 @@ sig = HMAC-SHA256(GOWIND_CRYPTO_KEY, "{path}|{expires}")   // hex
 | `AllowedMimePrefixes` / `AllowedExactMimeTypes` | `pkg/oss/constants.go:21,29` | 上传 MIME 白名单 |
 | `MINIO_DEFAULT_BUCKETS` | `docker-compose.libs.yaml` | 启动时自动创建的 bucket |
 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | `docker-compose.libs.yaml` | MinIO 根凭证（生产环境务必修改） |
-| `GOWIND_CRYPTO_KEY` | 环境变量 | 签名公开 URL 的 HMAC 密钥（`pkg/crypto/hmac.go`）；未配置则 `PublicUrl` 恒为空串，富文本内嵌预览不可用；轮换=全部存量公开 URL 作废 |
+| `GOWIND_CRYPTO_KEY` | 环境变量 | 签名公开 URL 的 HMAC 密钥（`go-utils/crypto`）；未配置则 `PublicUrl` 恒为空串，富文本内嵌预览不可用；轮换=全部存量公开 URL 作废 |
 
 ---
 
@@ -229,10 +229,9 @@ sig = HMAC-SHA256(GOWIND_CRYPTO_KEY, "{path}|{expires}")   // hex
 |---|---|
 | `backend/app/admin/service/internal/service/file_transfer_service.go` | 上传/下载业务逻辑（directUploadFile / presignedUploadFile / recordFile / DownloadFile） |
 | `backend/app/admin/service/internal/server/i_file_transfer_http.pb.go` | 手动注册的上传/下载 HTTP 端点（multipart `FormFile` 与 JSON `Bind` 双模式兼容，前端实际走 JSON+base64）；含签名图片代理路由的免鉴权手动注册块 |
-| `backend/pkg/crypto/hmac.go` | 签名公开 URL 的 HMAC-SHA256 签发/恒定时间验签（`GOWIND_CRYPTO_KEY`） |
+| `go-utils/crypto` | 签名公开 URL 的 HMAC-SHA256 签发/恒定时间验签（`GOWIND_CRYPTO_KEY`） |
 | `backend/pkg/oss/minio.go` | MinIO 客户端封装（UploadFile / DownloadFile / GetUploadPresignedUrl 等） |
-| `backend/pkg/oss/constants.go` | 安全常量与校验函数（大小上限、MIME 白名单、目录校验） |
-| `backend/pkg/oss/utils.go` | objectName 生成、MIME 嗅探、bucket 路由等工具 |
+| `go-utils/ossutil` | 安全常量与校验函数（大小上限、MIME 白名单、目录校验）及 objectName 生成、MIME 嗅探、bucket 路由等工具 |
 | `backend/app/admin/service/configs/oss.yaml` | MinIO 连接配置 |
 | `backend/docker-compose.libs.yaml` | MinIO 容器定义 |
 | `api/protos/storage/service/v1/file.proto` | `storage.File` 元数据 message 定义 |

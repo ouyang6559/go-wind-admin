@@ -11,11 +11,11 @@ import (
 	"github.com/tx7do/go-utils/geoip/geolite"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 
+	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/channel"
 	"go-wind-admin/app/admin/service/internal/server"
 	"go-wind-admin/app/admin/service/internal/service"
-	"go-wind-admin/pkg/authorizer"
 )
 
 // initApp 手写装配整个应用,是 Ent 后端构建(!gorm_backend)的依赖注入点。
@@ -170,7 +170,11 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	tenantAccessChecker := data.NewTenantAccessCheckerImpl(ctx, entClient)
 	authorizerProvider := data.NewAuthorizerProvider(ctx, roleRepo, apiRepo)
-	authz := authorizer.NewAuthorizer(ctx, authorizerProvider)
+	var authzEngineCfg *authorizer.EngineConfig
+	if bootstrapConf := ctx.GetConfig(); bootstrapConf != nil && bootstrapConf.Authz != nil {
+		authzEngineCfg = &authorizer.EngineConfig{Type: bootstrapConf.Authz.GetType()}
+	}
+	authz := authorizer.NewAuthorizer(ctx.Context(), ctx.GetLogger(), authzEngineCfg, authorizerProvider)
 
 	// ═══════════════════════ 四、服务层(internal/service) ═══════════════════════
 

@@ -31,11 +31,11 @@ require (
 	github.com/tx7do/go-scripts v0.0.8
 	github.com/tx7do/go-scripts/javascript v0.0.9
 	github.com/tx7do/go-scripts/lua v0.0.9
-	github.com/tx7do/go-utils v1.1.40
+	github.com/tx7do/go-utils v1.1.42
 	github.com/tx7do/go-utils/aggregator v0.0.5
 	github.com/tx7do/go-utils/captcha v0.0.4
 	github.com/tx7do/go-utils/copierutil v0.0.8
-	github.com/tx7do/go-utils/crypto v0.0.2
+	github.com/tx7do/go-utils/crypto v0.0.4
 	github.com/tx7do/go-utils/doctext v0.1.0
 	github.com/tx7do/go-utils/eventbus v0.1.0
 	github.com/tx7do/go-utils/fieldperm v0.1.0
@@ -45,7 +45,7 @@ require (
 	github.com/tx7do/go-utils/mailer v0.1.0
 	github.com/tx7do/go-utils/mapper v0.0.3
 	github.com/tx7do/go-utils/netutil v0.1.0
-	github.com/tx7do/go-utils/password v0.0.2
+	github.com/tx7do/go-utils/password v0.1.0
 	github.com/tx7do/go-utils/sqlutil v0.1.0
 	github.com/tx7do/go-wind v0.0.2
 	github.com/tx7do/go-wind-plugins/ai/openai v0.0.1
@@ -53,8 +53,6 @@ require (
 	github.com/tx7do/kratos-authn v1.1.11
 	github.com/tx7do/kratos-authn/engine/jwt v1.1.11
 	github.com/tx7do/kratos-authz v1.1.8
-	github.com/tx7do/kratos-authz/engine/casbin v1.1.12
-	github.com/tx7do/kratos-authz/engine/opa v1.1.15
 	github.com/tx7do/kratos-authz/middleware v1.1.13
 	github.com/tx7do/kratos-bootstrap/api v0.0.45
 	github.com/tx7do/kratos-bootstrap/bootstrap v0.1.17
@@ -78,6 +76,11 @@ require (
 	gorm.io/datatypes v1.2.7
 	gorm.io/gorm v1.31.2
 	modernc.org/sqlite v1.58.0
+)
+
+require (
+	github.com/tx7do/kratos-authz/engine/casbin v1.1.12 // indirect
+	github.com/tx7do/kratos-authz/engine/opa v1.1.15 // indirect
 )
 
 require (
@@ -236,6 +239,10 @@ require (
 	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/tx7do/go-crud/audit v0.0.3 // indirect
 	github.com/tx7do/go-crud/cache v0.0.2 // indirect
+	github.com/tx7do/go-utils/auditutil v0.1.0
+	github.com/tx7do/go-utils/authorizer v0.1.0
+	github.com/tx7do/go-utils/converter v0.1.0
+	github.com/tx7do/go-utils/ossutil v0.1.0
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1 // indirect
 	github.com/tx7do/kratos-bootstrap/config v0.2.3 // indirect

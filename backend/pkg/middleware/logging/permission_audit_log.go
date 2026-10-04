@@ -2,18 +2,14 @@ package logging
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/tx7do/go-utils/auditutil"
 	"github.com/tx7do/go-utils/trans"
-	"google.golang.org/protobuf/proto"
 
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 
@@ -111,10 +107,10 @@ func (p *PermissionAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 		permissionAuditLog.TargetName = trans.Ptr(name)
 	}
 
-	clientIp := getClientRealIP(htr.Request())
+	clientIp := auditutil.ClientRealIP(htr.Request())
 
 	permissionAuditLog.IpAddress = trans.Ptr(clientIp)
-	permissionAuditLog.RequestId = trans.Ptr(getRequestId(htr.Request()))
+	permissionAuditLog.RequestId = trans.Ptr(auditutil.RequestID(htr.Request()))
 
 	ut := extractAuthToken(htr)
 	if ut != nil {
@@ -134,8 +130,12 @@ func (p *PermissionAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 	}
 	permissionAuditLog.Reason = trans.Ptr(reason)
 
-	permissionAuditLog.LogHash = trans.Ptr(p.hashLog(permissionAuditLog))
-	permissionAuditLog.Signature = p.signature(permissionAuditLog)
+	permissionAuditLog.LogHash = trans.Ptr(auditutil.HashLog(permissionAuditLog))
+	signature, signErr := auditutil.SignLogContent(p.op.ecPrivateKey, permissionAuditLog.GetTenantId(), permissionAuditLog.GetOperatorId(), permissionAuditLog.GetCreatedAt(), permissionAuditLog.GetLogHash())
+	if signErr != nil {
+		fmt.Printf("sign log content failed: %v\n", signErr)
+	}
+	permissionAuditLog.Signature = signature
 
 	if p.op.writePermissionAuditLogFunc != nil {
 		ctx = appViewer.NewSystemViewerContext(ctx)
@@ -209,77 +209,4 @@ func targetNameFromBody(body []byte) string {
 		}
 	}
 	return ""
-}
-
-// hashLog 计算日志的 SHA256 哈希（十六进制小写字符串）
-// 规则：排除 log_hash 和 signature 字段，Protobuf 确定性序列化后哈希
-func (p *PermissionAuditLogMiddleware) hashLog(permissionAuditLog *auditV1.PermissionAuditLog) string {
-	if permissionAuditLog == nil {
-		return ""
-	}
-
-	permissionAuditLog.LogHash = nil
-	permissionAuditLog.Signature = nil
-
-	rawBytes, err := proto.Marshal(permissionAuditLog)
-	if err != nil {
-		fmt.Printf("marshal log failed: %v\n", err)
-		return ""
-	}
-
-	hash := sha256.Sum256(rawBytes)
-	return hex.EncodeToString(hash[:])
-}
-
-// signature 生成日志的 ECDSA 数字签名
-// 签名内容：tenant_id + operator_id + created_at（原始时间戳） + log_hash
-// 返回：ECDSA 签名字节数组（DER 格式）
-func (p *PermissionAuditLogMiddleware) signature(permissionAuditLog *auditV1.PermissionAuditLog) []byte {
-	if permissionAuditLog == nil || p.op.ecPrivateKey == nil {
-		return nil
-	}
-
-	tenantID := permissionAuditLog.GetTenantId()
-	operatorID := permissionAuditLog.GetOperatorId()
-	logHash := permissionAuditLog.GetLogHash()
-	createdAt := permissionAuditLog.GetCreatedAt()
-
-	type signContent struct {
-		TenantID   uint32 `json:"tenant_id"`
-		OperatorID uint32 `json:"operator_id"`
-		Sec        int64  `json:"sec"`
-		Nanos      int32  `json:"nanos"`
-		LogHash    string `json:"log_hash"`
-	}
-	sc := signContent{
-		TenantID:   tenantID,
-		OperatorID: operatorID,
-		LogHash:    logHash,
-	}
-	if createdAt != nil {
-		sc.Sec = createdAt.Seconds
-		sc.Nanos = createdAt.Nanos
-	}
-
-	scBytes, err := json.Marshal(sc)
-	if err != nil {
-		fmt.Printf("marshal sign content failed: %v\n", err)
-		return nil
-	}
-
-	scHash := sha256.Sum256(scBytes)
-
-	r, s, err := ecdsa.Sign(rand.Reader, p.op.ecPrivateKey, scHash[:])
-	if err != nil {
-		fmt.Printf("ECDSA sign failed: %v\n", err)
-		return nil
-	}
-
-	signBytes, err := encodeDER(r, s)
-	if err != nil {
-		fmt.Printf("encode DER failed: %v\n", err)
-		return nil
-	}
-
-	return signBytes
 }

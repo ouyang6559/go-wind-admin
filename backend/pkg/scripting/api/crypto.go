@@ -8,7 +8,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
-	"go-wind-admin/pkg/crypto"
+	"github.com/tx7do/go-utils/crypto"
 	"go-wind-admin/pkg/scripting/internal/convert"
 )
 
@@ -68,6 +68,8 @@ func buildCryptoModule(L *lua.LState, logger *bLogger.Helper) {
 	// crypto.encrypt_payload(table)
 	// Encrypts a Lua table as JSON
 	// Returns: table with encrypted data and metadata
+	// task_id/task_type 以明文保留在封装外层，供任务系统的路由/调度读取
+	// （无需解密），其余字段全部加密。
 	cryptoModule.RawSetString("encrypt_payload", L.NewFunction(func(L *lua.LState) int {
 		payloadTable := L.CheckTable(1)
 
@@ -75,7 +77,7 @@ func buildCryptoModule(L *lua.LState, logger *bLogger.Helper) {
 		payloadMap := convert.ToGoValue(payloadTable).(map[string]interface{})
 
 		// Encrypt the payload
-		encrypted, err := crypto.EncryptPayload(payloadMap)
+		encrypted, err := crypto.EncryptPayload(payloadMap, "task_id", "task_type")
 		if err != nil {
 			L.RaiseError("payload encryption failed: %v", err)
 			return 0

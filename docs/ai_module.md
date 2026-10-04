@@ -26,7 +26,7 @@
 
 ## 密钥与配置
 
-- api_key 经全局加密器（`pkg/crypto`，密钥来自环境变量 `GOWIND_CRYPTO_KEY`）加密落库；未设置该变量时明文落库（与全局加密既有语义一致）。
+- api_key 经全局加密器（`go-utils/crypto`，密钥来自环境变量 `GOWIND_CRYPTO_KEY`）加密落库；未设置该变量时明文落库（与全局加密既有语义一致）。
 - Update 语义：apiKey 留空 = 不修改已存 Key（该字段从 updateMask 摘除，防 FieldMask 空值清写）。
 
 ## 配额与租户门禁

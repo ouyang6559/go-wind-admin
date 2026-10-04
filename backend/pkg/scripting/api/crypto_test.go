@@ -7,7 +7,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
-	"go-wind-admin/pkg/crypto"
+	"github.com/tx7do/go-utils/crypto"
 )
 
 func TestRegisterCrypto_Module(t *testing.T) {

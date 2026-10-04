@@ -29,10 +29,10 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
-	conf "github.com/tx7do/kratos-bootstrap/api/gen/go/conf/v1"
-	"github.com/tx7do/kratos-bootstrap/bootstrap"
 
 	crudViewer "github.com/tx7do/go-crud/viewer"
+	"github.com/tx7do/go-utils/authorizer"
+	goconv "github.com/tx7do/go-utils/converter"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
@@ -40,7 +40,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
-	"go-wind-admin/pkg/authorizer"
 	"go-wind-admin/pkg/constants"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
@@ -55,8 +54,6 @@ import (
 func newPermissionServiceForTest(t *testing.T) (*PermissionService, *ent.Client) {
 	t.Helper()
 	entClient := enttest.NewEntClientForTest(t)
-	bootstrapCtx := bootstrap.NewContextWithParam(context.Background(), nil,
-		&conf.Bootstrap{Authz: &conf.Authorization{Type: "noop"}}, bLogger.NopLogger())
 	svc := &PermissionService{
 		log:                     bLogger.NewHelper(bLogger.NopLogger()),
 		permissionRepo:          data.NewPermissionRepoForTest(entClient),
@@ -64,9 +61,9 @@ func newPermissionServiceForTest(t *testing.T) (*PermissionService, *ent.Client)
 		menuRepo:                data.NewMenuRepoForTest(entClient),
 		apiRepo:                 data.NewApiRepoForTest(entClient),
 		roleRepo:                data.NewRoleRepoForTest(entClient),
-		authorizer:              authorizer.NewAuthorizer(bootstrapCtx, stubAuthzProvider{}),
+		authorizer:              authorizer.NewAuthorizer(context.Background(), bLogger.NopLogger(), &authorizer.EngineConfig{Type: "noop"}, stubAuthzProvider{}),
 		menuPermissionConverter: converter.NewMenuPermissionConverter(),
-		apiPermissionConverter:  converter.NewApiPermissionConverter(),
+		apiPermissionConverter:  goconv.NewApiPermissionConverter(),
 	}
 	return svc, entClient.Client()
 }

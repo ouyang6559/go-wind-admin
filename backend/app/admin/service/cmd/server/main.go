@@ -38,7 +38,7 @@ import (
 
 	//_ "github.com/tx7do/kratos-bootstrap/tracer"
 
-	appCrypto "go-wind-admin/pkg/crypto"
+	appCrypto "github.com/tx7do/go-utils/crypto"
 	"go-wind-admin/pkg/serviceid"
 )
 

@@ -2,20 +2,15 @@ package logging
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/tx7do/go-utils/auditutil"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
-	"google.golang.org/protobuf/proto"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
@@ -83,14 +78,14 @@ func (l *LoginAuditLogMiddleware) Handle(ctx context.Context, htr *http.Transpor
 	// 回传挑战上下文中的用户名（见 MfaService.VerifyMFAChallenge）。
 	auditUsername := htr.ReplyHeader().Get("X-Audit-Username")
 
-	clientIp := getClientRealIP(htr.Request())
+	clientIp := auditutil.ClientRealIP(htr.Request())
 
 	loginAuditLog.IpAddress = trans.Ptr(clientIp)
 	loginAuditLog.CreatedAt = timeutil.TimeToTimestamppb(trans.Ptr(time.Now()))
 
 	loginAuditLog.GeoLocation = fillGeoLocation(clientIp)
 
-	if username, _ := extractUsernameFromRequest(htr.Request()); username != "" {
+	if username, _ := auditutil.ExtractUsernameFromRequest(htr.Request()); username != "" {
 		loginAuditLog.Username = trans.Ptr(username)
 	}
 
@@ -113,7 +108,7 @@ func (l *LoginAuditLogMiddleware) Handle(ctx context.Context, htr *http.Transpor
 	loginAuditLog.DeviceInfo = fillDeviceInfo(htr, ut)
 
 	// 获取客户端ID
-	loginAuditLog.RequestId = trans.Ptr(getRequestId(htr.Request()))
+	loginAuditLog.RequestId = trans.Ptr(auditutil.RequestID(htr.Request()))
 
 	loginAuditLog.FailureReason = trans.Ptr(reason)
 
@@ -132,90 +127,18 @@ func (l *LoginAuditLogMiddleware) Handle(ctx context.Context, htr *http.Transpor
 	loginAuditLog.RiskFactors = l.computeRiskFactors(loginAuditLog)
 
 	// 计算哈希和签名
-	loginAuditLog.LogHash = trans.Ptr(l.hashLog(loginAuditLog))
-	loginAuditLog.Signature = l.signature(loginAuditLog)
+	loginAuditLog.LogHash = trans.Ptr(auditutil.HashLog(loginAuditLog))
+	signature, signErr := auditutil.SignLogContent(l.op.ecPrivateKey, loginAuditLog.GetTenantId(), loginAuditLog.GetUserId(), loginAuditLog.GetCreatedAt(), loginAuditLog.GetLogHash())
+	if signErr != nil {
+		fmt.Printf("sign log content failed: %v\n", signErr)
+	}
+	loginAuditLog.Signature = signature
 
 	// 写入日志
 	if l.op.writeLoginLogFunc != nil {
 		ctx = appViewer.NewSystemViewerContext(ctx)
 		_ = l.op.writeLoginLogFunc(ctx, loginAuditLog)
 	}
-}
-
-// hashLog 计算日志的 SHA256 哈希（十六进制小写字符串）
-// 规则：排除 log_hash 和 signature 字段，Protobuf 确定性序列化后哈希
-func (l *LoginAuditLogMiddleware) hashLog(loginAuditLog *auditV1.LoginAuditLog) string {
-	if loginAuditLog == nil {
-		return ""
-	}
-
-	loginAuditLog.LogHash = nil
-	loginAuditLog.Signature = nil
-
-	rawBytes, err := proto.Marshal(loginAuditLog)
-	if err != nil {
-		fmt.Printf("marshal log failed: %v\n", err)
-		return ""
-	}
-
-	hash := sha256.Sum256(rawBytes)
-	return hex.EncodeToString(hash[:])
-}
-
-// signature 生成日志的 ECDSA 数字签名
-// 签名内容：tenant_id + user_id + created_at（原始时间戳） + log_hash
-// 返回：ECDSA 签名字节数组（r+s 拼接，DER 格式）
-func (l *LoginAuditLogMiddleware) signature(loginAuditLog *auditV1.LoginAuditLog) []byte {
-	if loginAuditLog == nil || l.op.ecPrivateKey == nil {
-		return nil
-	}
-
-	tenantID := loginAuditLog.GetTenantId()
-	userID := loginAuditLog.GetUserId()
-	username := loginAuditLog.GetUsername()
-	logHash := loginAuditLog.GetLogHash()
-	createdAt := loginAuditLog.GetCreatedAt()
-
-	type signContent struct {
-		TenantID uint32 `json:"tenant_id"`
-		UserID   uint32 `json:"user_id"`
-		Username string `json:"username"`
-		Sec      int64  `json:"sec"`   // createdAt 秒数
-		Nanos    int32  `json:"nanos"` // createdAt 纳秒数
-		LogHash  string `json:"log_hash"`
-	}
-	sc := signContent{
-		TenantID: tenantID,
-		UserID:   userID,
-		Username: username,
-		LogHash:  logHash,
-	}
-	if createdAt != nil {
-		sc.Sec = createdAt.Seconds
-		sc.Nanos = createdAt.Nanos
-	}
-
-	scBytes, err := json.Marshal(sc)
-	if err != nil {
-		fmt.Printf("marshal sign content failed: %v\n", err)
-		return nil
-	}
-
-	scHash := sha256.Sum256(scBytes)
-
-	r, s, err := ecdsa.Sign(rand.Reader, l.op.ecPrivateKey, scHash[:])
-	if err != nil {
-		fmt.Printf("ECDSA sign failed: %v\n", err)
-		return nil
-	}
-
-	signBytes, err := encodeDER(r, s)
-	if err != nil {
-		fmt.Printf("encode DER failed: %v\n", err)
-		return nil
-	}
-
-	return signBytes
 }
 
 // computeRiskScore 计算登录审计日志的风险分数（0-100）
@@ -250,7 +173,7 @@ func (l *LoginAuditLogMiddleware) computeRiskScore(loginAuditLog *auditV1.LoginA
 	if ip == "" {
 		score += 5
 	} else {
-		if isPrivateIP(ip) {
+		if auditutil.IsPrivateIP(ip) {
 			score -= 10
 		}
 	}
@@ -343,7 +266,7 @@ func (l *LoginAuditLogMiddleware) computeRiskFactors(la *auditV1.LoginAuditLog) 
 	if ip == "" {
 		add(RiskFactorIpMissing)
 	} else {
-		if isPrivateIP(ip) {
+		if auditutil.IsPrivateIP(ip) {
 			add(RiskFactorInternalIP)
 		} else {
 			add(RiskFactorExternalIP)

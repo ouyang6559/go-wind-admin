@@ -17,7 +17,7 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
+	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 

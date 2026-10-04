@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/tx7do/go-utils/ossutil"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
@@ -72,11 +73,11 @@ func LoaderOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) lua.LGFunctio
 			if bucketName != nil {
 				finalBucketName = *bucketName
 			} else {
-				finalBucketName = oss.ContentTypeToBucketName(contentType)
+				finalBucketName = ossutil.ContentTypeToBucketName(contentType)
 			}
 
 			// Generate object name
-			objectName, _ := oss.JoinObjectName(contentType, filePath, fileName)
+			objectName, _ := ossutil.JoinObjectName(contentType, filePath, fileName)
 
 			// Get presigned URL using the underlying MinIO client
 			ctx := context.Background()
@@ -218,7 +219,7 @@ func LoaderOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) lua.LGFunctio
 		// Get the appropriate bucket name for a content type
 		ossModule.RawSetString("get_bucket_for_type", L.NewFunction(func(L *lua.LState) int {
 			contentType := L.CheckString(1)
-			bucketName := oss.ContentTypeToBucketName(contentType)
+			bucketName := ossutil.ContentTypeToBucketName(contentType)
 			L.Push(lua.LString(bucketName))
 			return 1
 		}))

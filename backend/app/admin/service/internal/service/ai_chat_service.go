@@ -17,7 +17,7 @@ import (
 	"github.com/tx7do/kratos-transport/transport/sse"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	appCrypto "go-wind-admin/pkg/crypto"
+	appCrypto "github.com/tx7do/go-utils/crypto"
 
 	pkgAi "go-wind-admin/pkg/ai"
 	"go-wind-admin/pkg/sseevent"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 
+	"github.com/tx7do/go-utils/ossutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
@@ -179,12 +180,12 @@ func (s *UserProfileService) UploadAvatar(ctx context.Context, req *identityV1.U
 			return nil, authenticationV1.ErrorBadRequest("empty avatar data")
 		}
 		// 校验图片大小（复用上传限制，头像不应超过该上限）
-		if int64(len(imageBytes)) > oss.MaxUploadSize {
+		if int64(len(imageBytes)) > ossutil.MaxUploadSize {
 			return nil, authenticationV1.ErrorBadRequest("avatar exceeds max size")
 		}
 		// 嗅探真实图片类型并校验白名单
-		realMime, _ := oss.DetectFileType(imageBytes)
-		if !oss.IsAllowedMimeType(realMime) || len(realMime) < 6 || realMime[:6] != "image/" {
+		realMime, _ := ossutil.DetectFileType(imageBytes)
+		if !ossutil.IsAllowedMimeType(realMime) || len(realMime) < 6 || realMime[:6] != "image/" {
 			return nil, authenticationV1.ErrorBadRequest("only image files are allowed for avatar")
 		}
 		// 上传到 OSS（mc 自动嗅探 MIME/桶/对象名，头像统一进 images 桶）

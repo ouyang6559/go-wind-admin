@@ -5,7 +5,7 @@
 定位：平台全局运行时参数的键值存储——管理页可改、服务侧按键读取。与两个邻居划清边界：
 
 - **字典管理**是业务枚举（给前端下拉框用的分类/小类），参数是服务侧行为阈值（如口令复杂度下限），两者语义不同（表注释也如此声明）；
-- **环境变量口径已废弃**：阈值类配置一律经参数管理（口令策略曾走环境变量，已迁移，见 `pkg/password/policy.go` 包头注释）。
+- **环境变量口径已废弃**：阈值类配置一律经参数管理（口令策略曾走环境变量，已迁移；复杂度算法在 `go-utils/password`）。
 
 ---
 
@@ -70,7 +70,7 @@ maxAge := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMaxAgeDays, pas
 - 键不存在 → 按默认值创建（缺一补一，管理员自建行不阻断补种）；
 - 键已存在 → 跳过，**绝不把管理员改过的值重置回默认**。
 
-种子定义在 `pkg/constants/default_data.go` 的 `DefaultConfigs`，键与默认值**单源引自 `pkg/password` 的同名常量**——种子行与读取器缺省回退永远一致：
+种子定义在 `pkg/constants/default_data.go` 的 `DefaultConfigs`，键与默认值**单源自 `pkg/constants/password_policy.go` 的口令策略常量**——种子行与读取器缺省回退永远一致：
 
 | 键 | 默认 | 语义 |
 |---|---|---|
@@ -88,7 +88,7 @@ maxAge := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMaxAgeDays, pas
 
 ## 6. 接入新参数的步骤
 
-1. 在 `pkg/constants/default_data.go` 的 `DefaultConfigs` 追加键（内置参数把默认值常量与消费方回退值**单源**放同一处，如 `pkg/password` 的做法）；
+1. 在 `pkg/constants/default_data.go` 的 `DefaultConfigs` 追加键（内置参数把默认值常量与消费方回退值**单源**放同一处，如 `pkg/constants/password_policy.go` 的做法）；
 2. 消费方经 wiring 注入 `*data.ConfigRepo`，按键 `GetConfigXxx(ctx, key, def)` 读取——`def` 必须与种子默认值一致；
 3. 重新部署。老库启动时 `SeedDefaults` 自动补种，**不需要手工 SQL**；
 4. 键命名沿用现状 `sys.<域>.<名>`（如 `sys.password.minLen`）；`value_type` 按语义选，读取器与声明保持一致。

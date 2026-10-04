@@ -8,7 +8,8 @@ import (
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/usercredential"
-	passwordPolicy "go-wind-admin/pkg/password"
+
+	"go-wind-admin/pkg/constants"
 )
 
 func usercredentialTypePasswordHash() usercredential.CredentialType {
@@ -22,7 +23,7 @@ const passwordHistoryKey = "password_history"
 // 相同（bcrypt 比对）。历史列表为空/解析失败时跳过（不阻塞主流程）。
 // 保留条数自 sys_config 平台参数读取（参数管理页可调，<=0 关闭）。
 func (r *UserCredentialRepo) checkPasswordHistory(ctx context.Context, entity *ent.UserCredential, newPlain string) error {
-	limit := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount)
+	limit := r.configRepo.GetConfigInt(ctx, constants.ConfigKeyPasswordHistoryCount, constants.DefaultPasswordHistoryCount)
 	if limit <= 0 || entity == nil || entity.CredentialType == nil {
 		return nil
 	}

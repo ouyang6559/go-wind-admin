@@ -23,8 +23,8 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
+	"github.com/tx7do/go-utils/sliceutil"
 	"go-wind-admin/pkg/constants"
-	"go-wind-admin/pkg/utils"
 )
 
 type RoleRepo struct {
@@ -603,7 +603,7 @@ func (r *RoleRepo) Update(ctx context.Context, req *permissionV1.UpdateRoleReque
 	updateFieldPermissions := req.UpdateMask != nil &&
 		(hasPath("field_permissions", req.UpdateMask) || hasPath("fieldPermissions", req.UpdateMask))
 	if req.UpdateMask != nil {
-		req.UpdateMask.Paths = utils.FilterBlacklist(req.UpdateMask.GetPaths(), []string{
+		req.UpdateMask.Paths = sliceutil.FilterBlacklist(req.UpdateMask.GetPaths(), []string{
 			"permissions",
 			"org_units",
 			"orgUnits",

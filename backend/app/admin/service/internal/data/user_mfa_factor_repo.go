@@ -13,7 +13,7 @@ import (
 
 	entCrud "github.com/tx7do/go-crud/entgo"
 
-	"go-wind-admin/pkg/crypto"
+	"github.com/tx7do/go-utils/crypto"
 
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 )

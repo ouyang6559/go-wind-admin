@@ -11,7 +11,7 @@ import (
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 
-	appCrypto "go-wind-admin/pkg/crypto"
+	appCrypto "github.com/tx7do/go-utils/crypto"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"

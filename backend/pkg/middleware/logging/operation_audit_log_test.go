@@ -11,7 +11,7 @@
 //  5. 直调空 Transport：Request() 为 nil 的分支（ResourceId/Reason 的
 //     空值来源）与错误映射；
 //  6. writeOperationAuditLogFunc 为 nil 时只跳过落库；
-//  7. hashLog/signature 的 nil 边界。
+//  7. 哈希/签名（auditutil）的 nil 边界。
 package logging
 
 import (
@@ -24,6 +24,7 @@ import (
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tx7do/go-utils/auditutil"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
@@ -196,7 +197,7 @@ func TestOperationAuditLogHandleDirectNilRequest(t *testing.T) {
 			recs = append(recs, d)
 			return nil
 		})(&op)
-		key, _, err := generateECDSAKeyPair()
+		key, _, err := auditutil.GenerateECDSAKeyPair()
 		require.NoError(t, err)
 		WithECPrivateKey(key)(&op)
 		return NewOperationAuditLogMiddleware(&op), &recs
@@ -248,16 +249,12 @@ func TestOperationAuditLogHandleWriteFuncNil(t *testing.T) {
 	assert.Len(t, env.capture.permission, 1)
 }
 
-// TestOperationAuditLogHashLogAndSignatureEdges 直调覆盖 nil 边界。
-func TestOperationAuditLogHashLogAndSignatureEdges(t *testing.T) {
-	mwNoKey := NewOperationAuditLogMiddleware(&options{})
-	assert.Equal(t, "", mwNoKey.hashLog(nil))
-	assert.Nil(t, mwNoKey.signature(nil))
-	assert.Nil(t, mwNoKey.signature(&auditV1.OperationAuditLog{}), "无私钥时签名必须为 nil")
-
-	key, _, err := generateECDSAKeyPair()
-	require.NoError(t, err)
-	mwWithKey := NewOperationAuditLogMiddleware(&options{ecPrivateKey: key})
-	assert.Equal(t, "", mwWithKey.hashLog(nil))
-	assert.Nil(t, mwWithKey.signature(nil))
+// TestOperationAuditLogHashAndSignatureEdges 直调覆盖哈希/签名的 nil 边界
+// （实现已收敛至 auditutil）：nil 记录哈希归一空串；nil 私钥签名必须
+// 显式报错且产出 nil，而非半成品。
+func TestOperationAuditLogHashAndSignatureEdges(t *testing.T) {
+	assert.Equal(t, "", auditutil.HashLog(nil))
+	sig, err := auditutil.SignLogContent(nil, 0, 0, nil, "")
+	assert.Error(t, err, "无私钥时签名必须显式报错")
+	assert.Nil(t, sig)
 }

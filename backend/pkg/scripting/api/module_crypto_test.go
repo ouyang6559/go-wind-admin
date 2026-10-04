@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"go-wind-admin/pkg/crypto"
+	"github.com/tx7do/go-utils/crypto"
 )
 
 // initModuleCryptoTestEncryptor 初始化全局加密器（幂等；与既有 crypto_test.go

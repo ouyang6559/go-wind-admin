@@ -280,7 +280,7 @@ func mintTestTokenWithBadRoleClaim(t *testing.T) string {
 // 签名/哈希形状断言
 // ---------------------------------------------------------------------------
 
-// parseDERSig 按 encodeDER 的格式（0x30 总长 0x02 rLen r 0x02 sLen s）拆出
+// parseDERSig 按 auditutil.EncodeECDSADER 的格式（0x30 总长 0x02 rLen r 0x02 sLen s）拆出
 // (r, s)，供 ecdsa.Verify 回验签名。
 func parseDERSig(t *testing.T, der []byte) (r, s *big.Int) {
 	t.Helper()

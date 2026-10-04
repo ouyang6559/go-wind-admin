@@ -26,7 +26,7 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
+	"github.com/tx7do/go-utils/authorizer"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	applogging "go-wind-admin/pkg/middleware/logging"

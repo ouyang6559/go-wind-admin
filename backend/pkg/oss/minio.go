@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/tx7do/go-utils/ossutil"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 
@@ -26,19 +27,17 @@ const (
 
 // MinIOClient MinIO 客户端封装
 type MinIOClient struct {
-	mc         *minio.Client
-	conf       *conf.OSS
-	log        *bLogger.Helper
-	hmacSecret []byte
+	mc   *minio.Client
+	conf *conf.OSS
+	log  *bLogger.Helper
 }
 
 func NewMinIoClient(cfg *conf.Bootstrap, logger bLogger.Logger) *MinIOClient {
 	l := bLogger.NewHelper(logger.With("module", "minio/data/admin-service"))
 	return &MinIOClient{
-		log:        l,
-		conf:       cfg.Oss,
-		mc:         ossMinio.NewClient(cfg.Oss),
-		hmacSecret: staticHMACSecret,
+		log:  l,
+		conf: cfg.Oss,
+		mc:   ossMinio.NewClient(cfg.Oss),
 	}
 }
 
@@ -89,13 +88,13 @@ func (c *MinIOClient) GetUploadPresignedUrl(ctx context.Context, req *storageV1.
 	if req.BucketName != nil {
 		bucketName = req.GetBucketName()
 	} else {
-		bucketName = ContentTypeToBucketName(req.GetContentType())
+		bucketName = ossutil.ContentTypeToBucketName(req.GetContentType())
 	}
 	if bucketName == "" {
-		bucketName = BucketFiles
+		bucketName = ossutil.BucketFiles
 	}
 
-	objectName, _ := JoinObjectName(req.GetContentType(), req.FileDirectory, req.FileName)
+	objectName, _ := ossutil.JoinObjectName(req.GetContentType(), req.FileDirectory, req.FileName)
 
 	expiry := defaultExpiryTime
 	if req.ExpireSeconds != nil {
@@ -123,10 +122,10 @@ func (c *MinIOClient) GetUploadPresignedUrl(ctx context.Context, req *storageV1.
 
 		// 注意：主机替换必须作用于已赋值的 uploadUrl，此前误用 downloadUrl（此时仍为 ""）导致 no-op。
 		uploadUrl = presignedURL.String()
-		uploadUrl = ReplaceEndpointHost(uploadUrl, c.conf.Minio.UploadHost, c.conf.Minio.Endpoint)
+		uploadUrl = ossutil.ReplaceEndpointHost(uploadUrl, c.conf.Minio.UploadHost, c.conf.Minio.Endpoint)
 
-		downloadUrl = JoinObjectUrl(presignedURL.Host, bucketName, objectName)
-		downloadUrl = ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
+		downloadUrl = ossutil.JoinObjectUrl(presignedURL.Host, bucketName, objectName)
+		downloadUrl = ossutil.ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
 		if !strings.HasPrefix(downloadUrl, presignedURL.Scheme) {
 			downloadUrl = presignedURL.Scheme + "://" + downloadUrl
 		}
@@ -141,7 +140,7 @@ func (c *MinIOClient) GetUploadPresignedUrl(ctx context.Context, req *storageV1.
 			policy.SetExpires(time.Now().UTC().Add(expiry)),
 			policy.SetContentType(req.GetContentType()),
 			// 预签名上传同样必须施加大小上限，避免客户端绕过服务端直接上传超大对象（DoS/存储滥用）。
-			policy.SetContentLengthRange(0, int64(MaxUploadSize)),
+			policy.SetContentLengthRange(0, int64(ossutil.MaxUploadSize)),
 		} {
 			if e != nil {
 				c.log.Errorf(ctx, "Failed to build presigned POST policy: %v", e)
@@ -157,10 +156,10 @@ func (c *MinIOClient) GetUploadPresignedUrl(ctx context.Context, req *storageV1.
 
 		// 此前此处有三处变量串错：UploadHost 替换误用 downloadUrl、DownloadHost 替换结果误赋给 uploadUrl。
 		uploadUrl = presignedURL.String()
-		uploadUrl = ReplaceEndpointHost(uploadUrl, c.conf.Minio.UploadHost, c.conf.Minio.Endpoint)
+		uploadUrl = ossutil.ReplaceEndpointHost(uploadUrl, c.conf.Minio.UploadHost, c.conf.Minio.Endpoint)
 
-		downloadUrl = JoinObjectUrl(presignedURL.Host, bucketName, objectName)
-		downloadUrl = ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
+		downloadUrl = ossutil.JoinObjectUrl(presignedURL.Host, bucketName, objectName)
+		downloadUrl = ossutil.ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
 		if !strings.HasPrefix(downloadUrl, presignedURL.Scheme) {
 			downloadUrl = presignedURL.Scheme + "://" + downloadUrl
 		}
@@ -224,21 +223,21 @@ func (c *MinIOClient) UploadFile(
 	}
 
 	if bucketName == "" {
-		bucketName = BucketFiles
+		bucketName = ossutil.BucketFiles
 	}
 
 	var ext string
 	if mimeType == "" {
-		mimeType, ext = DetectFileType(fileContent)
+		mimeType, ext = ossutil.DetectFileType(fileContent)
 	}
 	if ext == "" {
-		ext = ContentTypeToFileExtension(mimeType)
+		ext = ossutil.ContentTypeToFileExtension(mimeType)
 		//ext = ".bin"
 	}
 
 	if objectName == "" {
-		bucketName = ContentTypeToBucketName(mimeType)
-		objectName = GenerateObjectName("", fileContent, ext, GenerateFileNameTypeUUID)
+		bucketName = ossutil.ContentTypeToBucketName(mimeType)
+		objectName = ossutil.GenerateObjectName("", fileContent, ext, ossutil.GenerateFileNameTypeUUID)
 	}
 	if mimeType == "" {
 		mimeType = DefaultContentType
@@ -267,8 +266,8 @@ func (c *MinIOClient) UploadFile(
 		return info, "", "", storageV1.ErrorUploadFailed("failed to upload fileContent")
 	}
 
-	downloadUrl := JoinObjectUrl(c.conf.Minio.DownloadHost, bucketName, objectName)
-	storagePath := JoinObjectUrl("", bucketName, objectName)
+	downloadUrl := ossutil.JoinObjectUrl(c.conf.Minio.DownloadHost, bucketName, objectName)
+	storagePath := ossutil.JoinObjectUrl("", bucketName, objectName)
 
 	return info, storagePath, downloadUrl, nil
 }
@@ -344,7 +343,7 @@ func (c *MinIOClient) getDownloadUrlWithStorageObjectPresigned(ctx context.Conte
 	}
 
 	downloadUrl := presignedURL.String()
-	downloadUrl = ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
+	downloadUrl = ossutil.ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
 	if !strings.HasPrefix(downloadUrl, presignedURL.Scheme) {
 		downloadUrl = presignedURL.Scheme + "://" + downloadUrl
 	}
@@ -446,7 +445,7 @@ func (c *MinIOClient) downloadFileWithStorageObjectPresigned(ctx context.Context
 	}
 
 	downloadUrl := presignedURL.String()
-	downloadUrl = ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
+	downloadUrl = ossutil.ReplaceEndpointHost(downloadUrl, c.conf.Minio.DownloadHost, c.conf.Minio.Endpoint)
 	if !strings.HasPrefix(downloadUrl, presignedURL.Scheme) {
 		downloadUrl = presignedURL.Scheme + "://" + downloadUrl
 	}

@@ -13,7 +13,7 @@ import (
 
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
+	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/pkg/constants"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 )

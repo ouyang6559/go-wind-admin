@@ -23,7 +23,6 @@ import (
 	"go-wind-admin/pkg/constants"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
-	"go-wind-admin/pkg/utils"
 )
 
 type UserService struct {
@@ -390,12 +389,12 @@ func (s *UserService) Create(ctx context.Context, req *identityV1.CreateUserRequ
 	var queryString string
 	if operator.GetTenantId() > 0 || req.Data.GetTenantId() > 0 {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "TENANT", "tenant_id": %d}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 			req.Data.GetTenantId(),
 		)
 	} else {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "SYSTEM"}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 		)
 	}
 	roles, err := s.roleRepo.List(ctx, &paginationV1.PagingRequest{
@@ -519,12 +518,12 @@ func (s *UserService) Update(ctx context.Context, req *identityV1.UpdateUserRequ
 	var queryString string
 	if operator.GetTenantId() > 0 || req.Data.GetTenantId() > 0 {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "TENANT", "tenant_id": %d}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 			req.Data.GetTenantId(),
 		)
 	} else {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "SYSTEM"}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 		)
 	}
 	roles, err := s.roleRepo.List(ctx, &paginationV1.PagingRequest{

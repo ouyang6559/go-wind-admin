@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/tx7do/go-utils/auditutil"
 	"github.com/tx7do/go-utils/trans"
 
 	sqlutil "github.com/tx7do/go-utils/sqlutil"
@@ -65,8 +66,8 @@ func (d *DataAccessAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 		return
 	}
 
-	clientIp := getClientRealIP(htr.Request())
-	reqId := getRequestId(htr.Request())
+	clientIp := auditutil.ClientRealIP(htr.Request())
+	reqId := auditutil.RequestID(htr.Request())
 	ut := extractAuthToken(htr)
 
 	// 落库前植入 sink 标记，短路 wrapper 对审计行自身 INSERT 的采集。

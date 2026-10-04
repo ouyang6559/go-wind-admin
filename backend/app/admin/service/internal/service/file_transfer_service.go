@@ -18,13 +18,14 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	"github.com/tx7do/go-utils/id"
+	"github.com/tx7do/go-utils/ossutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	storageV1 "go-wind-admin/api/gen/go/storage/service/v1"
 
-	"go-wind-admin/pkg/crypto"
+	"github.com/tx7do/go-utils/crypto"
 	"net/url"
 
 	gonetutil "github.com/tx7do/go-utils/netutil"
@@ -164,8 +165,8 @@ func (s *FileTransferService) directUploadFile(ctx context.Context, req *storage
 	}
 
 	// H3: 文件大小校验，防 DoS / 超大文件滥用
-	if int64(len(req.GetFile())) > oss.MaxUploadSize {
-		return nil, storageV1.ErrorFileTooLarge("file size %d exceeds max upload size %d", len(req.GetFile()), oss.MaxUploadSize)
+	if int64(len(req.GetFile())) > ossutil.MaxUploadSize {
+		return nil, storageV1.ErrorFileTooLarge("file size %d exceeds max upload size %d", len(req.GetFile()), ossutil.MaxUploadSize)
 	}
 
 	// 套餐 STORAGE 硬限制：租户用户上传前检查配额（当前占用+本次大小>上限拒绝；
@@ -184,15 +185,15 @@ func (s *FileTransferService) directUploadFile(ctx context.Context, req *storage
 
 	// H3: 通过文件内容嗅探真实 MIME，避免信任客户端可伪造的 mime 字段
 	// （防止把 text/html / 可执行文件伪装成 image/* 放进可被下载/渲染的 bucket）
-	realMime, _ := oss.DetectFileType(req.GetFile())
-	if !oss.IsAllowedMimeType(realMime) {
+	realMime, _ := ossutil.DetectFileType(req.GetFile())
+	if !ossutil.IsAllowedMimeType(realMime) {
 		return nil, storageV1.ErrorUnsupportedMediaType("file type %q is not allowed", realMime)
 	}
 	// 用真实嗅探出的类型覆盖客户端声明，防止 bucket 路由被绕过
 	req.Mime = trans.Ptr(realMime)
 
 	// H3: 校验客户端可控的 FileDirectory，拒绝 .. 等路径穿越/命名空间注入
-	if !oss.IsFileDirectorySafe(req.GetStorageObject().GetFileDirectory()) {
+	if !ossutil.IsFileDirectorySafe(req.GetStorageObject().GetFileDirectory()) {
 		return nil, storageV1.ErrorBadRequest("invalid file directory")
 	}
 
@@ -203,17 +204,17 @@ func (s *FileTransferService) directUploadFile(ctx context.Context, req *storage
 	}
 
 	if req.StorageObject.BucketName == nil {
-		req.StorageObject.BucketName = trans.Ptr(oss.ContentTypeToBucketName(req.GetMime()))
+		req.StorageObject.BucketName = trans.Ptr(ossutil.ContentTypeToBucketName(req.GetMime()))
 	}
 
 	if req.StorageObject.ObjectName == nil {
 		req.StorageObject.ObjectName = trans.Ptr(
-			oss.EnsureObjectName(
+			ossutil.EnsureObjectName(
 				req.GetStorageObject().GetFileDirectory(),
 				req.GetSourceFileName(),
 				req.GetMime(),
 				req.GetFile(),
-				oss.GenerateFileNameTypeUUID,
+				ossutil.GenerateFileNameTypeUUID,
 			),
 		)
 	}
@@ -421,12 +422,12 @@ func (s *FileTransferService) downloadFileFromURL(ctx context.Context, downloadU
 	}
 
 	// 4. 限制响应体大小，防 DoS
-	fileData, err := io.ReadAll(io.LimitReader(resp.Body, oss.MaxDownloadSize+1))
+	fileData, err := io.ReadAll(io.LimitReader(resp.Body, ossutil.MaxDownloadSize+1))
 	if err != nil {
 		return nil, storageV1.ErrorDownloadFailed("read body failed: %s", err.Error())
 	}
-	if int64(len(fileData)) > oss.MaxDownloadSize {
-		return nil, storageV1.ErrorDownloadFailed("remote file exceeds max download size %d", oss.MaxDownloadSize)
+	if int64(len(fileData)) > ossutil.MaxDownloadSize {
+		return nil, storageV1.ErrorDownloadFailed("remote file exceeds max download size %d", ossutil.MaxDownloadSize)
 	}
 
 	return &storageV1.DownloadFileResponse{

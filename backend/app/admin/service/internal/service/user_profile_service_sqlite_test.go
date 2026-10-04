@@ -33,6 +33,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	gocrypto "github.com/tx7do/go-utils/crypto"
+	"github.com/tx7do/go-utils/ossutil"
 	"github.com/tx7do/go-utils/trans"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -49,7 +50,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/usercredential"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
 	"go-wind-admin/pkg/middleware/auth"
-	"go-wind-admin/pkg/oss"
 )
 
 // userProfileUserRepoStub 是 UserProfileService 专用的 data.UserRepo 桩：
@@ -312,7 +312,7 @@ func TestUserProfileServiceSqlite_UploadAvatar_UrlPathAndValidation(t *testing.T
 
 	// 超过上传上限（50 MiB）。
 	_, err = env.svc.UploadAvatar(opCtx, &identityV1.UploadAvatarRequest{
-		Source: &identityV1.UploadAvatarRequest_ImageBase64{ImageBase64: base64.StdEncoding.EncodeToString(make([]byte, oss.MaxUploadSize+1))},
+		Source: &identityV1.UploadAvatarRequest_ImageBase64{ImageBase64: base64.StdEncoding.EncodeToString(make([]byte, ossutil.MaxUploadSize+1))},
 	})
 	require.Error(t, err, "超限头像应被拒绝")
 	require.Contains(t, err.Error(), "avatar exceeds max size")

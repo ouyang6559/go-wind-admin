@@ -13,10 +13,10 @@ import (
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
+	"github.com/tx7do/go-utils/crypto"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
-	"go-wind-admin/pkg/crypto"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	notificationChannelV1 "go-wind-admin/api/gen/go/notification_channel/service/v1"

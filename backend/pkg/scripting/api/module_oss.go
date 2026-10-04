@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/tx7do/go-utils/ossutil"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	"go-wind-admin/pkg/oss"
@@ -45,7 +46,7 @@ func ModuleOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) ModuleDef {
 
 				finalBucketName := bucketName
 				if finalBucketName == "" {
-					finalBucketName = oss.ContentTypeToBucketName(contentType)
+					finalBucketName = ossutil.ContentTypeToBucketName(contentType)
 				}
 
 				// 与 Lua 版语义一致：空值传 nil，由 JoinObjectName 生成默认名
@@ -56,7 +57,7 @@ func ModuleOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) ModuleDef {
 				if filePath != "" {
 					filePathPtr = &filePath
 				}
-				objectName, _ := oss.JoinObjectName(contentType, filePathPtr, fileNamePtr)
+				objectName, _ := ossutil.JoinObjectName(contentType, filePathPtr, fileNamePtr)
 
 				presignedURL, err := ossClient.GetClient().PresignedPutObject(bg, finalBucketName, objectName, time.Hour)
 				if err != nil {
@@ -128,7 +129,7 @@ func ModuleOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) ModuleDef {
 			},
 			// getBucketForType(contentType) → string
 			"getBucketForType": func(contentType string) string {
-				return oss.ContentTypeToBucketName(contentType)
+				return ossutil.ContentTypeToBucketName(contentType)
 			},
 		},
 	}
