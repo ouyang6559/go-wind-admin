@@ -12,7 +12,7 @@ import { TABLE } from '@/config/constants';
 import { fetchListLoginPolicies, useDeleteLoginPolicy } from '@/api/hooks/login-policy';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
-import { getPolicyTypeMap, getPolicyMethodMap } from './constants';
+import { getPolicyTypeMap, getPolicyMethodMap, getPolicyMethodOptions } from './constants';
 import LoginPolicyDrawer from './components/LoginPolicyDrawer';
 
 /**
@@ -89,9 +89,11 @@ const LoginPolicyManagement = () => {
       width: 120,
       valueType: 'select',
       valueEnum: Object.fromEntries(
-        Object.entries(policyMethodMap).map(([key, config]) => [
-          key,
-          { text: config.text, status: 'Default' as const },
+        // 与抽屉同源的过滤选项：MAC 不可选（HTTP 请求上下文拿不到，选了也永不命中），
+        // 完整映射 policyMethodMap 仅用于存量 MAC 行的标签渲染
+        getPolicyMethodOptions(t).map(({ label, value }) => [
+          value,
+          { text: label, status: 'Default' as const },
         ]),
       ),
       render: (_, record) => {
