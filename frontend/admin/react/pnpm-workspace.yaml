@@ -7,3 +7,5 @@ allowBuilds:
   json-editor-vue: false
   rolldown: true
   vue-demi: false
+patchedDependencies:
+  '@ant-design/pro-form@2.32.0': patches/@ant-design__pro-form@2.32.0.patch
