@@ -8,6 +8,56 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-04
+
+### 新增
+
+- 企业 OIDC SSO 登录（全栈，三端齐备）：授权码流 + Redis state 单次有效，环境变量
+  opt-in 接入；真实 Keycloak 实测修两处（SsoLogin 补隐私层绕过、user_repo nil mask
+  守卫）；Keycloak 演练环境（deploy/sso）与 CI 冒烟 e2e 防回归。
+- 通知域 P3 收官（两片）：用户通知偏好（静音时段 + 分类退订）与通知模板管理/渲染
+  全栈落地，事务性邮件按约定 code 可被模板覆写（无模板回落 mailtext）；偏好 tab 与
+  模板管理页三端齐备。
+- 监控告警联动：指标阈值规则 + 周期评估 + 经通知域分发；告警/恢复通知文案按收件人
+  偏好语言渲染；告警规则页三端齐备。
+- 审计日志服务端导出：XLSX / CSV 全量流式下载（突破客户端一万行上限），覆盖五类
+  审计日志、AI 用量流水与通知投递台账，三端入口统一。
+- 套餐配额硬执行与水位告警：USER / STORAGE / API_CALL 等四类配额接入租户闸门与
+  业务入口，配额水位提前告警经通知域推送；租户自助配额用量面板（个人中心）三端齐备。
+- 用户偏好语言：locale 字段 + 事务性邮件、告警通知、AI 审计日报均按收件人偏好语言渲染。
+- 租户白标：登录页按租户编号渲染 Logo / 名称（免鉴权公开查询），三端齐备。
+- 系统级常驻任务可视化：asynq Inspector 只读视图（方案 C'，零新表），三端任务监控页齐备。
+- 备份恢复工具链：RestoreCoreTables 空库恢复、备份桶超期对象生命周期清理、恢复演练文档。
+- AI 工具调用：Function Call 协议层（多轮工具调用循环接进流式对话）+ `ai_chat_tool`
+  SSE 帧工具调用可见化，三端对话 UI 齐备；语义搜索按调用者菜单权限裁剪，堵住越权检索缺口。
+- 字段级权限铺开第二资源：Role（permissions 权限集）。
+- 登录策略 REGION 维度真实现，MAC 维度移出三端下拉（对齐文档 7.3）。
+- react 补齐 /dashboard/analytics 分析页；全局搜索面板三端统一（vben 形态为基准）。
+
+### 变更
+
+- 通用代码三批下沉 tx7do 家族库（架构理顺，业务行为不变）：netutil / doctext / mailer /
+  fieldperm / eventbus / sqlutil 与 crypto / password / converter / ossutil / auditutil /
+  authorizer / sliceutil 下沉 go-utils；脚本宿主的钩子注册表、语言无关模块框架 + HTTP
+  出站护栏（`SCRIPT_HTTP_ALLOWED_DOMAINS`）、Lua 宿主桥下沉 go-scripts（本仓保留编排器
+  与业务桥接）；查看者标准上下文（UserContext / SystemContext）下沉 go-crud/viewer
+  v0.0.8（本仓 pkg/entgo/viewer 缩为数据范围映射适配层）。
+- 三端 dev 端口迁移 5xxx → 15xxx（react 15888 / vue-element 15777 / vue-vben 15666），
+  避开姐妹仓默认段。
+- 移除 oauth.proto 第三方绑定半成品与 LoginResponse.RefreshToken 残留字段（零消费方
+  死代码清理）。
+- 三端共享前端代码收敛为镜像并接 CI 防漂移：pagination 查询序列化、认证拦截器、
+  updateMask 构建泛化（六处手写掩码退役）+ 白名单钉校验器与封闭扫描。
+
+### 修复
+
+- 租户侧边栏整箱清空（TenantRepo 读侧补 WithPlan 边回填）。
+- 全局搜索三连修：react 补本地菜单匹配 / 结果点击导航 / Ctrl+K / 键盘导航；ele 菜单
+  索引存裸 i18n key 导致中文永远搜不到，改存翻译文案并修键盘选中语义。
+- vue-element 七处抽屉编辑不回填 / 编辑变新增，及通知模板表单项蒸发的根修。
+- 三端登录框 Chrome 自动填充白底覆盖（-webkit-autofill 处理 + autocomplete 语义）。
+- AI 问数 few-shot 注入按值 range 拷贝 proto 消息，修结构体复用引发的锁污染。
+
 ## [1.1.0] - 2026-09-29
 
 ### 新增
