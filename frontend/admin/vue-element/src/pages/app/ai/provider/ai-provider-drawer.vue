@@ -174,7 +174,23 @@ const formRules: FormRules = {
 defineExpose({
   open: (opts: { create: boolean; row?: any }) => {
     currentHint.value = opts.row?.apiKeyHint || "";
-    drawer.open(opts);
+    // 编辑模式下显式回填表单声明字段（避免 useDrawerForm 默认不回填导致编辑态空白）
+    drawer.open(opts, (row: any) => {
+      if (!row) return;
+      // 仅回填 defaults 声明的字段；apiKey 为机密不回显，保持空值
+      drawer.formData.name = row.name ?? "";
+      drawer.formData.modelType = row.modelType ?? "CLOUD";
+      drawer.formData.modelName = row.modelName ?? "";
+      drawer.formData.baseUrl = row.baseUrl ?? "";
+      drawer.formData.organization = row.organization ?? "";
+      drawer.formData.localHost = row.localHost ?? "";
+      drawer.formData.localPort = row.localPort ?? 11434;
+      drawer.formData.timeoutSeconds = row.timeoutSeconds ?? 60;
+      drawer.formData.systemPrompt = row.systemPrompt ?? "";
+      drawer.formData.isDefault = !!row.isDefault;
+      drawer.formData.isEnabled = row.isEnabled ?? true;
+      drawer.formData.remark = row.remark ?? "";
+    });
   },
 });
 </script>

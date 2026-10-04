@@ -107,7 +107,20 @@ const formRules: FormRules = {
   embeddingModel: [{ required: true, message: t("pages.ai_knowledge.requiredEmbeddingModel"), trigger: "blur" }],
 };
 
-defineExpose({ open: drawer.open });
+// 包装 open：编辑模式下显式回填表单声明字段（避免 useDrawerForm 默认不回填导致编辑态空白）
+function open(data?: { create?: boolean; row?: any }) {
+  drawer.open(data, (row: any) => {
+    if (!row) return;
+    // 仅回填 defaults 声明的字段，不拷贝 id/createdAt 等不可变字段
+    drawer.formData.name = row.name ?? "";
+    drawer.formData.description = row.description ?? "";
+    drawer.formData.providerId = row.providerId ?? undefined;
+    drawer.formData.embeddingModel = row.embeddingModel ?? "";
+  });
+}
+
+// 暴露方法给父组件
+defineExpose({ open });
 </script>
 
 <style lang="scss" scoped>
