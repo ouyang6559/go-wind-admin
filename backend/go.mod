@@ -36,17 +36,17 @@ require (
 	github.com/tx7do/go-utils/captcha v0.0.4
 	github.com/tx7do/go-utils/copierutil v0.0.8
 	github.com/tx7do/go-utils/crypto v0.0.2
-	github.com/tx7do/go-utils/doctext v0.0.0-00010101000000-000000000000
-	github.com/tx7do/go-utils/eventbus v0.0.0-00010101000000-000000000000
-	github.com/tx7do/go-utils/fieldperm v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-utils/doctext v0.1.0
+	github.com/tx7do/go-utils/eventbus v0.1.0
+	github.com/tx7do/go-utils/fieldperm v0.1.0
 	github.com/tx7do/go-utils/geoip v1.1.8
 	github.com/tx7do/go-utils/id v0.0.6
 	github.com/tx7do/go-utils/jwtutil v0.0.3
-	github.com/tx7do/go-utils/mailer v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-utils/mailer v0.1.0
 	github.com/tx7do/go-utils/mapper v0.0.3
-	github.com/tx7do/go-utils/netutil v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-utils/netutil v0.1.0
 	github.com/tx7do/go-utils/password v0.0.2
-	github.com/tx7do/go-utils/sqlutil v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-utils/sqlutil v0.1.0
 	github.com/tx7do/go-wind v0.0.2
 	github.com/tx7do/go-wind-plugins/ai/openai v0.0.1
 	github.com/tx7do/go-wind-toolkit/protoc-gen-go-redact v0.0.0-20260831125122-5bb4931991b2
@@ -311,15 +311,3 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
-
-replace github.com/tx7do/go-utils/netutil => D:/GoProject/go-utils/netutil
-
-replace github.com/tx7do/go-utils/doctext => D:/GoProject/go-utils/doctext
-
-replace github.com/tx7do/go-utils/mailer => D:/GoProject/go-utils/mailer
-
-replace github.com/tx7do/go-utils/fieldperm => D:/GoProject/go-utils/fieldperm
-
-replace github.com/tx7do/go-utils/eventbus => D:/GoProject/go-utils/eventbus
-
-replace github.com/tx7do/go-utils/sqlutil => D:/GoProject/go-utils/sqlutil
