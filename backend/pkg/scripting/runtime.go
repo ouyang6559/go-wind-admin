@@ -11,7 +11,7 @@ import (
 
 	gsEngine "github.com/tx7do/go-scripts"
 
-	"go-wind-admin/pkg/eventbus"
+	"github.com/tx7do/go-utils/eventbus"
 	"go-wind-admin/pkg/oss"
 )
 

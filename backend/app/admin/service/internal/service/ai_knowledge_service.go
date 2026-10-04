@@ -17,12 +17,12 @@ import (
 
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 
+	"github.com/tx7do/go-utils/doctext"
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	aiV1 "go-wind-admin/api/gen/go/ai/service/v1"
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
-	"go-wind-admin/pkg/doctext"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
 )
@@ -42,8 +42,8 @@ type AiKnowledgeService struct {
 	log  *bLogger.Helper
 	repo *data.AiKnowledgeRepo
 
-	providerRepo  *data.AiProviderRepo
-	usageLogRepo  *data.AiUsageLogRepo
+	providerRepo *data.AiProviderRepo
+	usageLogRepo *data.AiUsageLogRepo
 }
 
 func NewAiKnowledgeService(

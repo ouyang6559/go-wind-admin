@@ -8,8 +8,8 @@ import (
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 	notificationChannelV1 "go-wind-admin/api/gen/go/notification_channel/service/v1"
 
+	"github.com/tx7do/go-utils/mailer"
 	"go-wind-admin/app/admin/service/internal/data"
-	"go-wind-admin/pkg/mailer"
 )
 
 // EmailSender 邮件（SMTP）渠道。

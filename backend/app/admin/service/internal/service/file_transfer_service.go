@@ -27,8 +27,8 @@ import (
 	"go-wind-admin/pkg/crypto"
 	"net/url"
 
+	gonetutil "github.com/tx7do/go-utils/netutil"
 	"go-wind-admin/pkg/middleware/auth"
-	"go-wind-admin/pkg/netutil"
 	"go-wind-admin/pkg/oss"
 )
 
@@ -352,13 +352,13 @@ func (s *FileTransferService) downloadFileFromURL(ctx context.Context, downloadU
 	}
 
 	// 1. 静态校验 URL（scheme/host/userinfo）
-	u, err := netutil.ValidateURL(downloadUrl)
+	u, err := gonetutil.ValidateURL(downloadUrl)
 	if err != nil {
 		return nil, storageV1.ErrorDownloadFailed("invalid download url: %s", err.Error())
 	}
 
 	// 2. 解析主机名并校验所有解析到的 IP 不在内网
-	ips, err := netutil.LookupAndCheckHost(ctx, u.Hostname())
+	ips, err := gonetutil.LookupAndCheckHost(ctx, u.Hostname())
 	if err != nil {
 		return nil, storageV1.ErrorForbidden("blocked download host: %s", err.Error())
 	}
@@ -395,10 +395,10 @@ func (s *FileTransferService) downloadFileFromURL(ctx context.Context, downloadU
 			if len(via) >= 5 {
 				return http.ErrUseLastResponse
 			}
-			if _, rerr := netutil.ValidateURL(req.URL.String()); rerr != nil {
+			if _, rerr := gonetutil.ValidateURL(req.URL.String()); rerr != nil {
 				return fmt.Errorf("redirect to invalid url: %w", rerr)
 			}
-			if _, rerr := netutil.LookupAndCheckHost(req.Context(), req.URL.Hostname()); rerr != nil {
+			if _, rerr := gonetutil.LookupAndCheckHost(req.Context(), req.URL.Hostname()); rerr != nil {
 				return fmt.Errorf("redirect to blocked host: %w", rerr)
 			}
 			return nil

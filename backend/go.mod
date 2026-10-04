@@ -16,7 +16,6 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/jinzhu/inflection v1.0.0
-	github.com/ledongthuc/pdf v0.0.0-20260907135840-6c8c28e0e8a0
 	github.com/lib/pq v1.12.3
 	github.com/mileusna/useragent v1.3.5
 	github.com/minio/minio-go/v7 v7.3.0
@@ -37,11 +36,17 @@ require (
 	github.com/tx7do/go-utils/captcha v0.0.4
 	github.com/tx7do/go-utils/copierutil v0.0.8
 	github.com/tx7do/go-utils/crypto v0.0.2
+	github.com/tx7do/go-utils/doctext v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-utils/eventbus v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-utils/fieldperm v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-utils/geoip v1.1.8
 	github.com/tx7do/go-utils/id v0.0.6
 	github.com/tx7do/go-utils/jwtutil v0.0.3
+	github.com/tx7do/go-utils/mailer v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-utils/mapper v0.0.3
+	github.com/tx7do/go-utils/netutil v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-utils/password v0.0.2
+	github.com/tx7do/go-utils/sqlutil v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-wind v0.0.2
 	github.com/tx7do/go-wind-plugins/ai/openai v0.0.1
 	github.com/tx7do/go-wind-toolkit/protoc-gen-go-redact v0.0.0-20260831125122-5bb4931991b2
@@ -66,7 +71,6 @@ require (
 	github.com/xuri/excelize/v2 v2.9.1
 	github.com/yuin/gopher-lua v1.1.2
 	go.opentelemetry.io/otel/trace v1.46.0
-	golang.org/x/net v0.58.0
 	google.golang.org/genproto v0.0.0-20260908043556-f8649ddbbfe6
 	google.golang.org/genproto/googleapis/api v0.0.0-20260908043556-f8649ddbbfe6
 	google.golang.org/grpc v1.83.2
@@ -162,6 +166,7 @@ require (
 	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
+	github.com/ledongthuc/pdf v0.0.0-20260907135840-6c8c28e0e8a0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.2.1 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
@@ -276,6 +281,7 @@ require (
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/image v0.40.0 // indirect
 	golang.org/x/mod v0.40.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
@@ -305,3 +311,15 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
+
+replace github.com/tx7do/go-utils/netutil => D:/GoProject/go-utils/netutil
+
+replace github.com/tx7do/go-utils/doctext => D:/GoProject/go-utils/doctext
+
+replace github.com/tx7do/go-utils/mailer => D:/GoProject/go-utils/mailer
+
+replace github.com/tx7do/go-utils/fieldperm => D:/GoProject/go-utils/fieldperm
+
+replace github.com/tx7do/go-utils/eventbus => D:/GoProject/go-utils/eventbus
+
+replace github.com/tx7do/go-utils/sqlutil => D:/GoProject/go-utils/sqlutil

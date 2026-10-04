@@ -21,7 +21,7 @@ import (
 	_ "github.com/tx7do/go-scripts/javascript"
 	_ "github.com/tx7do/go-scripts/lua"
 
-	"go-wind-admin/pkg/eventbus"
+	"github.com/tx7do/go-utils/eventbus"
 	"go-wind-admin/pkg/oss"
 	"go-wind-admin/pkg/scripting/api"
 	"go-wind-admin/pkg/scripting/hook"

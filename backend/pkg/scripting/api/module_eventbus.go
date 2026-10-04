@@ -10,7 +10,7 @@ import (
 
 	gsEngine "github.com/tx7do/go-scripts"
 
-	"go-wind-admin/pkg/eventbus"
+	"github.com/tx7do/go-utils/eventbus"
 )
 
 // eventbusCbCounter 用于生成唯一的事件回调全局名。

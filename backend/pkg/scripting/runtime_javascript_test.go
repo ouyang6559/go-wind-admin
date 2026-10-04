@@ -10,7 +10,7 @@ import (
 
 	gsEngine "github.com/tx7do/go-scripts"
 
-	"go-wind-admin/pkg/eventbus"
+	"github.com/tx7do/go-utils/eventbus"
 )
 
 // newTestJSEngine 创建一个 JS 引擎编排器（禁用自动加载）。

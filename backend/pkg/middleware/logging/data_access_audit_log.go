@@ -7,6 +7,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/tx7do/go-utils/trans"
 
+	sqlutil "github.com/tx7do/go-utils/sqlutil"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 	"go-wind-admin/pkg/audit"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
@@ -86,7 +87,7 @@ func (d *DataAccessAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 		rec.DataMasked = trans.Ptr(ev.DataMasked)
 		rec.MaskingRules = trans.Ptr(ev.MaskingRules)
 		// 从脱敏 SQL 提取被访问表名（多表按 proto 语义斜线连接），首表映射数据分类。
-		if tables := audit.ExtractTables(ev.SqlText); len(tables) > 0 {
+		if tables := sqlutil.ExtractTables(ev.SqlText); len(tables) > 0 {
 			rec.TableName = trans.Ptr(strings.Join(tables, "/"))
 			rec.DataCategory = trans.Ptr(audit.ClassifyTable(tables[0]))
 		}
