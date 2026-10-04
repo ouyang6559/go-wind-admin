@@ -357,7 +357,6 @@ const MonitorAlertPage = () => {
           min={1}
           max={1440}
           fieldProps={{ precision: 0 }}
-          initialValue={30}
         />
         <ProFormSelect
           name="channel"

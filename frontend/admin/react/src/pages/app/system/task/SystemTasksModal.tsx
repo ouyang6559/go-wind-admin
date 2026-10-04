@@ -161,7 +161,9 @@ const SystemTasksModal = ({
               columns={failureColumns}
               dataSource={failures as Record<string, any>[]}
               pagination={false}
-              rowKey={(r: any, i) => `${r.taskType}-${r.state}-${i}`}
+              rowKey={(r: any) =>
+                `${r.taskType}-${r.state}-${r.lastFailedAt ?? ''}-${r.retried ?? 0}`
+              }
               size="small"
               bordered
             />
