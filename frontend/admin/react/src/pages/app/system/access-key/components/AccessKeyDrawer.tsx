@@ -113,10 +113,11 @@ export default function AccessKeyDrawer({
             onClose();
           },
           destroyOnClose: true,
+          // antd6 Drawer width 已废弃：size 直接收数字
+          size: 480,
         }}
         onFinish={handleSubmit}
         submitter={{ submitButtonProps: { loading: confirmLoading } }}
-        width={480}
       >
         <ProFormText
           name="name"
