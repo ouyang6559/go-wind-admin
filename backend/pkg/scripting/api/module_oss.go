@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/tx7do/go-scripts/hostmodule"
 	"github.com/tx7do/go-utils/ossutil"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
@@ -17,9 +18,9 @@ func errInvalid(msg string) error { return errors.New(msg) }
 
 // ModuleOSS 构建语言无关的 oss 模块（JS 等基于 map[string]any 桥接的语言使用）。
 // 与 Lua 版 LoaderOSS 功能对齐；client 为 nil 时返回不含函数的空模块。
-func ModuleOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) ModuleDef {
+func ModuleOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) hostmodule.ModuleDef {
 	if ossClient == nil {
-		return ModuleDef{Name: "oss", Funcs: map[string]any{}}
+		return hostmodule.ModuleDef{Name: "oss", Funcs: map[string]any{}}
 	}
 
 	bg := context.Background()
@@ -29,7 +30,7 @@ func ModuleOSS(ossClient *oss.MinIOClient, logger *bLogger.Helper) ModuleDef {
 		}
 	}
 
-	return ModuleDef{
+	return hostmodule.ModuleDef{
 		Name: "oss",
 		Funcs: map[string]any{
 			// uploadUrl(options) → {upload_url, download_url, object_name, bucket_name}

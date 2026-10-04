@@ -22,7 +22,7 @@ import (
 	gsEngine "github.com/tx7do/go-scripts"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
-	"go-wind-admin/pkg/scripting/hook"
+	"github.com/tx7do/go-scripts/hook"
 )
 
 // fakeEngine 测试用假引擎：GetType 固定 LuaType（以便走 Lua binder 的装配

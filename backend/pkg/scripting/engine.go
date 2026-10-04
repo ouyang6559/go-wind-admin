@@ -14,6 +14,8 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hook"
+	"github.com/tx7do/go-scripts/hostmodule"
 	gsSource "github.com/tx7do/go-scripts/source"
 
 	// 空导入各语言引擎包：触发 init() 将引擎工厂注册到全局注册表。
@@ -24,7 +26,6 @@ import (
 	"github.com/tx7do/go-utils/eventbus"
 	"go-wind-admin/pkg/oss"
 	"go-wind-admin/pkg/scripting/api"
-	"go-wind-admin/pkg/scripting/hook"
 )
 
 // Engine 是 Hook 编排器，语言无关。
@@ -85,7 +86,7 @@ type Config struct {
 
 	// HTTPOptions http 出站模块护栏：域名白名单（空 = 全部拒绝）、超时、响应体上限。
 	// 白名单来源：环境变量 SCRIPT_HTTP_ALLOWED_DOMAINS（逗号分隔）。
-	HTTPOptions api.HTTPOptions
+	HTTPOptions hostmodule.HTTPOptions
 }
 
 // DefaultConfig 返回默认配置。
@@ -104,25 +105,6 @@ func DefaultConfig() *Config {
 
 // EngineTypeLua 是 Lua 引擎类型标识（对齐 go-scripts）。
 const EngineTypeLua = gsEngine.LuaType
-
-// EnvHTTPAllowedDomains http 出站白名单环境变量名（逗号分隔域名）。
-const EnvHTTPAllowedDomains = "SCRIPT_HTTP_ALLOWED_DOMAINS"
-
-// HTTPAllowlistFromEnv 从环境变量读取域名白名单构造 http 护栏。
-// 未设置 = 空 = 全部出站拒绝（fail-closed）。
-func HTTPAllowlistFromEnv() api.HTTPOptions {
-	raw := strings.TrimSpace(os.Getenv(EnvHTTPAllowedDomains))
-	opts := api.HTTPOptions{}
-	if raw == "" {
-		return opts
-	}
-	for _, d := range strings.Split(raw, ",") {
-		if d = strings.TrimSpace(d); d != "" {
-			opts.AllowedDomains = append(opts.AllowedDomains, d)
-		}
-	}
-	return opts
-}
 
 // ScriptEngineFactory 创建脚本引擎实例。
 type ScriptEngineFactory func(config *Config, logger bLogger.Logger) (gsEngine.Engine, error)

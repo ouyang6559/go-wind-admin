@@ -28,9 +28,9 @@ require (
 	github.com/tx7do/go-crud/gorm v0.0.24
 	github.com/tx7do/go-crud/pagination v0.0.16
 	github.com/tx7do/go-crud/viewer v0.0.7
-	github.com/tx7do/go-scripts v0.0.8
+	github.com/tx7do/go-scripts v0.0.9
 	github.com/tx7do/go-scripts/javascript v0.0.9
-	github.com/tx7do/go-scripts/lua v0.0.9
+	github.com/tx7do/go-scripts/lua v0.0.10
 	github.com/tx7do/go-utils v1.1.42
 	github.com/tx7do/go-utils/aggregator v0.0.5
 	github.com/tx7do/go-utils/captcha v0.0.4
@@ -239,6 +239,7 @@ require (
 	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/tx7do/go-crud/audit v0.0.3 // indirect
 	github.com/tx7do/go-crud/cache v0.0.2 // indirect
+	github.com/tx7do/go-scripts/hostmodule v0.0.1
 	github.com/tx7do/go-utils/auditutil v0.1.0
 	github.com/tx7do/go-utils/authorizer v0.1.0
 	github.com/tx7do/go-utils/converter v0.1.0

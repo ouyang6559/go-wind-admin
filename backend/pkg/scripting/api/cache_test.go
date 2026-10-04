@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/tx7do/go-scripts/lua/host"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	"github.com/redis/go-redis/v9"
 	lua "github.com/yuin/gopher-lua"
@@ -342,7 +343,7 @@ func TestCacheAPI_JSONSupport(t *testing.T) {
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
 	// Register both cache and logger APIs
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterCache(L, rdb, logger)
 
 	script := `

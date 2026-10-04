@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/tx7do/go-scripts/hostmodule"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -25,9 +26,9 @@ type AICompleter interface {
 // ModuleAI 构建语言无关的 ai 模块（JS 等基于 map[string]any 桥接的语言使用）。
 // 约定：Go 函数返回 (T, error) 时，goja 会把非 nil error 转成 JS 异常，脚本用 try/catch 处理。
 // completer 为 nil 时返回不含函数的空模块。
-func ModuleAI(completer AICompleter, logger *bLogger.Helper) ModuleDef {
+func ModuleAI(completer AICompleter, logger *bLogger.Helper) hostmodule.ModuleDef {
 	if completer == nil {
-		return ModuleDef{Name: "ai", Funcs: map[string]any{}}
+		return hostmodule.ModuleDef{Name: "ai", Funcs: map[string]any{}}
 	}
 
 	bg := context.Background()
@@ -40,7 +41,7 @@ func ModuleAI(completer AICompleter, logger *bLogger.Helper) ModuleDef {
 		return context.WithTimeout(bg, aiChatCallTimeout)
 	}
 
-	return ModuleDef{
+	return hostmodule.ModuleDef{
 		Name: "ai",
 		Funcs: map[string]any{
 			// chat(content) → 回复文本；用默认启用的提供商

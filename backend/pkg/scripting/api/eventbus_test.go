@@ -9,6 +9,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
+	"github.com/tx7do/go-scripts/lua/host"
 	"github.com/tx7do/go-utils/eventbus"
 )
 
@@ -20,7 +21,7 @@ func TestEventBusAPI_PublishSubscribe(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -72,7 +73,7 @@ func TestEventBusAPI_MultipleSubscribers(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -121,7 +122,7 @@ func TestEventBusAPI_SubscribeOnce(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -165,7 +166,7 @@ func TestEventBusAPI_EventData(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -218,7 +219,7 @@ func TestEventBusAPI_FullEventObject(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -281,7 +282,7 @@ func TestEventBusAPI_NamedBuses(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -334,7 +335,7 @@ func TestEventBusAPI_AsyncPublish(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	var wg sync.WaitGroup
@@ -385,7 +386,7 @@ func TestEventBusAPI_CreateEvent(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `
@@ -433,7 +434,7 @@ func TestEventBusAPI_CrossBusIsolation(t *testing.T) {
 	defer L.Close()
 
 	logger := bLogger.NewHelper(bLogger.NopLogger())
-	RegisterLogger(L, logger)
+	host.RegisterLogger(L, logger)
 	RegisterEventBus(L, manager, logger)
 
 	script := `

@@ -32,6 +32,7 @@ import (
 	entCrud "github.com/tx7do/go-crud/entgo"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hostmodule"
 
 	scriptV1 "go-wind-admin/api/gen/go/script/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
@@ -59,7 +60,7 @@ func newScriptRuntimeForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Cli
 	if withLogRepo {
 		r.scriptLog = data.NewScriptLogRepoForTest(entClient)
 	}
-	r.cfg.HTTPOptions = scripting.HTTPAllowlistFromEnv()
+	r.cfg.HTTPOptions = hostmodule.HTTPAllowlistFromEnv()
 	for _, typ := range scripting.SupportedTypes() {
 		cfg := *r.cfg
 		cfg.EngineType = typ

@@ -9,7 +9,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
-	"go-wind-admin/pkg/scripting/internal/convert"
+	"github.com/tx7do/go-scripts/lua/convert"
 )
 
 // RegisterCache registers the Redis cache API for Lua as a requireable module

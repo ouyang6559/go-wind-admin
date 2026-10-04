@@ -271,10 +271,11 @@ pkg/scripting/
 ├── source_file.go         # FileSource（包装 go-scripts FileSource）
 ├── source_db.go           # DBSource（数据库 + 热更新）
 ├── script.go / context.go # 数据结构（语言无关）
-├── hook/registry.go       # Hook 系统（语言无关）
-├── api/                   # 业务 API 模块
-│   ├── module.go          #   ModuleDef（语言无关，供 JS 用）
-│   └── *.go               #   Loader*（Lua 专用）+ Module*（语言无关）
-└── internal/convert/      # Lua ↔ Go 转换
+└── api/                   # 业务 API 模块桥接（cache/eventbus/oss/ai/task）
 ```
+
+通用宿主层不在本目录：核心模块（logger/crypto/util/hook/http）、Lua↔Go 深转换
+（`lua/convert`）、语言无关模块框架与 http 出站护栏（`hostmodule`）、
+hook 注册表（`hook`）均由 [go-scripts](https://github.com/tx7do/go-scripts) 仓库提供，
+经引擎 `RegisterModule` 注入；require 模块名与脚本侧行为不变。
 

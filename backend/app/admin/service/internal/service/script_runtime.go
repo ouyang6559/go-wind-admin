@@ -13,6 +13,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hostmodule"
 	"github.com/tx7do/go-utils/trans"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
@@ -112,7 +113,7 @@ func NewScriptRuntime(ctx *bootstrap.Context, repo *data.ScriptRepo, redisClient
 	}
 	// http 出站护栏：域名白名单走环境变量 SCRIPT_HTTP_ALLOWED_DOMAINS
 	// （逗号分隔，支持 *.example.com 通配一级子域；未设置 = 全部拒绝，fail-closed）。
-	r.cfg.HTTPOptions = scripting.HTTPAllowlistFromEnv()
+	r.cfg.HTTPOptions = hostmodule.HTTPAllowlistFromEnv()
 
 	for _, t := range scripting.SupportedTypes() {
 		cfg := *r.cfg

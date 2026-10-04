@@ -24,6 +24,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hostmodule"
 )
 
 // findHookPoint 在 HookPoints 结果中按名称查找条目（未找到返回 nil）。
@@ -81,31 +82,31 @@ type nested struct {
 // 未设置/纯空白 → 空白名单（fail-closed）；单域名/多域名（含空白项）→ 去空白收集。
 func TestHTTPAllowlistFromEnv(t *testing.T) {
 	t.Run("unset env yields empty allowlist", func(t *testing.T) {
-		orig, had := os.LookupEnv(EnvHTTPAllowedDomains)
-		if err := os.Unsetenv(EnvHTTPAllowedDomains); err != nil {
+		orig, had := os.LookupEnv(hostmodule.EnvHTTPAllowedDomains)
+		if err := os.Unsetenv(hostmodule.EnvHTTPAllowedDomains); err != nil {
 			t.Fatalf("unset env: %v", err)
 		}
 		t.Cleanup(func() {
 			if had {
-				_ = os.Setenv(EnvHTTPAllowedDomains, orig)
+				_ = os.Setenv(hostmodule.EnvHTTPAllowedDomains, orig)
 			}
 		})
-		require.Empty(t, HTTPAllowlistFromEnv().AllowedDomains)
+		require.Empty(t, hostmodule.HTTPAllowlistFromEnv().AllowedDomains)
 	})
 
 	t.Run("blank value yields empty allowlist", func(t *testing.T) {
-		t.Setenv(EnvHTTPAllowedDomains, "   ")
-		require.Empty(t, HTTPAllowlistFromEnv().AllowedDomains)
+		t.Setenv(hostmodule.EnvHTTPAllowedDomains, "   ")
+		require.Empty(t, hostmodule.HTTPAllowlistFromEnv().AllowedDomains)
 	})
 
 	t.Run("single domain", func(t *testing.T) {
-		t.Setenv(EnvHTTPAllowedDomains, "a.example.com")
-		require.Equal(t, []string{"a.example.com"}, HTTPAllowlistFromEnv().AllowedDomains)
+		t.Setenv(hostmodule.EnvHTTPAllowedDomains, "a.example.com")
+		require.Equal(t, []string{"a.example.com"}, hostmodule.HTTPAllowlistFromEnv().AllowedDomains)
 	})
 
 	t.Run("multiple domains with blank entries", func(t *testing.T) {
-		t.Setenv(EnvHTTPAllowedDomains, " a.example.com , b.example.com ,, ")
-		require.Equal(t, []string{"a.example.com", "b.example.com"}, HTTPAllowlistFromEnv().AllowedDomains)
+		t.Setenv(hostmodule.EnvHTTPAllowedDomains, " a.example.com , b.example.com ,, ")
+		require.Equal(t, []string{"a.example.com", "b.example.com"}, hostmodule.HTTPAllowlistFromEnv().AllowedDomains)
 	})
 }
 

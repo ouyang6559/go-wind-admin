@@ -8,8 +8,8 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
+	"github.com/tx7do/go-scripts/lua/convert"
 	"github.com/tx7do/go-utils/eventbus"
-	"go-wind-admin/pkg/scripting/internal/convert"
 )
 
 // LuaEventHandler wraps a Lua function as an eventbus.Handler

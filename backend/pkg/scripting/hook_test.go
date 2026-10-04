@@ -7,7 +7,7 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 	lua "github.com/yuin/gopher-lua"
 
-	"go-wind-admin/pkg/scripting/api"
+	"github.com/tx7do/go-scripts/lua/host"
 )
 
 func TestHookAPI_RegisterHook(t *testing.T) {
@@ -18,8 +18,8 @@ func TestHookAPI_RegisterHook(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	script := `
 		local hook = require "kratos_hook"
@@ -63,8 +63,8 @@ func TestHookAPI_AddScript(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	// First script: registers a hook and adds itself
 	initScript := `
@@ -127,8 +127,8 @@ func TestHookAPI_SelfRegistration(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	// Script that registers itself
 	selfRegisterScript := `
@@ -205,8 +205,8 @@ func TestHookAPI_ListHooks(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	script := `
 		local log = require "kratos_logger"
@@ -248,8 +248,8 @@ func TestHookAPI_ComplexWorkflow(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	// Complex workflow: script registers hooks and other scripts
 	orchestratorScript := `
@@ -363,8 +363,8 @@ func TestHookAPI_CallbackRegistration(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	// Test callback-based registration (user's requested API)
 	callbackScript := `
@@ -433,8 +433,8 @@ func TestHookAPI_CallbackWithoutDescription(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	// Test minimal callback registration (hook name + callback only)
 	minimalScript := `
@@ -481,8 +481,8 @@ func TestHookAPI_MixedRegistrationMethods(t *testing.T) {
 	L := lua.NewState()
 	defer L.Close()
 
-	api.RegisterLogger(L, logger)
-	api.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
+	host.RegisterLogger(L, logger)
+	host.RegisterHookAPI(L, &luaHookAdapter{orchestrator: engine}, logger)
 
 	// Test using both callback and add_script methods together
 	mixedScript := `
