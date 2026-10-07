@@ -8,6 +8,29 @@ import { fetchGenerateCaptcha } from '@/api';
 import { ssoEnabled, startSsoLogin } from '@/api/hooks/sso';
 import { fetchTenantBranding } from '@/api/hooks/tenant-branding';
 
+/**
+ * 验证码控件：输入框与图片盒同排，组成单一受控组件挂进 Form.Item。
+ * value/onChange 由 Form.Item 注入后透传给 Input；校验错误渲染在整行下方，
+ * 验证码图不会被错误行挤偏（旧结构嵌套 Form.Item + items-center 会在报错时下坠）。
+ */
+const CaptchaField: React.FC<{
+  value?: string;
+  onChange?: (...event: any[]) => void;
+  placeholder?: string;
+  imageEl?: React.ReactNode;
+}> = ({ value, onChange, placeholder, imageEl }) => (
+  <div className="flex items-center gap-2">
+    <Input
+      prefix={<SafetyOutlined />}
+      placeholder={placeholder}
+      autoComplete="off"
+      value={value}
+      onChange={onChange}
+    />
+    {imageEl}
+  </div>
+);
+
 const Login: React.FC = () => {
   const { t } = useTranslation('auth');
   const { login, loginLoading } = useAuthStore();
@@ -132,12 +155,12 @@ const Login: React.FC = () => {
   };
 
   /**
-   * 验证码图片组件，与输入框水平对齐（flex items-center space-x-2）。
-   * 点击刷新验证码。高度与输入框统一（h-11）。
+   * 验证码图片盒：与输入框等高（h-11=44px），宽 132px 与后端 240×80（3:1）等比，
+   * img object-cover 满高填充无留白（对齐 vue-element 观感）。点击刷新验证码。
    */
   const captchaImageEl = (
     <div
-      className="flex items-center justify-center overflow-hidden w-[110px] h-11 shrink-0 rounded-lg cursor-pointer border border-solid bg-white light:border-black/10 light:bg-black/[0.03]"
+      className="flex items-center justify-center overflow-hidden w-[132px] h-11 shrink-0 rounded-lg cursor-pointer border border-solid bg-white light:border-black/10 light:bg-black/[0.03]"
       title={t('captchaRefresh')}
       onClick={() => !captchaLoading && refreshCaptcha()}
     >
@@ -145,7 +168,7 @@ const Login: React.FC = () => {
         <img
           src={captchaImage}
           alt="captcha"
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover"
         />
       ) : (
         <span className="text-slate-400 text-xs">
@@ -241,38 +264,28 @@ const Login: React.FC = () => {
             />
           </Form.Item>
 
-          {/* 验证码 —— 输入框与图片水平对齐，等高 h-11，flex 布局。
-              name 必须挂在直接包裹 Input 的 Form.Item 上：antd 只向唯一子元素注入
-              value/onChange，中间隔一层 div 会让验证码值永远进不了表单状态 */}
-          <Form.Item className="login-form-item" style={{ marginBottom: 0 }}>
-            <div className="flex items-center space-x-2">
-              <Form.Item
-                name="captcha"
-                rules={[
-                  {
-                    required: true,
-                    message: t('captchaRequired'),
-                  },
-                ]}
-                className="flex-1"
-                style={{ marginBottom: 0 }}
-              >
-                <Input
-                  prefix={<SafetyOutlined />}
-                  placeholder={t('captchaPlaceholder')}
-                  autoComplete="off"
-                />
-              </Form.Item>
-              {captchaImageEl}
-            </div>
+          {/* 验证码 —— 输入框与图片盒组成单一受控组件（CaptchaField），
+              校验错误渲染在整行下方，图片盒与输入框始终保持等高对齐 */}
+          <Form.Item
+            name="captcha"
+            rules={[
+              {
+                required: true,
+                message: t('captchaRequired'),
+              },
+            ]}
+            className="login-form-item"
+          >
+            <CaptchaField
+              placeholder={t('captchaPlaceholder')}
+              imageEl={captchaImageEl}
+            />
           </Form.Item>
 
           <Form.Item className="login-remember-item">
-            <div className="flex items-center justify-between">
-              <Form.Item name="remember" valuePropName="checked" noStyle>
-                <Checkbox>{t('rememberAccount')}</Checkbox>
-              </Form.Item>
-            </div>
+            <Form.Item name="remember" valuePropName="checked" noStyle>
+              <Checkbox>{t('rememberAccount')}</Checkbox>
+            </Form.Item>
           </Form.Item>
 
           <Form.Item className="login-form-item">
