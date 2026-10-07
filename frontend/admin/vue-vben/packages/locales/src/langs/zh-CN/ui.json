@@ -65,7 +65,9 @@
       "close": "关闭",
       "noResults": "未找到搜索结果",
       "noRecent": "没有搜索历史",
-      "recent": "搜索历史"
+      "recent": "搜索历史",
+      "semanticTitle": "AI 语义搜索",
+      "semanticSearching": "语义检索中…"
     },
     "lockScreen": {
       "title": "锁定屏幕",

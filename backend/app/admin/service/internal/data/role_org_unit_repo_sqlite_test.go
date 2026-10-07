@@ -27,7 +27,7 @@ func newRoleOrgUnitRepoSqlite(t *testing.T) *RoleOrgUnitRepo {
 // CleanOrgUnits（清理）→ 计数归零。
 func TestRoleOrgUnitRepoSqlite_AssignListReplaceClean(t *testing.T) {
 	repo := newRoleOrgUnitRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 局部闭包直插 org_unit 父行：AssignOrgUnits 的租户一致性校验要求
 	// 单元真实存在且归属目标租户。包内不引入通用 helper，避免与并行测试文件的包级符号撞名。
@@ -106,7 +106,7 @@ func TestRoleOrgUnitRepoSqlite_AssignListReplaceClean(t *testing.T) {
 // 租户一致性校验：跨租户（或不属于目标租户）的单元集应被整体拒绝，不落任何行。
 func TestRoleOrgUnitRepoSqlite_CrossTenantRejected(t *testing.T) {
 	repo := newRoleOrgUnitRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		tenantA  = uint32(7003)

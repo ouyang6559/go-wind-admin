@@ -6,15 +6,16 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/tx7do/go-scripts/hostmodule"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 )
 
 // ModuleCache 构建语言无关的 cache 模块（JS 等基于 map[string]any 桥接的语言使用）。
 // 约定：Go 函数返回 (T, error) 时，goja 会把非 nil error 转成 JS 异常，脚本用 try/catch 处理。
 // rdb 为 nil 时返回不含函数的空模块。
-func ModuleCache(rdb *redis.Client, logger *bLogger.Helper) ModuleDef {
+func ModuleCache(rdb *redis.Client, logger *bLogger.Helper) hostmodule.ModuleDef {
 	if rdb == nil {
-		return ModuleDef{Name: "cache", Funcs: map[string]any{}}
+		return hostmodule.ModuleDef{Name: "cache", Funcs: map[string]any{}}
 	}
 
 	bg := context.Background()
@@ -24,7 +25,7 @@ func ModuleCache(rdb *redis.Client, logger *bLogger.Helper) ModuleDef {
 		}
 	}
 
-	return ModuleDef{
+	return hostmodule.ModuleDef{
 		Name: "cache",
 		Funcs: map[string]any{
 			// get(key) → 值（JSON 自动解码）| nil

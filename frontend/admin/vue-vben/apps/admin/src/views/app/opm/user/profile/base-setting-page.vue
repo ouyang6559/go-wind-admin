@@ -247,6 +247,23 @@ reload();
   width: 96px;
   height: 96px;
   border-radius: 50%;
+
+  // antd Avatar 无图时的默认底色是库内写死的 #ccc，配它自己的白字只有 1.60:1；
+  // 占位字母要落到主题色上（与 detail/basic-info-page.vue 的 .avatar-placeholder 同规则）。
+  background: hsl(var(--muted));
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .avatar-actions {

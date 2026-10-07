@@ -22,7 +22,17 @@ func (s *UserProfileService) sendContactVCode(ctx context.Context, contact strin
 		return authenticationV1.ErrorInternalServerError("save verification code failed")
 	}
 
-	title, content := mailtext.ContactBindCode(ctx, code)
+	// 文案语言：绑定场景操作者即收件人，读其偏好 locale（未设置回落请求头判定）。
+	if operator, opErr := auth.FromContext(ctx); opErr == nil && operator.GetTenantId() > 0 {
+		if user, uErr := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
+			QueryBy: &identityV1.GetUserRequest_Id{Id: operator.GetUserId()},
+		}); uErr == nil && user.GetLocale() != "" {
+			if loc, ok := mailtext.LocaleOfTag(user.GetLocale()); ok {
+				ctx = mailtext.WithLocale(ctx, loc)
+			}
+		}
+	}
+	title, content := renderContactBindCode(ctx, s.mailer, code)
 	resp, err := s.notifier.SendDirect(ctx, &notificationV1.SendDirectNotificationRequest{
 		EventType: notificationV1.EventType_CONTACT_BIND_CODE,
 		Target:    contact,

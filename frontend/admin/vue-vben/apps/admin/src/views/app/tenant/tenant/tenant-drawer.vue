@@ -173,7 +173,9 @@ const [BaseForm, baseFormApi] = useVbenForm({
 
     {
       component: 'ApiSelect',
-      fieldName: 'subscriptionPlan',
+      // 与 proto 字段同名（json_name: planId）：setValues(row) 按 row.planId 回填，
+      // 遗留的 subscriptionPlan 字符串列不是本下拉的取值来源
+      fieldName: 'planId',
       label: $t('page.tenant.subscriptionPlan'),
       componentProps: {
         placeholder: $t('ui.placeholder.select'),
@@ -418,7 +420,7 @@ async function createTenantWithAdminUser(values: any) {
         expiredAt: values.expiredAt
           ? dayjs(values.expiredAt).toISOString()
           : undefined,
-        planId: values.subscriptionPlan || undefined,
+        planId: values.planId || undefined,
       },
       user: values.user,
       password: values.password,
@@ -452,8 +454,8 @@ async function updateTenant(values: any) {
         auditStatus: values.auditStatus,
         status: values.status,
         remark: values.remark,
-        // proto 字段为 plan_id（json_name: planId），此前误写 subscriptionPlan 会被丢弃
-        planId: values.subscriptionPlan || undefined,
+        // proto 字段为 plan_id（json_name: planId），与表单字段同名直取
+        planId: values.planId || undefined,
         // proto Timestamp 只接受 RFC3339；未动过时是服务端 RFC3339 串，动过则是 dayjs
         expiredAt: values.expiredAt
           ? dayjs(values.expiredAt).toISOString()

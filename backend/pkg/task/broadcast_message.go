@@ -13,7 +13,7 @@ const BroadcastMessageTaskType = "broadcast_message"
 // handler 按 id 分页拉取用户后批量插入收件记录，无需在 payload 里携带大字段。
 //
 // TenantId 是受众范围的唯一依据，不能省：handler 的 ctx 不携带请求期 viewer，
-// 若统一注入 SystemViewer（平台上下文 → 查询不加租户谓词），租户管理员的"全员广播"
+// 若统一注入 SystemContext（平台上下文 → 查询不加租户谓词），租户管理员的"全员广播"
 // 会把收件行写给全平台每个租户的用户。
 type BroadcastMessageTaskData struct {
 	MessageId uint32 `json:"message_id"`

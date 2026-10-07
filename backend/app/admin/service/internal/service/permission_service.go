@@ -20,9 +20,10 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
+	"github.com/tx7do/go-crud/viewer"
+	"github.com/tx7do/go-utils/authorizer"
+	goconv "github.com/tx7do/go-utils/converter"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/utils/converter"
 )
@@ -43,7 +44,7 @@ type PermissionService struct {
 	authorizer *authorizer.Authorizer
 
 	menuPermissionConverter *converter.MenuPermissionConverter
-	apiPermissionConverter  *converter.ApiPermissionConverter
+	apiPermissionConverter  *goconv.ApiPermissionConverter
 }
 
 func NewPermissionService(
@@ -64,7 +65,7 @@ func NewPermissionService(
 		roleRepo:                roleRepo,
 		authorizer:              authorizer,
 		menuPermissionConverter: converter.NewMenuPermissionConverter(),
-		apiPermissionConverter:  converter.NewApiPermissionConverter(),
+		apiPermissionConverter:  goconv.NewApiPermissionConverter(),
 	}
 
 	svc.init()
@@ -73,7 +74,7 @@ func NewPermissionService(
 }
 
 func (s *PermissionService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 	if count, _ := s.permissionRepo.Count(ctx, nil); count.Count == 0 {
 		_ = s.createDefaultPermissions(ctx)
 

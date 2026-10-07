@@ -94,7 +94,7 @@ func createAccessKeyViaService(t *testing.T, svc *AccessKeyService, opCtx contex
 func TestAccessKeyServiceSqlite_CreateAndGetAndCount(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 81})
 
 	idA, akA, skA := createAccessKeyViaService(t, svc, opCtx, "服务层凭证甲")
@@ -166,7 +166,7 @@ func TestAccessKeyServiceSqlite_CreateAndGetAndCount(t *testing.T) {
 func TestAccessKeyServiceSqlite_UpdateNilMaskKeepsImmutableFields(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 82})
 
 	id, ak, sk := createAccessKeyViaService(t, svc, opCtx, "更新前凭证名")
@@ -204,7 +204,7 @@ func TestAccessKeyServiceSqlite_UpdateNilMaskKeepsImmutableFields(t *testing.T) 
 func TestAccessKeyServiceSqlite_UpdateWithMaskImmutableStripped(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 82})
 
 	maskedID, origAK, _ := createAccessKeyViaService(t, svc, opCtx, "掩码更新凭证名")
@@ -249,7 +249,7 @@ func TestAccessKeyServiceSqlite_UpdateWithMaskImmutableStripped(t *testing.T) {
 func TestAccessKeyServiceSqlite_DisabledKeyIssueTokenRejected(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 83})
 
 	resp, err := svc.Create(opCtx, &accesskeyV1.CreateAccessKeyRequest{
@@ -274,7 +274,7 @@ func TestAccessKeyServiceSqlite_DisabledKeyIssueTokenRejected(t *testing.T) {
 func TestAccessKeyServiceSqlite_ExpiredKeyIssueTokenRejected(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 83})
 
 	resp, err := svc.Create(opCtx, &accesskeyV1.CreateAccessKeyRequest{
@@ -299,7 +299,7 @@ func TestAccessKeyServiceSqlite_ExpiredKeyIssueTokenRejected(t *testing.T) {
 func TestAccessKeyServiceSqlite_IssueTokenFlow(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 84})
 
 	_, ak, sk := createAccessKeyViaService(t, svc, opCtx, "换发流程凭证")
@@ -357,7 +357,7 @@ func TestAccessKeyServiceSqlite_IssueTokenFlow(t *testing.T) {
 func TestAccessKeyServiceSqlite_WrongSecretLockout(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 84})
 
 	_, ak, _ := createAccessKeyViaService(t, svc, opCtx, "锁定流程凭证")
@@ -382,7 +382,7 @@ func TestAccessKeyServiceSqlite_WrongSecretLockout(t *testing.T) {
 func TestAccessKeyServiceSqlite_ResetSecretRotation(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 85})
 
 	id, ak, oldSecret := createAccessKeyViaService(t, svc, opCtx, "轮换凭证")
@@ -417,7 +417,7 @@ func TestAccessKeyServiceSqlite_ResetSecretRotation(t *testing.T) {
 func TestAccessKeyServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newAccessKeyServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 85})
 
 	id, _, _ := createAccessKeyViaService(t, svc, opCtx, "待删除凭证")

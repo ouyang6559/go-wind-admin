@@ -29,12 +29,12 @@ import (
 
 // tenantAdminCtx 一个企业版租户管理员的令牌上下文：ita=true、ipa 缺省为假。
 func tenantAdminCtx() context.Context {
-	return auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	return auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 900, TenantId: trans.Ptr(uint32(7)), IsTenantAdmin: trans.Ptr(true)})
 }
 
 func platformAdminCtx(userId uint32) context.Context {
-	return auth.NewContext(enttest.NewSystemViewerCtx(context.Background()),
+	return auth.NewContext(enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: userId, IsPlatformAdmin: trans.Ptr(true)})
 }
 

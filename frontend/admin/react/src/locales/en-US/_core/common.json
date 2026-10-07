@@ -6,7 +6,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "submit": "Submit",
-    "reset": "Reset"
+    "reset": "Reset",
+    "retry": "Retry"
   },
   "header": {
     "profile": "Profile",
@@ -25,7 +26,15 @@
     "switchLanguage": "Switch Language",
     "search": "Search",
     "searchPlaceholder": "Search menu or features...",
-    "searchShortcut": "Ctrl K"
+    "searchShortcut": "Ctrl K",
+    "searching": "Searching…",
+    "noResults": "No matching pages found",
+    "noHistory": "No recent searches",
+    "searchRecent": "Recent",
+    "semanticTitle": "Semantic Search",
+    "searchSelect": "Select",
+    "searchSwitch": "Switch",
+    "searchClose": "Close"
   },
   "refresh": "Refresh",
   "home": "Home",
@@ -246,6 +255,9 @@
     "csv": "CSV (Comma Separated)",
     "xlsx": "Excel Workbook",
     "success": "Exported {count} rows",
-    "failed": "Export failed"
+    "failed": "Export failed",
+    "serverXlsx": "Server-side full (XLSX)",
+    "serverSuccess": "Export file generated",
+    "serverFailed": "Server-side export failed"
   }
 }

@@ -9,8 +9,9 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hostmodule"
 
-	"go-wind-admin/pkg/eventbus"
+	"github.com/tx7do/go-utils/eventbus"
 )
 
 // eventbusCbCounter 用于生成唯一的事件回调全局名。
@@ -22,9 +23,9 @@ var eventbusCbCounter int64
 // 与 jsCallback 同款策略——订阅阶段（脚本执行中）不调用引擎 API（goja 重入死锁），
 // 事件触发时先 RegisterGlobal 为唯一命名全局，再经引擎 CallFunction 调用。
 // eng 为 nil 或 manager 为 nil 时返回不含函数的空模块。
-func ModuleEventBus(eng gsEngine.Engine, manager *eventbus.Manager, logger *bLogger.Helper) ModuleDef {
+func ModuleEventBus(eng gsEngine.Engine, manager *eventbus.Manager, logger *bLogger.Helper) hostmodule.ModuleDef {
 	if eng == nil || manager == nil {
-		return ModuleDef{Name: "eventbus", Funcs: map[string]any{}}
+		return hostmodule.ModuleDef{Name: "eventbus", Funcs: map[string]any{}}
 	}
 
 	bg := context.Background()
@@ -47,7 +48,7 @@ func ModuleEventBus(eng gsEngine.Engine, manager *eventbus.Manager, logger *bLog
 		}
 	}
 
-	return ModuleDef{
+	return hostmodule.ModuleDef{
 		Name: "eventbus",
 		Funcs: map[string]any{
 			// publish(eventType, data) → 向 global 总线发布

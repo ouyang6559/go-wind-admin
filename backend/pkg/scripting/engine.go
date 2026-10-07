@@ -14,6 +14,8 @@ import (
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hook"
+	"github.com/tx7do/go-scripts/hostmodule"
 	gsSource "github.com/tx7do/go-scripts/source"
 
 	// 空导入各语言引擎包：触发 init() 将引擎工厂注册到全局注册表。
@@ -21,10 +23,9 @@ import (
 	_ "github.com/tx7do/go-scripts/javascript"
 	_ "github.com/tx7do/go-scripts/lua"
 
-	"go-wind-admin/pkg/eventbus"
+	"github.com/tx7do/go-utils/eventbus"
 	"go-wind-admin/pkg/oss"
 	"go-wind-admin/pkg/scripting/api"
-	"go-wind-admin/pkg/scripting/hook"
 )
 
 // Engine 是 Hook 编排器，语言无关。
@@ -51,6 +52,7 @@ type Engine struct {
 	rdb             *redis.Client
 	eventbusManager *eventbus.Manager
 	ossClient       *oss.MinIOClient
+	aiCompleter     api.AICompleter
 
 	// Hook 回调（hook 名称 -> 多个回调），由脚本 hook.register 注册
 	callbacks   map[string][]ScriptCallback
@@ -84,7 +86,7 @@ type Config struct {
 
 	// HTTPOptions http 出站模块护栏：域名白名单（空 = 全部拒绝）、超时、响应体上限。
 	// 白名单来源：环境变量 SCRIPT_HTTP_ALLOWED_DOMAINS（逗号分隔）。
-	HTTPOptions api.HTTPOptions
+	HTTPOptions hostmodule.HTTPOptions
 }
 
 // DefaultConfig 返回默认配置。
@@ -103,25 +105,6 @@ func DefaultConfig() *Config {
 
 // EngineTypeLua 是 Lua 引擎类型标识（对齐 go-scripts）。
 const EngineTypeLua = gsEngine.LuaType
-
-// EnvHTTPAllowedDomains http 出站白名单环境变量名（逗号分隔域名）。
-const EnvHTTPAllowedDomains = "SCRIPT_HTTP_ALLOWED_DOMAINS"
-
-// HTTPAllowlistFromEnv 从环境变量读取域名白名单构造 http 护栏。
-// 未设置 = 空 = 全部出站拒绝（fail-closed）。
-func HTTPAllowlistFromEnv() api.HTTPOptions {
-	raw := strings.TrimSpace(os.Getenv(EnvHTTPAllowedDomains))
-	opts := api.HTTPOptions{}
-	if raw == "" {
-		return opts
-	}
-	for _, d := range strings.Split(raw, ",") {
-		if d = strings.TrimSpace(d); d != "" {
-			opts.AllowedDomains = append(opts.AllowedDomains, d)
-		}
-	}
-	return opts
-}
 
 // ScriptEngineFactory 创建脚本引擎实例。
 type ScriptEngineFactory func(config *Config, logger bLogger.Logger) (gsEngine.Engine, error)
@@ -226,6 +209,7 @@ func (e *Engine) buildBindHook(binder RuntimeBinder) gsEngine.RuntimeHook {
 			Rdb:             e.rdb,
 			EventBusManager: e.eventbusManager,
 			OSSClient:       e.ossClient,
+			AI:              e.aiCompleter,
 			Orchestrator:    e,
 		}
 		return binder.Bind(e.scriptEngine, deps)
@@ -684,7 +668,12 @@ func (e *Engine) rebind() {
 	}
 }
 
-// SetRedis 注入 Redis 客户端，启用 cache API。
+// SetAICompleter 注入脚本 ai 模块的对话实现（nil = 不注册 ai 模块）。
+func (e *Engine) SetAICompleter(completer api.AICompleter) {
+	e.aiCompleter = completer
+	e.rebind()
+}
+
 func (e *Engine) SetRedis(rdb *redis.Client) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

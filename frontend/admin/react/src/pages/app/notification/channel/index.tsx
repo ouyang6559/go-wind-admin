@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
+import ListTable from '@/components/common/ListTable';
 import {
-  ProTable,
   ModalForm,
   ProFormText,
   ProFormDigit,
@@ -328,23 +328,18 @@ const NotificationChannelManagement = () => {
   return (
     <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
       <div ref={containerRef} className="page-container-content">
-        <ProTable<NotificationChannel>
+        <ListTable<NotificationChannel>
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
-            try {
-              const query = new PaginationQuery({
-                paging: { page: params.current || 1, pageSize: params.pageSize || 20 },
-                formValues: Object.fromEntries(
-                  Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
-                ),
-              });
-              const response = await fetchListNotificationChannels(query);
-              return { data: response.items || [], total: response.total || 0, success: true };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
-            }
+            const query = new PaginationQuery({
+              paging: { page: params.current || 1, pageSize: params.pageSize || 20 },
+              formValues: Object.fromEntries(
+                Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
+              ),
+            });
+            const response = await fetchListNotificationChannels(query);
+            return { data: response.items || [], total: response.total || 0, success: true };
           }}
           rowKey="id"
           search={false}

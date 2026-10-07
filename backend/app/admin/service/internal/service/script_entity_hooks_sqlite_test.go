@@ -131,7 +131,7 @@ func TestEntityHooks_VetoBlocksMappedEntity(t *testing.T) {
 			probe.before <- hookPoint
 			return errors.New("stub veto")
 		})
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := entClient.Client().Tenant.Create().
 		SetName("hook-veto-tenant").
@@ -160,7 +160,7 @@ func TestEntityHooks_VetoPanicFailOpen(t *testing.T) {
 	AttachEntityHooks(entClient.Client(), nil, func(_ context.Context, _ string, _ map[string]any) error {
 		panic("veto invoker panic")
 	})
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	created, err := entClient.Client().Tenant.Create().
 		SetName("hook-failopen-tenant").
@@ -182,7 +182,7 @@ func TestEntityHooks_AfterFiresAsyncOnSuccess(t *testing.T) {
 		func(_ context.Context, _ string, payload map[string]any) {
 			probe.after <- payload
 		}, nil)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := entClient.Client().Tenant.Create().
 		SetName("hook-after-tenant").
@@ -216,7 +216,7 @@ func TestEntityHooks_UnmappedEntityNoHooks(t *testing.T) {
 		func(_ context.Context, _ string, _ map[string]any) error {
 			return nil
 		})
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	languageRepo := data.NewLanguageRepoForTest(entClient)
 	err := languageRepo.Create(ctx, &dictV1.CreateLanguageRequest{
@@ -238,7 +238,7 @@ func TestEntityHooks_UnmappedEntityNoHooks(t *testing.T) {
 func TestEntityHooks_NilInvokersNoop(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	AttachEntityHooks(entClient.Client(), nil, nil)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	created, err := entClient.Client().Tenant.Create().
 		SetName("hook-nilinv-tenant").
@@ -258,7 +258,7 @@ func TestEntityHooks_NilInvokersNoop(t *testing.T) {
 func TestEntityHooks_WiringVetoEndToEnd(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, false)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 挂载否决脚本（before 钩子点）并重同步
 	createScriptRow(t, r, ctx, "wiring_veto_script", "tenant.before_create", "__stop('wiring veto')", true)
@@ -291,7 +291,7 @@ func TestEntityHooks_WiringVetoEndToEnd(t *testing.T) {
 func TestEntityHooks_WiringAfterLogsExecution(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, true)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	createScriptRow(t, r, ctx, "wiring_after_script", "tenant.after_create", "return true", true)
 	require.NoError(t, r.Resync(ctx), "Resync 应成功")
@@ -349,7 +349,7 @@ func TestScriptRuntime_InvokeEntityHook_NoMount(t *testing.T) {
 func TestScriptRuntime_InvokeEntityHook_MountedFailureStillErrors(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	r := newScriptRuntimeForTest(t, entClient, true)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	createScriptRow(t, r, ctx, "s2_failing_after_script", "tenant.after_create", "error('s2 boom')", true)
 	require.NoError(t, r.Resync(ctx), "Resync 应成功")

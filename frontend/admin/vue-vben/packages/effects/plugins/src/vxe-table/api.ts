@@ -3,7 +3,7 @@ import type { VxeGridInstance } from 'vxe-table';
 
 import type { VxeGridProps } from './types';
 
-import { toRaw } from 'vue';
+import { ref, toRaw } from 'vue';
 
 import { Store } from '@vben-core/shared/store';
 import {
@@ -37,6 +37,15 @@ export class VxeGridApi {
   public state: null | VxeGridProps = null;
 
   public store: Store<VxeGridProps>;
+
+  // proxy query 的生命周期由 extends.ts 包裹 query 时写入，组件只读它渲染加载/错误态。
+  // 不借用 vxe 内部的 tableLoading：它在请求发出瞬间就点亮遮罩，本地快响应会闪一下，
+  // 而"超过 250ms 才出现"的阈值只能由外层自己计时。
+  public queryLoading = ref(false);
+  /** 最近一次列表请求的失败原因（null = 无错），成功返回后清空 */
+  public queryError = ref<string | null>(null);
+  /** 是否成功取到过数据：首屏骨架与刷新加载态的分界 */
+  public hasLoaded = ref(false);
 
   constructor(options: VxeGridProps = {}) {
     const storeState = { ...options };

@@ -15,14 +15,37 @@ package netutil
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	gonetutil "github.com/tx7do/go-utils/netutil"
+
 	"github.com/go-kratos/kratos/v2/transport"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 )
+
+// trustedV4CIDRs 测试用可信代理网段（私有地址）。
+func trustedV4CIDRs() []string {
+	return []string{
+		"10.0.0.0/8",
+		"172.16.0.0/12",
+		"192.168.0.0/16",
+		"127.0.0.0/8",
+	}
+}
+
+// buildReq 构造一个带指定 RemoteAddr 与 header 的 *http.Request。
+func buildReq(remoteAddr string, headers map[string]string) *http.Request {
+	req := httptest.NewRequest("GET", "/", nil)
+	req.RemoteAddr = remoteAddr
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	return req
+}
 
 // stubHeader 实现 transport.Header 的空实现。
 type stubHeader struct{}
@@ -80,7 +103,7 @@ func TestClientIPFromContext_NonHTTPPaths(t *testing.T) {
 // TestClientIPFromContext_HTTPRequest 正常 HTTP 传输时等价于
 // ClientIPFromRequest：此处对端为非可信代理，返回对端 IP 且忽略 XFF。
 func TestClientIPFromContext_HTTPRequest(t *testing.T) {
-	SetTrustedProxies(trustedV4CIDRs())
+	gonetutil.SetTrustedProxies(trustedV4CIDRs())
 	req := buildReq("8.8.8.8:12345", map[string]string{
 		"X-Forwarded-For": "203.0.113.7",
 	})

@@ -29,7 +29,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "statusMap": {
     "ON": "启用",
     "OFF": "禁用"
@@ -56,7 +55,8 @@
       "address": "地址",
       "region": "区域",
       "lastLoginAt": "最后登录时间",
-      "lastLoginIp": "最后登录 IP"
+      "lastLoginIp": "最后登录 IP",
+      "permissions": "权限集（角色绑定的权限列表）"
     }
   }
 }

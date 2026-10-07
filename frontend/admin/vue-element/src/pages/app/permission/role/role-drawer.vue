@@ -71,7 +71,16 @@
         <div v-else class="org-unit-empty">{{ $t("pages.role.noOrgUnitData") }}</div>
       </ElFormItem>
 
-      <ElFormItem :label="$t('common.table.description')" prop="description">
+      <ElFormItem prop="description">
+        <template #label>
+          <span class="inline-flex items-center">
+            {{ $t("common.table.description") }}
+            <AiGenerateButton
+              scene="DESCRIPTION"
+              @generate="(content: string) => (formData.description = content)"
+            />
+          </span>
+        </template>
         <ElInput
           v-model="formData.description"
           type="textarea"
@@ -97,7 +106,7 @@
           <template #default="{ node, data }">
             <span class="custom-tree-node">
               <span>{{ node.label }}</span>
-              <span v-if="data.key" class="text-xs text-gray-400 ml-2">{{ data.key }}</span>
+              <span v-if="data.key" class="tree-node__key text-xs ml-2">{{ data.key }}</span>
             </span>
           </template>
         </ElTree>
@@ -133,6 +142,7 @@ import { ElMessage } from "element-plus";
 import type { TreeInstance } from "element-plus";
 
 import ProModal from "@/components/Pro/ProModal/index.vue";
+import AiGenerateButton from "@/components/AiGenerateButton/index.vue";
 
 import {
   useCreateRole,
@@ -399,6 +409,12 @@ defineExpose({
   display: flex;
   align-items: center;
   flex: 1;
+
+  // 权限码提示文字：tailwind gray-400 (#9CA3AF) 在浅色白底上实测仅 2.54:1，
+  // 改走 EP 次要文字 token（§5.2 禁止硬编码色值）
+  .tree-node__key {
+    color: var(--el-text-color-secondary);
+  }
 }
 
 .org-unit-empty {

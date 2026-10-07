@@ -43,7 +43,7 @@ func newPlanRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Client]) 
 func TestPlanRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &identityV1.CreatePlanRequest{
 		Data: &identityV1.Plan{
@@ -70,7 +70,7 @@ func TestPlanRepoSqlite_Create(t *testing.T) {
 func TestPlanRepoSqlite_CreateDuplicateName(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanRequest{
 		Data: &identityV1.Plan{Name: trans.Ptr("sqlite套餐-重名")},
@@ -85,7 +85,7 @@ func TestPlanRepoSqlite_CreateDuplicateName(t *testing.T) {
 func TestPlanRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanRequest{
 		Data: &identityV1.Plan{Name: trans.Ptr("套餐-markerpoi-甲")},
@@ -141,7 +141,7 @@ func TestPlanRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestPlanRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanRequest{
 		Data: &identityV1.Plan{Name: trans.Ptr("sqlite套餐-Get")},
@@ -168,7 +168,7 @@ func TestPlanRepoSqlite_Get(t *testing.T) {
 func TestPlanRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanRequest{
 		Data: &identityV1.Plan{
@@ -211,7 +211,7 @@ func TestPlanRepoSqlite_Update(t *testing.T) {
 func TestPlanRepoSqlite_EnumReadView(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		protoVersion   identityV1.Plan_Version
@@ -282,7 +282,7 @@ func TestPlanRepoSqlite_EnumReadView(t *testing.T) {
 func TestPlanRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanRequest{
 		Data: &identityV1.Plan{Name: trans.Ptr("sqlite套餐-待删除")},

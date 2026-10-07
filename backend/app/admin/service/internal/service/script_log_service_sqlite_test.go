@@ -65,7 +65,7 @@ func recordLogRows(t *testing.T, svc *ScriptLogService, ctx context.Context) {
 // 且关键字段回读正确。
 func TestScriptLogService_ListAndCount(t *testing.T) {
 	svc, _ := newScriptLogServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	recordLogRows(t, svc, ctx)
 
@@ -91,7 +91,7 @@ func TestScriptLogService_ListAndCount(t *testing.T) {
 // nil 请求拒绝、未来时间点全量清理、过去时间点与默认 90 天阈值不清理近期行。
 func TestScriptLogService_Purge(t *testing.T) {
 	svc, _ := newScriptLogServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.Purge(ctx, nil)
 	require.Error(t, err, "nil 请求应拒绝")

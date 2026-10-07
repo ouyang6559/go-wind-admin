@@ -184,7 +184,7 @@ function stripHtml(html: string): string {
       transition: color 0.2s ease;
 
       &:hover {
-        color: var(--el-color-primary);
+        color: var(--gowind-primary-text);
       }
     }
   }

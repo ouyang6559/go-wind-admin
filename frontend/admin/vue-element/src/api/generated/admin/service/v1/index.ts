@@ -759,6 +759,1437 @@ export function createAdminPortalServiceClient(
     },
   };
 }
+// AI 对话服务
+// 流式语义：本 RPC 是普通 POST（body 为扁平请求体，**不包 data**），
+// 增量 token 经 SSE `ai_chat_chunk` 事件推送（见 domain proto 注释）。
+export interface AiChatService {
+  // 发起一轮对话
+  Chat(
+    request: aiservicev1_ChatRequest,
+  ): Promise<aiservicev1_ChatResponse>;
+}
+
+export function createAiChatServiceClient(
+  transport: ClientTransport,
+): AiChatService {
+  return {
+    Chat(request) {
+      const path = `admin/v1/ai/chat/completions`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiChatService',
+        method: 'Chat',
+      }) as Promise<aiservicev1_ChatResponse>;
+    },
+  };
+}
+// 发起对话 - 请求
+export type aiservicev1_ChatRequest = {
+  content?: string;
+  conversationId?: number;
+  knowledgeBaseId?: number;
+  providerId?: number;
+};
+
+// 发起对话 - 回应
+export type aiservicev1_ChatResponse = {
+  // 会话（新建时返回新建的会话）
+  conversation: aiservicev1_AiConversation | undefined;
+  // 模型回复消息（含 token 用量与模型名）
+  message: aiservicev1_AiMessage | undefined;
+};
+
+// AI 对话会话
+export type aiservicev1_AiConversation = {
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  id?: number;
+  lastMessageAt?: wellKnownTimestamp;
+  providerId?: number;
+  tenantId?: number;
+  title?: string;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+  userId?: number;
+};
+
+// AI 对话消息
+export type aiservicev1_AiMessage = {
+  completionTokens?: number;
+  content?: string;
+  conversationId?: number;
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  durationMs?: number;
+  errorMessage?: string;
+  id?: number;
+  modelName?: string;
+  promptTokens?: number;
+  role?: aiservicev1_AiRole;
+  tenantId?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+  userId?: number;
+};
+
+// 消息角色
+export type aiservicev1_AiRole =
+  | 'AI_ROLE_UNSPECIFIED'
+  | 'ASSISTANT'
+  | 'SYSTEM'
+  | 'USER';
+// AI 内容生成服务（表单助手）
+export interface AiContentService {
+  // 生成内容
+  GenerateContent(
+    request: aiservicev1_GenerateContentRequest,
+  ): Promise<aiservicev1_GenerateContentResponse>;
+  // 语义搜索（菜单等可导航条目）
+  SemanticSearch(
+    request: aiservicev1_SemanticSearchRequest,
+  ): Promise<aiservicev1_SemanticSearchResponse>;
+  // 重建搜索索引
+  RebuildSearchIndex(
+    request: wellKnownEmpty,
+  ): Promise<aiservicev1_RebuildSearchIndexResponse>;
+}
+
+export function createAiContentServiceClient(
+  transport: ClientTransport,
+): AiContentService {
+  return {
+    GenerateContent(request) {
+      const path = `admin/v1/ai/content/generate`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiContentService',
+        method: 'GenerateContent',
+      }) as Promise<aiservicev1_GenerateContentResponse>;
+    },
+    SemanticSearch(request) {
+      const path = `admin/v1/ai/content/search`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiContentService',
+        method: 'SemanticSearch',
+      }) as Promise<aiservicev1_SemanticSearchResponse>;
+    },
+    RebuildSearchIndex(_request) {
+      const path = `admin/v1/ai/content/rebuild-index`;
+      const body = null;
+      return transport.unary(path, 'POST', body, {
+        service: 'AiContentService',
+        method: 'RebuildSearchIndex',
+      }) as Promise<aiservicev1_RebuildSearchIndexResponse>;
+    },
+  };
+}
+// 内容生成 - 请求
+export type aiservicev1_GenerateContentRequest = {
+  // 补充上下文（如已有内容的续写、字段标签等，可选）
+  context?: string;
+  // 输出语言（BCP-47，默认 zh-CN）
+  lang?: string;
+  // 期望长度（字符数提示，默认 200）
+  maxLength?: number;
+  // 场景标识
+  scene: aiservicev1_ContentScene | undefined;
+  // 主题/关键词（用户输入的生成指令）
+  topic: string | undefined;
+};
+
+// 场景标识（服务端按此选择预设提示词模板）
+export type aiservicev1_ContentScene =
+  // 公告/通知正文
+  | 'ANNOUNCEMENT'
+  | 'CONTENT_SCENE_UNSPECIFIED'
+  // 通用描述（角色/菜单/字典项/文件等实体描述）
+  | 'DESCRIPTION'
+  // 自由生成（用户自带完整提示词）
+  | 'GENERAL'
+  // 回复/反馈文案
+  | 'REPLY';
+// 内容生成 - 回应
+export type aiservicev1_GenerateContentResponse = {
+  content: string | undefined;
+  totalTokens: number | undefined;
+};
+
+// 语义搜索 - 请求
+export type aiservicev1_SemanticSearchRequest = {
+  limit?: number;
+  query: string | undefined;
+};
+
+// 语义搜索 - 回应
+export type aiservicev1_SemanticSearchResponse = {
+  items: aiservicev1_SemanticSearchItem[] | undefined;
+};
+
+// 搜索结果项
+export type aiservicev1_SemanticSearchItem = {
+  itemType: string | undefined;
+  route: string | undefined;
+  score: number | undefined;
+  title: string | undefined;
+};
+
+// 重建搜索索引 - 回应
+export type aiservicev1_RebuildSearchIndexResponse = {
+  indexedCount: number | undefined;
+};
+
+// AI 对话会话管理服务
+export interface AiConversationService {
+  // 分页查询会话列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiConversationResponse>;
+  // 查询会话详情
+  Get(
+    request: aiservicev1_GetAiConversationRequest,
+  ): Promise<aiservicev1_AiConversation>;
+  // 更新会话（改标题）
+  Update(
+    request: aiservicev1_UpdateAiConversationRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除会话
+  Delete(
+    request: aiservicev1_DeleteAiConversationRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createAiConversationServiceClient(
+  transport: ClientTransport,
+): AiConversationService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/conversations`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiConversationService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiConversationResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/conversations/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.viewMask) {
+        queryParams.push(
+          `viewMask=${encodeURIComponent(request.viewMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiConversationService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiConversation>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/conversations/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiConversationService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/conversations/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiConversationService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询会话列表 - 回应
+export type aiservicev1_ListAiConversationResponse = {
+  items: aiservicev1_AiConversation[] | undefined;
+  total: number | undefined;
+};
+
+// 查询会话详情 - 请求
+export type aiservicev1_GetAiConversationRequest = {
+  id?: number;
+  viewMask?: wellKnownFieldMask;
+};
+
+// 更新会话 - 请求
+export type aiservicev1_UpdateAiConversationRequest = {
+  allowMissing?: boolean;
+  data: aiservicev1_AiConversation | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除会话 - 请求
+export type aiservicev1_DeleteAiConversationRequest = {
+  id?: number;
+};
+
+// AI 知识库管理服务（RAG）
+export interface AiKnowledgeBaseService {
+  // 分页查询知识库列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiKnowledgeBaseResponse>;
+  // 查询知识库详情
+  Get(
+    request: aiservicev1_GetAiKnowledgeBaseRequest,
+  ): Promise<aiservicev1_AiKnowledgeBase>;
+  // 创建知识库
+  Create(
+    request: aiservicev1_CreateAiKnowledgeBaseRequest,
+  ): Promise<wellKnownEmpty>;
+  // 更新知识库
+  Update(
+    request: aiservicev1_UpdateAiKnowledgeBaseRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除知识库
+  Delete(
+    request: aiservicev1_DeleteAiKnowledgeBaseRequest,
+  ): Promise<wellKnownEmpty>;
+  // 上传文档（纯文本：切片 → 向量化 → 落库）
+  UploadDoc(
+    request: aiservicev1_UploadAiDocRequest,
+  ): Promise<aiservicev1_UploadAiDocResponse>;
+  // 上传文档文件（txt/md/docx/pdf：抽取文本后入库）
+  UploadDocFile(
+    request: aiservicev1_UploadAiDocFileRequest,
+  ): Promise<aiservicev1_UploadAiDocResponse>;
+  // 查询知识库下的文档
+  ListDocs(
+    request: aiservicev1_ListAiDocsRequest,
+  ): Promise<aiservicev1_ListAiDocsResponse>;
+  // 删除文档
+  DeleteDoc(
+    request: aiservicev1_DeleteAiDocRequest,
+  ): Promise<wellKnownEmpty>;
+  // 检索测试
+  Search(
+    request: aiservicev1_SearchAiKnowledgeRequest,
+  ): Promise<aiservicev1_SearchAiKnowledgeResponse>;
+}
+
+export function createAiKnowledgeBaseServiceClient(
+  transport: ClientTransport,
+): AiKnowledgeBaseService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/knowledge-bases`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiKnowledgeBaseResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.viewMask) {
+        queryParams.push(
+          `viewMask=${encodeURIComponent(request.viewMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiKnowledgeBase>;
+    },
+    Create(request) {
+      const path = `admin/v1/ai/knowledge-bases`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Create',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+    UploadDoc(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'UploadDoc',
+      }) as Promise<aiservicev1_UploadAiDocResponse>;
+    },
+    UploadDocFile(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs/file`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'UploadDocFile',
+      }) as Promise<aiservicev1_UploadAiDocResponse>;
+    },
+    ListDocs(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'ListDocs',
+      }) as Promise<aiservicev1_ListAiDocsResponse>;
+    },
+    DeleteDoc(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/docs/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'DeleteDoc',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Search(request) {
+      if (request.baseId === undefined || request.baseId === null) {
+        throw new Error('missing required field request.base_id');
+      }
+      const path = `admin/v1/ai/knowledge-bases/${request.baseId}/search`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiKnowledgeBaseService',
+        method: 'Search',
+      }) as Promise<aiservicev1_SearchAiKnowledgeResponse>;
+    },
+  };
+}
+// 查询知识库列表 - 回应
+export type aiservicev1_ListAiKnowledgeBaseResponse = {
+  items: aiservicev1_AiKnowledgeBase[] | undefined;
+  total: number | undefined;
+};
+
+// AI 知识库
+export type aiservicev1_AiKnowledgeBase = {
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  description?: string;
+  docCount?: number;
+  embeddingModel?: string;
+  id?: number;
+  name?: string;
+  providerId?: number;
+  tenantId?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+  userId?: number;
+};
+
+// 查询知识库详情 - 请求
+export type aiservicev1_GetAiKnowledgeBaseRequest = {
+  id?: number;
+  viewMask?: wellKnownFieldMask;
+};
+
+// 创建知识库 - 请求
+export type aiservicev1_CreateAiKnowledgeBaseRequest = {
+  data: aiservicev1_AiKnowledgeBase | undefined;
+};
+
+// 更新知识库 - 请求
+export type aiservicev1_UpdateAiKnowledgeBaseRequest = {
+  allowMissing?: boolean;
+  data: aiservicev1_AiKnowledgeBase | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除知识库 - 请求
+export type aiservicev1_DeleteAiKnowledgeBaseRequest = {
+  id?: number;
+};
+
+// 上传文档 - 请求（纯文本；内容直接随请求体传输）
+export type aiservicev1_UploadAiDocRequest = {
+  baseId: number | undefined;
+  content: string | undefined;
+  name: string | undefined;
+};
+
+// 上传文档 - 回应
+export type aiservicev1_UploadAiDocResponse = {
+  chunkCount: number | undefined;
+  doc: aiservicev1_AiDoc | undefined;
+};
+
+// AI 文档
+export type aiservicev1_AiDoc = {
+  baseId?: number;
+  chunkCount?: number;
+  createdAt?: wellKnownTimestamp;
+  errorMessage?: string;
+  id?: number;
+  name?: string;
+  status?: string;
+  tenantId?: number;
+  userId?: number;
+};
+
+// 上传文档文件 - 请求（文件字节经 protojson 即 base64 字符串传输）
+export type aiservicev1_UploadAiDocFileRequest = {
+  baseId: number | undefined;
+  contentBase64: string | undefined;
+  docName?: string;
+  fileName: string | undefined;
+};
+
+// 查询文档列表 - 请求
+export type aiservicev1_ListAiDocsRequest = {
+  baseId: number | undefined;
+};
+
+// 查询文档列表 - 回应
+export type aiservicev1_ListAiDocsResponse = {
+  items: aiservicev1_AiDoc[] | undefined;
+  total: number | undefined;
+};
+
+// 删除文档 - 请求
+export type aiservicev1_DeleteAiDocRequest = {
+  baseId: number | undefined;
+  id: number | undefined;
+};
+
+// 检索 - 请求
+export type aiservicev1_SearchAiKnowledgeRequest = {
+  baseId: number | undefined;
+  query: string | undefined;
+  topK?: number;
+};
+
+// 检索 - 回应
+export type aiservicev1_SearchAiKnowledgeResponse = {
+  hits: aiservicev1_KnowledgeHit[] | undefined;
+};
+
+// 检索命中片段
+export type aiservicev1_KnowledgeHit = {
+  chunkIndex: number | undefined;
+  content: string | undefined;
+  doc: aiservicev1_AiDoc | undefined;
+  score: number | undefined;
+};
+
+// AI 对话消息服务
+export interface AiMessageService {
+  // 分页查询消息列表（按 conversationId 过滤；ID 类字段精确匹配，不走模糊搜索）
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiMessageResponse>;
+  // 删除消息
+  Delete(
+    request: aiservicev1_DeleteAiMessageRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createAiMessageServiceClient(
+  transport: ClientTransport,
+): AiMessageService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/messages`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiMessageService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiMessageResponse>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/messages/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiMessageService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询消息列表 - 回应
+export type aiservicev1_ListAiMessageResponse = {
+  items: aiservicev1_AiMessage[] | undefined;
+  total: number | undefined;
+};
+
+// 删除消息 - 请求
+export type aiservicev1_DeleteAiMessageRequest = {
+  id?: number;
+};
+
+// AI 模型提供商管理服务
+export interface AiProviderService {
+  // 分页查询 AI 提供商列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiProviderResponse>;
+  // 查询 AI 提供商详情
+  Get(
+    request: aiservicev1_GetAiProviderRequest,
+  ): Promise<aiservicev1_AiProvider>;
+  // 创建 AI 提供商
+  Create(
+    request: aiservicev1_CreateAiProviderRequest,
+  ): Promise<wellKnownEmpty>;
+  // 更新 AI 提供商
+  Update(
+    request: aiservicev1_UpdateAiProviderRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除 AI 提供商
+  Delete(
+    request: aiservicev1_DeleteAiProviderRequest,
+  ): Promise<wellKnownEmpty>;
+}
+
+export function createAiProviderServiceClient(
+  transport: ClientTransport,
+): AiProviderService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/providers`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiProviderService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiProviderResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/providers/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.viewMask) {
+        queryParams.push(
+          `viewMask=${encodeURIComponent(request.viewMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiProviderService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiProvider>;
+    },
+    Create(request) {
+      const path = `admin/v1/ai/providers`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiProviderService',
+        method: 'Create',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/providers/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiProviderService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/providers/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiProviderService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+  };
+}
+// 查询 AI 提供商列表 - 回应
+export type aiservicev1_ListAiProviderResponse = {
+  items: aiservicev1_AiProvider[] | undefined;
+  total: number | undefined;
+};
+
+// AI 模型提供商（一行 = 一个可调用的模型端点配置）
+export type aiservicev1_AiProvider = {
+  apiKey?: string;
+  apiKeyHint?: string;
+  baseUrl?: string;
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  deletedAt?: wellKnownTimestamp;
+  deletedBy?: number;
+  id?: number;
+  isDefault?: boolean;
+  isEnabled?: boolean;
+  localHost?: string;
+  localPort?: number;
+  modelName?: string;
+  modelType?: aiservicev1_AiProvider_ModelType;
+  name?: string;
+  organization?: string;
+  remark?: string;
+  systemPrompt?: string;
+  timeoutSeconds?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+};
+
+// 模型部署形态
+export type aiservicev1_AiProvider_ModelType =
+  | 'CLOUD'
+  | 'LOCAL'
+  | 'MODEL_TYPE_UNSPECIFIED';
+// 查询 AI 提供商详情 - 请求
+export type aiservicev1_GetAiProviderRequest = {
+  id?: number;
+  viewMask?: wellKnownFieldMask;
+};
+
+// 创建 AI 提供商 - 请求
+export type aiservicev1_CreateAiProviderRequest = {
+  data: aiservicev1_AiProvider | undefined;
+};
+
+// 更新 AI 提供商 - 请求
+export type aiservicev1_UpdateAiProviderRequest = {
+  allowMissing?: boolean;
+  data: aiservicev1_AiProvider | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除 AI 提供商 - 请求
+export type aiservicev1_DeleteAiProviderRequest = {
+  id?: number;
+};
+
+// 智能问数服务（NL → 只读 SQL → 结构化结果）
+// 平台管理员专属：第一版查的是全平台数据，且 SQL 会触达原生库表。
+export interface AiQueryService {
+  // 智能问数
+  Ask(
+    request: aiservicev1_AskAiQueryRequest,
+  ): Promise<aiservicev1_AskAiQueryResponse>;
+}
+
+export function createAiQueryServiceClient(
+  transport: ClientTransport,
+): AiQueryService {
+  return {
+    Ask(request) {
+      const path = `admin/v1/ai/query/ask`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiQueryService',
+        method: 'Ask',
+      }) as Promise<aiservicev1_AskAiQueryResponse>;
+    },
+  };
+}
+// 智能问数 - 请求
+export type aiservicev1_AskAiQueryRequest = {
+  // 对话历史（最近若干轮，建议 ≤5；用于消解追问里的指代，如"那只看 admin 的"）
+  history: aiservicev1_AiQueryHistoryItem[] | undefined;
+  // 界面语言（BCP-47），决定结论 answer 的输出语言；默认 zh-CN
+  lang?: string;
+  question: string | undefined;
+  // 是否生成自然语言结论（二次模型调用；默认 true）
+  withAnswer?: boolean;
+};
+
+// 对话历史一轮（多轮追问用）：只回传问答摘要，供模型消解指代（如"那只看 admin 的"）
+export type aiservicev1_AiQueryHistoryItem = {
+  question: string | undefined;
+  resultSummary: string | undefined;
+  sql: string | undefined;
+};
+
+// 智能问数 - 回应
+export type aiservicev1_AskAiQueryResponse = {
+  // 自然语言结论（with_answer=false 或模型失败时为空）
+  answer?: string;
+  // 结果列名
+  columns: string[] | undefined;
+  // 执行失败原因（SQL 语法/列不存在等；有值时 rows 为空）
+  errorMessage?: string;
+  // 实际返回的行数
+  rowCount: number | undefined;
+  // 结果行（上限 100 行）
+  rows: aiservicev1_AiQueryRow[] | undefined;
+  // 生成的只读 SQL（原样返回，便于核对与复用）
+  sql: string | undefined;
+  // 本次消耗的总 token 数（计入 AI_TOKENS 用量）
+  totalTokens: number | undefined;
+};
+
+// 结果行（values 与 columns 下标对应；时间/数字均已格式化为字符串）
+export type aiservicev1_AiQueryRow = {
+  values: string[] | undefined;
+};
+
+// AI 用量流水服务（配额记账事实源）
+export interface AiUsageLogService {
+  // 分页查询用量流水
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiUsageLogResponse>;
+  // 当月用量汇总（tokens/调用量/配额上限）
+  GetUsageSummary(
+    request: wellKnownEmpty,
+  ): Promise<aiservicev1_UsageSummaryResponse>;
+}
+
+export function createAiUsageLogServiceClient(
+  transport: ClientTransport,
+): AiUsageLogService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/usage-logs`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiUsageLogService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiUsageLogResponse>;
+    },
+    GetUsageSummary(_request) {
+      const path = `admin/v1/ai/usage-summary`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AiUsageLogService',
+        method: 'GetUsageSummary',
+      }) as Promise<aiservicev1_UsageSummaryResponse>;
+    },
+  };
+}
+// 查询用量流水列表 - 回应
+export type aiservicev1_ListAiUsageLogResponse = {
+  items: aiservicev1_AiUsageLog[] | undefined;
+  total: number | undefined;
+};
+
+// AI 调用用量流水（每次成功的模型调用一行；配额按 total_tokens 聚合）
+export type aiservicev1_AiUsageLog = {
+  completionTokens?: number;
+  conversationId?: number;
+  createdAt?: wellKnownTimestamp;
+  durationMs?: number;
+  id?: number;
+  modelName?: string;
+  promptTokens?: number;
+  providerId?: number;
+  tenantId?: number;
+  totalTokens?: number;
+  userId?: number;
+};
+
+// 当月用量汇总 - 回应
+export type aiservicev1_UsageSummaryResponse = {
+  monthCalls: number | undefined;
+  monthTokens: number | undefined;
+  quotaConfigured: boolean | undefined;
+  quotaLimit: number | undefined;
+};
+
 // API资源管理服务
 export interface ApiService {
   // 查询API资源列表
@@ -1007,6 +2438,7 @@ export type permissionservicev1_Api = {
 
 // 业务功能模块
 export type identityservicev1_Module =
+  | 'AI'
   | 'DASHBOARD'
   | 'DICT'
   | 'FILE'
@@ -1327,6 +2759,22 @@ export interface AuthenticationService {
   VerifyCaptcha(
     request: authenticationservicev1_VerifyCaptchaRequest,
   ): Promise<authenticationservicev1_VerifyCaptchaResponse>;
+  // SSO 登录能力开关（免鉴权；登录页按钮显隐）
+  GetSsoLoginInfo(
+    request: authenticationservicev1_GetSsoLoginInfoRequest,
+  ): Promise<authenticationservicev1_GetSsoLoginInfoResponse>;
+  // 生成 OIDC 授权跳转 URL（免鉴权）
+  GetSsoLoginUrl(
+    request: authenticationservicev1_GetSsoLoginUrlRequest,
+  ): Promise<authenticationservicev1_GetSsoLoginUrlResponse>;
+  // OIDC 回调换本系统令牌（免鉴权）
+  SsoLogin(
+    request: authenticationservicev1_SsoLoginRequest,
+  ): Promise<authenticationservicev1_LoginResponse>;
+  // 租户白标查询（免鉴权；登录前按租户编号取名称/Logo 等展示信息）
+  GetTenantBranding(
+    request: authenticationservicev1_GetTenantBrandingRequest,
+  ): Promise<authenticationservicev1_GetTenantBrandingResponse>;
 }
 
 export function createAuthenticationServiceClient(
@@ -1389,6 +2837,38 @@ export function createAuthenticationServiceClient(
         method: 'VerifyCaptcha',
       }) as Promise<authenticationservicev1_VerifyCaptchaResponse>;
     },
+    GetSsoLoginInfo(_request) {
+      const path = `admin/v1/sso/login-info`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AuthenticationService',
+        method: 'GetSsoLoginInfo',
+      }) as Promise<authenticationservicev1_GetSsoLoginInfoResponse>;
+    },
+    GetSsoLoginUrl(request) {
+      const path = `admin/v1/sso/login-url`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AuthenticationService',
+        method: 'GetSsoLoginUrl',
+      }) as Promise<authenticationservicev1_GetSsoLoginUrlResponse>;
+    },
+    SsoLogin(request) {
+      const path = `admin/v1/sso/login`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AuthenticationService',
+        method: 'SsoLogin',
+      }) as Promise<authenticationservicev1_LoginResponse>;
+    },
+    GetTenantBranding(request) {
+      const path = `admin/v1/tenant-branding`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AuthenticationService',
+        method: 'GetTenantBranding',
+      }) as Promise<authenticationservicev1_GetTenantBrandingResponse>;
+    },
   };
 }
 // 用户后台登录 - 请求
@@ -1433,8 +2913,8 @@ export type authenticationservicev1_LoginResponse = {
   // 而是返回此 operation_id。前端据此跳转 MFA 挑战页，提交 TOTP 验证码到 MFAService.VerifyMFAChallenge。
   // 该字段非空时 access_token 必为空字符串；验证通过后由 VerifyMFAChallenge 返回真 token。
   mfa_operation_id?: string;
-  refresh_expires_in?: number;
-  refresh_token?: string;
+  // refresh token 已迁移 HttpOnly Cookie 传输（2026-08 迁移），不再进响应体：
+  // refresh_token / refresh_expires_in 字段已删除（历史残留，所有路径均未赋值）。
   scope?: string;
   token_type: authenticationservicev1_TokenType | undefined;
 };
@@ -1468,6 +2948,52 @@ export type authenticationservicev1_VerifyCaptchaRequest = {
 
 export type authenticationservicev1_VerifyCaptchaResponse = {
   valid: boolean | undefined;
+};
+
+// SSO 登录能力开关查询（登录页按钮显隐用；免鉴权）。
+export type authenticationservicev1_GetSsoLoginInfoRequest = {
+};
+
+export type authenticationservicev1_GetSsoLoginInfoResponse = {
+  // OIDC SSO 是否已配置（issuer/client_id/client_secret/redirect_url 齐备）
+  enabled: boolean | undefined;
+};
+
+// 生成 OIDC 授权跳转 URL（免鉴权）。state 由服务端生成并存 Redis（10 分钟
+// 单次有效），SsoLogin 时验证并取删——防 CSRF 与回调重放。
+export type authenticationservicev1_GetSsoLoginUrlRequest = {
+};
+
+export type authenticationservicev1_GetSsoLoginUrlResponse = {
+  // 完整授权跳转 URL（前端 window.location 前往）
+  authorizationUrl: string | undefined;
+  // 本次登录的 state（前端原样带到回调，SsoLogin 时一并提交）
+  state: string | undefined;
+};
+
+// OIDC 回调换令牌（免鉴权）：code+state 换本系统 JWT。
+// 流程：state 验证取删 → code 在 IdP token 端点换 access_token →
+// 拉 userinfo 取 email → 按邮箱在本系统查用户（未找到且允许预置时自动建）→
+// 签发标准 JWT 对（refresh token 走 HttpOnly Cookie，与密码登录同形）。
+// V1 边界：SSO 登录不触发本系统 TOTP MFA 闸门（认证已在 IdP 完成）。
+export type authenticationservicev1_SsoLoginRequest = {
+  // IdP 回调带回的授权码
+  code: string | undefined;
+  // GetSsoLoginUrl 返回的 state
+  state: string | undefined;
+};
+
+// 租户白标查询（免鉴权；登录前按租户编号取展示信息）。
+// 只暴露展示字段（名称/Logo），不泄露任何运营/配置数据。
+export type authenticationservicev1_GetTenantBrandingRequest = {
+  // 租户编号（登录页 tenant_code 输入框的值）
+  code: string | undefined;
+};
+
+export type authenticationservicev1_GetTenantBrandingResponse = {
+  found: boolean | undefined;
+  logoUrl: string | undefined;
+  name: string | undefined;
 };
 
 // 系统参数管理服务
@@ -1758,6 +3284,38 @@ export type StatusDistributionResponse = {
   items: DistributionItem[] | undefined;
 };
 
+// AI 概览解读 - 请求
+export type AiInsightsRequest = {
+  // 界面语言（BCP-47，如 zh-CN / en-US），决定 LLM 总评的输出语言；
+  // 告警本身只回传结构化事实，文案由前端 i18n 模板渲染
+  lang?: string;
+};
+
+// 异常告警条目：规则预筛的确定性结构化事实，**不含人类文案**——
+// 文案由前端按 type 选 i18n 模板并以 facts 插值渲染，保证多语言界面一致
+export type AiInsightAlert = {
+  // 插值参数（i18n 模板变量）：username / count / total / ip 等，键随 type 而定
+  facts: { [key: string]: string } | undefined;
+  // SENSITIVE_OPS 专用的明细行（username + action + 资源与时间由前端格式化）
+  items: AiSensitiveOpItem[] | undefined;
+  severity: string | undefined;
+  type: string | undefined;
+};
+
+// 敏感操作明细项
+export type AiSensitiveOpItem = {
+  action: string | undefined;
+  createdAt: string | undefined;
+  resourceType: string | undefined;
+  username: string | undefined;
+};
+
+// AI 概览解读 - 回应
+export type AiInsightsResponse = {
+  alerts: AiInsightAlert[] | undefined;
+  summary: string | undefined;
+};
+
 // 后台首页分析概览服务（只读聚合）
 export interface DashboardService {
   // 获取概览统计（用户总数 / 角色总数 / 今日登录次数 / 今日操作审计条数）
@@ -1773,6 +3331,10 @@ export interface DashboardService {
     request: wellKnownEmpty,
   ): Promise<ActionDistributionResponse>;
   // 登录审计按 status 分布
+  // AI 安全与异常洞察：审计明细行为模式挖掘（平台用户专属——数据会外发到模型端点）
+  GetAiInsights(
+    request: AiInsightsRequest,
+  ): Promise<AiInsightsResponse>;
   GetLoginStatusDistribution(
     request: wellKnownEmpty,
   ): Promise<StatusDistributionResponse>;
@@ -1815,6 +3377,14 @@ export function createDashboardServiceClient(
         service: 'DashboardService',
         method: 'GetOperationActionDistribution',
       }) as Promise<ActionDistributionResponse>;
+    },
+    GetAiInsights(request) {
+      const path = `admin/v1/dashboard/ai-insights`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'DashboardService',
+        method: 'GetAiInsights',
+      }) as Promise<AiInsightsResponse>;
     },
     GetLoginStatusDistribution(_request) {
       const path = `admin/v1/dashboard/login-status-distribution`;
@@ -5076,6 +6646,348 @@ export type authenticationservicev1_VerifyMFAChallengeRequest = {
   webauthn?: authenticationservicev1_WebAuthnAssertion;
 };
 
+// 监控告警规则服务（平台管理员）
+export interface MonitorAlertService {
+  // 规则列表（分页，contains 搜索）
+  ListMonitorAlertRule(
+    request: pagination_PagingRequest,
+  ): Promise<monitor_alertservicev1_ListMonitorAlertRuleResponse>;
+  // 规则详情
+  GetMonitorAlertRule(
+    request: monitor_alertservicev1_GetMonitorAlertRuleRequest,
+  ): Promise<monitor_alertservicev1_MonitorAlertRule>;
+  // 新建规则
+  CreateMonitorAlertRule(
+    request: monitor_alertservicev1_CreateMonitorAlertRuleRequest,
+  ): Promise<monitor_alertservicev1_MonitorAlertRule>;
+  // 更新规则
+  UpdateMonitorAlertRule(
+    request: monitor_alertservicev1_UpdateMonitorAlertRuleRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除规则
+  DeleteMonitorAlertRule(
+    request: monitor_alertservicev1_DeleteMonitorAlertRuleRequest,
+  ): Promise<wellKnownEmpty>;
+  // 立即评估一轮（与周期扫描同一内核），返回各启用规则的求值结论
+  EvaluateMonitorAlerts(
+    request: monitor_alertservicev1_EvaluateMonitorAlertsRequest,
+  ): Promise<monitor_alertservicev1_EvaluateMonitorAlertsResponse>;
+}
+
+export function createMonitorAlertServiceClient(
+  transport: ClientTransport,
+): MonitorAlertService {
+  return {
+    ListMonitorAlertRule(request) {
+      const path = `admin/v1/monitor-alert-rules`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'MonitorAlertService',
+        method: 'ListMonitorAlertRule',
+      }) as Promise<monitor_alertservicev1_ListMonitorAlertRuleResponse>;
+    },
+    GetMonitorAlertRule(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/monitor-alert-rules/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'MonitorAlertService',
+        method: 'GetMonitorAlertRule',
+      }) as Promise<monitor_alertservicev1_MonitorAlertRule>;
+    },
+    CreateMonitorAlertRule(request) {
+      const path = `admin/v1/monitor-alert-rules`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'MonitorAlertService',
+        method: 'CreateMonitorAlertRule',
+      }) as Promise<monitor_alertservicev1_MonitorAlertRule>;
+    },
+    UpdateMonitorAlertRule(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/monitor-alert-rules/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'MonitorAlertService',
+        method: 'UpdateMonitorAlertRule',
+      }) as Promise<wellKnownEmpty>;
+    },
+    DeleteMonitorAlertRule(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/monitor-alert-rules/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'MonitorAlertService',
+        method: 'DeleteMonitorAlertRule',
+      }) as Promise<wellKnownEmpty>;
+    },
+    EvaluateMonitorAlerts(request) {
+      const path = `admin/v1/monitor-alert-rules:evaluate`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'MonitorAlertService',
+        method: 'EvaluateMonitorAlerts',
+      }) as Promise<monitor_alertservicev1_EvaluateMonitorAlertsResponse>;
+    },
+  };
+}
+export type monitor_alertservicev1_ListMonitorAlertRuleResponse = {
+  items: monitor_alertservicev1_MonitorAlertRule[] | undefined;
+  total: number | undefined;
+};
+
+// 监控告警规则：指标阈值 → 触发通知。
+// 渠道与目标显式写在规则上（不经路由表）：告警是"点对点"的运营配置，
+// 路由表解决的是"事件该发去哪类渠道"，而这里要的是"这条告警发到这个邮箱"。
+export type monitor_alertservicev1_MonitorAlertRule = {
+  // 告警渠道（显式指定）
+  channel?: notificationservicev1_Channel;
+  // 重复告警冷却（分钟）：持续越限时按此间隔重发，默认 30
+  cooldownMinutes?: number;
+  id?: number;
+  isEnabled?: boolean;
+  lastAlertedAt?: wellKnownTimestamp;
+  // —— 以下为评估器回写状态（只读） ——
+  lastFiring?: boolean;
+  lastValue?: number;
+  metric?: monitor_alertservicev1_MonitorMetric;
+  name?: string;
+  // DB_PING_FAIL 时忽略 op/threshold
+  op?: monitor_alertservicev1_AlertOp;
+  remark?: string;
+  // 投递目标：EMAIL 为收件地址，WEBHOOK 为回调 URL
+  target?: string;
+  threshold?: number;
+  updatedAt?: wellKnownTimestamp;
+};
+
+// 监控指标（评估器支持的全集；新增指标 = 枚举加值 + evaluator 补取数分支）
+export type monitor_alertservicev1_MonitorMetric =
+  // 数据库当前打开连接数
+  | 'DB_OPEN_CONNECTIONS'
+  // 数据库连通性失败（布尔指标：越限即 ping 失败，op/threshold 被忽略）
+  | 'DB_PING_FAIL'
+  // Go goroutine 数量
+  | 'GO_GOROUTINES'
+  // Go 堆内存分配（MB）
+  | 'GO_MEM_ALLOC_MB'
+  | 'MONITOR_METRIC_UNSPECIFIED'
+  // Redis 逻辑库 key 总数（DBSIZE）
+  | 'REDIS_DB_SIZE';
+// 比较运算
+export type monitor_alertservicev1_AlertOp =
+  | 'ALERT_OP_UNSPECIFIED'
+  // 当前值 >= 阈值
+  | 'GE'
+  // 当前值 <= 阈值
+  | 'LE';
+// 投递渠道
+export type notificationservicev1_Channel =
+  | 'CHANNEL_UNSPECIFIED'
+  | 'EMAIL'
+  | 'INTERNAL'
+  | 'SMS'
+  | 'WEBHOOK';
+export type monitor_alertservicev1_GetMonitorAlertRuleRequest = {
+  id: number | undefined;
+};
+
+export type monitor_alertservicev1_CreateMonitorAlertRuleRequest = {
+  data: monitor_alertservicev1_MonitorAlertRule | undefined;
+};
+
+export type monitor_alertservicev1_UpdateMonitorAlertRuleRequest = {
+  data: monitor_alertservicev1_MonitorAlertRule | undefined;
+  id: number | undefined;
+  updateMask?: wellKnownFieldMask;
+};
+
+export type monitor_alertservicev1_DeleteMonitorAlertRuleRequest = {
+  id: number | undefined;
+};
+
+// 手动触发一轮评估（管理页「立即评估」）；返回各启用规则的求值结论
+export type monitor_alertservicev1_EvaluateMonitorAlertsRequest = {
+};
+
+export type monitor_alertservicev1_EvaluateMonitorAlertsResponse = {
+  outcomes: monitor_alertservicev1_EvaluateMonitorAlertsResponse_RuleOutcome[] | undefined;
+};
+
+export type monitor_alertservicev1_EvaluateMonitorAlertsResponse_RuleOutcome = {
+  // 本次扫描实际读到的指标值（采集失败为空）
+  currentValue?: number;
+  // 本次扫描是否越限
+  firing: boolean | undefined;
+  name: string | undefined;
+  // 本轮是否发出了通知（首次触发 / 冷却到期重发 / 恢复）
+  notified: boolean | undefined;
+  // 未发通知的原因（未越限未恢复 / 冷却中 / 采集失败）
+  reason?: string;
+  ruleId: number | undefined;
+};
+
+// 租户自助用量服务：租户管理员查看本租户的套餐用量与配额。
+// 与 TenantService.GetUsage（平台管理员按租户 ID 查任意租户）互补——
+// 本服务 server 钉定 operator 的租户，不接受客户端传入租户 ID。
+export interface MyTenantUsageService {
+  // 获取当前租户的套餐用量与配额（配额硬限制 403 时，租户管理员可在此看到原因）
+  GetMyTenantUsage(
+    request: wellKnownEmpty,
+  ): Promise<identityservicev1_TenantUsage>;
+}
+
+export function createMyTenantUsageServiceClient(
+  transport: ClientTransport,
+): MyTenantUsageService {
+  return {
+    GetMyTenantUsage(_request) {
+      const path = `admin/v1/my-tenant-usage`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'MyTenantUsageService',
+        method: 'GetMyTenantUsage',
+      }) as Promise<identityservicev1_TenantUsage>;
+    },
+  };
+}
+// 租户用量与配额
+export type identityservicev1_TenantUsage = {
+  apiCallCount: number | undefined;
+  planId?: number;
+  planName?: string;
+  quotas: identityservicev1_QuotaUsage[] | undefined;
+  storageUsedBytes: number | undefined;
+  tenantId: number | undefined;
+  userCount: number | undefined;
+};
+
+// 配额用量项
+export type identityservicev1_QuotaUsage = {
+  quotaType: identityservicev1_PlanQuota_QuotaType | undefined;
+  quotaValue: number | undefined;
+};
+
+// 配额类型
+export type identityservicev1_PlanQuota_QuotaType =
+  | 'AI_TOKENS'
+  | 'API_CALL'
+  | 'PLAN_QUOTA_TYPE_UNSPECIFIED'
+  | 'STORAGE'
+  | 'USER_LIMIT';
 // 通知投递台账管理服务（平台级只读视图）。
 // 本域不含"发一条通知"的通用 HTTP 路由：SendDirect 只由进程内的业务 service 经 Notifier 接口调用。
 // 把它开放成端点等于给任意已登录操作员一个"向任意邮箱发信"的能力。
@@ -5267,14 +7179,10 @@ export type notificationservicev1_EventType =
   // 它与其他三个事件的区别：那三个由业务动作触发、渠道由路由表决定；这一个本身就是
   // "站内信内容域经缝投递了一次"，related_id 必填，否则台账行无法回答"发的是哪条消息"。
   | 'INTERNAL_MESSAGE'
+  // 监控告警：监控扫描任务对规则求值后触发（explicit channel + target，不经路由表）。
+  // related_id 指向 sys_monitor_alert_rules.id。
+  | 'MONITOR_ALERT'
   | 'PASSWORD_RESET_CODE';
-// 投递渠道
-export type notificationservicev1_Channel =
-  | 'CHANNEL_UNSPECIFIED'
-  | 'EMAIL'
-  | 'INTERNAL'
-  | 'SMS'
-  | 'WEBHOOK';
 // 投递状态
 export type notificationservicev1_DeliveryStatus =
   | 'DELIVERY_STATUS_UNSPECIFIED'
@@ -5581,6 +7489,89 @@ export type notification_channelservicev1_SendTestEmailRequest = {
   recipient: string | undefined;
 };
 
+// 用户通知偏好服务（自助：读写的都是当前操作人自己的偏好，无管理面）。
+export interface NotificationPreferenceService {
+  // 获取当前用户的通知偏好；从未配置过时返回默认值（未启用静音、无退订）。
+  GetMyNotificationPreference(
+    request: wellKnownEmpty,
+  ): Promise<notificationservicev1_NotificationPreference>;
+  // 更新当前用户的通知偏好，返回保存后的完整状态。
+  UpdateMyNotificationPreference(
+    request: notificationservicev1_UpdateNotificationPreferenceRequest,
+  ): Promise<notificationservicev1_NotificationPreference>;
+  // 当前用户可退订的启用分类清单（本租户内）。
+  ListMyNotificationCategories(
+    request: wellKnownEmpty,
+  ): Promise<notificationservicev1_ListMyNotificationCategoriesResponse>;
+}
+
+export function createNotificationPreferenceServiceClient(
+  transport: ClientTransport,
+): NotificationPreferenceService {
+  return {
+    GetMyNotificationPreference(_request) {
+      const path = `admin/v1/notification-preference`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'NotificationPreferenceService',
+        method: 'GetMyNotificationPreference',
+      }) as Promise<notificationservicev1_NotificationPreference>;
+    },
+    UpdateMyNotificationPreference(request) {
+      const path = `admin/v1/notification-preference`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationPreferenceService',
+        method: 'UpdateMyNotificationPreference',
+      }) as Promise<notificationservicev1_NotificationPreference>;
+    },
+    ListMyNotificationCategories(_request) {
+      const path = `admin/v1/notification-preference/categories`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'NotificationPreferenceService',
+        method: 'ListMyNotificationCategories',
+      }) as Promise<notificationservicev1_ListMyNotificationCategoriesResponse>;
+    },
+  };
+}
+// 用户通知偏好（每用户一行）。
+// 服务端从操作人/收件人钉定 user_id，客户端传入的 user_id 一律忽略。
+export type notificationservicev1_NotificationPreference = {
+  // 退订的站内信分类 ID 列表：仅约束全员广播（targetAll），
+  // 点对点定向发送不受退订影响（直接指名发给你的消息不可拒收）。
+  mutedCategoryIds: number[] | undefined;
+  // 是否启用实时推送静音时段：只抑制 SSE 实时推送（桌面通知/角标即时性），
+  // 收件行照常落库，用户打开收件箱仍能看到全部消息。
+  quietEnabled?: boolean;
+  // 静音结束：自当日 00:00 起的分钟数（0-1439），默认 480（08:00）。
+  // 跨零点窗口（start > end，如 22:00→08:00）合法；start == end 且启用视为无效配置。
+  quietEndMinute?: number;
+  // 静音开始：自当日 00:00 起的分钟数（0-1439），默认 1320（22:00）。
+  quietStartMinute?: number;
+  updatedAt?: wellKnownTimestamp;
+  userId?: number;
+};
+
+// 更新自己的通知偏好（字段全量提交；未登录不可用）。
+export type notificationservicev1_UpdateNotificationPreferenceRequest = {
+  mutedCategoryIds: number[] | undefined;
+  quietEnabled?: boolean;
+  quietEndMinute?: number;
+  quietStartMinute?: number;
+};
+
+// 当前用户可见的启用分类清单（退订选择器的数据源）。
+export type notificationservicev1_ListMyNotificationCategoriesResponse = {
+  items: notificationservicev1_NotificationCategoryItem[] | undefined;
+};
+
+// 可退订分类的精简项（只取 id + 名称，避免拖整个分类实体）。
+export type notificationservicev1_NotificationCategoryItem = {
+  id?: number;
+  name?: string;
+};
+
 // 通知路由规则管理服务（平台级配置，菜单 authority 为 sys:platform_admin）。
 export interface NotificationRuleService {
   // 查询路由规则列表
@@ -5841,6 +7832,271 @@ export type notificationservicev1_TestDispatchNotificationRequest = {
 export type notificationservicev1_TestDispatchNotificationResponse = {
   deliveryId: number | undefined;
   status: notificationservicev1_DeliveryStatus | undefined;
+};
+
+// 通知模板管理服务（平台管理员；租户由 notification_platform_guard 拒绝）
+export interface NotificationTemplateService {
+  // 模板列表（分页，contains 搜索）
+  ListNotificationTemplate(
+    request: pagination_PagingRequest,
+  ): Promise<notificationservicev1_ListNotificationTemplateResponse>;
+  // 模板详情
+  GetNotificationTemplate(
+    request: notificationservicev1_GetNotificationTemplateRequest,
+  ): Promise<notificationservicev1_NotificationTemplate>;
+  // 新建模板
+  CreateNotificationTemplate(
+    request: notificationservicev1_CreateNotificationTemplateRequest,
+  ): Promise<notificationservicev1_NotificationTemplate>;
+  // 更新模板（CRUD 请求体必须包 {data:{...}}，见仓铁律）
+  UpdateNotificationTemplate(
+    request: notificationservicev1_UpdateNotificationTemplateRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除模板
+  DeleteNotificationTemplate(
+    request: notificationservicev1_DeleteNotificationTemplateRequest,
+  ): Promise<wellKnownEmpty>;
+  // 试渲染：按变量集渲染指定模板，返回标题与正文（管理页预览用，不产生投递）
+  RenderNotificationTemplate(
+    request: notificationservicev1_RenderNotificationTemplateRequest,
+  ): Promise<notificationservicev1_RenderNotificationTemplateResponse>;
+}
+
+export function createNotificationTemplateServiceClient(
+  transport: ClientTransport,
+): NotificationTemplateService {
+  return {
+    ListNotificationTemplate(request) {
+      const path = `admin/v1/notification-templates`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'NotificationTemplateService',
+        method: 'ListNotificationTemplate',
+      }) as Promise<notificationservicev1_ListNotificationTemplateResponse>;
+    },
+    GetNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.code) {
+        queryParams.push(
+          `code=${encodeURIComponent(request.code.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'NotificationTemplateService',
+        method: 'GetNotificationTemplate',
+      }) as Promise<notificationservicev1_NotificationTemplate>;
+    },
+    CreateNotificationTemplate(request) {
+      const path = `admin/v1/notification-templates`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationTemplateService',
+        method: 'CreateNotificationTemplate',
+      }) as Promise<notificationservicev1_NotificationTemplate>;
+    },
+    UpdateNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'NotificationTemplateService',
+        method: 'UpdateNotificationTemplate',
+      }) as Promise<wellKnownEmpty>;
+    },
+    DeleteNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'NotificationTemplateService',
+        method: 'DeleteNotificationTemplate',
+      }) as Promise<wellKnownEmpty>;
+    },
+    RenderNotificationTemplate(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-templates/${request.id}/render`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationTemplateService',
+        method: 'RenderNotificationTemplate',
+      }) as Promise<notificationservicev1_RenderNotificationTemplateResponse>;
+    },
+  };
+}
+export type notificationservicev1_ListNotificationTemplateResponse = {
+  items: notificationservicev1_NotificationTemplate[] | undefined;
+  total: number | undefined;
+};
+
+// 通知模板：可复用的标题/正文占位模板（{{var}}），平台全局、code 全局唯一。
+export type notificationservicev1_NotificationTemplate = {
+  // 模板编码，发送方以 template_code 引用；全局唯一，仅限字母数字与下划线/连字符
+  code?: string;
+  // 正文模板，支持 {{var}} 占位符
+  contentTemplate?: string;
+  createdAt?: wellKnownTimestamp;
+  id?: number;
+  isEnabled?: boolean;
+  name?: string;
+  remark?: string;
+  // 标题模板，支持 {{var}} 占位符；未识别占位符在渲染时报错
+  titleTemplate?: string;
+  updatedAt?: wellKnownTimestamp;
+};
+
+export type notificationservicev1_GetNotificationTemplateRequest = {
+  code?: string;
+  id?: number;
+};
+
+export type notificationservicev1_CreateNotificationTemplateRequest = {
+  data: notificationservicev1_NotificationTemplate | undefined;
+};
+
+export type notificationservicev1_UpdateNotificationTemplateRequest = {
+  data: notificationservicev1_NotificationTemplate | undefined;
+  id: number | undefined;
+  // 字段掩码：留空更新全部字段
+  updateMask?: wellKnownFieldMask;
+};
+
+export type notificationservicev1_DeleteNotificationTemplateRequest = {
+  id: number | undefined;
+};
+
+// 按变量集试渲染（管理页预览；发送不经过这里）
+export type notificationservicev1_RenderNotificationTemplateRequest = {
+  // 被渲染的模板 ID
+  id: number | undefined;
+  // 变量集：占位符名 → 值；模板引用了变量集里没有的占位符时整个渲染报错
+  variables: { [key: string]: string } | undefined;
+};
+
+export type notificationservicev1_RenderNotificationTemplateResponse = {
+  content: string | undefined;
+  title: string | undefined;
 };
 
 // 在线会话管理服务（在线用户列表 + 强制下线）
@@ -7909,12 +10165,6 @@ export type identityservicev1_PlanQuota = {
   updatedBy?: number;
 };
 
-// 配额类型
-export type identityservicev1_PlanQuota_QuotaType =
-  | 'API_CALL'
-  | 'PLAN_QUOTA_TYPE_UNSPECIFIED'
-  | 'STORAGE'
-  | 'USER_LIMIT';
 // 创建套餐配额 - 请求
 export type identityservicev1_CreatePlanQuotaRequest = {
   data: identityservicev1_PlanQuota | undefined;
@@ -9937,6 +12187,77 @@ export type taskservicev1_ControlTaskRequest_ControlType =
   | 'Restart'
   | 'Start'
   | 'Stop';
+// 系统级常驻任务监控服务（平台管理员；只读 asynq Inspector，无副作用）。
+export interface TaskMonitorService {
+  // 一站式巡检：调度条目（cron/上次/下次入队）+ 各任务类型的队列状态与失败明细
+  InspectSystemTasks(
+    request: taskservicev1_InspectSystemTasksRequest,
+  ): Promise<taskservicev1_InspectSystemTasksResponse>;
+}
+
+export function createTaskMonitorServiceClient(
+  transport: ClientTransport,
+): TaskMonitorService {
+  return {
+    InspectSystemTasks(request) {
+      const path = `admin/v1/system-tasks:inspect`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'TaskMonitorService',
+        method: 'InspectSystemTasks',
+      }) as Promise<taskservicev1_InspectSystemTasksResponse>;
+    },
+  };
+}
+// 手动触发巡检（系统级常驻任务可视化，只读 asynq，无副作用）
+export type taskservicev1_InspectSystemTasksRequest = {
+};
+
+export type taskservicev1_InspectSystemTasksResponse = {
+  // asynq 队列名（当前配置）
+  queue: string | undefined;
+  schedules: taskservicev1_SystemTaskScheduleEntry[] | undefined;
+  // 只汇总系统级常驻任务涉及的任务类型；无任何记录时不出现在结果里
+  summaries: taskservicev1_SystemTaskStateSummary[] | undefined;
+};
+
+// 系统级常驻任务的调度条目（asynq SchedulerEntries 的只读投影）。
+// Prev 为零值时间表示从未入队过（调度注册后还没到第一个触发点）。
+export type taskservicev1_SystemTaskScheduleEntry = {
+  // cron 表达式
+  cronSpec: string | undefined;
+  nextEnqueueAt: undefined | wellKnownTimestamp;
+  // 上次入队时间；从未入队为空
+  prevEnqueueAt: undefined | wellKnownTimestamp;
+  // 任务类型名（载荷里的 handler/类型，如 tenant_expiry_scan）
+  taskType: string | undefined;
+};
+
+// 单任务类型在队列里的状态摘要
+export type taskservicev1_SystemTaskStateSummary = {
+  active: number | undefined;
+  archived: number | undefined;
+  pending: number | undefined;
+  // 最近失败明细（retry + archived 合并、按失败时间倒序、截断）
+  recentFailures: taskservicev1_SystemTaskFailure[] | undefined;
+  retry: number | undefined;
+  taskType: string | undefined;
+};
+
+// 失败任务明细（retry/archived 里的单条）
+export type taskservicev1_SystemTaskFailure = {
+  lastError: string | undefined;
+  lastFailedAt: undefined | wellKnownTimestamp;
+  maxRetry: number | undefined;
+  // 下次重试时间（archived 无）
+  nextProcessAt: undefined | wellKnownTimestamp;
+  queue: string | undefined;
+  retried: number | undefined;
+  // retry 或 archived
+  state: string | undefined;
+  taskType: string | undefined;
+};
+
 // 租户管理服务
 export interface TenantService {
   // 获取租户列表
@@ -10313,6 +12634,8 @@ export type identityservicev1_User = {
   id?: number;
   lastLoginAt?: wellKnownTimestamp;
   lastLoginIp?: string;
+  // 偏好语言：事务性邮件（找回密码/换绑验证码）按此渲染；空 = 按请求 Accept-Language。
+  locale?: string;
   lockedUntil?: wellKnownTimestamp;
   mobile?: string;
   nickname?: string;
@@ -10367,23 +12690,6 @@ export type identityservicev1_TenantExistsResponse = {
 // 查询租户用量 - 请求
 export type identityservicev1_GetTenantUsageRequest = {
   id: number | undefined;
-};
-
-// 租户用量与配额
-export type identityservicev1_TenantUsage = {
-  apiCallCount: number | undefined;
-  planId?: number;
-  planName?: string;
-  quotas: identityservicev1_QuotaUsage[] | undefined;
-  storageUsedBytes: number | undefined;
-  tenantId: number | undefined;
-  userCount: number | undefined;
-};
-
-// 配额用量项
-export type identityservicev1_QuotaUsage = {
-  quotaType: identityservicev1_PlanQuota_QuotaType | undefined;
-  quotaValue: number | undefined;
 };
 
 // 清理租户数据 - 请求
@@ -10847,6 +13153,14 @@ export type identityservicev1_EmailVerification = {
 export class ApiClient {
   private _accessKeyService?: AccessKeyService;
   private _adminPortalService?: AdminPortalService;
+  private _aiChatService?: AiChatService;
+  private _aiContentService?: AiContentService;
+  private _aiConversationService?: AiConversationService;
+  private _aiKnowledgeBaseService?: AiKnowledgeBaseService;
+  private _aiMessageService?: AiMessageService;
+  private _aiProviderService?: AiProviderService;
+  private _aiQueryService?: AiQueryService;
+  private _aiUsageLogService?: AiUsageLogService;
   private _apiAuditLogService?: ApiAuditLogService;
   private _apiService?: ApiService;
   private _authenticationService?: AuthenticationService;
@@ -10865,9 +13179,13 @@ export class ApiClient {
   private _loginPolicyService?: LoginPolicyService;
   private _menuService?: MenuService;
   private _mfaService?: MfaService;
+  private _monitorAlertService?: MonitorAlertService;
+  private _myTenantUsageService?: MyTenantUsageService;
   private _notificationChannelService?: NotificationChannelService;
+  private _notificationPreferenceService?: NotificationPreferenceService;
   private _notificationRuleService?: NotificationRuleService;
   private _notificationService?: NotificationService;
+  private _notificationTemplateService?: NotificationTemplateService;
   private _onlineSessionService?: OnlineSessionService;
   private _operationAuditLogService?: OperationAuditLogService;
   private _orgUnitService?: OrgUnitService;
@@ -10884,6 +13202,7 @@ export class ApiClient {
   private _scriptLogService?: ScriptLogService;
   private _scriptService?: ScriptService;
   private _serverMonitorService?: ServerMonitorService;
+  private _taskMonitorService?: TaskMonitorService;
   private _taskService?: TaskService;
   private _tenantService?: TenantService;
   private readonly _transport: ClientTransport;
@@ -10900,6 +13219,38 @@ export class ApiClient {
 
   get adminPortalService(): AdminPortalService {
     return this._adminPortalService ??= createAdminPortalServiceClient(this._transport);
+  }
+
+  get aiChatService(): AiChatService {
+    return this._aiChatService ??= createAiChatServiceClient(this._transport);
+  }
+
+  get aiContentService(): AiContentService {
+    return this._aiContentService ??= createAiContentServiceClient(this._transport);
+  }
+
+  get aiConversationService(): AiConversationService {
+    return this._aiConversationService ??= createAiConversationServiceClient(this._transport);
+  }
+
+  get aiKnowledgeBaseService(): AiKnowledgeBaseService {
+    return this._aiKnowledgeBaseService ??= createAiKnowledgeBaseServiceClient(this._transport);
+  }
+
+  get aiMessageService(): AiMessageService {
+    return this._aiMessageService ??= createAiMessageServiceClient(this._transport);
+  }
+
+  get aiProviderService(): AiProviderService {
+    return this._aiProviderService ??= createAiProviderServiceClient(this._transport);
+  }
+
+  get aiQueryService(): AiQueryService {
+    return this._aiQueryService ??= createAiQueryServiceClient(this._transport);
+  }
+
+  get aiUsageLogService(): AiUsageLogService {
+    return this._aiUsageLogService ??= createAiUsageLogServiceClient(this._transport);
   }
 
   get apiAuditLogService(): ApiAuditLogService {
@@ -10974,8 +13325,20 @@ export class ApiClient {
     return this._mfaService ??= createMfaServiceClient(this._transport);
   }
 
+  get monitorAlertService(): MonitorAlertService {
+    return this._monitorAlertService ??= createMonitorAlertServiceClient(this._transport);
+  }
+
+  get myTenantUsageService(): MyTenantUsageService {
+    return this._myTenantUsageService ??= createMyTenantUsageServiceClient(this._transport);
+  }
+
   get notificationChannelService(): NotificationChannelService {
     return this._notificationChannelService ??= createNotificationChannelServiceClient(this._transport);
+  }
+
+  get notificationPreferenceService(): NotificationPreferenceService {
+    return this._notificationPreferenceService ??= createNotificationPreferenceServiceClient(this._transport);
   }
 
   get notificationRuleService(): NotificationRuleService {
@@ -10984,6 +13347,10 @@ export class ApiClient {
 
   get notificationService(): NotificationService {
     return this._notificationService ??= createNotificationServiceClient(this._transport);
+  }
+
+  get notificationTemplateService(): NotificationTemplateService {
+    return this._notificationTemplateService ??= createNotificationTemplateServiceClient(this._transport);
   }
 
   get onlineSessionService(): OnlineSessionService {
@@ -11048,6 +13415,10 @@ export class ApiClient {
 
   get serverMonitorService(): ServerMonitorService {
     return this._serverMonitorService ??= createServerMonitorServiceClient(this._transport);
+  }
+
+  get taskMonitorService(): TaskMonitorService {
+    return this._taskMonitorService ??= createTaskMonitorServiceClient(this._transport);
   }
 
   get taskService(): TaskService {

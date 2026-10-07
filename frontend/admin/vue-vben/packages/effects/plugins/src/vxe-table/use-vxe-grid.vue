@@ -13,8 +13,10 @@ import type { ExtendedVxeGridApi, VxeGridProps } from './types';
 import {
   computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   onUnmounted,
+  ref,
   toRaw,
   useSlots,
   useTemplateRef,
@@ -24,12 +26,17 @@ import {
 import { usePriorityValues } from '@vben/hooks';
 import { EmptyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
-import { usePreferences } from '@vben/preferences';
+import { preferences, usePreferences } from '@vben/preferences';
 import { cloneDeep, cn, mergeWithArrayOverride } from '@vben/utils';
-import { VbenHelpTooltip, VbenLoading } from '@vben-core/shadcn-ui';
+import {
+  VbenButton,
+  VbenHelpTooltip,
+  VbenLoading,
+} from '@vben-core/shadcn-ui';
 
 import { VxeGrid, VxeUI } from 'vxe-table';
 
+import GridTableSkeleton from './table-skeleton.vue';
 import { extendProxyOptions } from './extends';
 import { useTableForm } from './init';
 
@@ -66,6 +73,75 @@ const {
 const { isMobile } = usePreferences();
 
 const slots = useSlots();
+
+// ---------- 列表三态（首屏骨架 / 延迟加载态 / 失败态），与 react 端 ListTable 行为对齐 ----------
+// 这三个 ref 由 extends.ts 包裹 proxyConfig.ajax.query 时写入：vxe 内部的 tableLoading 在请求
+// 发出的瞬间就点亮遮罩，"超过阈值才出现"只能由外层自己计时，所以不复用它。
+const queryLoading = props.api.queryLoading;
+const queryError = props.api.queryError;
+const hasLoaded = props.api.hasLoaded;
+
+/** 加载态出场阈值（ms）：本地接口常在 100ms 内返回，早于阈值出现的骨架/遮罩比什么都不显示更闪 */
+const LOADING_DELAY = 250;
+/** 骨架最多铺这么多行：真实表体由 vxe 定高后自己滚动，铺满可见区即可，多铺的是白画的 DOM */
+const MAX_SKELETON_ROWS = 8;
+
+const delayedLoading = ref(false);
+let loadingDelayTimer: null | ReturnType<typeof setTimeout> = null;
+
+function clearLoadingDelayTimer() {
+  if (loadingDelayTimer !== null) {
+    clearTimeout(loadingDelayTimer);
+    loadingDelayTimer = null;
+  }
+}
+
+watch(queryLoading, (isLoading) => {
+  clearLoadingDelayTimer();
+  if (isLoading) {
+    if (!delayedLoading.value) {
+      loadingDelayTimer = setTimeout(() => {
+        delayedLoading.value = true;
+        loadingDelayTimer = null;
+      }, LOADING_DELAY);
+    }
+  } else {
+    delayedLoading.value = false;
+  }
+});
+
+onBeforeUnmount(clearLoadingDelayTimer);
+
+/** 首屏（还没成功取到过数据）用表格形状骨架，之后的刷新用转圈；偏好设置里 transition.loading 关掉则一律转圈 */
+const showSkeleton = computed(
+  () => !hasLoaded.value && preferences.transition.loading,
+);
+
+/**
+ * 失败时表格里是否还留有可读的旧数据：有则只在表格上方出一条横幅（旧数据不该被顶掉），
+ * 一行都没有时交给 #empty 显示原因与重试——那里读起来才是"这次查询失败了"而不是"没有数据"。
+ * 只在 queryError 变化时求值，读到的就是本次失败后 vxe 保留下来的那份数据。
+ */
+const hasRowsOnError = computed(() => {
+  if (!queryError.value) {
+    return false;
+  }
+  const grid = props.api.grid as unknown as { getData?: () => any[] };
+  return (grid?.getData?.() ?? []).length > 0;
+});
+
+function retryQuery() {
+  props.api.query();
+}
+
+// 横幅走 vxe 的 top 插槽，它计入 getExcludeHeight，但失败路径不会触发 vxe 自己的重排，
+// 所以要等横幅上屏后手动 recalculate，否则表体按没有横幅的高度铺满、分页被顶出卡片
+watch(queryError, () => {
+  nextTick(() => {
+    const grid = props.api.grid as unknown as { recalculate?: (flag: boolean) => any };
+    grid?.recalculate?.(true);
+  });
+});
 
 const [Form, formApi] = useTableForm({
   handleSubmit: async () => {
@@ -159,6 +235,9 @@ const options = computed(() => {
     mergedOptions.proxyConfig.enabled = !!ajax;
     // 不自动加载数据, 由组件控制
     mergedOptions.proxyConfig.autoLoad = false;
+    // vxe 在 proxy 请求发出的瞬间就点亮自己的遮罩，本地快响应会闪一下；
+    // 这里关掉它，遮罩改由本组件按 LOADING_DELAY 计时的 gridLoading 点亮
+    mergedOptions.proxyConfig.showLoading = false;
   }
 
   if (mergedOptions.pagerConfig) {
@@ -195,6 +274,22 @@ const options = computed(() => {
   return mergedOptions;
 });
 
+// 单独成一条 computed：把它塞进 options 会让每次加载态翻转都重算 cloneDeep 的整包配置，
+// 而 vxe 对 props.columns 是按引用监听的，重算一次就重装一次列
+const gridLoading = computed(
+  () => delayedLoading.value || !!gridOptions.value?.loading,
+);
+
+// 骨架行数上限跟分页大小同源（这里的 pageSize 已含本组件并入的默认值 20），再封顶；
+// 实际铺几行由 table-skeleton 按遮罩实测高度折算，铺不满是遮罩本来就只有表体那一小条
+const skeletonRows = computed(() => {
+  const pageSize = Number(options.value?.pagerConfig?.pageSize) || 0;
+  return Math.min(
+    pageSize > 0 ? pageSize : MAX_SKELETON_ROWS,
+    MAX_SKELETON_ROWS,
+  );
+});
+
 function onToolbarToolClick(event: VxeGridDefines.ToolbarToolClickEventParams) {
   if (event.code === 'search') {
     props.api?.toggleSearchForm?.();
@@ -215,7 +310,7 @@ const delegatedSlots = computed(() => {
   const resultSlots: string[] = [];
 
   for (const key of Object.keys(slots)) {
-    if (!['empty', 'form', 'loading', TOOLBAR_ACTIONS].includes(key)) {
+    if (!['empty', 'form', 'loading', 'top', TOOLBAR_ACTIONS].includes(key)) {
       resultSlots.push(key);
     }
   }
@@ -241,6 +336,19 @@ async function init() {
     toRaw(gridOptions.value),
     toRaw(globalGridConfig),
   );
+  // vxe-table 递归大类型与 DeepPartial 展开相容性检查在部分 TS 版本下触发 TS2589，
+  // 直接按目标成员类型断言，避免结构展开（与 api.ts setGridOptions 的传入方式等价）。
+  props.api?.setState?.({
+    gridOptions: defaultGridOptions as VxeGridProps['gridOptions'],
+  });
+  // form 由 vben-form 代替，所以需要保证query相关事件可以拿到参数
+  extendProxyOptions(props.api, defaultGridOptions, () =>
+    formApi.getLatestSubmissionValues(),
+  );
+  // 先包好 query 再发首个请求：VxeGrid 的 props 要到下一次渲染才换上包装后的函数，
+  // 首屏那一次若走未包装的原始函数，hasLoaded / queryError 都不会被写入，
+  // 加载态就只能由 vxe 自己的遮罩点亮（骨架没有原因，失败也没有留痕）。
+  await nextTick();
   // 内部主动加载数据，防止form的默认值影响
   const autoLoad = defaultGridOptions.proxyConfig?.autoLoad;
   const enableProxyConfig = options.value.proxyConfig?.enabled;
@@ -257,15 +365,6 @@ async function init() {
       '[Vben Vxe Table]: The formConfig in the grid is not supported, please use the `formOptions` props',
     );
   }
-  // vxe-table 递归大类型与 DeepPartial 展开相容性检查在部分 TS 版本下触发 TS2589，
-  // 直接按目标成员类型断言，避免结构展开（与 api.ts setGridOptions 的传入方式等价）。
-  props.api?.setState?.({
-    gridOptions: defaultGridOptions as VxeGridProps['gridOptions'],
-  });
-  // form 由 vben-form 代替，所以需要保证query相关事件可以拿到参数
-  extendProxyOptions(props.api, defaultGridOptions, () =>
-    formApi.getLatestSubmissionValues(),
-  );
 }
 
 // formOptions支持响应式
@@ -314,6 +413,7 @@ onUnmounted(() => {
         )
       "
       v-bind="options"
+      :loading="gridLoading"
       v-on="events"
     >
       <!-- 左侧操作区域或者title -->
@@ -376,17 +476,51 @@ onUnmounted(() => {
           ></div>
         </div>
       </template>
+      <!-- 已有数据时刷新失败：旧数据留着可读，只在表格上方补一条带重试入口的提示 -->
+      <template #top="slotProps">
+        <div
+          v-if="queryError && hasRowsOnError"
+          class="bg-destructive/10 text-destructive border-destructive/40 mb-2 flex items-center gap-3 rounded-md border px-3 py-2 text-sm"
+        >
+          <span class="min-w-0 flex-1">{{ queryError }}</span>
+          <VbenButton size="sm" @click="retryQuery">
+            {{ $t('common.retry') }}
+          </VbenButton>
+        </div>
+        <slot name="top" v-bind="slotProps"></slot>
+      </template>
       <!-- loading -->
       <template #loading>
         <slot name="loading">
-          <VbenLoading :spinning="true" />
+          <!-- vxe 每次装列 / 载数据都会点亮这层遮罩（isColLoading / isRowLoading），
+               它既不看 proxy 的 showLoading 也不看我们的 250ms 阈值，底色已在 style.css 摘掉；
+               所以可见性由这里按 delayedLoading 自己决定，快响应时槽里什么都不渲染 -->
+          <div v-if="delayedLoading" class="absolute inset-0">
+            <GridTableSkeleton
+              v-if="showSkeleton"
+              :columns="options.columns"
+              :rows="skeletonRows"
+            />
+            <VbenLoading v-else :min-loading-time="0" :spinning="true" />
+          </div>
         </slot>
       </template>
       <!-- 统一控状态 -->
       <template #empty>
         <slot name="empty">
-          <EmptyIcon class="mx-auto" />
-          <div class="mt-2">{{ $t('common.noData') }}</div>
+          <!-- 首屏就失败：一行数据都没有，"暂无数据"会被读成查询成功但结果为空，必须换成错误态 -->
+          <template v-if="queryError">
+            <div class="text-destructive mt-4 px-4 text-center text-sm">
+              {{ queryError }}
+            </div>
+            <VbenButton class="mt-3" size="sm" @click="retryQuery">
+              {{ $t('common.retry') }}
+            </VbenButton>
+          </template>
+          <template v-else>
+            <EmptyIcon class="mx-auto" />
+            <div class="mt-2">{{ $t('common.noData') }}</div>
+          </template>
         </slot>
       </template>
     </VxeGrid>

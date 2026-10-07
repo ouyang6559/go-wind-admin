@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full flex flex-1 flex-col">
-    <ProPage ref="pageRef" :config="pageConfig" @operate="handleOperate">
+    <ProPage ref="pageRef" :config="pageConfig" @operate="handleOperate" @toolbar="handleToolbar">
       <!-- 状态 -->
       <template #status="scope: any">
         <ElTag
@@ -73,12 +73,45 @@ import {
   createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
+import { exportAuditLogsServer } from "@/api/composables";
 import { $t } from "@/core/i18n";
 
 const pageRef = ref();
 const drawerRef = ref();
+const latestFormValuesRef = ref<Record<string, unknown>>({});
+
+const exporting = ref(false);
+
+async function handleServerExport() {
+  if (exporting.value) return;
+  exporting.value = true;
+  try {
+    await exportAuditLogsServer(
+      'login',
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
+    ElMessage.success($t("pages.login_audit_log.exportServerSuccess"));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error("server-side audit export failed", error);
+    ElMessage.error(error?.message || $t("pages.login_audit_log.exportServerFailed"));
+  } finally {
+    exporting.value = false;
+  }
+}
+
+// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
+// exportServer 是工具栏按钮，此处承接。
+function handleToolbar(name: string) {
+  if (name === "exportServer") {
+    handleServerExport();
+    return;
+  }
+}
 
 function handleOperate(data: { name: string; row: any }) {
+  // 服务端全量导出（XLSX，上限 50 万行）：不带搜索条件，突破导出弹窗
+  // 客户端聚合的 1 万行上限；带条件的导出走右侧既有的导出弹窗
   if (data.name === "detail") {
     drawerRef.value?.open({ row: data.row });
   }
@@ -184,24 +217,34 @@ const pageConfig = computed<ProPageConfig>(() => ({
         endTime = dayjs(createdAt[1]).format("YYYY-MM-DD HH:mm:ss");
       }
 
+      // 列表与导出共用同一份搜索条件：服务端导出透传的就是这里看到的
+      const formValues = {
+        username: queryParams.username,
+        ipAddress: queryParams.ipAddress,
+        status: queryParams.status,
+        actionType: queryParams.actionType,
+        riskLevel: queryParams.riskLevel,
+        created_at__gte: startTime,
+        created_at__lte: endTime,
+      };
+      latestFormValuesRef.value = formValues;
+
       const result = await fetchListLoginAuditLogs(
         new PaginationQuery({
           paging: { page: page || 1, pageSize: pageSize || 10 },
-          formValues: {
-            username: queryParams.username,
-            ipAddress: queryParams.ipAddress,
-            status: queryParams.status,
-            actionType: queryParams.actionType,
-            riskLevel: queryParams.riskLevel,
-            created_at__gte: startTime,
-            created_at__lte: endTime,
-          },
+          formValues,
           orderBy: ["-created_at"],
         })
       );
       return { items: result.items || [], total: result.total || 0 };
     },
-    toolbar: [],
+    toolbar: [
+      {
+        name: "exportServer",
+        label: $t("pages.login_audit_log.exportServer"),
+        icon: "lucide:download",
+      },
+    ],
     toolbarRight: [],
     defaultToolbar: ["refresh", "exports", "filter"],
     tableAttrs: { border: true, stripe: false },

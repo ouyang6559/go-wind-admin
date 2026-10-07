@@ -33,7 +33,7 @@ func newNotificationChannelRepoSqlite(t *testing.T, entClient *entCrud.EntClient
 func TestNotificationChannelRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	id, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -137,7 +137,7 @@ func TestNotificationChannelRepoSqlite_Create(t *testing.T) {
 func TestNotificationChannelRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idWithPwd, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -193,7 +193,7 @@ func TestNotificationChannelRepoSqlite_Get(t *testing.T) {
 func TestNotificationChannelRepoSqlite_List(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idWithPwd, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -244,7 +244,7 @@ func TestNotificationChannelRepoSqlite_List(t *testing.T) {
 func TestNotificationChannelRepoSqlite_IsExist(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	id, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -270,7 +270,7 @@ func TestNotificationChannelRepoSqlite_IsExist(t *testing.T) {
 func TestNotificationChannelRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	id, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -372,7 +372,7 @@ func TestNotificationChannelRepoSqlite_Update(t *testing.T) {
 func TestNotificationChannelRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idA, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -413,7 +413,7 @@ func TestNotificationChannelRepoSqlite_Delete(t *testing.T) {
 func TestNotificationChannelRepoSqlite_GetFirstEnabledEmailChannel(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 干扰行：WEBHOOK 启用（类型不符）、EMAIL 未启用（状态不符）
 	_, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
@@ -490,7 +490,7 @@ func TestNotificationChannelRepoSqlite_GetFirstEnabledEmailChannel(t *testing.T)
 func TestNotificationChannelRepoSqlite_GetFirstEnabledEmailChannel_None(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -511,7 +511,7 @@ func TestNotificationChannelRepoSqlite_GetFirstEnabledEmailChannel_None(t *testi
 func TestNotificationChannelRepoSqlite_GetDecryptedSmtpAccount(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idOn, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -563,7 +563,7 @@ func TestNotificationChannelRepoSqlite_GetDecryptedSmtpAccount(t *testing.T) {
 func TestNotificationChannelRepoSqlite_WebhookColumns(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idWithSecret, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{
@@ -670,7 +670,7 @@ func TestNotificationChannelRepoSqlite_WebhookColumns(t *testing.T) {
 func TestNotificationChannelRepoSqlite_WebhookSignStyleColumns(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const dingTemplate = `{"msgtype":"text","text":{"content":"{{title}}\n{{content}}"}}`
 
@@ -813,7 +813,7 @@ func TestNotificationChannelRepoSqlite_WebhookSignStyleColumns(t *testing.T) {
 func TestNotificationChannelRepoSqlite_GetFirstEnabledWebhookChannel(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 干扰行：启用 EMAIL（类型不符）、停用 WEBHOOK（状态不符）
 	_, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
@@ -880,7 +880,7 @@ func TestNotificationChannelRepoSqlite_GetFirstEnabledWebhookChannel(t *testing.
 func TestNotificationChannelRepoSqlite_GetDecryptedWebhookAccount(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newNotificationChannelRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	idWh, err := repo.Create(ctx, &notificationChannelV1.CreateNotificationChannelRequest{
 		Data: &notificationChannelV1.NotificationChannel{

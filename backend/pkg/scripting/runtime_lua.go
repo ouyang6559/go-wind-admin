@@ -8,10 +8,12 @@ import (
 	lua "github.com/yuin/gopher-lua"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hostmodule"
 	gsLua "github.com/tx7do/go-scripts/lua"
+	"github.com/tx7do/go-scripts/lua/convert"
+	"github.com/tx7do/go-scripts/lua/host"
 
 	"go-wind-admin/pkg/scripting/api"
-	"go-wind-admin/pkg/scripting/internal/convert"
 )
 
 // 本文件是 Lua 语言适配器，实现 runtime.go 中定义的语言无关接口。
@@ -57,9 +59,9 @@ func (b *LuaBinder) WithContext(holder *execCtxHolder, cfg *Config) RuntimeBinde
 }
 
 // httpOpts 从编排器配置取 http 护栏（binder 无 cfg 时 fail-closed 空白名单）。
-func (b *LuaBinder) httpOpts() api.HTTPOptions {
+func (b *LuaBinder) httpOpts() hostmodule.HTTPOptions {
 	if b.cfg == nil {
-		return api.HTTPOptions{}
+		return hostmodule.HTTPOptions{}
 	}
 	return b.cfg.HTTPOptions
 }
@@ -78,10 +80,10 @@ func (b *LuaBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 		name    string
 		builder lua.LGFunction
 	}{
-		{"kratos_logger", api.LoaderLogger(deps.Logger)},
-		{"kratos_crypto", api.LoaderCrypto(deps.Logger)},
-		{"kratos_util", api.LoaderUtil(deps.Logger, sleepCap)},
-		{"kratos_http", api.LoaderHTTP(b.httpOpts())},
+		{"kratos_logger", host.LoaderLogger(deps.Logger)},
+		{"kratos_crypto", host.LoaderCrypto(deps.Logger)},
+		{"kratos_util", host.LoaderUtil(deps.Logger, sleepCap)},
+		{"kratos_http", host.LoaderHTTP(b.httpOpts())},
 	}
 
 	// http 模块即便未配置白名单也注册（fail-closed：脚本调用即收到明确的白名单错误）
@@ -104,13 +106,19 @@ func (b *LuaBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 			builder lua.LGFunction
 		}{"kratos_oss", api.LoaderOSS(deps.OSSClient, deps.Logger)})
 	}
+	if deps.AI != nil {
+		registrations = append(registrations, struct {
+			name    string
+			builder lua.LGFunction
+		}{"kratos_ai", api.LoaderAI(deps.AI, deps.Logger)})
+	}
 
 	// hook 模块（脚本自注册 hook 回调）
 	hookAdapter := &luaHookAdapter{orchestrator: deps.Orchestrator}
 	registrations = append(registrations, struct {
 		name    string
 		builder lua.LGFunction
-	}{"kratos_hook", api.LoaderHook(hookAdapter, deps.Logger)})
+	}{"kratos_hook", host.LoaderHook(hookAdapter, deps.Logger)})
 
 	// task 模块
 	registrations = append(registrations, struct {
@@ -280,12 +288,12 @@ func (c *luaCallback) Call(ctx context.Context, execCtx *Context) (any, error) {
 
 // --- 适配器（供 api 包的 Lua 专用接口使用） ---
 
-// luaHookAdapter 将编排器适配为 api.HookEngine 接口。
+// luaHookAdapter 将编排器适配为 go-scripts/lua/host 包的 HookEngine 接口。
 type luaHookAdapter struct {
 	orchestrator *Engine
 }
 
-var _ api.HookEngine = (*luaHookAdapter)(nil)
+var _ host.HookEngine = (*luaHookAdapter)(nil)
 
 func (a *luaHookAdapter) RegisterHook(name, description string) error {
 	return a.orchestrator.RegisterHook(name, description)

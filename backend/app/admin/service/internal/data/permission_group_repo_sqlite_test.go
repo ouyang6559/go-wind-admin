@@ -41,7 +41,7 @@ func newPermissionGroupRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*en
 func TestPermissionGroupRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	dto, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
 		Data: &permissionV1.PermissionGroup{
@@ -76,7 +76,7 @@ func TestPermissionGroupRepoSqlite_Create(t *testing.T) {
 func TestPermissionGroupRepoSqlite_CreateTreePath(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
 		Data: &permissionV1.PermissionGroup{Name: trans.Ptr("sqlite分组-父")},
@@ -111,7 +111,7 @@ func TestPermissionGroupRepoSqlite_CreateTreePath(t *testing.T) {
 func TestPermissionGroupRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, func() error {
 		_, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
@@ -160,7 +160,7 @@ func TestPermissionGroupRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestPermissionGroupRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
 		Data: &permissionV1.PermissionGroup{Name: trans.Ptr("sqlite分组-Get")},
@@ -191,7 +191,7 @@ func TestPermissionGroupRepoSqlite_Get(t *testing.T) {
 func TestPermissionGroupRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
 		Data: &permissionV1.PermissionGroup{
@@ -229,7 +229,7 @@ func TestPermissionGroupRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
 	permRepo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 叶子分组：可删
 	leaf, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
@@ -283,7 +283,7 @@ func TestPermissionGroupRepoSqlite_Delete(t *testing.T) {
 func TestPermissionGroupRepoSqlite_ListByIDs(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionGroupRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	groupA, err := repo.Create(ctx, &permissionV1.CreatePermissionGroupRequest{
 		Data: &permissionV1.PermissionGroup{Name: trans.Ptr("按ID查-甲")},

@@ -25,7 +25,6 @@
   "updateFailed": "Update failed",
   "deleteFailed": "Delete failed",
   "uploadFailed": "Upload failed",
-  "fetchFailed": "Failed to fetch data",
   "requiredFileName": "Please enter file name",
   "providerMap": {
     "MINIO": "MinIO",

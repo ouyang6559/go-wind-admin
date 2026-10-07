@@ -102,6 +102,19 @@ const system: RouteRecordRaw[] = [
       },
 
       {
+        // 监控告警规则：指标阈值 → 触发通知（联动通知域，平台管理员）
+        path: 'monitor-alerts',
+        name: 'MonitorAlertRule',
+        meta: {
+          order: 10,
+          icon: 'lucide:bell-plus',
+          title: $t('menu.system.monitorAlerts'),
+          authority: ['sys:platform_admin'],
+        },
+        component: () => import('#/views/app/system/monitor_alert/index.vue'),
+      },
+
+      {
         path: 'scripts',
         name: 'ScriptManagement',
         meta: {

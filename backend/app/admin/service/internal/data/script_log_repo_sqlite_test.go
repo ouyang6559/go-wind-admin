@@ -50,7 +50,7 @@ func newScriptLogRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Clie
 func TestScriptLogRepoSqlite_RecordAndList(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptLogRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	repo.Record(ctx, ScriptLogRecord{
 		ScriptID:   0,
@@ -137,7 +137,7 @@ func TestScriptLogRepoSqlite_RecordAndList(t *testing.T) {
 func TestScriptLogRepoSqlite_Purge(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptLogRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	repo.Record(ctx, ScriptLogRecord{
 		ScriptName: "purge_old_row",

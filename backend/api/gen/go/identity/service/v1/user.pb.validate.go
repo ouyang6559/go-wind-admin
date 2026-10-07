@@ -128,6 +128,10 @@ func (m *User) validate(all bool) error {
 		// no validation rules for Region
 	}
 
+	if m.Locale != nil {
+		// no validation rules for Locale
+	}
+
 	if m.Description != nil {
 		// no validation rules for Description
 	}

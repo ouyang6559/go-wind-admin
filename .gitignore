@@ -37,8 +37,9 @@ bin/
 backendr/target/
 
 # ZCode CLI - 忽略会话级临时产物（plans/state 等），保留项目级 skills
-.zcode/*
-!.zcode/skills/
+# （**/ 前缀使规则覆盖任意层级子目录，如 frontend/admin/.zcode/）
+**/.zcode/*
+!**/.zcode/skills/
 
 # 浏览器 e2e 测试产物（截图、playwright 缓存）
 chk-*.png

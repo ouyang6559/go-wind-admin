@@ -7,6 +7,8 @@ import enUS from 'antd/locale/en_US';
 
 import { usePreferencesStore } from '../../store';
 import { DARK_PALETTE, darkThemeComponents, darkThemeTokens } from '../../config';
+import { SECONDARY_TEXT_DARK, SECONDARY_TEXT_LIGHT } from '../../config/constants';
+import { mixColor } from '@/utils/color';
 import type { SupportedLanguagesType } from '../../types';
 
 export interface ThemeProviderProps {
@@ -56,7 +58,22 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       colorSuccess: themePrefs.colorSuccess,
       colorWarning: themePrefs.colorWarning,
       colorError: themePrefs.colorDestructive,
+      // §2.1 声明"react 端 colorInfo 同值"，但代码里从未设过 colorInfo/colorLink，
+      // 于是链接与 info 态走 antd 默认 #1677FF（浅色实测：链接文字 #1677FF on 白 4.10:1，
+      // 且与主色 #006BE6 不同蓝）。显式钉住主色后链接 = #006BE6 on 白 4.76:1。
+      colorInfo: themePrefs.colorPrimary,
+      // 暗色下不能直接用主色当链接色：darkAlgorithm 把 #006BE6 再派生成 #035EC7，
+      // 实测"收起/文档/公告"等链接文字 2.90:1（暗色大底 #111827 上）；按 §2.1 文字档
+      // 反解（主色 70% + 白 30%）= #4D97EE，同底 5.89:1。
+      colorLink:
+        effectiveMode === 'dark'
+          ? mixColor(themePrefs.colorPrimary, '#ffffff', 0.7)
+          : themePrefs.colorPrimary,
       borderRadius: Number.parseInt(themePrefs.radius) || 6,
+      // colorTextDescription 驱动 .ant-typography-secondary / 面包屑分隔符 /
+      // Descriptions 标签 / Empty 描述——antd 默认 rgba(0,0,0,.45) 实测只有 3.35:1（浅色）
+      // 且暗色派生到 #6E7681 只有 3.86:1；两侧都按 §2.2 钉成"次要文字"档。
+      colorTextDescription: effectiveMode === 'dark' ? SECONDARY_TEXT_DARK : SECONDARY_TEXT_LIGHT,
     };
 
     // 暗黑模式叠加蓝调深色色阶（背景/文字/边框/填充分层），亮色保持 antd 默认
@@ -101,15 +118,22 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     };
   }, [effectiveMode]);
 
-  // 4.1 主色锚点变量：错误页插画等自定义 CSS 的取色源（随偏好主色联动）。
+  // 4.1 主色/语义色锚点变量：错误页插画等自定义 CSS 的取色源，同时是
+  // styles/semantic-text.css 里「语义色作文字」降档的输入（换主色后文字档跟着联动）。
   // 写在 <html> 上——antd v6 的 --ant-* cssVar 只注入在包裹层内，<html> 作用域引用会落空。
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--app-color-primary', themePrefs.colorPrimary);
+    root.style.setProperty('--app-color-success', themePrefs.colorSuccess);
+    root.style.setProperty('--app-color-warning', themePrefs.colorWarning);
+    root.style.setProperty('--app-color-destructive', themePrefs.colorDestructive);
     return () => {
       root.style.removeProperty('--app-color-primary');
+      root.style.removeProperty('--app-color-success');
+      root.style.removeProperty('--app-color-warning');
+      root.style.removeProperty('--app-color-destructive');
     };
-  }, [themePrefs.colorPrimary]);
+  }, [themePrefs.colorPrimary, themePrefs.colorSuccess, themePrefs.colorWarning, themePrefs.colorDestructive]);
 
   // 5. 应用 CSS 滤镜（色弱 / 灰色模式）
   useEffect(() => {

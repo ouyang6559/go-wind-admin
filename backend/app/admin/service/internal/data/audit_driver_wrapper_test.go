@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	sqlutil "github.com/tx7do/go-utils/sqlutil"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/audit"
 )
@@ -65,7 +66,7 @@ func TestAuditDriver_CollectsQueryEvent(t *testing.T) {
 		require.False(t, ev.IsWrite)
 		require.Equal(t, int64(-1), ev.AffectedRows)
 		require.True(t, ev.DataMasked)
-		require.Equal(t, audit.MaskingRules, ev.MaskingRules)
+		require.Equal(t, sqlutil.MaskingRules, ev.MaskingRules)
 		require.Equal(t, sha256Hex(ev.SqlText), ev.SqlDigest, "摘要必须与脱敏文本一致")
 	}
 }
@@ -85,7 +86,7 @@ func TestAuditDriver_CollectsWriteEvent(t *testing.T) {
 	for _, ev := range *events {
 		require.Equal(t, "sqlite3", ev.Dialect)
 		require.True(t, ev.DataMasked)
-		require.Equal(t, audit.MaskingRules, ev.MaskingRules)
+		require.Equal(t, sqlutil.MaskingRules, ev.MaskingRules)
 		require.Equal(t, sha256Hex(ev.SqlText), ev.SqlDigest)
 		if ev.IsWrite {
 			writes++
@@ -114,7 +115,7 @@ func TestAuditDriver_TxEvents(t *testing.T) {
 			continue
 		}
 		require.True(t, ev.DataMasked)
-		require.Equal(t, audit.MaskingRules, ev.MaskingRules)
+		require.Equal(t, sqlutil.MaskingRules, ev.MaskingRules)
 		require.Equal(t, sha256Hex(ev.SqlText), ev.SqlDigest)
 		if ev.IsWrite {
 			txWrites++

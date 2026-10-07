@@ -27,7 +27,7 @@ func newDashboardRepoSqlite(t *testing.T) *DashboardRepo {
 // CountActiveUsers / CountRoles / CountTodayLogins / CountTodayOperations 均为 0。
 func TestDashboardRepoSqlite_CountEmptyTables(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	n, err := repo.CountActiveUsers(ctx)
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestDashboardRepoSqlite_CountEmptyTables(t *testing.T) {
 func TestDashboardRepoSqlite_CountUsersAndRoles(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, client.User.Create().SetUsername("sqlite_dash_user_a").Exec(ctx))
 	require.NoError(t, client.User.Create().SetUsername("sqlite_dash_user_b").Exec(ctx))
@@ -71,7 +71,7 @@ func TestDashboardRepoSqlite_CountUsersAndRoles(t *testing.T) {
 func TestDashboardRepoSqlite_CountTodayLoginsAndOperations(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	now := time.Now()
 	for i := 0; i < 2; i++ {
@@ -102,7 +102,7 @@ func TestDashboardRepoSqlite_CountTodayLoginsAndOperations(t *testing.T) {
 func TestDashboardRepoSqlite_LoginTrend(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	now := time.Now()
 	for i := 0; i < 2; i++ {
@@ -149,7 +149,7 @@ func TestDashboardRepoSqlite_LoginTrend(t *testing.T) {
 // TestDashboardRepoSqlite_LoginTrendNoData 验证空数据时全部桶为 0。
 func TestDashboardRepoSqlite_LoginTrendNoData(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	trend, err := repo.LoginTrend(ctx, 4)
 	require.NoError(t, err)
@@ -164,7 +164,7 @@ func TestDashboardRepoSqlite_LoginTrendNoData(t *testing.T) {
 func TestDashboardRepoSqlite_OperationActionDistribution(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	now := time.Now()
 	for i := 0; i < 2; i++ {
@@ -193,7 +193,7 @@ func TestDashboardRepoSqlite_OperationActionDistribution(t *testing.T) {
 func TestDashboardRepoSqlite_LoginStatusDistribution(t *testing.T) {
 	repo := newDashboardRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	now := time.Now()
 	for i := 0; i < 2; i++ {

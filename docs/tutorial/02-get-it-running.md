@@ -94,9 +94,9 @@ cd backend/app/admin/service && go run ./cmd/server -c ./configs
 
 | 端 | 目录 | 启动 | 端口 |
 |---|---|---|---|
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm install && pnpm dev:antd` | 5666 |
-| Vue Element | `frontend/admin/vue-element` | `pnpm install && pnpm dev` | 5777 |
-| React | `frontend/admin/react` | `pnpm install && pnpm dev` | 5888 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm install && pnpm dev:antd` | 15666 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm install && pnpm dev` | 15777 |
+| React | `frontend/admin/react` | `pnpm install && pnpm dev` | 15888 |
 
 端口写在 `.env.development` 里但键名三端各异（react `VITE_SERVER_PORT` / vue-element `VITE_APP_PORT`
 / vue-vben `VITE_PORT`，见第 01 章）；被占用时 vite 会自动顺延一个端口，**启动日志里有实际端口**，
@@ -115,7 +115,7 @@ cd backend/app/admin/service && go run ./cmd/server -c ./configs
 |---|---|---|
 | 后端 REST API | <http://localhost:7788> | 所有管理接口 + Swagger（`/docs`） |
 | 后端 SSE | <http://localhost:7789/events> | 服务端推送 |
-| React / Vue Element / Vue Vben | 5888 / 5777 / 5666 | Vite dev server |
+| React / Vue Element / Vue Vben | 15888 / 15777 / 15666 | Vite dev server |
 | MinIO Console | <http://localhost:9001> | 对象存储管理界面（root / \*Abcd123456） |
 | PostgreSQL / Redis | 5432 / 6379 | 仅本机后端使用 |
 

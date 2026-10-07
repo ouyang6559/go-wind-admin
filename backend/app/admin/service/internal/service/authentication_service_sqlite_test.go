@@ -88,6 +88,8 @@ type authSvcUserRepoStub struct {
 	roleIDsByUser     map[uint32][]uint32
 	updates           []*identityV1.UpdateUserRequest
 	findIdentifierErr error
+	// emailToUserID SSO 测试用：email → userID 映射（nil = 走默认 identifier 直返）
+	emailToUserID map[string]uint32
 }
 
 func (s *authSvcUserRepoStub) Get(_ context.Context, req *identityV1.GetUserRequest) (*identityV1.User, error) {
@@ -104,6 +106,16 @@ func (s *authSvcUserRepoStub) ListRoleIDsByUserID(_ context.Context, userID uint
 func (s *authSvcUserRepoStub) FindUsernameByIdentifier(_ context.Context, _ uint32, identifier string) (string, uint32, error) {
 	if s.findIdentifierErr != nil {
 		return "", 0, s.findIdentifierErr
+	}
+	if s.emailToUserID != nil {
+		if uid, ok := s.emailToUserID[identifier]; ok {
+			// 与生产一致：返回 username + userID（非 0 即命中）
+			if u, ok := s.usersByID[uid]; ok {
+				return u.GetUsername(), uid, nil
+			}
+			return identifier, uid, nil
+		}
+		return identifier, 0, nil
 	}
 	return identifier, 0, nil
 }
@@ -143,7 +155,7 @@ type authSvcEnv struct {
 	stub          *authSvcUserRepoStub
 	mr            *miniredis.Miniredis
 	captchaClient *captcha.Captcha
-	ctx           context.Context // SystemViewer（仅用于种子数据写入）
+	ctx           context.Context // SystemContext（仅用于种子数据写入）
 }
 
 // newAuthenticationServiceForTest 白盒复刻 NewAuthenticationService 的字段初始化：
@@ -211,7 +223,7 @@ func newAuthenticationServiceForTest(t *testing.T) *authSvcEnv {
 		stub:          stub,
 		mr:            mr,
 		captchaClient: captchaClient,
-		ctx:           enttest.NewSystemViewerCtx(context.Background()),
+		ctx:           enttest.NewSystemContext(context.Background()),
 	}
 }
 

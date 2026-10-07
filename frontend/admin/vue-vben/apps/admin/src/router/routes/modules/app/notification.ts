@@ -59,6 +59,19 @@ const notification: RouteRecordRaw[] = [
         },
         component: () => import('#/views/app/notification/delivery/index.vue'),
       },
+
+      {
+        // 通知模板：可复用的标题/正文占位模板，发送方以 template_code 引用
+        path: 'templates',
+        name: 'NotificationTemplateManagement',
+        meta: {
+          order: 4,
+          icon: 'lucide:layout-template',
+          title: $t('menu.notification.templates'),
+          authority: ['sys:platform_admin'],
+        },
+        component: () => import('#/views/app/notification/template/index.vue'),
+      },
     ],
   },
 ];

@@ -29,7 +29,6 @@
   "createFailed": "Creation failed",
   "updateFailed": "Update failed",
   "deleteFailed": "Delete failed",
-  "fetchFailed": "Failed to fetch data",
   "statusMap": {
     "ON": "Active",
     "OFF": "Inactive"
@@ -56,7 +55,8 @@
       "address": "Address",
       "region": "Region",
       "lastLoginAt": "Last Login At",
-      "lastLoginIp": "Last Login IP"
+      "lastLoginIp": "Last Login IP",
+      "permissions": "Permission set"
     }
   }
 }

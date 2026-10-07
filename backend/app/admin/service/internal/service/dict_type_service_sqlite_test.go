@@ -35,7 +35,7 @@ func newDictTypeServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.C
 func TestDictTypeServiceSqlite_CreateAndGet(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictTypeServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &dictV1.CreateDictTypeRequest{
@@ -71,7 +71,7 @@ func TestDictTypeServiceSqlite_CreateAndGet(t *testing.T) {
 func TestDictTypeServiceSqlite_List(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictTypeServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	for _, tc := range []struct{ code, name string }{
@@ -114,7 +114,7 @@ func TestDictTypeServiceSqlite_List(t *testing.T) {
 func TestDictTypeServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictTypeServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &dictV1.CreateDictTypeRequest{
@@ -147,7 +147,7 @@ func TestDictTypeServiceSqlite_Update(t *testing.T) {
 func TestDictTypeServiceSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newDictTypeServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	for _, code := range []string{"svc-dt-del-code-a", "svc-dt-del-code-b"} {

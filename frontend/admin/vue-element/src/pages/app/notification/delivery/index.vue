@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full flex flex-1 flex-col">
-    <ProPage ref="pageRef" :config="pageConfig">
+    <ProPage ref="pageRef" :config="pageConfig" @toolbar="handleToolbar">
       <!-- 渠道 -->
       <template #channel="scope: any">
         <ElTag
@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from "vue";
-import { ElMessage, ElTag } from "element-plus";
+import { ElTag } from "element-plus";
 
 import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
@@ -49,8 +49,10 @@ import {
   notificationDeliveryStatusToName,
   notificationDeliveryStatusToType,
 } from "@/api/composables";
+import { serverExportFile } from "@/api/composables/server-export";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
+import { ElMessage } from "element-plus";
 
 /**
  * 通知投递台账（只读）
@@ -64,6 +66,38 @@ import { $t } from "@/core/i18n";
  * 分辨它靠 attempts，见该列注释。
  */
 const pageRef = ref();
+
+// 当前搜索条件（服务端导出透传用，与列表 listAction 同源——"导出的就是当前搜索看到的"）
+const latestFormValuesRef = ref<Record<string, unknown>>({});
+
+// 服务端全量导出（平台管理员专属闸在后端；本页与台账读接口同权限语义）。
+const exportingServer = ref(false);
+async function handleServerExport() {
+  if (exportingServer.value) return;
+  exportingServer.value = true;
+  try {
+    await serverExportFile(
+      "admin/v1/notification-deliveries:export",
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
+    ElMessage.success($t("pages.notification_delivery.exportServerSuccess"));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error("server-side export failed", error);
+    ElMessage.error(error?.message || $t("pages.notification_delivery.exportServerFailed"));
+  } finally {
+    exportingServer.value = false;
+  }
+}
+
+// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
+// exportServer 是工具栏按钮，此处承接。
+function handleToolbar(name: string) {
+  if (name === "exportServer") {
+    handleServerExport();
+    return;
+  }
+}
 
 const pageConfig = computed<ProPageConfig<NotificationDelivery>>(() => ({
   skeleton: true,
@@ -108,28 +142,28 @@ const pageConfig = computed<ProPageConfig<NotificationDelivery>>(() => ({
 
     listAction: async (query: any) => {
       const { page, pageSize, ...queryParams } = query;
-      try {
-        const result = await fetchListNotificationDeliveries(
-          new PaginationQuery({
-            paging: { page: page || 1, pageSize: pageSize || 20 },
-            formValues: {
-              eventType: queryParams.eventType,
-              channel: queryParams.channel,
-              target: queryParams.target,
-              status: queryParams.status,
-            },
-            orderBy: ["-created_at"],
-          })
-        );
-        return { items: result.items || [], total: result.total || 0 };
-      } catch (error: any) {
-        // 不吞错：ElMessage 只是给用户看的文案，排查要靠控制台里的原始错误对象
-        console.error("list notification deliveries failed:", error);
-        ElMessage.error(error?.message || $t("pages.notification_delivery.fetchFailed"));
-        return { items: [], total: 0 };
-      }
+      latestFormValuesRef.value = {
+        eventType: queryParams.eventType,
+        channel: queryParams.channel,
+        target: queryParams.target,
+        status: queryParams.status,
+      };
+      const result = await fetchListNotificationDeliveries(
+        new PaginationQuery({
+          paging: { page: page || 1, pageSize: pageSize || 20 },
+          formValues: latestFormValuesRef.value,
+          orderBy: ["-created_at"],
+        })
+      );
+      return { items: result.items || [], total: result.total || 0 };
     },
-    toolbar: [],
+    toolbar: [
+      {
+        name: "exportServer",
+        label: $t("pages.notification_delivery.exportServer"),
+        icon: "lucide:download",
+      },
+    ],
     toolbarRight: [],
     defaultToolbar: ["refresh", "exports", "filter"],
     tableAttrs: { border: true, stripe: false },

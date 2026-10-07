@@ -139,3 +139,22 @@ html.invert-mode {
 html.grayscale-mode {
   filter: grayscale(1);
 }
+
+// ============================================
+// 4. Chrome 自动填充底色覆盖
+//     保存过密码的浏览器上，Chrome 密码管理器按账号/密码语义填充登录框，
+//     并在页面样式之上强制绘制 input:-webkit-autofill 白底（background
+//     无法覆盖），暗色主题下账号/密码两个输入框因此整块发白；无痕窗口
+//     没有已存密码、不触发填充，所以"看起来正常"。box-shadow inset 用
+//     输入框自身 token 底色（el-input 底色即 --el-input-bg-color，暗亮
+//     两主题同源）盖回，text-fill-color 恢复文字色，无限过渡作双保险。
+// ============================================
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--el-text-color-regular);
+  caret-color: var(--el-text-color-regular);
+  -webkit-box-shadow: 0 0 0 1000px var(--el-input-bg-color, var(--el-fill-color-blank)) inset;
+  transition: background-color 99999s ease-in-out 0s;
+}

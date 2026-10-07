@@ -104,10 +104,10 @@ SSE 扇出与 streamID 归属校验（`HandleAuthorize` 不匹配即 403）都�
 2. **收件行租户归属确实有 bug，但不是"从未赋值 / 落 NULL"。** 机制实测为：repo 会调
    `SetNillableTenantID`（值来自调用方），列上 `Default(0)` 所以缺值是 **0 而非 NULL**；
    租户上下文下 go-crud `TenantPrivacy` 还会强制覆盖为 viewer 租户。
-   真正的破口是 `AsyncBroadcastMessage` 无条件用 `SystemViewer` 重建 ctx：
+   真正的破口是 `AsyncBroadcastMessage` 无条件用 `SystemContext` 重建 ctx：
    平台上下文放行 → ① `userRepo.List` 不受租户约束，**租户管理员的"全员广播"实际向全平台用户扇出**；
    ② 收件行落成 `tenant_id=0`，而收件箱读取被强制过滤为本租户 → **谁都读不到**。
-   修复：任务载荷带 `TenantId`，handler 据此构造 `UserViewer` ctx；`executeBroadcast` 的租户
+   修复：任务载荷带 `TenantId`，handler 据此构造 `UserContext` ctx；`executeBroadcast` 的租户
    **从 ctx 的 viewer 反取**而非另传一份，使"受众范围"与"行打标"不可能分叉。回退 goroutine 路径
    本来就带着请求 viewer，无需改。
    （P2-2 之后这一句只对**受众范围**成立：viewer 租户决定扇出到哪，行打标改由**每个收件用户自己的**租户逐行决定，
@@ -331,10 +331,10 @@ vben 端乐观插入拿到 `messageId:0` + Invalid Date，其去重逻辑随后�
 | C 路由规则表 + WEBHOOK 出口 | 已完成 | 2026-09-20 | `sys_notification_rules`、WEBHOOK 渠道、测试投递 |
 | C7 全新安装链路 + 平台侧授权 | 已完成 | 2026-09-20 | 装到没装过的库上跑一遍、通知域补 `requirePlatformAdmin` |
 | 欠账 1 失败路径也落 `channel_id` | 已完成 | 2026-09-21 | 失败行不再空挂渠道 |
-| 欠账 2 租户侧边栏整箱被清空 | **未修** | — | 成因已实测定位，修法写在同一节里，差在"等点头"（改的是全部租户的可见菜单集） |
+| 欠账 2 租户侧边栏整箱被清空 | 已完成 | 2026-10-02 | `TenantRepo` 读侧补 `WithPlan()` 边回填；vben 抽屉读写不同键一并修 |
 | M 通知域提为一级菜单 | 已完成 | 2026-09-21 | 菜单树重排 + 启动期 identity 序列自愈 |
 | N WEBHOOK 出站风格与载荷模板 | 已完成 | 2026-09-21 | 五种签名风格 + 载荷模板 |
-| P3 偏好与模板 | **未开始** | — | 用户通知偏好 / 分类退订 / 静音时段 + 模板管理，单独排期 |
+| P3 偏好与模板 | **已完成** | 2026-10-03 | 第一片偏好/退订/静音 + 第二片模板管理与渲染均落（见 §4 P3）；ele/vben 两块页面移植待做 |
 
 > 各小节里"今天/现在还剩 X"的措辞都是**写下那一段时的现场快照**，别拿来当当前进度读；进度只看上表。
 > §7 里带日期的实测记录同理：它记的是"当时那一格验过什么"，不随后续改动回写。
@@ -413,9 +413,9 @@ vue-element 的 `if (!data.id || !data.messageId) return` 把**每一条广播�
 1. **写侧定向路径**：`sendNotification` 的收件行租户改为查收件用户（`recipientTenantID` → `userRepo.Get`），
    不再取操作人 viewer；查不到时回退 viewer 租户并留 error（回退成 0 会把行藏进"平台"这个谁都读不到的地方）。
 2. **写侧广播路径**：`executeBroadcast` 逐行取受众 DTO 自带的 `tenant_id`，不再整批取 viewer 租户。
-   平台管理员的广播在 SystemViewer 下跑，viewer 租户恒为 0，按它打标等于把全平台的收件行写进租户 0。
+   平台管理员的广播在 SystemContext 下跑，viewer 租户恒为 0，按它打标等于把全平台的收件行写进租户 0。
    受众没带租户时（`tenant_id=0` 而广播方是租户）按广播方租户兜底并留 error —— 这是 go-crud DTO 映射退化的唯一可察觉窗口。
-3. **读侧**：`ListUserInbox` 回填父消息改走 SystemViewer。平台公告的父消息行落在租户 0，而收件行按读者租户过滤，
+3. **读侧**：`ListUserInbox` 回填父消息改走 SystemContext。平台公告的父消息行落在租户 0，而收件行按读者租户过滤，
    用读者的 viewer 读父消息 → 收件箱有行、标题正文为空（推送侧从内存 DTO 取正文，反而是全的，两条路径就此分叉）。
    `messageIds` 全部来自已按读者租户过滤过的收件行，"能读到这条收件行"就是授权凭据，不构成跨租户读取口。
 
@@ -442,7 +442,7 @@ vue-element 的 `if (!data.id || !data.messageId) return` 把**每一条广播�
 **用户删除不级联凭证**是本次顺手发现的一个既有缺口（不在本次范围内，登录侧因用户已不存在而 fail-closed）。
 
 回归测试：`TestInternalMessageServiceSqlite_PlatformBroadcastIsReadableByTenantUser`（平台广播 → 两个租户的读者各读到自己的行 + 标题正文）、
-`TestNotifySeamDirectedSend`（收件行落在收件人租户而非 SystemViewer 的租户 0）、
+`TestNotifySeamDirectedSend`（收件行落在收件人租户而非 SystemContext 的租户 0）、
 `TestInternalMessageRecipientTenantSqlite` 的 `listAs(t, uid)`（同租户换一个收件人就读不到）。
 
 **环境发现（不是代码缺陷，但会让广播看起来"没发"**）：本机 `backend` 与同机其他项目的 asynq 共用同一个
@@ -509,7 +509,7 @@ asynq 消费者 —— 三种情况都会留下一行永远 `SENDING` 的台账�
 1. **落点形状 = 系统级常驻任务**（这条口径的权威说明在 `docs/task_system.md` §5.6）：类型与 cron 常量在
    `pkg/task/notification_delivery_sweep.go`（`notification_delivery_sweep` / `*/5 * * * *`），handler 是
    `NotificationService.AsyncDeliverySweep`，订阅在 `NewAsynqServer`，cron 重注册在 `TaskService.startAllTask`
-   末尾 —— 因此它不进 `sys_tasks`，任务管理页看不见也停不掉，跑在 SystemViewer 上下文下。
+   末尾 —— 因此它不进 `sys_tasks`，任务管理页看不见也停不掉，跑在 SystemContext 上下文下。
 2. **年龄锚点用 `created_at`，不是 `updated_at`**：本仓没有任何一处会写 `updated_at`（mixin 列
    `Optional().Nillable()` 且无默认值），下表里被扫过的那两行至今 `updated_at` 为空 —— 这就是证据。
    顺带复用已有的 `(status, created_at)` 索引。代价是"一行被合法地反复推进"这种场景扫不出来，目前没有这种场景。
@@ -872,7 +872,7 @@ webhook 侧三条失败用例（SSRF 拦下 / 对端 5xx / 配置不可用）按
 **门禁**：本块纯后端 + 文档，三端未动。`go build ./...` 通过，`go vet ./app/admin/service/internal/data/... ./app/admin/service/internal/service/...` 无输出，
 `go test -count=1 ./app/...` 六个包全绿。
 
-### 欠账 2（租户侧边栏整箱被清空：成因已定位，**未修**，2026-09-21）
+### 欠账 2（租户侧边栏整箱被清空：成因已定位，~~未修~~ **已修 2026-10-02**）
 
 **编号口径**：§4 里的「欠账 1 / 欠账 2」是"把代码侧的欠账先做完"这一轮排出来的两块，
 与 §7 待办里那两项 `D1`、`D2`（mailpit 成功投递实测 / 已部署实例「接口同步」后的 403→200 复测）不是同一套编号。
@@ -918,7 +918,7 @@ webhook 侧三条失败用例（SSRF 拦下 / 对端 5xx / 配置不可用）按
 模块门禁真正生效的地方是 Api 表闸门（§4 C7 那两格 403 `module not allowed` 就是它），所以这一格属显示层缺陷、
 不构成数据越权 —— 但"套餐白名单已经管不住菜单"这件事必须记下来，否则改完 `plan_id` 会以为门禁在生效。
 
-**修法（未做，等点头）**：`TenantRepo` 的读路径补边回填，形状照 `plan_module_repo.go:112-114` ——
+**修法（2026-10-02 已按此落地，见 §7 对应条目）**：`TenantRepo` 的读路径补边回填，形状照 `plan_module_repo.go:112-114` ——
 `Get`/`List` 的 builder 加 `WithPlan()`，DTO 上 `if e.Edges.Plan != nil { dto.PlanId = &e.Edges.Plan.ID }`。
 不在通知域范围内，而且它改变的是**所有租户用户的侧边栏可见集**（今天全空 → 修完变成"按套餐白名单"），
 影响面比本轮通知域那两块大；若同时想把白名单真正接上（递归过滤叶子），那是第三次行为变化，
@@ -1177,10 +1177,27 @@ react 与 ele 只读渲染（tooltip / 行内 help、五个风格选项、textar
 
 ### P3 偏好与模板
 
-用户通知偏好 / 分类退订 / 静音时段 + 模板管理与渲染。今天这三样全部不存在
-（`pkg/constants/default_data.go:1023` 的 `DefaultConfigs` 只有 3 条等保口令阈值，无通知相关；
-提交 `9f10f789` 曾删掉 ele+vben 个人中心一个假的"消息通知" tab，理由正是"无用户通知偏好能力"）。
-这是 IM 那套里工作量最大的部分，单独排期。
+两片均已完成。**第一片（用户通知偏好 / 分类退订 / 静音时段）完成 2026-10-03**：
+每用户一行 `sys_notification_preferences`（ent schema `notification_preference.go`，**刻意无租户 mixin**——偏好跟人不跟租户，
+广播在 SystemContext 下跨租户读偏好，挂租户 mixin 会让其他租户收件人的偏好永远查不到；访问锚是服务端钉定的 user_id），
+字段为静音开关 + 起止分钟数（`[start, end)` 左闭右开、跨零点 start>end 合法、start==end 拒绝）+ 退订分类 ID JSON 列。
+执行语义两条，都钉在 SQLite 集成测试里：**分类退订只约束全员广播**（`executeBroadcast` 按页批量读偏好，退订者整行不落库不推送；
+点对点定向发送不受退订影响）；**静音时段只抑制 SSE 实时推送**（收件行照常落库，DND 语义；定向路径 `sendNotification` 同样生效）。
+偏好层全部 fail-open（仓储未接线/查询失败 → 按无人配置处理，只影响打扰度不影响到达）。
+自助入口 `NotificationPreferenceService`（GET/POST `/admin/v1/notification-preference` + `/categories`，
+user_id 从操作人钉定，映射进 INTERNAL_MESSAGE 模块供 Api 表闸门放行）；react 先行的个人中心「通知偏好」tab 已落地
+（ele/vben 移植待做）。事务性出站（找回密码/换绑验证码邮件）不经偏好层，不受静音/退订影响。
+
+**第二片（模板管理与渲染）完成 2026-10-03**：`sys_notification_templates`（平台全局、code 全局唯一，
+与渠道/规则同域）+ 六个 RPC（CRUD + Render 试渲染），渲染内核 `renderTemplate` 单趟扫描、
+未识别占位符报错并带名字、未闭合 `{{` 按原文保留、值不转义（产物是纯文本）；
+`SendDirect` 新增 `template_code` + `template_vars`——渲染发生在落台账之前，异步载荷装渲染结果，
+重试不重新解析模板；模板不存在/停用/缺变量一律报错且零台账行。建/改模板**不做**空变量集试渲染
+（带占位符是模板本义），占位符拼错由渲染时报错暴露、管理页预览即可发现。
+种子菜单 id 101（/notification/templates）；已部署实例落地 = 「接口同步」+「菜单同步」+ 权限勾选。
+react 先行页面已落（/notification/templates，预览弹窗结果就地展示）；ele/vben 页面移植待做。
+
+**事务性邮件已接入模板覆写（2026-10-03）**：找回密码/换绑验证码/渠道测试/规则测试通知四类出站按约定 code（pwd_reset_code / contact_bind_code / channel_test_email / rule_test_notification）查模板渲染，缺失/停用/渲染失败静默回落 mailtext 内置文案——事务性邮件是认证关键路径，模板配置问题绝不阻断发送（与 SendDirect 显式 template_code 的报错语义分级不同：隐式覆写回落、显式点名报错）。实现 transactional_mail.go，TransactionMailer 注入 AuthenticationService/UserProfileService/NotificationChannelService。
 
 ## 5. 与 go-wind-im 的可抄性对照
 
@@ -1238,7 +1255,7 @@ react 与 ele 只读渲染（tooltip / 行内 help、五个风格选项、textar
    已覆盖全平台，只需把每行的 tenant 换成**收件用户自己的** `tenant_id`）、收件箱读侧对 `tenant_id=0`
    开口（要改隔离层，风险大）、或明确"平台公告不进站内信、只走站内公告栏"。
    选了第一条：改动局限在站内信的写侧与读侧，不碰隔离层。**落地比原设想多一处**——收件行按受众打标之后，
-   父消息（平台公告本体）仍在租户 0，收件箱回填必须换 SystemViewer 才读得到，否则"有行没标题"（见 §4 P2-2 第 3 条）。
+   父消息（平台公告本体）仍在租户 0，收件箱回填必须换 SystemContext 才读得到，否则"有行没标题"（见 §4 P2-2 第 3 条）。
    **P2 补充事实（2026-09-20 实测）**：定向路径的收件行 `tenant_id` 取的是**操作人** viewer 的租户
    （改缝前后同形，实测 admin→tenant_admin 一次投递落 `tenant_id=0`），所以"平台公告租户读不到"
    这个缺陷在定向路径上同样存在，不止广播。已按同一规则一起覆盖两个入口。
@@ -1466,14 +1483,19 @@ gow run admin
       连带后果：**异步重试从第二次起显式钉住第一次那条配置**（`dispatchRequest` 读台账的 `channel_id`），
       于是一次投递只有一次渠道答案，中途把它停用/删除会让剩下的尝试变成 SKIPPED，而不是改选下一条。
       实测的对照行、行为变化理由与探针账目见 §4 欠账 1。
-- [ ] 欠账 2 **未修，跨域等点头**：租户侧边栏整箱被清空（`GET /admin/v1/routes` → `{"items":[]}`）。
-      成因已定位并实测：`plan_id` 是 ent 的**边外键**而非字段，`TenantRepo` 的 copier mapper 读不到非导出字段，
-      于是 `filterMenusByPlanWhitelist` 的 `t.PlanId == nil` 命中、无日志 `return nil`。
-      修法是读侧补 `WithPlan()` + 手工回填 `dto.PlanId`（照 `plan_module_repo.go:112-114`），
-      **但它属套餐/租户导航域**、改变的是全部租户用户可见的菜单集，所以本轮只交成因。
-      同一段代码另两格顺带记下：白名单只遍历顶层节点而顶层根菜单一条都不带 `module`（当时 9 条根 / 实际过滤面 0/35；
-      M 块之后重测为 47 行 / 根 10 条 / 带 module 0 条，结论不变，见 §4 M），
-      以及**三端**租户编辑抽屉的「订阅套餐」下拉在编辑态恒为空（vben 那份还读写不同键）。全在 §4 欠账 2。
+- [x] 欠账 2 **已修（2026-10-02）**：租户侧边栏整箱被清空（`GET /admin/v1/routes` → `{"items":[]}`）。
+      成因即当时定位的：`plan_id` 是 ent 的**边外键**而非字段，`TenantRepo` 的 copier mapper 读不到非导出字段，
+      `filterMenusByPlanWhitelist` 的 `t.PlanId == nil` 命中、无日志 `return nil`。
+      修法照原案落地：`tenant_repo.go` 的 `Get`/`List` 读侧补 `WithPlan()` 预载并手工回填 `dto.PlanId`
+      （`Get` 因 `repository.Get` 泛型实现拿不到 entity，按其语义展开为 mask 归一化 + 列裁剪 + `Only` 后回填；
+      `List` 改手写映射循环 + 独立 count builder）。
+      回归测试 `tenant_repo_sqlite_test.go` 的 `TestTenantRepoSqlite_PlanIdEdgeBackfill`
+      （带套餐/无套餐 × Get 按主键/按 code/List）；e2e 实测：新建绑套餐租户后，平台侧 Get/List 响应带 `planId`，
+      租户 token 的 `/admin/v1/routes` 从 `{"items":[]}` 恢复为 6 条根节点（与本文记录的根容器数一致），探针数据即建即删。
+      **白名单只遍历顶层节点、叶子从不被检查这一格未动**（递归过滤是第三次行为变化，仍需单独确认；
+      在此之前"修完 plan_id 后白名单实际过滤面为 0"的旧结论依然成立——租户侧边栏恢复的是"全部授权菜单"）。
+      同段第三症状同步收口：三端租户编辑抽屉「订阅套餐」编辑态回填恢复（react/ele 本就读写同键、只差后端回填）；
+      vben 那份读写不同键（表单字段 `subscriptionPlan` 吃遗留字符串列、提交却当 `planId`）已把表单字段改名 `planId` 统一。
 
 P2 新增事件类型时的落点清单（一枚 `INTERNAL_MESSAGE` 要逐个点到的地方，漏任一处都是静默不一致）。
 **C 之后第一行变了**：路由不再是 Go 表，而是"播种一行默认规则 + 页面可改"：

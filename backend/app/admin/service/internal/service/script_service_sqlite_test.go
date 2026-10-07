@@ -51,7 +51,7 @@ func newScriptServiceForTest(t *testing.T) (*ScriptService, *ent.Client) {
 // nil 请求、nil Data、空名、空源码、不支持语言均拒绝且不落库。
 func TestScriptService_CreateValidation(t *testing.T) {
 	svc, client := newScriptServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, nil)
@@ -85,7 +85,7 @@ func TestScriptService_CreateValidation(t *testing.T) {
 // 改为全新名成功。
 func TestScriptService_CreateNameConflict(t *testing.T) {
 	svc, client := newScriptServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &scriptV1.CreateScriptRequest{
@@ -120,7 +120,7 @@ func TestScriptService_CreateNameConflict(t *testing.T) {
 // （掩码外字段保持原值）、按 ID 列表删除清空。
 func TestScriptService_CrudLifecycle(t *testing.T) {
 	svc, client := newScriptServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &scriptV1.CreateScriptRequest{
@@ -196,7 +196,7 @@ func TestScriptService_CrudLifecycle(t *testing.T) {
 // TestScriptService_ListCount 验证 List/Count 返回已落库行。
 func TestScriptService_ListCount(t *testing.T) {
 	svc, _ := newScriptServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	listResp, err := svc.List(ctx, &paginationV1.PagingRequest{})
 	require.NoError(t, err)
@@ -212,7 +212,7 @@ func TestScriptService_ListCount(t *testing.T) {
 // 创建带钩子点的启用脚本后 ListHookPoints 出现挂载，删除后卸载。
 func TestScriptService_CreateDeleteResyncLinkage(t *testing.T) {
 	svc, _ := newScriptServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &scriptV1.CreateScriptRequest{
@@ -295,7 +295,7 @@ return true
 // nil 请求/缺 target 拒绝、不存在 ID NotFound、执行异常 Success=false 且带错误消息。
 func TestScriptService_TestRunSavedByIdAndErrors(t *testing.T) {
 	svc, _ := newScriptServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.TestRun(ctx, nil)
 	require.Error(t, err, "nil 请求应拒绝")

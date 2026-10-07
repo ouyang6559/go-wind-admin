@@ -20,10 +20,9 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
-	"go-wind-admin/pkg/utils"
 )
 
 type UserService struct {
@@ -38,6 +37,7 @@ type UserService struct {
 	positionRepo *data.PositionRepo
 	orgUnitRepo  *data.OrgUnitRepo
 	tenantRepo   *data.TenantRepo
+	usageRepo    *data.TenantUsageRepo
 
 	membershipRepo *data.MembershipRepo
 
@@ -52,6 +52,7 @@ func NewUserService(
 	positionRepo *data.PositionRepo,
 	orgUnitRepo *data.OrgUnitRepo,
 	tenantRepo *data.TenantRepo,
+	usageRepo *data.TenantUsageRepo,
 	membershipRepo *data.MembershipRepo,
 	authenticator *data.Authenticator,
 ) *UserService {
@@ -63,6 +64,7 @@ func NewUserService(
 		positionRepo:       positionRepo,
 		orgUnitRepo:        orgUnitRepo,
 		tenantRepo:         tenantRepo,
+		usageRepo:          usageRepo,
 		membershipRepo:     membershipRepo,
 		authenticator:      authenticator,
 	}
@@ -73,7 +75,7 @@ func NewUserService(
 }
 
 func (s *UserService) init() {
-	ctx := appViewer.NewSystemViewerContext(context.Background())
+	ctx := viewer.WithSystemContext(context.Background())
 
 	if count, _ := s.userRepo.Count(ctx, nil); count == 0 {
 		if err := s.createDefaultUser(ctx); err != nil {
@@ -387,12 +389,12 @@ func (s *UserService) Create(ctx context.Context, req *identityV1.CreateUserRequ
 	var queryString string
 	if operator.GetTenantId() > 0 || req.Data.GetTenantId() > 0 {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "TENANT", "tenant_id": %d}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 			req.Data.GetTenantId(),
 		)
 	} else {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "SYSTEM"}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 		)
 	}
 	roles, err := s.roleRepo.List(ctx, &paginationV1.PagingRequest{
@@ -417,6 +419,22 @@ func (s *UserService) Create(ctx context.Context, req *identityV1.CreateUserRequ
 
 	req.Data.RoleId = nil
 	req.Data.RoleIds = roleIds
+
+	// 套餐 USER_LIMIT 硬限制：租户用户创建前检查配额（平台用户/计量失败 fail-open）
+	targetTenantID := req.Data.GetTenantId()
+	if targetTenantID == 0 {
+		targetTenantID = operator.GetTenantId()
+	}
+	if targetTenantID > 0 && s.usageRepo != nil {
+		usage, uerr := s.usageRepo.GetUsage(ctx, targetTenantID)
+		if uerr == nil {
+			if limit, ok := quotaLimitFromUsages(usage.GetQuotas(), identityV1.PlanQuota_USER_LIMIT); ok {
+				if uint64(usage.GetUserCount()) >= limit {
+					return nil, quotaExceededError("USER_LIMIT", limit, usage.GetUserCount())
+				}
+			}
+		}
+	}
 
 	// 创建用户
 	var user *identityV1.User
@@ -500,12 +518,12 @@ func (s *UserService) Update(ctx context.Context, req *identityV1.UpdateUserRequ
 	var queryString string
 	if operator.GetTenantId() > 0 || req.Data.GetTenantId() > 0 {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "TENANT", "tenant_id": %d}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 			req.Data.GetTenantId(),
 		)
 	} else {
 		queryString = fmt.Sprintf(`{"id__in": "[%s]", "type": "SYSTEM"}`,
-			utils.NumberSliceToString(roleIds),
+			sliceutil.NumberSliceToString(roleIds),
 		)
 	}
 	roles, err := s.roleRepo.List(ctx, &paginationV1.PagingRequest{

@@ -297,13 +297,13 @@ defineExpose({
     &.el-button--danger {
       background-color: var(--el-color-danger-light-9);
       border-color: var(--el-color-danger-light-5);
-      color: var(--el-color-danger);
+      color: var(--gowind-danger-text);
 
       &:hover,
       &:focus {
         background-color: var(--el-color-danger-light-7);
         border-color: var(--el-color-danger-light-3);
-        color: var(--el-color-danger);
+        color: var(--gowind-danger-text);
       }
 
       &:active {
@@ -315,13 +315,13 @@ defineExpose({
     &.el-button--success {
       background-color: var(--el-color-success-light-9);
       border-color: var(--el-color-success-light-5);
-      color: var(--el-color-success);
+      color: var(--gowind-success-text);
 
       &:hover,
       &:focus {
         background-color: var(--el-color-success-light-7);
         border-color: var(--el-color-success-light-3);
-        color: var(--el-color-success);
+        color: var(--gowind-success-text);
       }
 
       &:active {

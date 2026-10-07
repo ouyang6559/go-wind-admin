@@ -49,7 +49,7 @@ func newLoginPolicyRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Cl
 func TestLoginPolicyRepoSqlite_CreateAndGet(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newLoginPolicyRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &authenticationV1.CreateLoginPolicyRequest{
 		Data: &authenticationV1.LoginPolicy{
@@ -138,7 +138,7 @@ func TestLoginPolicyRepoSqlite_CreateAndGet(t *testing.T) {
 func TestLoginPolicyRepoSqlite_ListForLoginTenantScope(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newLoginPolicyRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 租户 7：一条全局（target/value/reason 均省略）+ 一条定向
 	require.NoError(t, repo.Create(ctx, &authenticationV1.CreateLoginPolicyRequest{
@@ -206,7 +206,7 @@ func TestLoginPolicyRepoSqlite_ListForLoginTenantScope(t *testing.T) {
 func TestLoginPolicyRepoSqlite_List(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newLoginPolicyRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &authenticationV1.CreateLoginPolicyRequest{
 		Data: &authenticationV1.LoginPolicy{
@@ -257,7 +257,7 @@ func TestLoginPolicyRepoSqlite_List(t *testing.T) {
 func TestLoginPolicyRepoSqlite_CountAndIsExist(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newLoginPolicyRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &authenticationV1.CreateLoginPolicyRequest{
 		Data: &authenticationV1.LoginPolicy{
@@ -310,7 +310,7 @@ func TestLoginPolicyRepoSqlite_CountAndIsExist(t *testing.T) {
 func TestLoginPolicyRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newLoginPolicyRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &authenticationV1.CreateLoginPolicyRequest{
 		Data: &authenticationV1.LoginPolicy{
@@ -429,7 +429,7 @@ func TestLoginPolicyRepoSqlite_Update(t *testing.T) {
 func TestLoginPolicyRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newLoginPolicyRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &authenticationV1.CreateLoginPolicyRequest{
 		Data: &authenticationV1.LoginPolicy{

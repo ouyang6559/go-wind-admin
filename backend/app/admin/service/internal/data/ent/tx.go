@@ -14,6 +14,20 @@ type Tx struct {
 	config
 	// AccessKey is the client for interacting with the AccessKey builders.
 	AccessKey *AccessKeyClient
+	// AiChunk is the client for interacting with the AiChunk builders.
+	AiChunk *AiChunkClient
+	// AiConversation is the client for interacting with the AiConversation builders.
+	AiConversation *AiConversationClient
+	// AiDoc is the client for interacting with the AiDoc builders.
+	AiDoc *AiDocClient
+	// AiKnowledgeBase is the client for interacting with the AiKnowledgeBase builders.
+	AiKnowledgeBase *AiKnowledgeBaseClient
+	// AiMessage is the client for interacting with the AiMessage builders.
+	AiMessage *AiMessageClient
+	// AiProvider is the client for interacting with the AiProvider builders.
+	AiProvider *AiProviderClient
+	// AiUsageLog is the client for interacting with the AiUsageLog builders.
+	AiUsageLog *AiUsageLogClient
 	// Api is the client for interacting with the Api builders.
 	Api *APIClient
 	// ApiAuditLog is the client for interacting with the ApiAuditLog builders.
@@ -50,12 +64,18 @@ type Tx struct {
 	MembershipRole *MembershipRoleClient
 	// Menu is the client for interacting with the Menu builders.
 	Menu *MenuClient
+	// MonitorAlertRule is the client for interacting with the MonitorAlertRule builders.
+	MonitorAlertRule *MonitorAlertRuleClient
 	// NotificationChannel is the client for interacting with the NotificationChannel builders.
 	NotificationChannel *NotificationChannelClient
 	// NotificationDelivery is the client for interacting with the NotificationDelivery builders.
 	NotificationDelivery *NotificationDeliveryClient
+	// NotificationPreference is the client for interacting with the NotificationPreference builders.
+	NotificationPreference *NotificationPreferenceClient
 	// NotificationRule is the client for interacting with the NotificationRule builders.
 	NotificationRule *NotificationRuleClient
+	// NotificationTemplate is the client for interacting with the NotificationTemplate builders.
+	NotificationTemplate *NotificationTemplateClient
 	// OperationAuditLog is the client for interacting with the OperationAuditLog builders.
 	OperationAuditLog *OperationAuditLogClient
 	// OrgUnit is the client for interacting with the OrgUnit builders.
@@ -246,6 +266,13 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.AccessKey = NewAccessKeyClient(tx.config)
+	tx.AiChunk = NewAiChunkClient(tx.config)
+	tx.AiConversation = NewAiConversationClient(tx.config)
+	tx.AiDoc = NewAiDocClient(tx.config)
+	tx.AiKnowledgeBase = NewAiKnowledgeBaseClient(tx.config)
+	tx.AiMessage = NewAiMessageClient(tx.config)
+	tx.AiProvider = NewAiProviderClient(tx.config)
+	tx.AiUsageLog = NewAiUsageLogClient(tx.config)
 	tx.Api = NewAPIClient(tx.config)
 	tx.ApiAuditLog = NewApiAuditLogClient(tx.config)
 	tx.DataAccessAuditLog = NewDataAccessAuditLogClient(tx.config)
@@ -264,9 +291,12 @@ func (tx *Tx) init() {
 	tx.MembershipPosition = NewMembershipPositionClient(tx.config)
 	tx.MembershipRole = NewMembershipRoleClient(tx.config)
 	tx.Menu = NewMenuClient(tx.config)
+	tx.MonitorAlertRule = NewMonitorAlertRuleClient(tx.config)
 	tx.NotificationChannel = NewNotificationChannelClient(tx.config)
 	tx.NotificationDelivery = NewNotificationDeliveryClient(tx.config)
+	tx.NotificationPreference = NewNotificationPreferenceClient(tx.config)
 	tx.NotificationRule = NewNotificationRuleClient(tx.config)
+	tx.NotificationTemplate = NewNotificationTemplateClient(tx.config)
 	tx.OperationAuditLog = NewOperationAuditLogClient(tx.config)
 	tx.OrgUnit = NewOrgUnitClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)

@@ -36,7 +36,7 @@ func newDictEntryI18nRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.
 func TestDictEntryI18nRepoSqlite_Upsert(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryI18nRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	entry, err := entClient.Client().DictEntry.Create().
 		SetEntryValue("sqlite_i18n_upsert_value").
@@ -70,7 +70,7 @@ func TestDictEntryI18nRepoSqlite_Upsert(t *testing.T) {
 func TestDictEntryI18nRepoSqlite_ListAndGet(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryI18nRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	entry, err := entClient.Client().DictEntry.Create().
 		SetEntryValue("sqlite_i18n_listget_value").
@@ -111,7 +111,7 @@ func TestDictEntryI18nRepoSqlite_ListAndGet(t *testing.T) {
 func TestDictEntryI18nRepoSqlite_CleanByEntryIDTx(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryI18nRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	entry, err := entClient.Client().DictEntry.Create().
 		SetEntryValue("sqlite_i18n_clean_tx_value").
@@ -146,7 +146,7 @@ func TestDictEntryI18nRepoSqlite_CleanByEntryIDTx(t *testing.T) {
 func TestDictEntryI18nRepoSqlite_CleanByEntryIDs(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryI18nRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	entryA, err := entClient.Client().DictEntry.Create().
 		SetEntryValue("sqlite_i18n_clean_ids_a").
@@ -185,7 +185,7 @@ func TestDictEntryI18nRepoSqlite_CleanByEntryIDs(t *testing.T) {
 func TestDictEntryI18nRepoSqlite_Truncate(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryI18nRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	entry, err := entClient.Client().DictEntry.Create().
 		SetEntryValue("sqlite_i18n_truncate_value").

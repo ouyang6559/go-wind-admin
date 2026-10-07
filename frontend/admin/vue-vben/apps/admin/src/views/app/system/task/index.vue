@@ -1,7 +1,7 @@
 ﻿<script lang="ts" setup>
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { h } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, useVbenDrawer, type VbenFormProps } from '@vben/common-ui';
 import {
@@ -15,6 +15,7 @@ import {
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import SystemTasksModal from './system-tasks-modal.vue';
 import {
   type taskservicev1_ControlTaskRequest_ControlType as ControlTaskRequest_ControlType,
   type taskservicev1_Task as Task,
@@ -169,6 +170,8 @@ const gridOptions: VxeGridProps<Task> = {
 
 const exportFetcher = (page: number, pageSize: number) =>
   fetchListTasks(new PaginationQuery({ paging: { page, pageSize } }));
+
+const sysTasksOpen = ref(false);
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -342,6 +345,10 @@ async function handleEnableChanged(row: any, checked: boolean) {
           {{ $t('page.task.button.create') }}
         </a-button>
 
+        <a-button class="mr-2" @click="sysTasksOpen = true">
+          {{ $t('page.task.sysTasksButton') }}
+        </a-button>
+
         <a-popconfirm
           :cancel-text="$t('ui.button.cancel')"
           :ok-text="$t('ui.button.ok')"
@@ -465,36 +472,36 @@ async function handleEnableChanged(row: any, checked: boolean) {
         </a-popconfirm>
       </template>
     </Grid>
+    <SystemTasksModal v-model:open="sysTasksOpen" />
     <Drawer />
   </Page>
 </template>
 
 <style scoped>
-/* 绿色按钮使用 antd success 主题 token，亮/暗模式自动切换，避免硬编码色值在不同主题下不协调 */
-.btn-start-all {
-  background-color: var(--ant-color-success) !important;
-  border-color: var(--ant-color-success) !important;
-  color: var(--ant-color-text-light-solid) !important;
+/* 绿色按钮走本仓 design token（--success）。原先写的是 var(--ant-color-success)：
+   vben 端 antd 未开 cssVar，页面上根本不存在 --ant-* 变量，整段声明被丢弃，
+   按钮实际一直是主色蓝——注释里"亮/暗自动切换"也因此从未生效。
+   hover 按 §2.1 取亮一阶（禁止手工挑色，用 color-mix 派生）；disabled 不加 !important，
+   让 antd 自己的禁用样式生效。
+   前景取 §2.3 暗色 L0 #0B0F19（不是 --primary-foreground 的 #FAFAFA）：success 在亮/暗两态
+   同为 #57D188（亮度 0.49），近白墨在上面实测 1.85:1，深色墨在同一底上 9.98:1。 */
+.btn-start-all:not([disabled]) {
+  background-color: hsl(var(--success)) !important;
+  border-color: hsl(var(--success)) !important;
+  color: #0b0f19 !important;
 }
 
-.btn-start-all:hover,
-.btn-start-all:focus {
-  background-color: var(--ant-color-success-active) !important;
-  border-color: var(--ant-color-success-active) !important;
-}
-
-.btn-start-all[disabled] {
-  background-color: var(--ant-color-bg-container-disabled) !important;
-  border-color: var(--ant-color-bg-container-disabled) !important;
-  color: var(--ant-color-text-disabled) !important;
-  cursor: not-allowed !important;
+.btn-start-all:not([disabled]):hover,
+.btn-start-all:not([disabled]):focus {
+  background-color: color-mix(in srgb, hsl(var(--success)) 80%, white) !important;
+  border-color: color-mix(in srgb, hsl(var(--success)) 80%, white) !important;
 }
 
 :deep(.green-link-btn) {
-  color: var(--ant-color-success) !important;
+  color: hsl(var(--success)) !important;
 }
 
 :deep(.green-link-btn:hover) {
-  color: var(--ant-color-success-active) !important;
+  color: color-mix(in srgb, hsl(var(--success)) 80%, white) !important;
 }
 </style>

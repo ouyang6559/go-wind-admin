@@ -9,6 +9,7 @@ import { $t } from '@vben/locales';
 import AccountBindPage from './account-bind-page.vue';
 import BaseSettingPage from './base-setting-page.vue';
 import EditPasswordPage from './edit-password-page.vue';
+import NotificationPreferencePage from './notification-preference-page.vue';
 import SecureSettingPage from './secure-setting-page.vue';
 import MySessionsPage from './my-sessions-page.vue';
 
@@ -38,9 +39,14 @@ const settingList: { component: Component; key: string; name: string }[] = [
     name: $t('page.user.profile.tab.activeSessions'),
     component: MySessionsPage,
   },
+  {
+    key: '6',
+    name: $t('page.user.profile.tab.notification'),
+    component: NotificationPreferencePage,
+  },
 ];
 
-// 消息通知 tab 已移除：后端暂无用户通知偏好能力，原页为模板演示数据。
+// 「消息通知」tab（P3）：后端已有用户通知偏好能力，见 notification-preference-page.vue
 
 const activeKey = ref('1');
 
@@ -57,7 +63,6 @@ const handleSwitchTab = (key: string) => {
         v-model:active-key="activeKey"
         tab-position="left"
         :tab-bar-style="{ width: '220px' }"
-        class="edge-tabs"
       >
         <template v-for="item in settingList" :key="item.key">
           <a-tab-pane :tab="item.name">
@@ -68,17 +73,3 @@ const handleSwitchTab = (key: string) => {
     </a-card>
   </Page>
 </template>
-
-<style lang="less">
-.edge-tabs {
-  margin: 0;
-}
-
-/* 使用 Vue scoped 的深度选择器，覆盖 Antd 的默认内边距/外边距 */
-.edge-tabs,
-::v-deep(.ant-tabs-content, .ant-tabs-content-holder, .ant-tabs-tabpane) {
-  padding: 0 !important;
-  margin: 0 !important;
-  box-sizing: border-box;
-}
-</style>

@@ -52,7 +52,7 @@ func TestBackupRepoSqlite_IsConfigured(t *testing.T) {
 // 八张核心表键全部存在，各导出切片长度为 0，无错误（空表不是失败）。
 func TestBackupRepoSqlite_ExportEmptyTables(t *testing.T) {
 	repo := newBackupRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	exported, err := repo.ExportCoreTables(ctx)
 	require.NoError(t, err, "空库导出应成功")
@@ -68,7 +68,7 @@ func TestBackupRepoSqlite_ExportEmptyTables(t *testing.T) {
 func TestBackupRepoSqlite_ExportSeededTables(t *testing.T) {
 	repo := newBackupRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 播种六张可直接最小化建行的表（membership/menu 留空，
 	// 用于验证空表在含数据导出中仍产出空切片键）。

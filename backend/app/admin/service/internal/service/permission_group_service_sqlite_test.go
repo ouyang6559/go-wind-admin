@@ -42,7 +42,7 @@ func newPermissionGroupServiceForTest(t *testing.T, entClient *entCrud.EntClient
 func TestPermissionGroupServiceSqlite_InitSeedsDefaultTree_AndListAssemblesTree(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPermissionGroupServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 
@@ -75,7 +75,7 @@ func TestPermissionGroupServiceSqlite_InitSeedsDefaultTree_AndListAssemblesTree(
 func TestPermissionGroupServiceSqlite_CreateAndGet(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPermissionGroupServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	svc.init()
@@ -142,7 +142,7 @@ func TestPermissionGroupServiceSqlite_CreateAndGet(t *testing.T) {
 func TestPermissionGroupServiceSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newPermissionGroupServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreatePermissionGroupRequest{

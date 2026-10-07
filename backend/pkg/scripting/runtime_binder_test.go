@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gsEngine "github.com/tx7do/go-scripts"
 
-	"go-wind-admin/pkg/scripting/api"
+	"github.com/tx7do/go-scripts/hostmodule"
 )
 
 // settleJSWatcherRace 等待本测试遗留的 go-scripts/js 中断监视 goroutine
@@ -48,12 +48,12 @@ func TestCallbackSourceStrings(t *testing.T) {
 // TestBinderHTTPOpts httpOpts 两分支：无 cfg 时 fail-closed 空护栏，
 // 有 cfg 时透传编排器配置（Lua/JS 两侧一致）。
 func TestBinderHTTPOpts(t *testing.T) {
-	empty := api.HTTPOptions{}
+	empty := hostmodule.HTTPOptions{}
 	require.Equal(t, empty, (&LuaBinder{}).httpOpts())
 	require.Equal(t, empty, (&JSBinder{}).httpOpts())
 
 	cfg := &Config{
-		HTTPOptions: api.HTTPOptions{
+		HTTPOptions: hostmodule.HTTPOptions{
 			AllowedDomains:  []string{"a.example.com", "b.example.com"},
 			Timeout:         7,
 			MaxResponseBody: 4096,

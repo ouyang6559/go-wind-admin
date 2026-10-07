@@ -30,7 +30,6 @@ import (
 	internalMessageV1 "go-wind-admin/api/gen/go/internal_message/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -82,7 +81,7 @@ func newNotifySeamEnv(t *testing.T) *notifySeamEnv {
 		internalMessageCategoryRepo:  data.NewInternalMessageCategoryRepoForTest(entClient),
 		internalMessageRecipientRepo: data.NewInternalMessageRecipientRepoForTest(entClient),
 		userRepo: &internalMessageServiceUserRepoStub{
-			// 定向投递的收件人 1024 属于租户 5，而本测试的 ctx 是 SystemViewer（租户 0）：
+			// 定向投递的收件人 1024 属于租户 5，而本测试的 ctx 是 SystemContext（租户 0）：
 			// 收件行落在 5 才说明打标跟的是收件人，不是操作人/viewer。
 			tenantByUserID: map[uint32]uint32{1024: 5},
 		},
@@ -102,7 +101,7 @@ func newNotifySeamEnv(t *testing.T) *notifySeamEnv {
 	im.RegisterNotifier(notifier)
 
 	ctx := auth.NewContext(
-		enttest.NewSystemViewerCtx(context.Background()),
+		enttest.NewSystemContext(context.Background()),
 		&authenticationV1.UserTokenPayload{UserId: 88},
 	)
 
@@ -150,7 +149,7 @@ func TestNotifySeamDirectedSend(t *testing.T) {
 	require.Equal(t, resp.GetMessageId(), inbox.GetItems()[0].GetMessageId())
 	require.Equal(t, uint32(1024), inbox.GetItems()[0].GetRecipientUserId())
 	require.Equal(t, uint32(5), inbox.GetItems()[0].GetTenantId(),
-		"收件行必须打在收件人的租户上：viewer 是租户 0 的 SystemViewer，落在 5 才证明打标跟的是受众")
+		"收件行必须打在收件人的租户上：viewer 是租户 0 的 SystemContext，落在 5 才证明打标跟的是受众")
 
 	payload := ssePayloadAt(t, e.pub, 0)
 	require.NotZero(t, payload["id"], "SSE 载荷必须带收件行主键")
@@ -227,8 +226,8 @@ func TestBroadcastSsePayloadCarriesRecipientId(t *testing.T) {
 	require.NoError(t, err)
 
 	// 广播在 asynq handler 的 ctx 上跑：viewer 按任务 payload 的租户重建，与 HTTP 请求 ctx 无关。
-	broadcastCtx := viewer.WithContext(context.Background(), appViewer.NewUserViewer(0, 7, 0, "", nil))
-	e.im.executeBroadcast(broadcastCtx, msg.GetId(), 1, "广播标题", "广播正文")
+	broadcastCtx := viewer.WithContext(context.Background(), viewer.NewUserContext(0, 7, 0, "", nil))
+	e.im.executeBroadcast(broadcastCtx, msg.GetId(), 1, 0, "广播标题", "广播正文")
 
 	require.Len(t, e.pub.events, 3, "三个收件人各推一条")
 	for i := range e.pub.events {

@@ -36,7 +36,7 @@ func newUserOrgUnitRepoSqlite(t *testing.T) *UserOrgUnitRepo {
 // ListOrgUnitIDs/ListUserIDs（正反向查询）→ CleanRelationsByXxx（清理）→ 计数归零。
 func TestUserOrgUnitRepoSqlite_AssignListAndClean(t *testing.T) {
 	repo := newUserOrgUnitRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		testUserID = uint32(3101)
@@ -111,7 +111,7 @@ func TestUserOrgUnitRepoSqlite_AssignListAndClean(t *testing.T) {
 // RemoveOrgUnitsFromUser 的单向解除语义与按单元清理路径。
 func TestUserOrgUnitRepoSqlite_RemoveAndCleanByOrgUnit(t *testing.T) {
 	repo := newUserOrgUnitRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		testUserID = uint32(3102)
@@ -157,7 +157,7 @@ func TestUserOrgUnitRepoSqlite_RemoveAndCleanByOrgUnit(t *testing.T) {
 // excludeExpired 语义：过期（end_at 早于当前时刻）的关联在过滤后被排除。
 func TestUserOrgUnitRepoSqlite_ExcludeExpired(t *testing.T) {
 	repo := newUserOrgUnitRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		testUserID = uint32(3103)

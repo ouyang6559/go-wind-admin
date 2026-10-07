@@ -3,7 +3,9 @@
   "tab": {
     "basicInfo": "Basic Info",
     "security": "Security",
-    "sessions": "Active Sessions"
+    "sessions": "Active Sessions",
+    "notification": "Notifications",
+    "tenantUsage": "Plan Usage"
   },
   "avatar": "Avatar",
   "username": "Username",
@@ -34,7 +36,6 @@
   "save": "Save Changes",
   "saveSuccess": "Saved successfully",
   "saveFailed": "Save failed",
-  "fetchFailed": "Failed to fetch user info",
   "oldPassword": "Current Password",
   "oldPasswordPlaceholder": "Enter current password",
   "requiredOldPassword": "Please enter current password",
@@ -75,5 +76,37 @@
     "unbindConfirmContent": "After unbinding, login will no longer require a verification code. This reduces account security.",
     "cancel": "Cancel",
     "totpDevice": "TOTP device"
-  }
+  },
+  "notification": {
+    "quietTitle": "Quiet Hours",
+    "quietDesc": "During quiet hours, internal message notifications are not pushed in real time (no instant desktop toasts or badge updates). Messages still arrive in your inbox.",
+    "quietEnable": "Enable quiet hours",
+    "quietTimeRange": "Quiet window (supports overnight spans, e.g. 22:00 to 08:00)",
+    "quietTimeRequired": "Please select the quiet window",
+    "quietZeroWidth": "Quiet start and end time cannot be the same",
+    "muteTitle": "Category Unsubscribe",
+    "muteDesc": "After unsubscribing, you will no longer receive all-hands broadcast messages of that category. Direct messages addressed to you are not affected.",
+    "noCategories": "No categories available in this tenant",
+    "save": "Save Preferences",
+    "saving": "Saving…",
+    "saveSuccess": "Notification preferences saved",
+    "saveFailed": "Failed to save notification preferences",
+    "transactionalNote": "Transactional emails such as verification codes are not affected by this page and are always sent.",
+    "on": "ON",
+    "off": "OFF"
+  },
+  "tenantUsage": {
+    "plan": "Current plan: ",
+    "noPlan": "No plan subscribed",
+    "empty": "No plan usage data for this account.",
+    "reached": "limit reached",
+    "quota": {
+      "USER_LIMIT": "Users",
+      "STORAGE": "Storage (MB)",
+      "API_CALL": "API calls",
+      "AI_TOKENS": "AI tokens"
+    }
+  },
+  "locale": "Preferred language",
+  "localePlaceholder": "Follow browser language"
 }

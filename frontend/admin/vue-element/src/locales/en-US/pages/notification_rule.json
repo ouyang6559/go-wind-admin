@@ -23,7 +23,6 @@
   "createSuccess": "Created",
   "updateSuccess": "Saved",
   "saveFailed": "Save failed",
-  "fetchFailed": "Failed to load routing rules",
   "requiredEventType": "Select an event type",
   "requiredChannel": "Select a channel",
   "testDispatch": "Test dispatch",

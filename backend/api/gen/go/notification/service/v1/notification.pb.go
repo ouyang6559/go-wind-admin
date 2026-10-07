@@ -93,6 +93,9 @@ const (
 	// 它与其他三个事件的区别：那三个由业务动作触发、渠道由路由表决定；这一个本身就是
 	// "站内信内容域经缝投递了一次"，related_id 必填，否则台账行无法回答"发的是哪条消息"。
 	EventType_INTERNAL_MESSAGE EventType = 4
+	// 监控告警：监控扫描任务对规则求值后触发（explicit channel + target，不经路由表）。
+	// related_id 指向 sys_monitor_alert_rules.id。
+	EventType_MONITOR_ALERT EventType = 5
 )
 
 // Enum value maps for EventType.
@@ -103,6 +106,7 @@ var (
 		2: "CONTACT_BIND_CODE",
 		3: "CHANNEL_TEST_EMAIL",
 		4: "INTERNAL_MESSAGE",
+		5: "MONITOR_ALERT",
 	}
 	EventType_value = map[string]int32{
 		"EVENT_TYPE_UNSPECIFIED": 0,
@@ -110,6 +114,7 @@ var (
 		"CONTACT_BIND_CODE":      2,
 		"CHANNEL_TEST_EMAIL":     3,
 		"INTERNAL_MESSAGE":       4,
+		"MONITOR_ALERT":          5,
 	}
 )
 
@@ -487,7 +492,12 @@ type SendDirectNotificationRequest struct {
 	RelatedId *uint32 `protobuf:"varint,9,opt,name=related_id,json=relatedId,proto3,oneof" json:"related_id,omitempty"` // 关联业务对象ID
 	// 幂等锚，可选：调用方留空时服务端生成一个 UUID。调用方若自行传入（例如同一次用户提交
 	// 因网络重试而被打上两次），台账按 (request_id, channel) 唯一索引收敛。
-	RequestId     *string `protobuf:"bytes,10,opt,name=request_id,json=requestId,proto3,oneof" json:"request_id,omitempty"` // 派发请求ID
+	RequestId *string `protobuf:"bytes,10,opt,name=request_id,json=requestId,proto3,oneof" json:"request_id,omitempty"` // 派发请求ID
+	// 通知模板编码：给出时 title/content 由模板渲染得出，请求里的 title/content 被覆盖。
+	// 渲染发生在落台账之前——异步派发的载荷里装的就是渲染结果，重试不重新解析模板。
+	TemplateCode *string `protobuf:"bytes,11,opt,name=template_code,json=templateCode,proto3,oneof" json:"template_code,omitempty"` // 通知模板编码
+	// 模板变量：占位符名 → 值；模板引用了变量集里没有的占位符时整个渲染报错。
+	TemplateVars  map[string]string `protobuf:"bytes,12,rep,name=template_vars,json=templateVars,proto3" json:"template_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 模板变量
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -590,6 +600,20 @@ func (x *SendDirectNotificationRequest) GetRequestId() string {
 		return *x.RequestId
 	}
 	return ""
+}
+
+func (x *SendDirectNotificationRequest) GetTemplateCode() string {
+	if x != nil && x.TemplateCode != nil {
+		return *x.TemplateCode
+	}
+	return ""
+}
+
+func (x *SendDirectNotificationRequest) GetTemplateVars() map[string]string {
+	if x != nil {
+		return x.TemplateVars
+	}
+	return nil
 }
 
 // 直发通知 - 回应
@@ -701,7 +725,7 @@ const file_notification_service_v1_notification_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2-.notification.service.v1.NotificationDeliveryR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x04R\x05total\"0\n" +
 	"\x1eGetNotificationDeliveryRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\"\xa8\b\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\"\x80\v\n" +
 	"\x1dSendDirectNotificationRequest\x12\x82\x01\n" +
 	"\n" +
 	"event_type\x18\x01 \x01(\x0e2\".notification.service.v1.EventTypeB?\xbaG<\x92\x029业务事件类型（决定渠道路由与台账分类）R\teventType\x12E\n" +
@@ -717,14 +741,20 @@ const file_notification_service_v1_notification_proto_rawDesc = "" +
 	"related_id\x18\t \x01(\rB5\xbaG2\x92\x02/关联业务对象ID（按 event_type 解释）H\x04R\trelatedId\x88\x01\x01\x12V\n" +
 	"\n" +
 	"request_id\x18\n" +
-	" \x01(\tB2\xbaG/\x92\x02,派发请求ID（留空则服务端生成）H\x05R\trequestId\x88\x01\x01B\r\n" +
+	" \x01(\tB2\xbaG/\x92\x02,派发请求ID（留空则服务端生成）H\x05R\trequestId\x88\x01\x01\x12e\n" +
+	"\rtemplate_code\x18\v \x01(\tB;\xbaG8\x92\x025通知模板编码（给出时覆盖 title/content）H\x06R\ftemplateCode\x88\x01\x01\x12\x9b\x01\n" +
+	"\rtemplate_vars\x18\f \x03(\v2H.notification.service.v1.SendDirectNotificationRequest.TemplateVarsEntryB,\xbaG)\x92\x02&模板变量（占位符名 → 值）R\ftemplateVars\x1a?\n" +
+	"\x11TemplateVarsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\r\n" +
 	"\v_channel_idB\n" +
 	"\n" +
 	"\b_channelB\x14\n" +
 	"\x12_recipient_user_idB\x13\n" +
 	"\x11_operator_user_idB\r\n" +
 	"\v_related_idB\r\n" +
-	"\v_request_id\"\xa0\x01\n" +
+	"\v_request_idB\x10\n" +
+	"\x0e_template_code\"\xa0\x01\n" +
 	"\x18SendNotificationResponse\x12/\n" +
 	"\vdelivery_id\x18\x01 \x01(\rB\x0e\xbaG\v\x92\x02\b台账IDR\n" +
 	"deliveryId\x12S\n" +
@@ -734,13 +764,14 @@ const file_notification_service_v1_notification_proto_rawDesc = "" +
 	"\x05EMAIL\x10\x01\x12\a\n" +
 	"\x03SMS\x10\x02\x12\v\n" +
 	"\aWEBHOOK\x10\x03\x12\f\n" +
-	"\bINTERNAL\x10\x04*\x85\x01\n" +
+	"\bINTERNAL\x10\x04*\x98\x01\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PASSWORD_RESET_CODE\x10\x01\x12\x15\n" +
 	"\x11CONTACT_BIND_CODE\x10\x02\x12\x16\n" +
 	"\x12CHANNEL_TEST_EMAIL\x10\x03\x12\x14\n" +
-	"\x10INTERNAL_MESSAGE\x10\x04*a\n" +
+	"\x10INTERNAL_MESSAGE\x10\x04\x12\x11\n" +
+	"\rMONITOR_ALERT\x10\x05*a\n" +
 	"\x0eDeliveryStatus\x12\x1f\n" +
 	"\x1bDELIVERY_STATUS_UNSPECIFIED\x10\x00\x12\v\n" +
 	"\aSENDING\x10\x01\x12\b\n" +
@@ -768,7 +799,7 @@ func file_notification_service_v1_notification_proto_rawDescGZIP() []byte {
 }
 
 var file_notification_service_v1_notification_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_notification_service_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_notification_service_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_notification_service_v1_notification_proto_goTypes = []any{
 	(Channel)(0),                             // 0: notification.service.v1.Channel
 	(EventType)(0),                           // 1: notification.service.v1.EventType
@@ -778,31 +809,33 @@ var file_notification_service_v1_notification_proto_goTypes = []any{
 	(*GetNotificationDeliveryRequest)(nil),   // 5: notification.service.v1.GetNotificationDeliveryRequest
 	(*SendDirectNotificationRequest)(nil),    // 6: notification.service.v1.SendDirectNotificationRequest
 	(*SendNotificationResponse)(nil),         // 7: notification.service.v1.SendNotificationResponse
-	(*timestamppb.Timestamp)(nil),            // 8: google.protobuf.Timestamp
-	(*v1.PagingRequest)(nil),                 // 9: pagination.PagingRequest
+	nil,                                      // 8: notification.service.v1.SendDirectNotificationRequest.TemplateVarsEntry
+	(*timestamppb.Timestamp)(nil),            // 9: google.protobuf.Timestamp
+	(*v1.PagingRequest)(nil),                 // 10: pagination.PagingRequest
 }
 var file_notification_service_v1_notification_proto_depIdxs = []int32{
 	1,  // 0: notification.service.v1.NotificationDelivery.event_type:type_name -> notification.service.v1.EventType
 	0,  // 1: notification.service.v1.NotificationDelivery.channel:type_name -> notification.service.v1.Channel
 	2,  // 2: notification.service.v1.NotificationDelivery.status:type_name -> notification.service.v1.DeliveryStatus
-	8,  // 3: notification.service.v1.NotificationDelivery.sent_at:type_name -> google.protobuf.Timestamp
-	8,  // 4: notification.service.v1.NotificationDelivery.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 5: notification.service.v1.NotificationDelivery.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 3: notification.service.v1.NotificationDelivery.sent_at:type_name -> google.protobuf.Timestamp
+	9,  // 4: notification.service.v1.NotificationDelivery.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 5: notification.service.v1.NotificationDelivery.updated_at:type_name -> google.protobuf.Timestamp
 	3,  // 6: notification.service.v1.ListNotificationDeliveryResponse.items:type_name -> notification.service.v1.NotificationDelivery
 	1,  // 7: notification.service.v1.SendDirectNotificationRequest.event_type:type_name -> notification.service.v1.EventType
 	0,  // 8: notification.service.v1.SendDirectNotificationRequest.channel:type_name -> notification.service.v1.Channel
-	2,  // 9: notification.service.v1.SendNotificationResponse.status:type_name -> notification.service.v1.DeliveryStatus
-	6,  // 10: notification.service.v1.NotificationService.SendDirect:input_type -> notification.service.v1.SendDirectNotificationRequest
-	9,  // 11: notification.service.v1.NotificationService.ListDelivery:input_type -> pagination.PagingRequest
-	5,  // 12: notification.service.v1.NotificationService.GetDelivery:input_type -> notification.service.v1.GetNotificationDeliveryRequest
-	7,  // 13: notification.service.v1.NotificationService.SendDirect:output_type -> notification.service.v1.SendNotificationResponse
-	4,  // 14: notification.service.v1.NotificationService.ListDelivery:output_type -> notification.service.v1.ListNotificationDeliveryResponse
-	3,  // 15: notification.service.v1.NotificationService.GetDelivery:output_type -> notification.service.v1.NotificationDelivery
-	13, // [13:16] is the sub-list for method output_type
-	10, // [10:13] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	8,  // 9: notification.service.v1.SendDirectNotificationRequest.template_vars:type_name -> notification.service.v1.SendDirectNotificationRequest.TemplateVarsEntry
+	2,  // 10: notification.service.v1.SendNotificationResponse.status:type_name -> notification.service.v1.DeliveryStatus
+	6,  // 11: notification.service.v1.NotificationService.SendDirect:input_type -> notification.service.v1.SendDirectNotificationRequest
+	10, // 12: notification.service.v1.NotificationService.ListDelivery:input_type -> pagination.PagingRequest
+	5,  // 13: notification.service.v1.NotificationService.GetDelivery:input_type -> notification.service.v1.GetNotificationDeliveryRequest
+	7,  // 14: notification.service.v1.NotificationService.SendDirect:output_type -> notification.service.v1.SendNotificationResponse
+	4,  // 15: notification.service.v1.NotificationService.ListDelivery:output_type -> notification.service.v1.ListNotificationDeliveryResponse
+	3,  // 16: notification.service.v1.NotificationService.GetDelivery:output_type -> notification.service.v1.NotificationDelivery
+	14, // [14:17] is the sub-list for method output_type
+	11, // [11:14] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_notification_service_v1_notification_proto_init() }
@@ -818,7 +851,7 @@ func file_notification_service_v1_notification_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notification_service_v1_notification_proto_rawDesc), len(file_notification_service_v1_notification_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

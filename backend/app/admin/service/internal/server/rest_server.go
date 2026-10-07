@@ -26,8 +26,8 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
+	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/pkg/middleware/auth"
 	applogging "go-wind-admin/pkg/middleware/logging"
 )
@@ -94,6 +94,12 @@ func NewRestMiddleware(
 		adminV1.OperationAccessKeyServiceIssueToken,
 		adminV1.OperationAuthenticationServiceForgotPassword,
 		adminV1.OperationAuthenticationServiceResetPasswordByCode,
+		// 租户白标查询免鉴权：登录前按租户编号取名称/Logo（只暴露展示字段）
+		adminV1.OperationAuthenticationServiceGetTenantBranding,
+		// OIDC SSO 三端点免鉴权：它们本身就是认证入口（未登录态使用）
+		adminV1.OperationAuthenticationServiceGetSsoLoginInfo,
+		adminV1.OperationAuthenticationServiceGetSsoLoginUrl,
+		adminV1.OperationAuthenticationServiceSsoLogin,
 		//OperationFileTransferServiceDownloadFile,
 		//OperationFileTransferServicePostUploadFile,
 		//OperationFileTransferServicePutUploadFile,
@@ -173,8 +179,23 @@ func NewRestServer(
 
 	// register:param ── 新模块服务形参在此行后注册(make register 工具锚点,勿删)
 	notificationRuleService *service.NotificationRuleService,
+	notificationPreferenceService *service.NotificationPreferenceService,
+	notificationTemplateService *service.NotificationTemplateService,
+	monitorAlertService *service.MonitorAlertService,
+	myTenantUsageService *service.MyTenantUsageService,
+	auditExportService *service.AuditExportService,
+	dataExportService *service.DataExportService,
+	taskMonitorService *service.TaskMonitorService,
 	accessKeyService *service.AccessKeyService,
 	configService *service.ConfigService,
+	aiProviderService *service.AiProviderService,
+	aiConversationService *service.AiConversationService,
+	aiMessageService *service.AiMessageService,
+	aiUsageLogService *service.AiUsageLogService,
+	aiKnowledgeService *service.AiKnowledgeService,
+	aiChatService *service.AiChatService,
+	aiQueryService *service.AiQueryService,
+	aiContentService *service.AiContentService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
 
@@ -217,6 +238,9 @@ func NewRestServer(
 	adminV1.RegisterUserServiceHTTPServer(srv, adminV1.RedactedUserServiceServer(
 		service.NewFieldPermissionUserServiceServer(&userServiceServerAdapter{UserServiceHTTPServer: userService}),
 		nil))
+	// Role 资源同款装饰器（字段权限铺开第二个资源）：可管控字段 permissions
+	// （角色权限集，权限体系的元权限）。
+	adminV1.RegisterRoleServiceHTTPServer(srv, service.NewFieldPermissionRoleServiceServer(roleService))
 	adminV1.RegisterOrgUnitServiceHTTPServer(srv, orgUnitService)
 	adminV1.RegisterRoleServiceHTTPServer(srv, roleService)
 	adminV1.RegisterPositionServiceHTTPServer(srv, positionService)
@@ -243,6 +267,23 @@ func NewRestServer(
 	// 但，代码生成器生成代码可以提供给OpenAPI使用。
 	registerFileTransferServiceHandler(srv, fileTransferService)
 
+	// 审计日志服务端导出：手动注册（二进制文件响应，proto 生成路由写不了响应头）。
+	// 手动路由无 Operation → auth 中间件不应用 → 鉴权在 handler 内显式做（平台管理员）。
+	srv.Route("/").GET("admin/v1/audit-logs:export", func(ctx http.Context) error {
+		return auditExportService.ServeExport(ctx.Response(), ctx.Request())
+	})
+
+	// AI 用量流水服务端导出（手动注册，理由同上；租户管理员按 viewer 语义导本租户，
+	// 与 /admin/v1/ai/usage-logs 列表口径一致）。
+	srv.Route("/").GET("admin/v1/ai/usage-logs:export", func(ctx http.Context) error {
+		return dataExportService.ServeAiUsageExport(ctx.Response(), ctx.Request())
+	})
+
+	// 通知投递台账服务端导出（手动注册；平台管理员专属，同台账读接口的闸）。
+	srv.Route("/").GET("admin/v1/notification-deliveries:export", func(ctx http.Context) error {
+		return dataExportService.ServeNotificationDeliveryExport(ctx.Response(), ctx.Request())
+	})
+
 	adminV1.RegisterInternalMessageServiceHTTPServer(srv, internalMessageService)
 	adminV1.RegisterInternalMessageCategoryServiceHTTPServer(srv, internalMessageCategoryService)
 	adminV1.RegisterInternalMessageRecipientServiceHTTPServer(srv, internalMessageRecipientService)
@@ -252,8 +293,21 @@ func NewRestServer(
 
 	// register:route ── 新模块路由在此行后注册(make register 工具锚点,勿删)
 	adminV1.RegisterNotificationRuleServiceHTTPServer(srv, notificationRuleService)
+	adminV1.RegisterNotificationPreferenceServiceHTTPServer(srv, notificationPreferenceService)
+	adminV1.RegisterNotificationTemplateServiceHTTPServer(srv, notificationTemplateService)
+	adminV1.RegisterMonitorAlertServiceHTTPServer(srv, monitorAlertService)
+	adminV1.RegisterMyTenantUsageServiceHTTPServer(srv, myTenantUsageService)
+	adminV1.RegisterTaskMonitorServiceHTTPServer(srv, taskMonitorService)
 	adminV1.RegisterAccessKeyServiceHTTPServer(srv, accessKeyService)
 	adminV1.RegisterConfigServiceHTTPServer(srv, configService)
+	adminV1.RegisterAiProviderServiceHTTPServer(srv, aiProviderService)
+	adminV1.RegisterAiConversationServiceHTTPServer(srv, aiConversationService)
+	adminV1.RegisterAiMessageServiceHTTPServer(srv, aiMessageService)
+	adminV1.RegisterAiUsageLogServiceHTTPServer(srv, aiUsageLogService)
+	adminV1.RegisterAiKnowledgeBaseServiceHTTPServer(srv, aiKnowledgeService)
+	adminV1.RegisterAiQueryServiceHTTPServer(srv, aiQueryService)
+	adminV1.RegisterAiContentServiceHTTPServer(srv, aiContentService)
+	adminV1.RegisterAiChatServiceHTTPServer(srv, aiChatService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(
@@ -264,7 +318,7 @@ func NewRestServer(
 	}
 
 	if authorizer != nil {
-		if err = authorizer.ResetPolicies(appViewer.NewSystemViewerContext(ctx.Context())); err != nil {
+		if err = authorizer.ResetPolicies(viewer.WithSystemContext(ctx.Context())); err != nil {
 			log.Errorf("reset policies error: %v", err)
 		}
 	}

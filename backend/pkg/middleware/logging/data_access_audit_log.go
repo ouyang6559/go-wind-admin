@@ -5,11 +5,13 @@ import (
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/tx7do/go-utils/auditutil"
 	"github.com/tx7do/go-utils/trans"
 
+	"github.com/tx7do/go-crud/viewer"
+	sqlutil "github.com/tx7do/go-utils/sqlutil"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 	"go-wind-admin/pkg/audit"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 type DataAccessAuditLogMiddleware struct {
@@ -64,13 +66,13 @@ func (d *DataAccessAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 		return
 	}
 
-	clientIp := getClientRealIP(htr.Request())
-	reqId := getRequestId(htr.Request())
+	clientIp := auditutil.ClientRealIP(htr.Request())
+	reqId := auditutil.RequestID(htr.Request())
 	ut := extractAuthToken(htr)
 
 	// 落库前植入 sink 标记，短路 wrapper 对审计行自身 INSERT 的采集。
 	sinkCtx := context.WithValue(ctx, audit.SinkKey(), true)
-	sinkCtx = appViewer.NewSystemViewerContext(sinkCtx)
+	sinkCtx = viewer.WithSystemContext(sinkCtx)
 
 	for _, ev := range *acc {
 		rec := &auditV1.DataAccessAuditLog{}
@@ -86,7 +88,7 @@ func (d *DataAccessAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 		rec.DataMasked = trans.Ptr(ev.DataMasked)
 		rec.MaskingRules = trans.Ptr(ev.MaskingRules)
 		// 从脱敏 SQL 提取被访问表名（多表按 proto 语义斜线连接），首表映射数据分类。
-		if tables := audit.ExtractTables(ev.SqlText); len(tables) > 0 {
+		if tables := sqlutil.ExtractTables(ev.SqlText); len(tables) > 0 {
 			rec.TableName = trans.Ptr(strings.Join(tables, "/"))
 			rec.DataCategory = trans.Ptr(audit.ClassifyTable(tables[0]))
 		}

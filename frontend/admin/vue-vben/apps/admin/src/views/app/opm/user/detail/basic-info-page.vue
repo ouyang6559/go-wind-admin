@@ -161,7 +161,7 @@ reload();
   justify-content: center;
   font-size: 85px;
   font-weight: 700;
-  color: var(--ant-color-text);
+  color: hsl(var(--foreground));
   line-height: 1; /* 消除行高带来的垂直偏移 */
   text-transform: uppercase; /* 统一转为大写，视觉更规整 */
 }

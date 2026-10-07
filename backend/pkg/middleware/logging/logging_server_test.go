@@ -257,23 +257,23 @@ func TestServerDispatchMatrix(t *testing.T) {
 			// （审计写入必须绕过租户隔离）。该不变量由 Server() 在落库前植入。
 			for _, m := range env.capture.apiMeta {
 				require.True(t, m.Sinking, "API 审计写入必须带 sink 标记")
-				require.True(t, m.SystemViewer, "API 审计写入必须以系统 viewer 执行")
+				require.True(t, m.SystemContext, "API 审计写入必须以系统 viewer 执行")
 			}
 			for _, m := range env.capture.operationMeta {
 				require.True(t, m.Sinking, "操作审计写入必须带 sink 标记")
-				require.True(t, m.SystemViewer, "操作审计写入必须以系统 viewer 执行")
+				require.True(t, m.SystemContext, "操作审计写入必须以系统 viewer 执行")
 			}
 			for _, m := range env.capture.permissionMeta {
 				require.True(t, m.Sinking, "权限审计写入必须带 sink 标记")
-				require.True(t, m.SystemViewer, "权限审计写入必须以系统 viewer 执行")
+				require.True(t, m.SystemContext, "权限审计写入必须以系统 viewer 执行")
 			}
 			for _, m := range env.capture.loginMeta {
 				require.True(t, m.Sinking, "登录审计写入必须带 sink 标记")
-				require.True(t, m.SystemViewer, "登录审计写入必须以系统 viewer 执行")
+				require.True(t, m.SystemContext, "登录审计写入必须以系统 viewer 执行")
 			}
 			for _, m := range env.capture.dataAccessMeta {
 				require.True(t, m.Sinking, "数据访问审计写入必须带 sink 标记")
-				require.True(t, m.SystemViewer, "数据访问审计写入必须以系统 viewer 执行")
+				require.True(t, m.SystemContext, "数据访问审计写入必须以系统 viewer 执行")
 			}
 
 			// 注入过 SQL 事件的场景：accumulator 必须被清空，防止后续复用 ctx 重复落库。

@@ -28,7 +28,6 @@
   "deleteFailed": "删除失败",
   "syncSuccess": "同步成功",
   "syncFailed": "同步失败",
-  "fetchFailed": "获取数据失败",
   "maxChars": "最多 {{max}} 个字符",
   "requiredPath": "请输入API路径",
   "requiredMethod": "请选择请求方法"

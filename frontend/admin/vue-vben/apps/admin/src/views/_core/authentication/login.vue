@@ -6,8 +6,12 @@ import { computed, h, onMounted, ref } from 'vue';
 import { AuthenticationLogin, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
+import { message } from 'ant-design-vue';
+
 import { useAuthStore } from '#/stores';
 import { fetchGenerateCaptcha } from '#/api/composables';
+import { ssoEnabled, startSsoLogin } from '#/api/composables/sso';
+import { fetchTenantBranding } from '#/api/composables/tenant-branding';
 
 defineOptions({ name: 'Login' });
 
@@ -17,6 +21,28 @@ const authStore = useAuthStore();
 const captchaId = ref('');
 const captchaImage = ref('');
 const captchaLoading = ref(false);
+
+// SSO 开关（后端未配置 OIDC 时按钮不渲染）
+const ssoOn = ref(false);
+
+// 租户白标：租户编号输入失焦后拉取，命中替换欢迎标题
+const tenantBranding = ref<{ found: boolean; name: string; logoUrl: string } | null>(null);
+
+async function applyTenantBranding(event: any) {
+  const trimmed = (event?.target?.value ?? '').trim();
+  if (!trimmed) {
+    tenantBranding.value = null;
+    return;
+  }
+  try {
+    const branding = await fetchTenantBranding(trimmed);
+    tenantBranding.value = branding.found ? branding : null;
+  } catch (brandingError) {
+    // 白标是非关键路径：失败静默保持默认品牌，原始错误留控制台
+    console.warn('fetch tenant branding failed', brandingError);
+    tenantBranding.value = null;
+  }
+}
 
 async function refreshCaptcha() {
   captchaLoading.value = true;
@@ -33,7 +59,21 @@ async function refreshCaptcha() {
 
 onMounted(() => {
   refreshCaptcha();
+  // SSO 开关探测：失败/未配置都不显示按钮（非关键路径，静默降级）
+  ssoEnabled()
+    .then((v) => (ssoOn.value = v))
+    .catch(() => (ssoOn.value = false));
 });
+
+async function handleSsoLogin() {
+  try {
+    await startSsoLogin();
+  } catch (err: any) {
+    // 原始错误必须留在控制台：展示给用户的是归一化文案
+    console.error('start sso login failed', err);
+    message.error(err?.message || $t('page.sso.failed'));
+  }
+}
 
 // 验证码图片渲染函数（响应式读取 captchaImage / captchaLoading）
 // 作为函数式组件传入 suffix，由 VbenRenderContent 通过 h() 渲染
@@ -52,8 +92,8 @@ const renderCaptchaImage = () =>
         cursor: 'pointer',
         borderRadius: '6px',
         overflow: 'hidden',
-        border: '1px solid var(--border)',
-        background: 'var(--input)',
+        border: '1px solid hsl(var(--border))',
+        background: 'hsl(var(--input))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -86,6 +126,8 @@ const formSchema = computed((): VbenFormSchema[] => {
       component: 'VbenInput',
       componentProps: {
         placeholder: $t('authentication.tenantCode'),
+        autocomplete: 'off',
+        onBlur: applyTenantBranding,
       },
       fieldName: 'tenant_code',
       label: $t('authentication.tenantCode'),
@@ -95,6 +137,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       component: 'VbenInput',
       componentProps: {
         placeholder: $t('authentication.usernameTip'),
+        autocomplete: 'username',
       },
       dependencies: {
         trigger(values) {
@@ -111,6 +154,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       component: 'VbenInputPassword',
       componentProps: {
         placeholder: $t('authentication.password'),
+        autocomplete: 'current-password',
       },
       fieldName: 'password',
       label: $t('authentication.password'),
@@ -148,14 +192,32 @@ async function handleSubmit(values: Record<string, any>) {
   <!-- 对齐 react：标题/描述在卡片外，登录表单包一张 24px 圆角卡片（边框 + 主色柔影） -->
   <div>
     <div class="mb-7">
-      <h2
-        class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
-      >
-        {{ $t('authentication.welcomeBack') }} 👋🏻
-      </h2>
-      <p class="text-muted-foreground text-sm lg:text-md">
-        {{ $t('authentication.loginSubtitle') }}
-      </p>
+      <template v-if="tenantBranding">
+        <img
+          v-if="tenantBranding.logoUrl"
+          :src="tenantBranding.logoUrl"
+          :alt="tenantBranding.name"
+          class="mb-3 max-h-12 max-w-[200px] object-contain"
+        />
+        <h2
+          class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
+        >
+          {{ tenantBranding.name }}
+        </h2>
+        <p class="text-muted-foreground text-sm lg:text-md">
+          {{ $t('authentication.welcomeBack') }}
+        </p>
+      </template>
+      <template v-else>
+        <h2
+          class="text-foreground mb-3 text-3xl font-bold leading-9 tracking-tight lg:text-4xl"
+        >
+          {{ $t('authentication.welcomeBack') }} 👋🏻
+        </h2>
+        <p class="text-muted-foreground text-sm lg:text-md">
+          {{ $t('authentication.loginSubtitle') }}
+        </p>
+      </template>
     </div>
 
     <div
@@ -174,6 +236,17 @@ async function handleSubmit(values: Record<string, any>) {
         <!-- 内置标题已移到卡片外，置空默认标题块 -->
         <template #title><span class="hidden"></span></template>
       </AuthenticationLogin>
+
+      <template v-if="ssoOn">
+        <div class="my-4 flex items-center gap-3">
+          <div class="h-px flex-1 bg-border"></div>
+          <span class="text-muted-foreground text-xs">{{ $t('page.sso.or') }}</span>
+          <div class="h-px flex-1 bg-border"></div>
+        </div>
+        <a-button block size="large" @click="handleSsoLogin">
+          {{ $t('page.sso.button') }}
+        </a-button>
+      </template>
     </div>
   </div>
 </template>

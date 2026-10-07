@@ -9,14 +9,14 @@
 //	func TestFooRepo(t *testing.T) {
 //	    entClient := enttest.NewEntClientForTest(t)
 //	    repo := NewFooRepo(testCtx(), entClient) // 复用生产构造函数
-//	    ctx := enttest.NewSystemViewerCtx(context.Background())
+//	    ctx := enttest.NewSystemContext(context.Background())
 //	    // ... 对 repo 做 CRUD 断言 ...
 //	}
 //
 // 安全说明：
 //   - 每个 entClient 独占一个 SQLite 内存库，测试间互不干扰；
 //     t.Cleanup 负责关闭，无需手动清理。
-//   - NewSystemViewerCtx 注入平台级 SystemViewer（tenant_id=0），
+//   - NewSystemContext 注入平台级 SystemContext（tenant_id=0），
 //     与生产中系统后台任务的身份一致，满足 ent mixin 的多租户隐私规则。
 package enttest
 
@@ -35,8 +35,8 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	entCrud "github.com/tx7do/go-crud/entgo"
 
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/app/admin/service/internal/data/ent"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 // NewEntClientForTest 构造一个基于 SQLite 内存库的 entCrud.EntClient，
@@ -64,8 +64,8 @@ func NewEntClientForTest(t *testing.T) *entCrud.EntClient[*ent.Client] {
 	return entCrud.NewEntClient[*ent.Client](client, drv)
 }
 
-// NewSystemViewerCtx 返回注入了平台级 SystemViewer 的 context，
+// NewSystemContext 返回注入了平台级 SystemContext 的 context，
 // 满足 ent mixin 多租户隐私规则对 ViewerContext 的强制要求。
-func NewSystemViewerCtx(ctx context.Context) context.Context {
-	return appViewer.NewSystemViewerContext(ctx)
+func NewSystemContext(ctx context.Context) context.Context {
+	return viewer.WithSystemContext(ctx)
 }

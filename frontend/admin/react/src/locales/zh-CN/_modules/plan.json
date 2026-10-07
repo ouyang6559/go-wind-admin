@@ -26,7 +26,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "requiredName": "请输入套餐名称",
   "requiredVersion": "请选择套餐版本",
   "requiredExpiryPolicy": "请选择到期处置策略",

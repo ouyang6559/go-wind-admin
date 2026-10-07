@@ -198,7 +198,7 @@ func TestServer_ValidToken_ContextInjection(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, reached)
 
-	// viewer 注入断言：UserViewer 携带 payload 的身份三元组（TenantId 未设 → 0）。
+	// viewer 注入断言：UserContext 携带 payload 的身份三元组（TenantId 未设 → 0）。
 	vc, ok := viewer.FromContext(handlerCtx)
 	require.True(t, ok)
 	require.Equal(t, uint64(42), vc.UserID())

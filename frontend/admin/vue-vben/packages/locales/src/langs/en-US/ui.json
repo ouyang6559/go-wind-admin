@@ -65,7 +65,9 @@
       "close": "Close",
       "noResults": "No Search Results Found",
       "noRecent": "No Search History",
-      "recent": "Search History"
+      "recent": "Search History",
+      "semanticTitle": "AI Semantic Results",
+      "semanticSearching": "Semantic search…"
     },
     "lockScreen": {
       "title": "Lock Screen",

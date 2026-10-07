@@ -15,9 +15,9 @@ import (
 	"github.com/tx7do/go-utils/trans"
 	authzEngine "github.com/tx7do/kratos-authz/engine"
 
+	"github.com/tx7do/go-crud/viewer"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -90,13 +90,13 @@ func (e *evalLoggingEngine) IsAuthorized(ctx context.Context, subject authzEngin
 		}
 	}
 
-	// SystemViewer：评估发生在 authz 阶段，无租户 viewer 上下文，落库需系统视角。
-	_ = e.repo.Create(appViewer.NewSystemViewerContext(ctx), &permissionV1.CreatePolicyEvaluationLogRequest{Data: rec})
+	// SystemContext：评估发生在 authz 阶段，无租户 viewer 上下文，落库需系统视角。
+	_ = e.repo.Create(viewer.WithSystemContext(ctx), &permissionV1.CreatePolicyEvaluationLogRequest{Data: rec})
 
 	return allowed, err
 }
 
-// resolvePolicyCached 带 TTL 缓存的反查；查询走 SystemViewer（评估阶段无租户 viewer）。
+// resolvePolicyCached 带 TTL 缓存的反查；查询走 SystemContext（评估阶段无租户 viewer）。
 func (e *evalLoggingEngine) resolvePolicyCached(ctx context.Context, subject, path, method string) (permissionID, policyID uint32) {
 	if e.repo == nil {
 		return 0, 0
@@ -110,7 +110,7 @@ func (e *evalLoggingEngine) resolvePolicyCached(ctx context.Context, subject, pa
 	}
 	e.resolveMu.Unlock()
 
-	pid, pol := e.repo.ResolvePermissionPolicyByRoute(appViewer.NewSystemViewerContext(ctx), subject, path, method)
+	pid, pol := e.repo.ResolvePermissionPolicyByRoute(viewer.WithSystemContext(ctx), subject, path, method)
 
 	e.resolveMu.Lock()
 	e.resolveCache[key] = resolveResult{permissionID: pid, policyID: pol, expiresAt: time.Now().Add(resolveTTL)}

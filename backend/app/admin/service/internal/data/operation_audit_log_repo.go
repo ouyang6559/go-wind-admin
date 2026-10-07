@@ -1,6 +1,8 @@
 package data
 
 import (
+	"sort"
+
 	"context"
 	"time"
 
@@ -10,6 +12,8 @@ import (
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
+
+	"github.com/tx7do/go-crud/viewer"
 
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
@@ -175,4 +179,79 @@ func (r *OperationAuditLogRepo) Create(ctx context.Context, req *auditV1.CreateO
 	}
 
 	return nil
+}
+
+// AuditDigestStats 审计日报聚合统计。
+type AuditDigestStats struct {
+	Total      int64              // 昨日总操作数
+	Failed     int64              // 失败操作数
+	Users      int64              // 涉及用户数
+	TopActions []AuditActionCount // 动作分布（全部动作类型，按次数降序）
+}
+
+// AuditActionCount 单个动作类型的计数。
+type AuditActionCount struct {
+	Action string
+	Count  int64
+}
+
+// DigestStats 聚合 [from, to) 区间的操作审计统计（系统查看器；日报任务无请求上下文）。
+func (r *OperationAuditLogRepo) DigestStats(ctx context.Context, from, to time.Time) (*AuditDigestStats, error) {
+	sysCtx := viewer.WithSystemContext(ctx)
+	client := r.entClient.Client().OperationAuditLog.Query().Where(
+		operationauditlog.CreatedAtGTE(from),
+		operationauditlog.CreatedAtLT(to),
+	)
+
+	stats := &AuditDigestStats{TopActions: make([]AuditActionCount, 0, 8)}
+
+	total, err := client.Clone().Count(sysCtx)
+	if err != nil {
+		r.log.Errorf(ctx, "audit digest: count total failed: %s", err.Error())
+		return nil, auditV1.ErrorInternalServerError("audit digest stats failed")
+	}
+	stats.Total = int64(total)
+	if total == 0 {
+		return stats, nil
+	}
+
+	failed, err := client.Clone().Where(operationauditlog.SuccessEQ(false)).Count(sysCtx)
+	if err != nil {
+		r.log.Errorf(ctx, "audit digest: count failed failed: %s", err.Error())
+		return nil, auditV1.ErrorInternalServerError("audit digest stats failed")
+	}
+	stats.Failed = int64(failed)
+
+	// 涉及用户数（去重 user_id）
+	var userRows []struct {
+		UserID uint32 `sql:"user_id"`
+		Cnt    int    `sql:"cnt"`
+	}
+	if err = client.Clone().
+		GroupBy(operationauditlog.FieldUserID).
+		Aggregate(ent.As(ent.Count(), "cnt")).
+		Scan(sysCtx, &userRows); err != nil {
+		r.log.Errorf(ctx, "audit digest: count users failed: %s", err.Error())
+		return nil, auditV1.ErrorInternalServerError("audit digest stats failed")
+	}
+	stats.Users = int64(len(userRows))
+
+	// 动作分布
+	var actionRows []struct {
+		Action string `sql:"action"`
+		Cnt    int    `sql:"cnt"`
+	}
+	if err = client.Clone().
+		GroupBy(operationauditlog.FieldAction).
+		Aggregate(ent.As(ent.Count(), "cnt")).
+		Scan(sysCtx, &actionRows); err != nil {
+		r.log.Errorf(ctx, "audit digest: group actions failed: %s", err.Error())
+		return nil, auditV1.ErrorInternalServerError("audit digest stats failed")
+	}
+	for _, row := range actionRows {
+		stats.TopActions = append(stats.TopActions, AuditActionCount{Action: row.Action, Count: int64(row.Cnt)})
+	}
+	sort.Slice(stats.TopActions, func(i, j int) bool { return stats.TopActions[i].Count > stats.TopActions[j].Count })
+
+	return stats, nil
 }

@@ -46,6 +46,8 @@ func (NotificationDelivery) Fields() []ent.Field {
 				"ContactBindCode", "CONTACT_BIND_CODE",
 				"ChannelTestEmail", "CHANNEL_TEST_EMAIL",
 				"InternalMessage", "INTERNAL_MESSAGE",
+				// 监控告警：与 proto 的 EventType 枚举逐字同名（EnumTypeConverter 按名字配对）
+				"MonitorAlert", "MONITOR_ALERT",
 			).
 			Optional().
 			Nillable(),

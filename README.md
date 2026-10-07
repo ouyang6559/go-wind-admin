@@ -26,6 +26,7 @@
 - **微服务 + 单体自由切换**：基于 go-kratos 微服务框架，但支持单体架构模式开发与部署，灵活适配团队规模
 - **全栈代码生成**：Protobuf → Go API / TypeScript 客户端，Ent Schema → ORM，一键 CRUD 脚手架；配套桌面端可视化代码生成器与 CLI（[go-wind-toolkit](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)，见[配套工具](#配套工具)）
 - **生产就绪**：JWT 鉴权、SSE 消息推送、异步任务调度、Swagger 文档、Docker 一键部署
+- **AI 能力开箱即用**：OpenAI 兼容多模型接入（云端/本地 Ollama）、SSE 流式对话、知识库 RAG（pgvector 向量检索 + 文件上传）、token 用量配额、脚本 `ai` 模块与定时 AI 任务，详见 [docs/ai_module.md](./docs/ai_module.md)
 
 ### 为什么是三套前端
 
@@ -34,6 +35,13 @@
 一套后端、一份接口契约、三种前端实现：用 React 的团队拿 `react` 那套，用 Vue 的团队拿 `vue-vben` 或 `vue-element` 那套。谁都不必为了用这个脚手架去换自己熟练的技术栈。
 
 把三套都维护到可用，这个成本由**上游**承担；你作为采用者只维护选中的那一套，另外两个目录删掉即可（改动点见 [docs/adopt-one-frontend.md](./docs/adopt-one-frontend.md)）。
+
+---
+
+## 从这里开始
+
+- **想系统上手**：读 [文档索引](./docs/README.md)——文档分**教程层**（[渐进教程](./docs/tutorial/README.md) 10 章：从空环境走到独立开发业务模块、AI 能力接入、安全部署上线）与**参考层**（每个子系统的唯一权威说明）两层，索引里按你的角色（全栈采用者 / 后端 / 前端 / 运维与安全）标好了推荐阅读路径。
+- **想先看到它跑起来**：往下依次是[演示地址](#演示地址)与[快速开始](#快速开始)。
 
 ---
 
@@ -52,43 +60,6 @@
 
 ---
 
-## 技术栈
-
-<table>
-<tr><th>层级</th><th>技术</th></tr>
-<tr><td><strong>后端框架</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
-<tr><td><strong>ORM</strong></td><td><code>Ent</code>（主要） · <code>GORM</code>（辅助） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
-<tr><td><strong>中间件</strong></td><td><code>Redis</code>（compose 拉 <code>bitnami/redis:latest</code>，未固定版本；代码只用到 Set/Expire/Publish 一类的长期命令，未使用 Redis 8 专属命令） · <code>MinIO</code>（S3 兼容对象存储）</td></tr>
-<tr><td><strong>认证授权</strong></td><td><code>JWT</code> · <code>Casbin</code> · <code>OPA</code></td></tr>
-<tr><td><strong>实时通信</strong></td><td><code>SSE</code>（服务端推送） · <code>Asynq</code>（异步任务）</td></tr>
-<tr><td><strong>脚本引擎</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多语言 Hook 插件系统</td></tr>
-<tr><td><strong>前端</strong></td><td><strong>三选一</strong>——下面三行是并列选项，各取其一，不需要同时采用</td></tr>
-<tr><td><strong>Vue Vben 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code></td></tr>
-<tr><td><strong>Vue Element 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code>（轻量纯净版）</td></tr>
-<tr><td><strong>React 版</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code>（无 UMI）</td></tr>
-<tr><td><strong>部署运维</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
-</table>
-
----
-
-## 安全与等保合规
-
-本项目的安全能力参照《网络安全等级保护 2.0》（二级/三级）技术要求设计，面向企业高隐私私有化部署场景开箱即用：
-
-| 等保技术要求 | 落地实现 |
-|------------|---------|
-| **安全审计** | 六类审计日志全覆盖：登录 / 操作 / API / 数据访问 / 权限变更 / 策略评估，记录客户端 IP（登录 / 操作 / API 三类另解析归属地）与前端下发的 `X-Request-ID` 请求号。asynq 每日定时归档：库内留存 180 天（`AUDIT_RETENTION_DAYS` 可调），超期数据导出 JSONL 归档文件留痕，库瘦身与日志留存两不误 |
-| **身份鉴别** | 口令复杂度（≥8 位、小写/大写/数字/符号四类取三）、历史口令复用检查（默认近 3 条）、口令有效期（默认 90 天），阈值经「参数管理」平台参数调整（内置参数启动时播种，环境变量配置已废弃）；TOTP 多因素认证（MFA）；图形验证码；Redis 登录失败限流（IP + 用户名双维度）；可配置登录限制策略 |
-| **访问控制** | 动态 RBAC 权限引擎（策略引擎可切换：Casbin / OPA），角色—权限—接口映射存于数据库，权限变更即时热更新生效；菜单/按钮级权限控制，角色级行数据权限范围（V1 试点：岗位表）与字段级权限（V1 试点：用户表，黑名单字段自响应裁剪）；每次鉴权判定落策略评估日志可追溯 |
-| **多租户隔离** | ent Privacy 策略编译级数据隔离：读查询自动注入租户过滤，Create 防伪造租户、Update / Delete 注入租户谓词（跨租户变更命中 0 行）；租户请求按 `(path, method)` 经 Api 表 fail-closed 校验（缺权限点即拒绝）；套餐模块白名单与到期只读策略 |
-| **数据保密性** | 登录口令应用层 AES 加密传输、bcrypt 哈希存储；敏感任务配置 AES-256-GCM 静态加密（Ent Hook 透明加解密）；JWT RS256 非对称签名；refresh token 走 HttpOnly Cookie；传输层 TLS 由部署层启用（后端 `server.rest.tls` 配置或 nginx / 负载均衡终止） |
-| **数据备份恢复** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) 定时全量备份（pg_dump，默认保留 30 份自动轮换），支持 Docker 容器 / 本地直连双模式，附恢复操作文档 |
-| **前端安全** | 三端各自附带 `scripts/deploy/nginx.conf`，生产侧下发 X-Frame-Options / HSTS / Content-Security-Policy 响应头；react 与 vue-element 另在构建期向 `index.html` 注入 CSP `<meta>`（内联脚本按 sha256 白名单放行），换掉 web server 也仍有一层防护 |
-
-> **说明**：等保测评除技术要求外，还包含管理制度、物理环境、人员组织等非软件范畴的内容。本项目覆盖的是技术措施部分，可为私有化部署的等保测评准备提供直接支撑，但不能替代完整的等保测评流程。
-
----
-
 ## 快速开始
 
 ### 环境要求
@@ -102,9 +73,9 @@
 
 ### 环境脚本选型
 
-- Linux / macOS 开发环境：`scripts/env/install_unix_dev.sh`
-- Linux / macOS 生产环境：`scripts/env/install_unix_prod.sh`
-- Windows 开发环境：`scripts/env/install_windows_dev.ps1`
+- Linux / macOS 开发环境：`backend/scripts/env/install_unix_dev.sh`
+- Linux / macOS 生产环境：`backend/scripts/env/install_unix_prod.sh`
+- Windows 开发环境：`backend/scripts/env/install_windows_dev.ps1`
 
 ### Docker 两种部署模式
 
@@ -164,9 +135,9 @@ gow run admin
 
 | 前端版本 | 目录 | 启动命令 | 端口 |
 |---------|------|---------|------|
-| React | `frontend/admin/react` | `pnpm dev` | 5888 |
-| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 5777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 5666 |
+| React | `frontend/admin/react` | `pnpm dev` | 15888 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
 
 ```shell
 # 三选一：先 cd 进你选的那一端，再装依赖、再启动。
@@ -174,14 +145,51 @@ gow run admin
 # 在这两处跑 pnpm install 只会得到 ENOENT 报错。
 cd frontend/admin/react
 pnpm install
-pnpm dev                    # 端口 5888
+pnpm dev                    # 端口 15888
 
 # 换成另外两端：
-cd frontend/admin/vue-element && pnpm install && pnpm dev            # 端口 5777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 5666
+cd frontend/admin/vue-element && pnpm install && pnpm dev            # 端口 15777
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 15666
 ```
 
 > vue-vben 本身是个 pnpm workspace（`pnpm-workspace.yaml` + `apps/` + `packages/`），所以必须在它的**根目录**装依赖，`pnpm dev:antd` 再从 workspace 里挑出 `@vben/web-antd` 这个 app 启动——在 `apps/admin` 下单独 `pnpm install` 会破坏 catalog 版本锁定。
+
+---
+
+## 技术栈
+
+<table>
+<tr><th>层级</th><th>技术</th></tr>
+<tr><td><strong>后端框架</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
+<tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code>（二选一，构建标签切换，默认 Ent） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
+<tr><td><strong>中间件</strong></td><td><code>Redis</code>（compose 拉 <code>bitnami/redis:latest</code>，未固定版本；代码只用到 Set/Expire/Publish 一类的长期命令，未使用 Redis 8 专属命令） · <code>MinIO</code>（S3 兼容对象存储）</td></tr>
+<tr><td><strong>认证授权</strong></td><td><code>JWT</code>（认证） · <code>Casbin</code> / <code>OPA</code>（鉴权引擎，二选一，默认 noop 全放行）</td></tr>
+<tr><td><strong>实时通信</strong></td><td><code>SSE</code>（服务端推送） · <code>Asynq</code>（异步任务）</td></tr>
+<tr><td><strong>脚本引擎</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多语言 Hook 插件系统</td></tr>
+<tr><td><strong>前端</strong></td><td><strong>三选一</strong>——下面三行是并列选项，各取其一，不需要同时采用</td></tr>
+<tr><td><strong>Vue Vben 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code> · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>Vue Element 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code>（轻量纯净版） · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>React 版</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code>（无 UMI） · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>部署运维</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
+</table>
+
+---
+
+## 安全与等保合规
+
+本项目的安全能力参照《网络安全等级保护 2.0》（二级/三级）技术要求设计，面向企业高隐私私有化部署场景开箱即用：
+
+| 等保技术要求 | 落地实现 |
+|------------|---------|
+| **安全审计** | 六类审计日志全覆盖：登录 / 操作 / API / 数据访问 / 权限变更 / 策略评估，记录客户端 IP（登录 / 操作 / API 三类另解析归属地）与前端下发的 `X-Request-ID` 请求号。asynq 每日定时归档：库内留存 180 天（`AUDIT_RETENTION_DAYS` 可调），超期数据导出 JSONL 归档文件留痕，库瘦身与日志留存两不误 |
+| **身份鉴别** | 口令复杂度（≥8 位、小写/大写/数字/符号四类取三）、历史口令复用检查（默认近 3 条）、口令有效期（默认 90 天），阈值经「参数管理」平台参数调整（内置参数启动时播种，环境变量配置已废弃）；TOTP 多因素认证（MFA）；图形验证码；Redis 登录失败限流（IP + 用户名双维度）；可配置登录限制策略 |
+| **访问控制** | 动态 RBAC 权限引擎（策略引擎可切换：Casbin / OPA），角色—权限—接口映射存于数据库，权限变更即时热更新生效；菜单/按钮级权限控制，角色级行数据权限范围（V1 试点：岗位表）与字段级权限（V1 试点：用户表，黑名单字段自响应裁剪）；每次鉴权判定落策略评估日志可追溯 |
+| **多租户隔离** | ent Privacy 策略编译级数据隔离：读查询自动注入租户过滤，Create 防伪造租户、Update / Delete 注入租户谓词（跨租户变更命中 0 行）；租户请求按 `(path, method)` 经 Api 表 fail-closed 校验（缺权限点即拒绝）；套餐模块白名单与到期只读策略 |
+| **数据保密性** | 登录口令应用层 AES 加密传输、bcrypt 哈希存储；敏感任务配置 AES-256-GCM 静态加密（Ent Hook 透明加解密）；JWT RS256 非对称签名；refresh token 走 HttpOnly Cookie；传输层 TLS 由部署层启用（后端 `server.rest.tls` 配置或 nginx / 负载均衡终止） |
+| **数据备份恢复** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) 定时全量备份（pg_dump，默认保留 30 份自动轮换），支持 Docker 容器 / 本地直连双模式，附恢复操作文档 |
+| **前端安全** | 三端各自附带 `scripts/deploy/nginx.conf`，生产侧下发 X-Frame-Options / HSTS / Content-Security-Policy 响应头；react 与 vue-element 另在构建期向 `index.html` 注入 CSP `<meta>`（内联脚本按 sha256 白名单放行），换掉 web server 也仍有一层防护 |
+
+> **说明**：等保测评除技术要求外，还包含管理制度、物理环境、人员组织等非软件范畴的内容。本项目覆盖的是技术措施部分，可为私有化部署的等保测评准备提供直接支撑，但不能替代完整的等保测评流程。
 
 ---
 
@@ -215,7 +223,10 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 56
 | 多因素认证（MFA） | 基于 TOTP 的多因素认证，含登录挑战、个人中心绑定管理，以及管理员救援重置用户 MFA 的解锁路径 |
 | 找回密码 | 绑定邮箱验证码找回密码：验证码 10 分钟单次有效、重置成功即吊销全部会话，静默处理防用户枚举 |
 | 通知渠道 | 管理通知渠道，类型两选一：`EMAIL`（走 SMTP，密码加密存储、列表脱敏展示）或 `WEBHOOK`（HTTP 回调，签名风格五档：NONE / DINGTALK / FEISHU / WECOM / CUSTOM）；支持启用 / 停用与测试发送 |
+| 通知规则 | 管理通知路由规则（哪类事件投递到哪个渠道），支持启用 / 停用与按规则行的测试投递；内置默认规则随启动播种（仅空表补种），删行即生效 |
+| 通知投递台账 | 查看每条通知对每个渠道的投递结果（状态 / 渠道 / 尝试次数 / 失败原因 / 请求号），支持按接收人与状态筛选 |
 | 服务监控 | 只读展示服务运行时指标（CPU 核数、内存、goroutine 数、运行时长等），自动刷新 |
+| 在线用户 | 查看当前在线会话（用户、租户、客户端类型、登录 IP、User-Agent、设备 ID、登录时间），支持关键词过滤、分页（登录时间倒序）与单会话强制下线，30 秒自动刷新 |
 | 脚本系统 | 脚本级插件系统（Lua / JavaScript，数据库为事实源，管理页增改即时生效）：实体生命周期钩子（before 可否决 / after 异步）、定时任务（asynq 调度）、HTTP 出站（域名白名单 fail-closed）、试运行与执行日志；详见 [docs/script_system.md](./docs/script_system.md) |
 | 参数管理 | 平台全局系统参数的键值管理（区别于业务字典），内置参数启动时播种、禁删可改；服务侧经缓存 accessor 读取，多实例部署下参数变更经 Redis 发布订阅广播失效各实例缓存 |
 | 机器凭证（AK/SK） | 租户级 AccessKey / SecretKey 管理：创建时 Secret 一次性展示，支持启停、删除与密钥轮换重置（轮换后旧 Secret 立即失效）；AK / Secret 可经令牌交换端点换取租户作用域机器 JWT（machine 角色、仅签发 access 令牌），交换端点按 IP + AK 接入尝试限流 |
@@ -241,6 +252,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 56
 | 功能 | 说明 |
 |------|-----|
 | 个人中心 | 个人信息展示和修改，查看最后登录信息，密码修改、邮箱绑定 / 换绑（验证码校验）等功能 |
+| 我的活跃会话 | 查看本人当前在线的会话列表（登录 IP、设备、登录时间等），当前会话仅展示不可下线，其余会话可单独下线 |
 
 ---
 

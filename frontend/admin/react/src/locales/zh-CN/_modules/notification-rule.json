@@ -22,7 +22,6 @@
   "createSuccess": "创建成功",
   "updateSuccess": "保存成功",
   "saveFailed": "保存失败",
-  "fetchFailed": "获取路由规则列表失败",
   "requiredEventType": "请选择业务事件",
   "requiredChannel": "请选择投递渠道",
   "testDispatch": "测试投递",

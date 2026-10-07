@@ -18,10 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	"github.com/tx7do/go-utils/trans"
-	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
-
-	conf "github.com/tx7do/kratos-bootstrap/api/gen/go/conf/v1"
 
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
@@ -30,7 +27,7 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
-	"go-wind-admin/pkg/authorizer"
+	"github.com/tx7do/go-utils/authorizer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -50,12 +47,10 @@ func (roleServiceAuthProviderStub) ProvidePolicies(context.Context) (authorizer.
 func newRoleServiceForTest(t *testing.T) *RoleService {
 	t.Helper()
 	entClient := enttest.NewEntClientForTest(t)
-	// noop 引擎形态：Authz 配置为默认类型（空串 → noop 分支），日志用 NopLogger。
-	bootstrapCtx := bootstrap.NewContextWithParam(context.Background(), nil,
-		&conf.Bootstrap{Authz: &conf.Authorization{}}, bLogger.NopLogger())
+	// noop 引擎形态：EngineConfig 空类型按 noop 分支处理，日志用 NopLogger。
 	svc := &RoleService{
 		log:        bLogger.NewHelper(bLogger.NopLogger()),
-		authorizer: authorizer.NewAuthorizer(bootstrapCtx, roleServiceAuthProviderStub{}),
+		authorizer: authorizer.NewAuthorizer(context.Background(), bLogger.NopLogger(), &authorizer.EngineConfig{}, roleServiceAuthProviderStub{}),
 		roleRepo:   data.NewRoleRepoForTest(entClient),
 		tenantRepo: data.NewTenantRepoForTest(entClient),
 	}
@@ -67,7 +62,7 @@ func newRoleServiceForTest(t *testing.T) *RoleService {
 // 租户级角色回填租户名，平台级角色（默认播种）不回填。
 func TestRoleServiceSqlite_ListEnrichment(t *testing.T) {
 	svc := newRoleServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	tenant, err := svc.tenantRepo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("RoleSvc 富集租户甲"),
@@ -116,7 +111,7 @@ func TestRoleServiceSqlite_ListEnrichment(t *testing.T) {
 // TestRoleServiceSqlite_GetEnrichment 验证 Get 单条查询的 TenantName 回填。
 func TestRoleServiceSqlite_GetEnrichment(t *testing.T) {
 	svc := newRoleServiceForTest(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	tenant, err := svc.tenantRepo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("RoleSvc 富集租户乙"),
@@ -165,7 +160,7 @@ func TestRoleServiceSqlite_GetEnrichment(t *testing.T) {
 // Delete 的非保护角色删除路径。
 func TestRoleServiceSqlite_CreateAndDelete(t *testing.T) {
 	svc := newRoleServiceForTest(t)
-	baseCtx := enttest.NewSystemViewerCtx(context.Background())
+	baseCtx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(baseCtx, &authenticationV1.UserTokenPayload{UserId: 4242})
 
 	// Create：操作人注入 CreatedBy，角色本体与角色元数据同事务落库。

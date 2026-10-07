@@ -391,7 +391,7 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   cursor: pointer;
-  color: var(--el-color-primary);
+  color: var(--gowind-primary-text);
   font-size: 13px;
   user-select: none;
   white-space: nowrap;

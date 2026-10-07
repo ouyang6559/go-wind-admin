@@ -8,6 +8,119 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-04
+
+### 新增
+
+- 企业 OIDC SSO 登录（全栈，三端齐备）：授权码流 + Redis state 单次有效，环境变量
+  opt-in 接入；真实 Keycloak 实测修两处（SsoLogin 补隐私层绕过、user_repo nil mask
+  守卫）；Keycloak 演练环境（deploy/sso）与 CI 冒烟 e2e 防回归。
+- 通知域 P3 收官（两片）：用户通知偏好（静音时段 + 分类退订）与通知模板管理/渲染
+  全栈落地，事务性邮件按约定 code 可被模板覆写（无模板回落 mailtext）；偏好 tab 与
+  模板管理页三端齐备。
+- 监控告警联动：指标阈值规则 + 周期评估 + 经通知域分发；告警/恢复通知文案按收件人
+  偏好语言渲染；告警规则页三端齐备。
+- 审计日志服务端导出：XLSX / CSV 全量流式下载（突破客户端一万行上限），覆盖五类
+  审计日志、AI 用量流水与通知投递台账，三端入口统一。
+- 套餐配额硬执行与水位告警：USER / STORAGE / API_CALL 等四类配额接入租户闸门与
+  业务入口，配额水位提前告警经通知域推送；租户自助配额用量面板（个人中心）三端齐备。
+- 用户偏好语言：locale 字段 + 事务性邮件、告警通知、AI 审计日报均按收件人偏好语言渲染。
+- 租户白标：登录页按租户编号渲染 Logo / 名称（免鉴权公开查询），三端齐备。
+- 系统级常驻任务可视化：asynq Inspector 只读视图（方案 C'，零新表），三端任务监控页齐备。
+- 备份恢复工具链：RestoreCoreTables 空库恢复、备份桶超期对象生命周期清理、恢复演练文档。
+- AI 工具调用：Function Call 协议层（多轮工具调用循环接进流式对话）+ `ai_chat_tool`
+  SSE 帧工具调用可见化，三端对话 UI 齐备；语义搜索按调用者菜单权限裁剪，堵住越权检索缺口。
+- 字段级权限铺开第二资源：Role（permissions 权限集）。
+- 登录策略 REGION 维度真实现，MAC 维度移出三端下拉（对齐文档 7.3）。
+- react 补齐 /dashboard/analytics 分析页；全局搜索面板三端统一（vben 形态为基准）。
+
+### 变更
+
+- 通用代码三批下沉 tx7do 家族库（架构理顺，业务行为不变）：netutil / doctext / mailer /
+  fieldperm / eventbus / sqlutil 与 crypto / password / converter / ossutil / auditutil /
+  authorizer / sliceutil 下沉 go-utils；脚本宿主的钩子注册表、语言无关模块框架 + HTTP
+  出站护栏（`SCRIPT_HTTP_ALLOWED_DOMAINS`）、Lua 宿主桥下沉 go-scripts（本仓保留编排器
+  与业务桥接）；查看者标准上下文（UserContext / SystemContext）下沉 go-crud/viewer
+  v0.0.8（本仓 pkg/entgo/viewer 缩为数据范围映射适配层）。
+- 三端 dev 端口迁移 5xxx → 15xxx（react 15888 / vue-element 15777 / vue-vben 15666），
+  避开姐妹仓默认段。
+- 移除 oauth.proto 第三方绑定半成品与 LoginResponse.RefreshToken 残留字段（零消费方
+  死代码清理）。
+- 三端共享前端代码收敛为镜像并接 CI 防漂移：pagination 查询序列化、认证拦截器、
+  updateMask 构建泛化（六处手写掩码退役）+ 白名单钉校验器与封闭扫描。
+
+### 修复
+
+- 租户侧边栏整箱清空（TenantRepo 读侧补 WithPlan 边回填）。
+- 全局搜索三连修：react 补本地菜单匹配 / 结果点击导航 / Ctrl+K / 键盘导航；ele 菜单
+  索引存裸 i18n key 导致中文永远搜不到，改存翻译文案并修键盘选中语义。
+- vue-element 七处抽屉编辑不回填 / 编辑变新增，及通知模板表单项蒸发的根修。
+- 三端登录框 Chrome 自动填充白底覆盖（-webkit-autofill 处理 + autocomplete 语义）。
+- AI 问数 few-shot 注入按值 range 拷贝 proto 消息，修结构体复用引发的锁污染。
+
+## [1.1.0] - 2026-09-29
+
+### 新增
+
+- AI 模块（全栈，三端齐备）：模型提供商管理（密钥加密存储 / 连通性测试）、
+  SSE 流式对话（多会话 / 历史持久化 / 会话重命名）、用量配额记账与用量统计页
+  （含当月汇总 RPC），并登记进业务模块枚举与套餐白名单映射链（租户按套餐开通）。
+  详见 `docs/ai_module.md` 与教程第 10 章。
+- 知识库 RAG：文档上传（txt / md / docx / pdf 抽取文本）→ 切片向量化（pgvector）
+  入库 → 对话按知识库检索注入上下文；三端管理页与聊天知识库选择器齐备；
+  向量重索引任务（ai_doc_reindex）、切片批量入库与 embedding 全链计量、
+  切片表越万行自动建 HNSW 索引。
+- 智能问数：自然语言 → 只读 SQL → 结构化结果与图表。四重护栏
+  （仅 SELECT / 表白名单 / 强制租户谓词 / 行数上限）+ 只读事务，面向租户开放
+  自助分析（双白名单）；多轮追问、结果自动图表（图表 / 表格切换）、
+  订阅定时问数（ai_query_run：cron 执行 NL→SQL 后经站内信推送）；三端问数页齐备。
+- AI 内容生成（表单助手）：场景预设提示词 + AiGenerateButton 通用组件，三端覆盖。
+- 全局语义搜索：菜单向量化索引（pgvector），顶栏全局搜索接语义检索 API。
+- AI 安全与异常洞察：分析页审计明细行为模式挖掘卡片、Dashboard 当日指标
+  AI 图文解读、审计日报 AI 摘要任务（ai_audit_digest：定时聚合 + LLM 摘要 +
+  站内信投递）；告警后端只回结构化事实，文案归前端 i18n。
+- 脚本系统暴露原生 `ai` 模块：脚本可直调 LLM 对话。
+- `docs/sys_config.md`：参数管理（sys_config）参考文档——键值模型、缓存读取器
+  （负缓存 / 类型回退）、写路径与多实例 Redis 失效广播、内置参数按键补种、新参数接入
+  步骤；接入 docs/README.md 参考层索引与教程 07 深读。
+
+### 变更
+
+- 列表加载态三态化（三端统一）：首屏表格形状骨架（复用列定义、与真实表同高）+
+  250ms 阈值内不闪加载态 + 失败态与重试；列表页请求不再自行 catch，错误统一由
+  表格记录日志并内联展示原始原因。设计语言规范 `docs/design-language.md` §4
+  补「列表加载态」条。
+- README（三语）：顶部新增「从这里开始」导览——链接文档索引（含按角色推荐阅读路径）与渐进教程，
+  「快速开始」上移至技术栈与安全合规之前，压缩新人首屏到可行动路径的距离。
+- `docs/README.md`：通知域条目不再于索引内转载分阶段实施状态史，
+  各阶段落地状态以 `notification_domain_design.md` 文内状态标记与验收清单为准
+  （对齐该文档「实施进度更新时改本文状态标记、不另开文档」的单一事实源约定）。
+- 全仓文档审计修订：`backend_file_upload.md` 上传请求体改记 JSON+base64 现状
+  （2026-09-17 三端切换，multipart 保留为兼容回退）；`crud_module_guide` 步数 10→11、
+  生成的注册函数名更正为 `Register<Entity>ServiceHTTPServer`、代码生成命令统一 gow-first、
+  List 过滤补 contains/ID 排除约定并链 `list_query_rule.md`；`adopt-one-frontend.md`
+  workflow 表述跟进 docs-parity CI；`backend_project_struct.md` 补全 pkg 20 个子包清单；
+  三语 README 环境脚本路径加 `backend/` 前缀，功能列表补在线用户 / 我的活跃会话 /
+  通知规则 / 通知投递台账四行（三语同步，parity CI 通过）。
+- 移除失效的 `make install-golang` 目标（原指向的 `install_golang.sh` 已在脚本模块化
+  重构中并入 `install_unix_dev/prod`，由 `lib/go-utils.sh` 的 `install_golang()` 承担），
+  `backend/scripts/README.md` 对应段落改记现状；修正 `config_repo.go` 两处滞后于
+  多实例失效广播的注释。
+
+### 修复
+
+- 修复历史消息 role 大小写映射：部分模型厂商对大写 role 返回 422，统一映射小写；
+  连带修模型提供商 Update 的 key 分支逻辑反转。
+- 修复 Dashboard AI 洞察接口 500：审计行 user_id / username 为 NULL 时 Scan 报错。
+- 修复智能问数实测暴露的缺陷：SQL 提取与拒答对抗（真实 DeepSeek 实测）、
+  vue-element 端全局 loading 卡死 / 空图表容器 / 图表重挂载、React 端输入区
+  常驻吸底；用量流水补 duration_ms，用量摘要与流水列表同口径。
+- 修复 vue-element 启动期 i18n 竞态：语言包未就绪即渲染致整页文案裸 key。
+- 修复 vue-element 暗色模式与图表：Tailwind v4 `dark:` 变体改挂 `html.dark`
+  跟随应用主题开关；暗色 hover 亮度装饰收敛回库原生通道；ECharts 6 兼容
+  （containLabel 废弃迁移、已销毁实例守卫、零尺寸初始化防御）。
+- 三端样式整改：语义色文字档成层、语义色按钮禁用态去实底（vue-element）。
+
 ## [1.0.0] - 2026-09-24
 
 ### 新增

@@ -11,6 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/tx7do/go-utils/auditutil"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	"go-wind-admin/pkg/audit"
@@ -93,7 +94,7 @@ func Server(opts ...Option) middleware.Middleware {
 	}
 
 	if op.ecPrivateKey == nil || op.ecPublicKey == nil {
-		op.ecPrivateKey, op.ecPublicKey, _ = generateECDSAKeyPair()
+		op.ecPrivateKey, op.ecPublicKey, _ = auditutil.GenerateECDSAKeyPair()
 	}
 
 	loginAuditLogMiddleware := NewLoginAuditLogMiddleware(&op)

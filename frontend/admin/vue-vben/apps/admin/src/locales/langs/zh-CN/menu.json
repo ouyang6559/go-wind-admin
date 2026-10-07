@@ -45,13 +45,15 @@
     "serverMonitor": "服务监控",
     "scripts": "脚本管理",
     "config": "参数管理",
-    "accessKeys": "OpenAPI 凭证"
+    "accessKeys": "OpenAPI 凭证",
+    "monitorAlerts": "监控告警"
   },
   "notification": {
     "moduleName": "通知管理",
     "channels": "通知渠道",
     "rules": "通知路由规则",
-    "deliveries": "通知投递记录"
+    "deliveries": "通知投递记录",
+    "templates": "通知模板"
   },
   "log": {
     "moduleName": "日志审计",
@@ -68,5 +70,13 @@
     "internalMessage": "消息管理",
     "internalMessageCategory": "消息分类",
     "inbox": "收件箱"
+  },
+  "ai": {
+    "moduleName": "AI 助手",
+    "chat": "AI 助手",
+    "providers": "AI 提供商",
+    "knowledge": "知识库",
+    "query": "智能问数",
+    "usage": "用量统计"
   }
 }

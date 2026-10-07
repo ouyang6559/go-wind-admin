@@ -6,7 +6,8 @@
     "edit": "编辑",
     "delete": "删除",
     "submit": "确定",
-    "reset": "取消"
+    "reset": "取消",
+    "retry": "重试"
   },
   "home": "首页",
   "header": {
@@ -26,7 +27,15 @@
     "switchLanguage": "切换语言",
     "search": "搜索",
     "searchPlaceholder": "搜索菜单或功能...",
-    "searchShortcut": "Ctrl K"
+    "searchShortcut": "Ctrl K",
+    "searching": "搜索中…",
+    "noResults": "未找到相关页面",
+    "noHistory": "暂无最近搜索",
+    "searchRecent": "最近",
+    "semanticTitle": "语义搜索",
+    "searchSelect": "选择",
+    "searchSwitch": "切换",
+    "searchClose": "关闭"
   },
   "refresh": "刷新",
   "iframe": {
@@ -246,6 +255,9 @@
     "csv": "CSV (逗号分隔)",
     "xlsx": "Excel 工作簿",
     "success": "已导出 {count} 行",
-    "failed": "导出失败"
+    "failed": "导出失败",
+    "serverXlsx": "服务端全量 (XLSX)",
+    "serverSuccess": "导出文件已生成",
+    "serverFailed": "服务端导出失败"
   }
 }

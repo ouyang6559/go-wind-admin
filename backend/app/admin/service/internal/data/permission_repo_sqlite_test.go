@@ -52,7 +52,7 @@ func newPermissionRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Cli
 func TestPermissionRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &permissionV1.CreatePermissionRequest{
 		Data: &permissionV1.Permission{
@@ -77,7 +77,7 @@ func TestPermissionRepoSqlite_Create(t *testing.T) {
 func TestPermissionRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreatePermissionRequest{
 		Data: &permissionV1.Permission{
@@ -144,7 +144,7 @@ func TestPermissionRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestPermissionRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreatePermissionRequest{
 		Data: &permissionV1.Permission{
@@ -191,7 +191,7 @@ func TestPermissionRepoSqlite_Get(t *testing.T) {
 func TestPermissionRepoSqlite_CodesAndIdsLookup(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreatePermissionRequest{
 		Data: &permissionV1.Permission{
@@ -231,7 +231,7 @@ func TestPermissionRepoSqlite_CodesAndIdsLookup(t *testing.T) {
 func TestPermissionRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreatePermissionRequest{
 		Data: &permissionV1.Permission{
@@ -272,7 +272,7 @@ func TestPermissionRepoSqlite_UpdateKeepsRelationGrants(t *testing.T) {
 		t.Helper()
 		entClient := enttest.NewEntClientForTest(t)
 		repo := newPermissionRepoSqlite(t, entClient)
-		ctx := enttest.NewSystemViewerCtx(context.Background())
+		ctx := enttest.NewSystemContext(context.Background())
 		require.NoError(t, repo.Create(ctx, &permissionV1.CreatePermissionRequest{
 			Data: &permissionV1.Permission{
 				Name:    trans.Ptr("sqlite权限点-关联保持"),
@@ -362,7 +362,7 @@ func TestPermissionRepoSqlite_UpdateKeepsRelationGrants(t *testing.T) {
 func TestPermissionRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPermissionRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 按 ID 删除
 	require.NoError(t, repo.Create(ctx, &permissionV1.CreatePermissionRequest{

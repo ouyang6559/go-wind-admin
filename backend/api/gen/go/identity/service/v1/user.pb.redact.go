@@ -230,6 +230,8 @@ func (x *User) Redact() {
 
 	// Safe field: Region
 
+	// Safe field: Locale
+
 	// Safe field: Description
 
 	// Safe field: Remark

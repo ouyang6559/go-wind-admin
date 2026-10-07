@@ -15,16 +15,19 @@ import (
 // userId 传 0 表示只检查全局条目（密码校验前的第一段），取到 userId 后再查第二段。
 //
 // 维度支持：IP（精确 IP 或 CIDR）、TIME（HH:MM-HH:MM 时间窗，支持跨午夜）、
-// DEVICE（device_id 精确匹配）。MAC 与 REGION 第一版不判定：HTTP 请求上下文
-// 拿不到 MAC 地址，REGION 依赖 IP 地理库（后续可复用登录审计的 GeoLocation 能力接入）。
+// DEVICE（device_id 精确匹配）、REGION（IP 归属地：国家/省/市任一精确相等即命中，
+// 大小写不敏感；region 串由调用方经 geoip 从 clientIP 解析，空串=解析失败不判定）。
+// MAC 不判定：HTTP 请求上下文拿不到 MAC 地址（管理页已从方法下拉移除；
+// 后端枚举保留兼容存量数据，存量 MAC 策略永不命中）。
 func MatchLoginPolicy(
 	policies []EffectivePolicy,
 	userId uint32,
 	clientIP string,
 	deviceId string,
+	region string,
 	now time.Time,
 ) (blocked bool, reason string) {
-	for _, method := range []string{"IP", "TIME", "DEVICE"} {
+	for _, method := range []string{"IP", "TIME", "DEVICE", "REGION"} {
 		// 该维度对当前用户生效的条目（全局 + 定向）
 		var blacks, whites []EffectivePolicy
 		for _, p := range policies {
@@ -49,6 +52,8 @@ func MatchLoginPolicy(
 			matched = func(v string) bool { return matchTimeWindow(now, v) }
 		case "DEVICE":
 			matched = func(v string) bool { return deviceId != "" && deviceId == v }
+		case "REGION":
+			matched = func(v string) bool { return matchRegionValue(region, v) }
 		}
 
 		for _, p := range blacks {
@@ -133,6 +138,16 @@ func parseHHMM(s string) (int, bool) {
 		return 0, false
 	}
 	return h*60 + m, true
+}
+
+// matchRegionValue 判定 IP 归属地是否命中策略值：value 与归属地的
+// 国家/省/市任一精确相等（大小写不敏感）即命中。任一侧为空不命中。
+// 精确相等而非包含：白名单语义下包含匹配太宽（如"省"命中所有省份）。
+func matchRegionValue(region, value string) bool {
+	if region == "" || value == "" {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(region), strings.TrimSpace(value))
 }
 
 func (p EffectivePolicy) describe(method string) string {

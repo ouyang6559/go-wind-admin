@@ -36,7 +36,7 @@ func newMembershipRoleRepoSqlite(t *testing.T) *MembershipRoleRepo {
 // ListRoleIDs/ListMembershipIDs（正反向查询）→ CleanRelationsByMembershipID（清理）→ 计数归零。
 func TestMembershipRoleRepoSqlite_AssignListAndClean(t *testing.T) {
 	repo := newMembershipRoleRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		testMembershipID = uint32(8101)
@@ -101,7 +101,7 @@ func TestMembershipRoleRepoSqlite_AssignListAndClean(t *testing.T) {
 // 的单向解除语义与按角色清理路径。
 func TestMembershipRoleRepoSqlite_RemoveRolesFromMembership(t *testing.T) {
 	repo := newMembershipRoleRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		testMembershipID = uint32(8102)
@@ -141,7 +141,7 @@ func TestMembershipRoleRepoSqlite_RemoveRolesFromMembership(t *testing.T) {
 // excludeExpired 语义：过期（end_at 早于当前时刻）的关联在过滤后被排除。
 func TestMembershipRoleRepoSqlite_ExcludeExpired(t *testing.T) {
 	repo := newMembershipRoleRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	const (
 		testMembershipID = uint32(8103)

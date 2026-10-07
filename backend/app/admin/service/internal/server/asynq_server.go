@@ -12,12 +12,12 @@ import (
 
 	"go-wind-admin/app/admin/service/internal/service"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 	"go-wind-admin/pkg/task"
 )
 
 // NewAsynqServer creates a new asynq server.
-func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, scriptRuntime *service.ScriptRuntime) (*asynqServer.Server, error) {
+func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, internalMessageService *service.InternalMessageService, notificationService *service.NotificationService, monitorAlertService *service.MonitorAlertService, scriptRuntime *service.ScriptRuntime, aiKnowledgeService *service.AiKnowledgeService, aiDigestService *service.AiDigestService, planQuotaWatermarkService *service.PlanQuotaWatermarkService) (*asynqServer.Server, error) {
 	cfg := ctx.GetConfig()
 
 	if cfg == nil || cfg.Server == nil || cfg.Server.Asynq == nil {
@@ -71,6 +71,32 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 		return nil, err
 	}
 
+	// 知识库向量重索引 handler（非常驻 cron：经「任务管理」按需创建，payload.baseId=0 表全部库）。
+	// 场景：管理员更换知识库 embedding 模型/provider 后对既有切片全量重算向量。
+	if aiKnowledgeService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.AiDocReindexTaskType, aiKnowledgeService.AsyncAiDocReindex); err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
+	// 审计日报 AI 摘要 handler（系统级常驻 cron，每日 08:00）。
+	if aiDigestService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.AiAuditDigestTaskType, aiDigestService.AsyncAiAuditDigest); err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
+	// 套餐配额水位扫描 handler（系统级常驻 cron，每日 09:00）：
+	// 扫描全部 ON 租户四类配额水位，命中租户的告警站内信投递其管理员。
+	if planQuotaWatermarkService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.PlanQuotaWatermarkTaskType, planQuotaWatermarkService.AsyncPlanQuotaWatermarkScan); err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
 	// 注册租户到期扫描任务（系统级常驻任务，不写入 sys_tasks 表）。
 	// 该任务每小时整点扫描 status==ON 且 expired_at<=now 的租户，按套餐 expiry_policy 修改状态并吊销令牌。
 	// READONLY 策略的即时读写拦截由 TenantAccessChecker 中间件承担，不依赖本扫描任务。
@@ -105,6 +131,14 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 		return nil, err
 	}
 
+	// 监控告警扫描 handler（系统级常驻 cron，每 5 分钟评估一轮全部启用的告警规则）。
+	if monitorAlertService != nil {
+		if err = asynqServer.RegisterSubscriber(srv, task.MonitorAlertScanTaskType, monitorAlertService.AsyncMonitorAlertScan); err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
+
 	// 通知台账超时清扫 handler（系统级常驻任务，不写入 sys_tasks 表）。
 	// 周期调度在 startAllTask 末尾注册，与其他系统级任务同构。
 	// 它结算的是"再也不会有结论"的 SENDING 行（进程死在拨号中途 / 结论回写失败 / 队列没有消费者）。
@@ -114,7 +148,7 @@ func NewAsynqServer(ctx *bootstrap.Context, taskService *service.TaskService, in
 	}
 
 	// 启动所有的任务
-	if _, err = taskService.StartAllTask(appViewer.NewSystemViewerContext(ctx.Context()), &emptypb.Empty{}); err != nil {
+	if _, err = taskService.StartAllTask(viewer.WithSystemContext(ctx.Context()), &emptypb.Empty{}); err != nil {
 		log.Error(err)
 		return nil, err
 	}

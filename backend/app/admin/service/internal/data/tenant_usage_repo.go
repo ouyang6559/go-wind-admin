@@ -47,7 +47,7 @@ import (
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 
-	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"github.com/tx7do/go-crud/viewer"
 )
 
 // TenantUsageRepo 提供租户用量与配额的实时聚合查询，以及手动清理租户数据。
@@ -70,9 +70,44 @@ func NewTenantUsageRepo(
 }
 
 // GetUsage 聚合查询指定租户的当前用量与套餐配额上限。
-// 使用 SystemViewerContext 绕过租户隔离以跨表聚合。
+// 使用 SystemContext 绕过租户隔离以跨表聚合。
+// CountUsersInTenant 数租户用户数（USER_LIMIT 配额检查用）。
+func (r *TenantUsageRepo) CountUsersInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
+	count, err := r.entClient.Client().User.Query().
+		Where(user.TenantIDEQ(tenantID)).
+		Count(ctx)
+	return uint64(count), err
+}
+
+// SumStorageInTenant 汇总租户文件字节数（STORAGE 配额检查用）。
+func (r *TenantUsageRepo) SumStorageInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
+	var rows []struct {
+		Total uint64 `sql:"total"`
+	}
+	err := r.entClient.Client().File.Query().
+		Where(file.TenantIDEQ(tenantID)).
+		Aggregate(ent.As(ent.Sum(file.FieldSize), "total")).
+		Scan(ctx, &rows)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) > 0 {
+		return rows[0].Total, nil
+	}
+	return 0, nil
+}
+
+// CountApiCallsInTenant 统计租户 API 调用行数（API_CALL 配额检查与水位扫描用）。
+// 与 GetUsage 的 ApiCallCount 同源（sys_api_audit_logs 按租户 COUNT）。
+func (r *TenantUsageRepo) CountApiCallsInTenant(ctx context.Context, tenantID uint32) (uint64, error) {
+	cnt, err := r.entClient.Client().ApiAuditLog.Query().
+		Where(apiauditlog.TenantIDEQ(tenantID)).
+		Count(ctx)
+	return uint64(cnt), err
+}
+
 func (r *TenantUsageRepo) GetUsage(ctx context.Context, tenantId uint32) (*identityV1.TenantUsage, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	// 1. 查租户记录，WithPlan(WithQuotas) 预载套餐及其配额。
 	t, err := r.entClient.Client().Tenant.Query().
@@ -131,14 +166,12 @@ func (r *TenantUsageRepo) GetUsage(ctx context.Context, tenantId uint32) (*ident
 	usage.StorageUsedBytes = storageSum
 
 	// 5. API 调用量统计
-	apiCount, aerr := r.entClient.Client().ApiAuditLog.Query().
-		Where(apiauditlog.TenantIDEQ(tenantId)).
-		Count(sysCtx)
+	apiCount, aerr := r.CountApiCallsInTenant(sysCtx, tenantId)
 	if aerr != nil {
 		r.log.Errorf(ctx, "get usage: count api audit logs failed: %v", aerr)
 		apiCount = 0
 	}
-	usage.ApiCallCount = uint64(apiCount)
+	usage.ApiCallCount = apiCount
 
 	return usage, nil
 }
@@ -152,6 +185,8 @@ func mapEntQuotaTypeToProto(qt planquota.QuotaType) identityV1.PlanQuota_QuotaTy
 		return identityV1.PlanQuota_STORAGE
 	case planquota.QuotaTypeApiCall:
 		return identityV1.PlanQuota_API_CALL
+	case planquota.QuotaTypeAiTokens:
+		return identityV1.PlanQuota_AI_TOKENS
 	default:
 		return identityV1.PlanQuota_PLAN_QUOTA_TYPE_UNSPECIFIED
 	}
@@ -161,9 +196,9 @@ func mapEntQuotaTypeToProto(qt planquota.QuotaType) identityV1.PlanQuota_QuotaTy
 //
 // 在一个事务中硬删所有带 tenant_id 的业务表数据，保留 sys_tenants 记录（status 改为 OFF），
 // 事务提交后吊销该租户全部用户的在线令牌（admin+app 双 ClientType）。
-// 使用 SystemViewerContext 绕过租户隔离以删除跨表数据。
+// 使用 SystemContext 绕过租户隔离以删除跨表数据。
 func (r *TenantUsageRepo) CleanupTenantData(ctx context.Context, tenantId uint32) error {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 
 	tx, err := r.entClient.Client().Tx(sysCtx)
 	if err != nil {
@@ -327,9 +362,9 @@ func (r *TenantUsageRepo) CleanupTenantData(ctx context.Context, tenantId uint32
 //   - FREEZE     → status=FREEZE（同上）
 //   - READONLY   → 保持 ON，读写拦截交给 TenantAccessChecker 按过期+只读判定
 //
-// 使用 SystemViewerContext 跨租户扫描。返回被改状态的租户数量。
+// 使用 SystemContext 跨租户扫描。返回被改状态的租户数量。
 func (r *TenantUsageRepo) EnforceExpiryPolicies(ctx context.Context) (int, error) {
-	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	sysCtx := viewer.WithSystemContext(ctx)
 	now := time.Now()
 
 	// 查询所有 status==ON 且 expired_at<=now 的租户，WithPlan 预载套餐以读取 expiry_policy。

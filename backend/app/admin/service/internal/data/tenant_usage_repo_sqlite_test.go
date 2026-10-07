@@ -34,7 +34,7 @@ func newTenantUsageRepoSqlite(t *testing.T) *TenantUsageRepo {
 // TestTenantUsageRepoSqlite_GetUsageTenantNotFound 验证租户不存在时 GetUsage 报错。
 func TestTenantUsageRepoSqlite_GetUsageTenantNotFound(t *testing.T) {
 	repo := newTenantUsageRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.GetUsage(ctx, 424242)
 	require.Error(t, err, "查询不存在的租户应返回错误")
@@ -45,7 +45,7 @@ func TestTenantUsageRepoSqlite_GetUsageTenantNotFound(t *testing.T) {
 func TestTenantUsageRepoSqlite_GetUsageEmptyTenant(t *testing.T) {
 	repo := newTenantUsageRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	tenantRow, err := client.Tenant.Create().
 		SetName("sqlite_usage_tenant_empty").
@@ -70,7 +70,7 @@ func TestTenantUsageRepoSqlite_GetUsageEmptyTenant(t *testing.T) {
 func TestTenantUsageRepoSqlite_GetUsageWithPlanAndData(t *testing.T) {
 	repo := newTenantUsageRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	now := time.Now()
 
@@ -147,7 +147,7 @@ func TestTenantUsageRepoSqlite_GetUsageWithPlanAndData(t *testing.T) {
 func TestTenantUsageRepoSqlite_CleanupTenantData(t *testing.T) {
 	repo := newTenantUsageRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	now := time.Now()
 	tenantRow, err := client.Tenant.Create().
@@ -208,7 +208,7 @@ func TestTenantUsageRepoSqlite_CleanupTenantData(t *testing.T) {
 func TestTenantUsageRepoSqlite_EnforceExpiryPolicies(t *testing.T) {
 	repo := newTenantUsageRepoSqlite(t)
 	client := repo.entClient.Client()
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	past := time.Now().Add(-48 * time.Hour)
 	future := time.Now().Add(48 * time.Hour)

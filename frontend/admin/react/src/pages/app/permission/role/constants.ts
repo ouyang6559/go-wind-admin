@@ -137,10 +137,22 @@ export function getDataScopeOptions(t: TFn) {
   }));
 }
 
-// ========== 字段权限（User 资源试点） ==========
+// ========== 字段权限（资源 × 可勾选字段） ==========
 
-// 可勾选字段：value 与后端 identity User proto 字段 json_name 逐字一致，
+// 可勾选字段：value 与后端 proto 字段 json_name 逐字一致，
 // 提交后经登录聚合写入令牌，命中字段在响应侧被裁剪。
+// 新增受控资源：在此加 getXxxFieldPermissionOptions + ROLE_FIELD_RESOURCES 登记项，
+// 并在服务端加同型装饰器（role_field_permission.go 等）。
+
+/** 受控资源登记：抽屉按此渲染分组，顺序即展示顺序。 */
+export const ROLE_FIELD_RESOURCES = [
+  { resource: 'User', options: (t: TFn) => getUserFieldPermissionOptions(t) },
+  {
+    resource: 'Role',
+    options: (t: TFn) => [{ value: 'permissions', label: t('fieldPerm.field.permissions') }],
+  },
+] as const;
+
 export function getUserFieldPermissionOptions(t: TFn) {
   return [
     { value: 'email', label: t('fieldPerm.field.email') },

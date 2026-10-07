@@ -21,32 +21,38 @@ require (
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/pquerna/otp v1.5.0
 	github.com/redis/go-redis/v9 v9.22.0
+	github.com/sashabaranov/go-openai v1.41.2
 	github.com/stretchr/testify v1.12.1
 	github.com/tx7do/go-crud/api v0.0.7
 	github.com/tx7do/go-crud/entgo v0.0.55
 	github.com/tx7do/go-crud/gorm v0.0.24
 	github.com/tx7do/go-crud/pagination v0.0.16
-	github.com/tx7do/go-crud/viewer v0.0.7
-	github.com/tx7do/go-scripts v0.0.8
+	github.com/tx7do/go-crud/viewer v0.0.8
+	github.com/tx7do/go-scripts v0.0.9
 	github.com/tx7do/go-scripts/javascript v0.0.9
-	github.com/tx7do/go-scripts/lua v0.0.9
-	github.com/tx7do/go-utils v1.1.40
+	github.com/tx7do/go-scripts/lua v0.0.10
+	github.com/tx7do/go-utils v1.1.42
 	github.com/tx7do/go-utils/aggregator v0.0.5
 	github.com/tx7do/go-utils/captcha v0.0.4
 	github.com/tx7do/go-utils/copierutil v0.0.8
-	github.com/tx7do/go-utils/crypto v0.0.2
+	github.com/tx7do/go-utils/crypto v0.0.4
+	github.com/tx7do/go-utils/doctext v0.1.0
+	github.com/tx7do/go-utils/eventbus v0.1.0
+	github.com/tx7do/go-utils/fieldperm v0.1.0
 	github.com/tx7do/go-utils/geoip v1.1.8
 	github.com/tx7do/go-utils/id v0.0.6
 	github.com/tx7do/go-utils/jwtutil v0.0.3
+	github.com/tx7do/go-utils/mailer v0.1.0
 	github.com/tx7do/go-utils/mapper v0.0.3
-	github.com/tx7do/go-utils/password v0.0.2
+	github.com/tx7do/go-utils/netutil v0.1.0
+	github.com/tx7do/go-utils/password v0.1.0
+	github.com/tx7do/go-utils/sqlutil v0.1.0
 	github.com/tx7do/go-wind v0.0.2
+	github.com/tx7do/go-wind-plugins/ai/openai v0.0.1
 	github.com/tx7do/go-wind-toolkit/protoc-gen-go-redact v0.0.0-20260831125122-5bb4931991b2
 	github.com/tx7do/kratos-authn v1.1.11
 	github.com/tx7do/kratos-authn/engine/jwt v1.1.11
 	github.com/tx7do/kratos-authz v1.1.8
-	github.com/tx7do/kratos-authz/engine/casbin v1.1.12
-	github.com/tx7do/kratos-authz/engine/opa v1.1.15
 	github.com/tx7do/kratos-authz/middleware v1.1.13
 	github.com/tx7do/kratos-bootstrap/api v0.0.45
 	github.com/tx7do/kratos-bootstrap/bootstrap v0.1.17
@@ -60,9 +66,9 @@ require (
 	github.com/tx7do/kratos-swagger-ui v0.0.1
 	github.com/tx7do/kratos-transport/transport/asynq v1.3.14
 	github.com/tx7do/kratos-transport/transport/sse v1.3.8
+	github.com/xuri/excelize/v2 v2.9.1
 	github.com/yuin/gopher-lua v1.1.2
 	go.opentelemetry.io/otel/trace v1.46.0
-	golang.org/x/net v0.58.0
 	google.golang.org/genproto v0.0.0-20260908043556-f8649ddbbfe6
 	google.golang.org/genproto/googleapis/api v0.0.0-20260908043556-f8649ddbbfe6
 	google.golang.org/grpc v1.83.2
@@ -70,6 +76,11 @@ require (
 	gorm.io/datatypes v1.2.7
 	gorm.io/gorm v1.31.2
 	modernc.org/sqlite v1.58.0
+)
+
+require (
+	github.com/tx7do/kratos-authz/engine/casbin v1.1.12 // indirect
+	github.com/tx7do/kratos-authz/engine/opa v1.1.15 // indirect
 )
 
 require (
@@ -158,6 +169,7 @@ require (
 	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
+	github.com/ledongthuc/pdf v0.0.0-20260907135840-6c8c28e0e8a0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.2.1 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
@@ -202,6 +214,8 @@ require (
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.22.0 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.22.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/richardlehane/mscfb v1.0.4 // indirect
+	github.com/richardlehane/msoleps v1.0.4 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
@@ -218,12 +232,18 @@ require (
 	github.com/swaggest/swgui v1.8.5 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/tengattack/gluacrypto v0.0.0-20240324200146-54b58c95c255 // indirect
+	github.com/tiendc/go-deepcopy v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/tx7do/go-crud/audit v0.0.3 // indirect
 	github.com/tx7do/go-crud/cache v0.0.2 // indirect
+	github.com/tx7do/go-scripts/hostmodule v0.0.1
+	github.com/tx7do/go-utils/auditutil v0.1.0
+	github.com/tx7do/go-utils/authorizer v0.1.0
+	github.com/tx7do/go-utils/converter v0.1.0
+	github.com/tx7do/go-utils/ossutil v0.1.0
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1 // indirect
 	github.com/tx7do/kratos-bootstrap/config v0.2.3 // indirect
@@ -240,6 +260,8 @@ require (
 	github.com/wenlng/go-captcha/v2 v2.0.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/xuri/efp v0.0.1 // indirect
+	github.com/xuri/nfp v0.0.1 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 	github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
@@ -267,6 +289,7 @@ require (
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/image v0.40.0 // indirect
 	golang.org/x/mod v0.40.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect

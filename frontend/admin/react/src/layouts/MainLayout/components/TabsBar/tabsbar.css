@@ -116,7 +116,8 @@
       }
 
       &.ant-tabs-tab-active {
-        color: var(--ant-color-primary);
+        /* 文字档而非主色原值：主色 #006BE6 在标签底 #F0F0F0 上只有 4.33:1（见 semantic-text.css） */
+        color: var(--gowind-primary-text);
         font-weight: 500;
       }
     }
@@ -148,7 +149,7 @@
       }
 
       &.ant-tabs-tab-active {
-        color: var(--ant-color-primary);
+        color: var(--gowind-primary-text);
         font-weight: 500;
         border-bottom-color: var(--ant-color-primary);
       }
@@ -280,13 +281,17 @@
   color: var(--ant-color-text);
   font-weight: 400;
 }
+/* chrome/card 的选中项自带填充底（--ant-color-fill ≈ #323845），文字必须是浅色墨。
+   带 !important 是因为 styles/semantic-text.css 的「激活页签用主色文字档」那条也带 !important
+   （它服务的是 brisk/plain 这类无填充底的风格），这里要靠更高的选择器权重赢下暗色这一档：
+   实测 #4D97EE 在该填充底上只有 3.88:1（2026-09-28 大扫测，39 处）。 */
 [data-theme='dark'] .tabsbar-chrome .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn,
 [data-theme='dark'] .tabsbar-card .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: var(--ant-color-text);
+  color: var(--ant-color-text) !important;
 }
 [data-theme='dark'] .tabsbar-brisk .ant-tabs-tab.ant-tabs-tab-active,
 [data-theme='dark'] .tabsbar-plain .ant-tabs-tab.ant-tabs-tab-active {
-  color: var(--ant-color-primary);
+  color: var(--gowind-primary-text);
   font-weight: 500;
 }
 /* brisk / plain 风格：底部指示条统一主色 */

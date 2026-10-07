@@ -26,7 +26,7 @@ func Server() middleware.Middleware {
 				traceID = spanContext.TraceID().String()
 			}
 
-			userViewer := appViewer.NewUserViewer(
+			userViewer := viewer.NewUserContext(
 				data.GetUserId(),
 				data.GetTenantId(),
 				data.GetOrgUnitId(),

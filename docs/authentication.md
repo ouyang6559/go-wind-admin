@@ -172,7 +172,7 @@ SameSite=Lax 按站点判断——localhost 不同端口同站，dev 直连后�
 `access_key_service.go IssueToken`（`POST`，白名单端点——AK/SK 本身即凭据）：
 
 1. 复用登录限流器（IP+AK 双维度，防爆破）；
-2. `GetByAccessKeyBySystem`（SystemViewer 通道）查 AK 行；不存在/密钥错误统一文案；
+2. `GetByAccessKeyBySystem`（SystemContext 通道）查 AK 行；不存在/密钥错误统一文案；
 3. 状态 OFF / `expires_at` 已过 → 拒；
 4. SHA-256(secret) 摘要 `subtle.ConstantTimeCompare` 恒定时间比对（明文不落库）；
 5. 成功：清限流计数、`CreateMachineToken`（纯 access、入缓存、
@@ -270,9 +270,10 @@ SameSite=Lax 按站点判断——localhost 不同端口同站，dev 直连后�
 | 项 | 现状 | 影响 |
 |---|---|---|
 | ~~MFA 登录成功路径 refresh token 走响应体~~ | **已修复（2026-09-13）**：`VerifyMFAChallenge` 改调 `setRefreshCookies`，响应体不再携带 refresh 字段，与主登录路径一致 | 修复前：refresh 暴露在 JS 可读响应体 + MFA 用户会话静默续期丢失（前端只认 Cookie）。修复后 MFA 用户获得与其他用户一致的续期链路 |
-| `LoginResponse.RefreshToken`/`RefreshExpiresIn` 字段残留 | proto 字段仍在（历史形态），当前**所有路径均不再赋值** | 字段级清理（proto 删字段 + `make api`/`make ts` 三端重生成）属可选跟进，不影响行为 |
-| oidc / preshared_key / oauth proto | 配置节与 proto 预留，未接线 | 接入前勿在生产配置里误以为已启用 |
-| MAC / REGION 登录策略维度 | 未实现（7.3） | 管理页如已展示该选项需对齐 |
+| ~~`LoginResponse.RefreshToken`/`RefreshExpiresIn` 字段残留~~ | **已清理（2026-10-03）**：proto 删字段 + 三端重生成；核实三端零消费方（refresh 全走 HttpOnly Cookie）。`LoginRequest.refresh_token`（授权请求入参，另一语义）保留 | 无 |
+| oidc / preshared_key 配置节 | 预留未接线（企业 OIDC 登录已由 2026-10-03 的 SSO 环境变量方案另行覆盖；preshared_key 视需求） | 接入前勿在生产配置里误以为已启用 |
+| ~~oauth proto（第三方绑定）~~ | **已移除（2026-10-03）**：OAuthService 11 个 RPC 无实现/无注册/三端生成物零引用，微信/QQ 等消费平台绑定不在产品范围。企业联邦由 SSO 覆盖；将来如需第三方绑定，git 历史可恢复，且正确路径是 OIDC 联邦而非硬编码厂商枚举 | 无 |
+| ~~MAC / REGION 登录策略维度~~ | **REGION 已实现（2026-10-03）**：IP 经内嵌 GeoLite2 库解析归属地（取省），与策略值精确相等（大小写不敏感）即命中；解析失败不判定。**MAC 移出三端方法下拉**（HTTP 拿不到 MAC，选了永不命中；后端枚举保留兼容存量数据，存量 MAC 策略永不命中） | 无 |
 
 ## 12. 边界（明确不做）
 

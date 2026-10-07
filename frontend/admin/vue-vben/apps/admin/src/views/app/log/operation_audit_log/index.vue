@@ -6,9 +6,12 @@ import { LucideEye } from '@vben/icons';
 
 import dayjs from 'dayjs';
 
-import { h } from 'vue';
+import { h, ref } from 'vue';
+
+import { message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { exportAuditLogsServer } from '#/api';
 import {
   fetchListOperationAuditLogs,
   operationAuditLogActionList,
@@ -167,18 +170,22 @@ const gridOptions: VxeGridProps<OperationAuditLog> = {
           );
         }
 
+        // 列表与导出共用同一份搜索条件：服务端导出透传的就是这里看到的
+        const conditions = {
+          username: formValues.username,
+          resourceType: formValues.resourceType,
+          action: formValues.action,
+          ipAddress: formValues.ipAddress,
+          success: formValues.success,
+          created_at__gte: startTime,
+          created_at__lte: endTime,
+        };
+        latestFormValuesRef.value = conditions;
+
         return await fetchListOperationAuditLogs(
           new PaginationQuery({
             paging: { page: page.currentPage, pageSize: page.pageSize },
-            formValues: {
-              username: formValues.username,
-              resourceType: formValues.resourceType,
-              action: formValues.action,
-              ipAddress: formValues.ipAddress,
-              success: formValues.success,
-              created_at__gte: startTime,
-              created_at__lte: endTime,
-            },
+            formValues: conditions,
             orderBy: ['-created_at'],
           }),
         );
@@ -231,6 +238,9 @@ const gridOptions: VxeGridProps<OperationAuditLog> = {
   ],
 };
 
+// 当前搜索条件（服务端导出透传用，与 Grid proxy 查询同源——"导出的就是当前搜索看到的"）
+const latestFormValuesRef = ref<Record<string, unknown>>({});
+
 const [Grid] = useVbenVxeGrid({ gridOptions, formOptions });
 
 const [Drawer, drawerApi] = useVbenDrawer({
@@ -243,8 +253,26 @@ function handleView(row: OperationAuditLog) {
 }
 
 // 导出全部：按当前条件聚合拉取（上限 1 万行）生成 CSV
+async function handleServerExport() {
+  try {
+    await exportAuditLogsServer(
+      'operation',
+      new PaginationQuery({ formValues: latestFormValuesRef.value }),
+    );
+    message.success($t('page.auditExport.serverSuccess'));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：用户可见的那句翻译不包含服务端的原因
+    console.error('[audit-export] server-side export failed', error);
+    message.error(error?.message || $t('page.auditExport.serverFailed'));
+  }
+}
+
 async function handleExportAll(info: { key: string | number }) {
   const format = String(info.key);
+  if (format === 'server-xlsx') {
+    await handleServerExport();
+    return;
+  }
   if (format !== 'csv' && format !== 'xlsx') return;
   const pageSize = 1000;
   const maxRows = 10000;
@@ -276,6 +304,8 @@ async function handleExportAll(info: { key: string | number }) {
             <a-menu @click="handleExportAll">
               <a-menu-item key="csv">{{ $t('ui.button.exportFormatCsv') }}</a-menu-item>
               <a-menu-item key="xlsx">{{ $t('ui.button.exportFormatXlsx') }}</a-menu-item>
+              <a-menu-divider />
+              <a-menu-item key="server-xlsx">{{ $t('page.auditExport.serverFull') }}</a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>

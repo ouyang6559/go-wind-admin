@@ -7,6 +7,7 @@
 export {}
 declare global {
   const Activity: typeof import('react').Activity
+  const AiGenerateButton: typeof import('../src/components/common/AiGenerateButton/index').default
   const ApiPageSelect: typeof import('../src/components/common/Selects/index').ApiPageSelect
   const ApiSelect: typeof import('../src/components/common/Selects/index').ApiSelect
   const ApiTreeSelect: typeof import('../src/components/common/Selects/index').ApiTreeSelect
@@ -53,6 +54,7 @@ declare global {
   const JsonEditor: typeof import('../src/components/common/Editor/src/JsonEditor').default
   const Link: typeof import('react-router-dom').Link
   const LinkModal: typeof import('../src/components/common/Editor/src/TiptapEditor/index').LinkModal
+  const ListTable: typeof import('../src/components/common/ListTable/index').default
   const Loading: typeof import('../src/components/common/Loading/index').default
   const LoadingComponent: typeof import('../src/components/common/Form/components/LoadingComponent').default
   const MAX_TAG_COUNT: typeof import('../src/components/common/Selects/index').MAX_TAG_COUNT
@@ -78,6 +80,7 @@ declare global {
   const Suspense: typeof import('react').Suspense
   const TableExportButton: typeof import('../src/components/common/TableExportButton/index').default
   const TableFilter: typeof import('../src/components/Table/components/TableFilter').default
+  const TableSkeleton: typeof import('../src/components/common/ListTable/TableSkeleton').default
   const Theme: typeof import('../src/components/common/Theme/index').default
   const ThemeLoading: typeof import('../src/components/common/Loading/index').ThemeLoading
   const TiptapEditor: typeof import('../src/components/common/Editor/src/TiptapEditor').default
@@ -188,6 +191,6 @@ declare global {
 // for type re-export
 declare global {
   // @ts-ignore
-  export type { TableExportButtonProps, ImportModalProps, FC, ECOption, AuthLayoutProps, EditorProps, CodeEditorProps, JsonEditorProps, MarkdownEditorProps, PlainTextEditorProps, TiptapEditorProps, CodeBlockModalProps, VideoModalProps, IframeModalProps, ThemeLoadingProps, TokenPayload, AuthState, UserState, TabItem } from './autoImports.d'
+  export type { TableExportServerExport, TableSkeletonProps, TableExportButtonProps, ImportModalProps, FC, ECOption, AuthLayoutProps, EditorProps, CodeEditorProps, JsonEditorProps, MarkdownEditorProps, PlainTextEditorProps, TiptapEditorProps, CodeBlockModalProps, VideoModalProps, IframeModalProps, ThemeLoadingProps, TokenPayload, AuthState, UserState, TabItem } from './autoImports.d'
   import('./autoImports.d')
 }

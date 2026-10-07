@@ -83,7 +83,7 @@ func Server(opts ...Option) middleware.Middleware {
 					traceID = spanContext.TraceID().String()
 				}
 
-				userViewer := appViewer.NewUserViewer(
+				userViewer := viewer.NewUserContext(
 					uint64(tokenPayload.GetUserId()),
 					uint64(tokenPayload.GetTenantId()),
 					uint64(tokenPayload.GetOrgUnitId()),
@@ -116,7 +116,8 @@ func Server(opts ...Option) middleware.Middleware {
 
 			// 租户级访问检查：仅对租户用户（tenantId>0）生效，平台管理员（tenantId=0）直接放行。
 			// 检查项：租户状态（OFF/EXPIRED/FREEZE 拒绝）、到期只读策略（仅放行 GET/HEAD/OPTIONS）、
-			// 套餐模块白名单（请求所属业务模块不在白名单则拒绝）。
+			// 套餐模块白名单（请求所属业务模块不在白名单则拒绝）、
+			// 套餐配额（API_CALL 调用量达套餐上限则拒绝）。
 			if op.tenantAccessChecker != nil && tokenPayload.GetTenantId() > 0 {
 				var path, method string
 				if htr, ok := tr.(*http.Transport); ok {

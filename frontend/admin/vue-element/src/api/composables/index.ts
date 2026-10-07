@@ -8,6 +8,10 @@ export * from "./shared";
 
 // 认证相关
 export * from "./auth";
+export * from "./ai-provider";
+export * from "./ai-chat";
+export * from "./ai-knowledge";
+export * from "./ai-content";
 export * from "./access_key";
 
 // MFA 相关
@@ -71,6 +75,11 @@ export * from "./notification-delivery";
 
 // 通知路由规则（事件类型 → 渠道 + 派发方式）
 export * from "./notification-rule";
+export * from "./notification-template";
+export * from "./monitor-alert";
+export * from "./audit-export";
+export * from "./task-monitor";
+export * from "./my-tenant-usage";
 
 // 首页分析概览
 export * from "./dashboard";

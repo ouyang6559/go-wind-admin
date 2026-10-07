@@ -19,6 +19,7 @@ import {
 } from '#/api/composables/dashboard';
 
 import AnalyticsTrends from './analytics-trends.vue';
+import AnalyticsAiInsights from './analytics-ai-insights.vue';
 import AnalyticsVisitsData from './analytics-visits-data.vue';
 import AnalyticsVisitsSource from './analytics-visits-source.vue';
 
@@ -85,6 +86,15 @@ const chartTabs = [
 <template>
   <div class="p-5">
     <AnalysisOverview :items="overviewItems" />
+
+    <!-- AI 安全与异常洞察（行为模式挖掘，平台用户专属） -->
+    <AnalyticsAiInsights
+      :actions="actionDistQuery.data.value?.items"
+      :overview="overviewQuery.data.value"
+      :status-items="statusDistQuery.data.value?.items"
+      :trend="trendQuery.data.value"
+      class="mt-5"
+    />
     <AnalysisChartsTabs :tabs="chartTabs" class="mt-5">
       <template #trends>
         <AnalyticsTrends :data="trendQuery.data.value" />

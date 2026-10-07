@@ -141,7 +141,7 @@ function handleAdd() {
 }
 
 function handleEdit(row: any) {
-  drawerRef.value?.open(row);
+  drawerRef.value?.open({ create: false, row });
 }
 
 function handleToolbar(name: string) {

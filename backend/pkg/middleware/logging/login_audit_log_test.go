@@ -8,7 +8,7 @@
 //     中间件错误到 Status/FailureReason 的映射，以及端到端的风险评分/
 //     等级/风险因素推导；
 //  3. 直调空 Transport 的全空来源路径（覆盖 Request()/RequestHeader() 为
-//     nil 时各取值分支与 getRequestId(nil) 等空值路径）；
+//     nil 时各取值分支与 auditutil.RequestID(nil) 等空值路径）；
 //  4. computeRiskScore / levelFromScore / computeRiskFactors 的表驱动
 //     纯函数测试：各启发式因子、负分与上限截断、等级阈值、因素去重排序。
 package logging
@@ -24,6 +24,7 @@ import (
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tx7do/go-utils/auditutil"
 	"github.com/tx7do/go-utils/trans"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
@@ -119,7 +120,7 @@ func TestLoginAuditLogHandleLoginOpWithToken(t *testing.T) {
 
 	require.Len(t, env.capture.loginMeta, 1)
 	assert.True(t, env.capture.loginMeta[0].Sinking)
-	assert.True(t, env.capture.loginMeta[0].SystemViewer)
+	assert.True(t, env.capture.loginMeta[0].SystemContext)
 }
 
 // TestLoginAuditLogHandleMFAVerifyStatus 验证 MFA 验证 operation 的
@@ -240,7 +241,7 @@ func TestLoginAuditLogHandleWriteFuncNil(t *testing.T) {
 
 // TestLoginAuditLogHandleDirectEmptySources 直调空 Transport 覆盖
 // Request()/RequestHeader() 为 nil 的全空来源路径：IP/请求 ID/用户名/设备
-// 全空，评分取全空来源组合（35 → MEDIUM），并覆盖 getRequestId(nil) 分支
+// 全空，评分取全空来源组合（35 → MEDIUM），并覆盖 auditutil.RequestID(nil) 分支
 // 产生的空请求 ID（NO_REQUEST_ID 因素）。
 func TestLoginAuditLogHandleDirectEmptySources(t *testing.T) {
 	t.Run("成功", func(t *testing.T) {
@@ -253,7 +254,7 @@ func TestLoginAuditLogHandleDirectEmptySources(t *testing.T) {
 			meta = (&auditCapture{}).metaOf(ctx)
 			return nil
 		})(&op)
-		key, _, err := generateECDSAKeyPair()
+		key, _, err := auditutil.GenerateECDSAKeyPair()
 		require.NoError(t, err)
 		WithECPrivateKey(key)(&op)
 		mw := NewLoginAuditLogMiddleware(&op)
@@ -273,7 +274,7 @@ func TestLoginAuditLogHandleDirectEmptySources(t *testing.T) {
 		require.NotNil(t, di)
 		assert.Empty(t, di.GetUserAgent())
 		assert.Equal(t, auditV1.DeviceInfo_OTHER, di.GetDeviceType())
-		assert.Equal(t, PlatformOther, di.GetPlatform())
+		assert.Equal(t, auditutil.PlatformOther, di.GetPlatform())
 		assert.Empty(t, di.GetClientId())
 		// 评分：成功(0) + 匿名(20) + 未知设备(10) + IP 缺失(5) = 35 → MEDIUM。
 		assert.Equal(t, uint32(35), rec.GetRiskScore())
@@ -285,7 +286,7 @@ func TestLoginAuditLogHandleDirectEmptySources(t *testing.T) {
 		requireLogHashHex(t, rec.GetLogHash())
 		requireDERSig(t, rec.GetSignature())
 		requireTimestampNearNow(t, rec.GetCreatedAt())
-		assert.True(t, meta.SystemViewer, "直调落库同样必须切系统 viewer")
+		assert.True(t, meta.SystemContext, "直调落库同样必须切系统 viewer")
 		assert.False(t, meta.Sinking, "直调路径无 Server 包装时无 sink 标记（由 Server 落库阶段统一植入）")
 	})
 
@@ -313,19 +314,14 @@ func TestLoginAuditLogHandleDirectEmptySources(t *testing.T) {
 	})
 }
 
-// TestLoginAuditLogHashLogAndSignatureEdges 直调覆盖 nil 边界：
-// nil 记录返回空哈希/nil 签名；私钥缺失时签名必须为 nil 而非半成品。
-func TestLoginAuditLogHashLogAndSignatureEdges(t *testing.T) {
-	mwNoKey := NewLoginAuditLogMiddleware(&options{})
-	assert.Equal(t, "", mwNoKey.hashLog(nil))
-	assert.Nil(t, mwNoKey.signature(nil))
-	assert.Nil(t, mwNoKey.signature(&auditV1.LoginAuditLog{}), "无私钥时签名必须为 nil")
-
-	key, _, err := generateECDSAKeyPair()
-	require.NoError(t, err)
-	mwWithKey := NewLoginAuditLogMiddleware(&options{ecPrivateKey: key})
-	assert.Equal(t, "", mwWithKey.hashLog(nil))
-	assert.Nil(t, mwWithKey.signature(nil))
+// TestLoginAuditLogHashAndSignatureEdges 直调覆盖哈希/签名的 nil 边界
+// （实现已收敛至 auditutil）：nil 记录哈希归一空串；nil 私钥签名必须
+// 显式报错且产出 nil，而非半成品。
+func TestLoginAuditLogHashAndSignatureEdges(t *testing.T) {
+	assert.Equal(t, "", auditutil.HashLog(nil))
+	sig, err := auditutil.SignLogContent(nil, 0, 0, nil, "")
+	assert.Error(t, err, "无私钥时签名必须显式报错")
+	assert.Nil(t, sig)
 }
 
 // ---------------------------------------------------------------------------

@@ -32,6 +32,14 @@
     "policyEvaluationLog": "Policy Evaluation Logs",
     "redisCacheMonitor": "Redis Cache Monitor"
   },
+  "ai": {
+    "moduleName": "AI Assistant",
+    "chat": "AI Assistant",
+    "providers": "AI Providers",
+    "knowledge": "Knowledge Bases",
+    "query": "AI Query",
+    "usage": "Usage"
+  },
   "system": {
     "moduleName": "System Management",
     "dict": "Dictionary Management",
@@ -43,13 +51,15 @@
     "serverMonitor": "Server Monitor",
     "scripts": "Scripts",
     "config": "Config Management",
-    "accessKeys": "OpenAPI Credentials"
+    "accessKeys": "OpenAPI Credentials",
+    "monitorAlerts": "Monitor Alerts"
   },
   "notification": {
     "moduleName": "Notifications",
     "channels": "Notification Channels",
     "rules": "Notification Routing Rules",
-    "deliveries": "Notification Deliveries"
+    "deliveries": "Notification Deliveries",
+    "templates": "Templates"
   },
   "tenant": {
     "moduleName": "Tenant Management",

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, App, Space } from 'antd';
 import {
   EditOutlined,
@@ -282,40 +282,31 @@ const MenuManagement = () => {
     <>
       <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
         <div ref={containerRef} className="page-container-content">
-          <ProTable<Menu>
+          <ListTable<Menu>
             actionRef={actionRef}
             columns={columns}
             request={async (params, _sorter, _filter) => {
-              try {
-                const query = new PaginationQuery({
-                  paging: {
-                    page: 1,
-                    pageSize: 1000,
-                  },
-                  formValues: {
-                    'meta.title': params.menuName,
-                    status: params.status,
-                  },
-                });
+              const query = new PaginationQuery({
+                paging: {
+                  page: 1,
+                  pageSize: 1000,
+                },
+                formValues: {
+                  'meta.title': params.menuName,
+                  status: params.status,
+                },
+              });
 
-                const response = await fetchListMenus(query);
-                const items = response.items || [];
-                const treeData = buildMenuTree(items as Menu[]);
-                setTreeData(treeData);
+              const response = await fetchListMenus(query);
+              const items = response.items || [];
+              const treeData = buildMenuTree(items as Menu[]);
+              setTreeData(treeData);
 
-                return {
-                  data: treeData,
-                  total: items.length,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return {
-                  data: [],
-                  total: 0,
-                  success: false,
-                };
-              }
+              return {
+                data: treeData,
+                total: items.length,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

@@ -1,6 +1,8 @@
 # Lua API Modules
 
-This directory contains the Lua API modules that expose Go functionality to Lua scripts.
+This directory contains the **business** Lua API modules (cache, eventbus, oss, ai, task) that expose go-wind-admin functionality to Lua scripts.
+
+The **core** modules (logger, hook, crypto, util, http) are provided by the [go-scripts](https://github.com/tx7do/go-scripts) host layer — `lua/host` for the Lua form and `hostmodule` for the language-neutral form including the HTTP egress guardrail. Their require names and behavior are unchanged; only the implementation location moved.
 
 ## Available Modules
 
@@ -75,17 +77,15 @@ local result = oss.upload_url({
 
 ## Module Documentation
 
-- **[logger.go](logger.go)** - Logging API
-- **[hook.go](hook.go)** - Hook management API
-- **[crypto.go](crypto.go)** - Encryption/decryption API
-- **[util.go](util.go)** - Utility API (sleep, time, date)
+Core modules (logger/hook/crypto/util/http) live in the go-scripts repository (`lua/host`, `hostmodule`); the modules kept in this directory:
+
 - **[cache.go](cache.go)** - Redis cache API
 - **[eventbus.go](eventbus.go)** - Event bus API
 - **[oss.go](oss.go)** - Object storage API
 
 ## Detailed Guides
 
-- **[UTIL_API.md](UTIL_API.md)** - Complete Util API reference
+- **[go-scripts/lua/host/UTIL_API.md](https://github.com/tx7do/go-scripts/blob/main/lua/host/UTIL_API.md)** - Complete Util API reference (moved to go-scripts)
 - **[../CRYPTO_API.md](../CRYPTO_API.md)** - Complete Crypto API reference
 - **[../OSS_API.md](../OSS_API.md)** - Complete OSS API reference
 - **[../OSS_INTEGRATION.md](../OSS_INTEGRATION.md)** - OSS integration guide

@@ -12,5 +12,7 @@
   "query": "Search",
   "search": "Search",
   "edit": "Edit",
-  "delete": "Delete"
+  "delete": "Delete",
+  "loadDataFailed": "Failed to load data",
+  "retry": "Retry"
 }

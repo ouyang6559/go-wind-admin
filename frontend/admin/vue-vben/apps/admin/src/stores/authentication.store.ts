@@ -11,6 +11,7 @@ import { notification } from 'ant-design-vue';
 import { defineStore } from 'pinia';
 
 import { fetchMyPermissionCode, fetchUserProfile, loginMutation, logoutMutation, refreshTokenMutation, verifyMfaMutation } from '#/api/composables';
+import { apiClient } from '#/api/client';
 import { $t } from '#/locales';
 import { queryClient } from '#/plugins/vue-query';
 import { router } from '#/router';
@@ -210,6 +211,20 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       loginLoading.value = false;
     }
+    return { userInfo };
+  }
+
+  // completeSsoLogin OIDC 回调换令牌：code+state 调 SsoLogin（后端已验证 state
+  // 并签发标准 JWT 对），复用 applySuccessfulLogin（存 token/拉用户/跳转）。
+  // refresh token 由后端经 HttpOnly Cookie 下发，与密码登录同形。
+  async function completeSsoLogin(
+    code: string,
+    state: string,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    let userInfo: UserInfo | null = null;
+    const resp = await apiClient.authenticationService.SsoLogin({ code, state });
+    userInfo = await applySuccessfulLogin(resp as any, onSuccess);
     return { userInfo };
   }
 
@@ -531,6 +546,7 @@ export const useAuthStore = defineStore('auth', () => {
     $reset,
     authLogin,
     completeMfaChallenge,
+    completeSsoLogin,
     fetchUserInfo,
     fetchAccessCodes,
     loginLoading,

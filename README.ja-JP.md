@@ -26,6 +26,7 @@
 - **マイクロサービス + モノリスの自由切替**：go-kratos マイクロサービスフレームワークベースでありながら、モノリス構成での開発・デプロイもサポートし、チーム規模に柔軟に対応
 - **フルスタックコード生成**：Protobuf → Go API / TypeScript クライアント、Ent Schema → ORM、ワンクリック CRUD スキャフォールド。デスクトップ GUI ジェネレーターと CLI（[go-wind-toolkit](https://github.com/tx7do/go-wind-toolkit/tree/main/gowind-uiapp)、[関連ツール](#関連ツール) 参照）を同梱
 - **本番即戦力**：JWT 認証、SSE プッシュ、非同期タスクスケジューリング、Swagger ドキュメント、Docker ワンクリックデプロイ
+- **AI 機能をすぐに使える**：OpenAI 互換のマルチモデル接続（クラウド / ローカル Ollama）、SSE ストリーミングチャット、ナレッジベース RAG（pgvector によるベクトル検索 + ファイルアップロード）、トークン使用量クォータ、スクリプト `ai` モジュール、定時 AI タスク。詳細は [docs/ai_module.md](./docs/ai_module.md)
 
 ### なぜ 3 つのフロントエンドなのか
 
@@ -34,6 +35,13 @@
 バックエンドは 1 つ、API 契約は 1 つ、フロントエンド実装が 3 つ。React チームは `react`、Vue チームは `vue-vben` か `vue-element` を取ります。このスキャフォールドを使うためにスタックを乗り換える必要はありません。
 
 3 つすべてを使える状態に保つコストは **上流（本リポジトリ側）**が負担します。採用者は選んだ 1 つだけをメンテナンスすればよく、他の 2 ディレクトリは削除できます（調整箇所は [docs/adopt-one-frontend.md](./docs/adopt-one-frontend.md)・中国語参照）。
+
+---
+
+## ここから始める
+
+- **このコードベースを体系的に学びたい場合**：[ドキュメントインデックス](./docs/README.md)（中国語）から始めてください。ドキュメントは**チュートリアル層**（空の環境からビジネスモジュールの独立開発・安全なデプロイまで案内する[全 10 章の段階的チュートリアル](./docs/tutorial/README.md)）と**リファレンス層**（各サブシステムの権威ある説明）に分かれており、インデックスには役割別（フルスタック採用者 / バックエンド / フロントエンド / 運用・セキュリティ）の推奨リーディングパスが記載されています。
+- **まず動作を見たい場合**：下に[デモ](#デモ)と[クイックスタート](#クイックスタート)が続きます。
 
 ---
 
@@ -52,43 +60,6 @@
 
 ---
 
-## 技術スタック
-
-<table>
-<tr><th>レイヤー</th><th>技術</th></tr>
-<tr><td><strong>バックエンドフレームワーク</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
-<tr><td><strong>ORM</strong></td><td><code>Ent</code>（主力） · <code>GORM</code>（補助） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
-<tr><td><strong>ミドルウェア</strong></td><td><code>Redis</code>（compose は <code>bitnami/redis:latest</code> を取得、バージョン固定なし。コード側は Set/Expire/Publish などの長期コマンドのみで、Redis 8 専用コマンドは不使用） · <code>MinIO</code>（S3 互換オブジェクトストレージ）</td></tr>
-<tr><td><strong>認証・認可</strong></td><td><code>JWT</code> · <code>Casbin</code> · <code>OPA</code></td></tr>
-<tr><td><strong>リアルタイム通信</strong></td><td><code>SSE</code>（サーバープッシュ） · <code>Asynq</code>（非同期タスク）</td></tr>
-<tr><td><strong>スクリプトエンジン</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多言語 Hook プラグインシステム</td></tr>
-<tr><td><strong>フロントエンド</strong></td><td><strong>3 択 1</strong> — 下の 3 行は並列の選択肢で、3 つ同時に採用するものではありません</td></tr>
-<tr><td><strong>Vue Vben 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code></td></tr>
-<tr><td><strong>Vue Element 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code>（軽量ピュア版）</td></tr>
-<tr><td><strong>React 版</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code>（UMI 不使用）</td></tr>
-<tr><td><strong>デプロイ・運用</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
-</table>
-
----
-
-## セキュリティと等級保護コンプライアンス（等保 2.0）
-
-本プロジェクトのセキュリティ能力は、中国《ネットワークセキュリティ等級保護 2.0》（等保 2.0、レベル 2/3）の技術要求を参照して設計されており、企業の高プライバシー・プライベートデプロイシナリオにそのまま利用できます：
-
-| 技術要求 | 実装内容 |
-|---------|---------|
-| **セキュリティ監査** | 6 種類の監査ログを完全網羅：ログイン / 操作 / API / データアクセス / 権限変更 / ポリシー評価。クライアント IP を記録し、ログイン / 操作 / API の 3 種は所属地も解決する。フロントエンド発行の `X-Request-ID` リクエスト ID も併記。asynq による毎日定時アーカイブ：DB 内保持は 180 日（`AUDIT_RETENTION_DAYS` で調整可能）、期限超過データは JSONL アーカイブファイルへエクスポートして痕跡を保持 |
-| **本人認証** | パスワード複雑度（8 文字以上、小文字 / 大文字 / 数字 / 記号の 4 種類から 3 種類以上）、履歴パスワード再利用チェック（デフォルト直近 3 件）、パスワード有効期間（デフォルト 90 日）— しきい値は「パラメータ管理」のプラットフォームパラメータで調整（内蔵パラメータは起動時にシードされ、環境変数による設定は廃止）。TOTP 多要素認証（MFA）、画像認証コード、Redis ログイン失敗レート制限（IP + ユーザー名の 2 次元）、設定可能なログイン制限ポリシー |
-| **アクセス制御** | 動的 RBAC 権限エンジン（ポリシーエンジン切替可能：Casbin / OPA）。ロール—権限—インターフェースのマッピングは DB に保存され、権限変更は即時ホットリロードで反映。メニュー / ボタンレベルの権限制御に加え、ロール単位の行レベルデータスコープ（V1 試行：役職テーブル）とフィールドレベル権限（V1 試行：ユーザーテーブル、ブラックリストフィールドはレスポンスから刈り取り）。認証判定のたびにポリシー評価ログへ記録しトレース可能 |
-| **マルチテナント分離** | ent Privacy ポリシーによるコンパイルレベルのデータ分離：読み取りクエリには自動的にテナントフィルターが注入され、Create はテナント偽装を防止、Update / Delete にはテナント述語が注入される（テナント横断の変更は 0 行ヒット）。テナントリクエストは `(path, method)` により Api テーブルでフェイルクローズ検証（権限ポイント欠落は即拒否）。プランのモジュールホワイトリストと期限切れ読み取り専用ポリシー |
-| **データ機密性** | ログインパスワードはアプリケーション層で AES 暗号化送信、bcrypt ハッシュで保存。機密タスク設定は AES-256-GCM で保存時暗号化（Ent Hook による透過的加復号）。JWT RS256 非対称署名、refresh token は HttpOnly Cookie。トランスポート層 TLS はデプロイ層で有効化（バックエンド `server.rest.tls` 設定、または nginx / ロードバランサー終端） |
-| **データバックアップ・リカバリ** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) による定時フルバックアップ（pg_dump、デフォルト 30 部自動ローテーション）。Docker コンテナ / ローカル直結の双モード対応、リカバリ手順ドキュメント付き |
-| **フロントエンドセキュリティ** | 3 つのフロントエンドはそれぞれ `scripts/deploy/nginx.conf` を同梱し、本番では X-Frame-Options / HSTS / Content-Security-Policy レスポンスヘッダーを下流する。react と vue-element はビルド時に `index.html` へ CSP `<meta>` も注入する（インラインスクリプトは sha256 ホワイトリスト）。web server を差し替えても一層目の防御が残る |
-
-> **注記**：等保評価には技術要求のほか、管理制度、物理環境、人員組織などソフトウェア以外の領域が含まれます。本プロジェクトがカバーするのは技術措置の部分であり、プライベートデプロイにおける等保評価準備を直接支援しますが、完全な等保評価プロセスの代替ではありません。
-
----
-
 ## クイックスタート
 
 ### 環境要件
@@ -102,9 +73,9 @@
 
 ### 環境スクリプト選択
 
-- Linux / macOS 開発環境：`scripts/env/install_unix_dev.sh`
-- Linux / macOS 本番環境：`scripts/env/install_unix_prod.sh`
-- Windows 開発環境：`scripts/env/install_windows_dev.ps1`
+- Linux / macOS 開発環境：`backend/scripts/env/install_unix_dev.sh`
+- Linux / macOS 本番環境：`backend/scripts/env/install_unix_prod.sh`
+- Windows 開発環境：`backend/scripts/env/install_windows_dev.ps1`
 
 ### Docker 2つのデプロイモード
 
@@ -164,9 +135,9 @@ gow run admin
 
 | フロントエンド版 | ディレクトリ | 起動コマンド | ポート |
 |------------------|--------------|--------------|--------|
-| React | `frontend/admin/react` | `pnpm dev` | 5888 |
-| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 5777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 5666 |
+| React | `frontend/admin/react` | `pnpm dev` | 15888 |
+| Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
 
 ```shell
 # 3 つのうち 1 つを選ぶ：まずそのフロントエンドへ cd してから install → 起動。
@@ -174,14 +145,51 @@ gow run admin
 # そこで `pnpm install` を実行すると ENOENT エラーになる。
 cd frontend/admin/react
 pnpm install
-pnpm dev                    # ポート 5888
+pnpm dev                    # ポート 15888
 
 # 残り 2 系：
-cd frontend/admin/vue-element && pnpm install && pnpm dev            # ポート 5777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート 5666
+cd frontend/admin/vue-element && pnpm install && pnpm dev            # ポート 15777
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート 15666
 ```
 
 > vue-vben 自体が pnpm workspace（`pnpm-workspace.yaml` + `apps/` + `packages/`）なので、依存インストールは必ず**そのルート**で行う。`pnpm dev:antd` は workspace から `@vben/web-antd` app を選んで起動するだけ。`apps/admin` で単独 install すると catalog のバージョン固定を迂回する。
+
+---
+
+## 技術スタック
+
+<table>
+<tr><th>レイヤー</th><th>技術</th></tr>
+<tr><td><strong>バックエンドフレームワーク</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
+<tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code>（2 択 1、ビルドタグで切替、デフォルトは Ent） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
+<tr><td><strong>ミドルウェア</strong></td><td><code>Redis</code>（compose は <code>bitnami/redis:latest</code> を取得、バージョン固定なし。コード側は Set/Expire/Publish などの長期コマンドのみで、Redis 8 専用コマンドは不使用） · <code>MinIO</code>（S3 互換オブジェクトストレージ）</td></tr>
+<tr><td><strong>認証・認可</strong></td><td><code>JWT</code>（認証） · <code>Casbin</code> / <code>OPA</code>（認可エンジン、2 択 1、デフォルトは全許可の noop）</td></tr>
+<tr><td><strong>リアルタイム通信</strong></td><td><code>SSE</code>（サーバープッシュ） · <code>Asynq</code>（非同期タスク）</td></tr>
+<tr><td><strong>スクリプトエンジン</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多言語 Hook プラグインシステム</td></tr>
+<tr><td><strong>フロントエンド</strong></td><td><strong>3 択 1</strong> — 下の 3 行は並列の選択肢で、3 つ同時に採用するものではありません</td></tr>
+<tr><td><strong>Vue Vben 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Ant Design Vue</code> · <code>Vben Admin</code> · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>Vue Element 版</strong></td><td><code>Vue 3</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Element Plus</code>（軽量ピュア版） · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>React 版</strong></td><td><code>React 19</code> · <code>TypeScript</code> · <code>Vite</code> · <code>Zustand</code> · <code>Ant Design V6</code>（UMI 不使用） · <code>Tailwind CSS</code></td></tr>
+<tr><td><strong>デプロイ・運用</strong></td><td><code>Docker</code> · <code>Docker Compose</code> · <code>PM2</code> · <code>Swagger UI</code></td></tr>
+</table>
+
+---
+
+## セキュリティと等級保護コンプライアンス（等保 2.0）
+
+本プロジェクトのセキュリティ能力は、中国《ネットワークセキュリティ等級保護 2.0》（等保 2.0、レベル 2/3）の技術要求を参照して設計されており、企業の高プライバシー・プライベートデプロイシナリオにそのまま利用できます：
+
+| 技術要求 | 実装内容 |
+|---------|---------|
+| **セキュリティ監査** | 6 種類の監査ログを完全網羅：ログイン / 操作 / API / データアクセス / 権限変更 / ポリシー評価。クライアント IP を記録し、ログイン / 操作 / API の 3 種は所属地も解決する。フロントエンド発行の `X-Request-ID` リクエスト ID も併記。asynq による毎日定時アーカイブ：DB 内保持は 180 日（`AUDIT_RETENTION_DAYS` で調整可能）、期限超過データは JSONL アーカイブファイルへエクスポートして痕跡を保持 |
+| **本人認証** | パスワード複雑度（8 文字以上、小文字 / 大文字 / 数字 / 記号の 4 種類から 3 種類以上）、履歴パスワード再利用チェック（デフォルト直近 3 件）、パスワード有効期間（デフォルト 90 日）— しきい値は「パラメータ管理」のプラットフォームパラメータで調整（内蔵パラメータは起動時にシードされ、環境変数による設定は廃止）。TOTP 多要素認証（MFA）、画像認証コード、Redis ログイン失敗レート制限（IP + ユーザー名の 2 次元）、設定可能なログイン制限ポリシー |
+| **アクセス制御** | 動的 RBAC 権限エンジン（ポリシーエンジン切替可能：Casbin / OPA）。ロール—権限—インターフェースのマッピングは DB に保存され、権限変更は即時ホットリロードで反映。メニュー / ボタンレベルの権限制御に加え、ロール単位の行レベルデータスコープ（V1 試行：役職テーブル）とフィールドレベル権限（V1 試行：ユーザーテーブル、ブラックリストフィールドはレスポンスから刈り取り）。認証判定のたびにポリシー評価ログへ記録しトレース可能 |
+| **マルチテナント分離** | ent Privacy ポリシーによるコンパイルレベルのデータ分離：読み取りクエリには自動的にテナントフィルターが注入され、Create はテナント偽装を防止、Update / Delete にはテナント述語が注入される（テナント横断の変更は 0 行ヒット）。テナントリクエストは `(path, method)` により Api テーブルでフェイルクローズ検証（権限ポイント欠落は即拒否）。プランのモジュールホワイトリストと期限切れ読み取り専用ポリシー |
+| **データ機密性** | ログインパスワードはアプリケーション層で AES 暗号化送信、bcrypt ハッシュで保存。機密タスク設定は AES-256-GCM で保存時暗号化（Ent Hook による透過的加復号）。JWT RS256 非対称署名、refresh token は HttpOnly Cookie。トランスポート層 TLS はデプロイ層で有効化（バックエンド `server.rest.tls` 設定、または nginx / ロードバランサー終端） |
+| **データバックアップ・リカバリ** | [`scripts/backup/pg_backup.sh`](./backend/scripts/backup/pg_backup.sh) による定時フルバックアップ（pg_dump、デフォルト 30 部自動ローテーション）。Docker コンテナ / ローカル直結の双モード対応、リカバリ手順ドキュメント付き |
+| **フロントエンドセキュリティ** | 3 つのフロントエンドはそれぞれ `scripts/deploy/nginx.conf` を同梱し、本番では X-Frame-Options / HSTS / Content-Security-Policy レスポンスヘッダーを下流する。react と vue-element はビルド時に `index.html` へ CSP `<meta>` も注入する（インラインスクリプトは sha256 ホワイトリスト）。web server を差し替えても一層目の防御が残る |
+
+> **注記**：等保評価には技術要求のほか、管理制度、物理環境、人員組織などソフトウェア以外の領域が含まれます。本プロジェクトがカバーするのは技術措置の部分であり、プライベートデプロイにおける等保評価準備を直接支援しますが、完全な等保評価プロセスの代替ではありません。
 
 ---
 
@@ -215,7 +223,10 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート
 | 多要素認証（MFA） | TOTP ベースの多要素認証。ログインチャレンジ、個人センターでのバインド管理、および管理者によるユーザー MFA のレスキューリセットを含む。 |
 | パスワード再設定 | バインド済みメールアドレス宛の認証コードでパスワードを再設定：コードは 10 分間・1 回のみ有効、再設定成功時に全セッションを失効。存在しないユーザーは静かに処理し、ユーザー列挙を防止。 |
 | 通知チャネル | 通知チャネルの管理、タイプは 2 択：`EMAIL`（SMTP 経由、パスワードは暗号化保存・リストではマスク表示）または `WEBHOOK`（HTTP コールバック、署名スタイル 5 档：NONE / DINGTALK / FEISHU / WECOM / CUSTOM）。有効化 / 無効化とテスト送信をサポート。 |
+| 通知ルール | 通知ルーティングルール（どのイベントをどのチャネルへ配信するか）の管理。有効化 / 無効化とルール行単位のテスト配信をサポート。内蔵デフォルトルールは起動時に播種（空テーブル時のみ）。行削除は即時反映。 |
+| 配信台帳 | 通知ごと・チャネルごとの配信結果（ステータス / チャネル / 試行回数 / 失敗理由 / リクエスト ID）を確認。受取人やステータスで絞り込み可能。 |
 | サーバーモニタリング | サービスのランタイム指標（CPU コア数、メモリ、goroutine 数、稼働時間など）を読み取り専用で表示し、自動更新。 |
+| オンラインユーザー | 現在オンラインのセッション一覧（ユーザー、テナント、クライアント種別、ログイン IP、User-Agent、デバイス ID、ログイン時刻）。キーワード絞り込み・ページング（ログイン時刻の降順）・セッション単位の強制ログアウトに対応、30 秒自動更新。 |
 | スクリプトシステム | スクリプトプラグインシステム（Lua / JavaScript、データベースを信頼源、管理画面の変更は即時反映）：エンティティライフサイクルフック（before は否決可 / after は非同期）、定時タスク（asynq）、HTTP 送信（ドメイン許可リスト fail-closed）、テスト実行と実行ログ。詳細は [docs/script_system.md](./docs/script_system.md) |
 | パラメータ管理 | プラットフォーム全体のシステムパラメータをキー / 値で管理（業務ディクショナリとは区別）。内蔵パラメータは起動時にシードされ、削除は不可。読み取りはサービス側のキャッシュ付き accessor を経由し、マルチインスタンス構成では変更が Redis パブリッシュ / サブスクライブでブロードキャストされて各インスタンスのキャッシュが失効される。 |
 | マシン資格情報（AK/SK） | テナントスコープの AccessKey / SecretKey 管理：作成時に Secret を一度だけ表示し、有効化 / 無効化・削除・シークレットのローテーションをサポート（ローテーションで旧 Secret は直ちに無効化）。AK / Secret はトークン交換エンドポイントでテナントスコープのマシン JWT（machine ロール、アクセストークンのみ）に交換可能。交換エンドポイントには IP + AK 単位の失敗レート制限が適用される。 |
@@ -241,6 +252,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート
 | 機能 | 説明 |
 |------|------|
 | マイページ | 個人情報の表示・修正、最終ログイン情報の参照、パスワードの変更、メールアドレスのバインド / 再バインド（認証コード検証）などの機能を提供。 |
+| マイアクティブセッション | 自分の現在アクティブなセッション一覧（ログイン IP、デバイス、ログイン時刻など）。現在のセッションは表示のみ（ログアウト不可）、それ以外は個別にログアウト可能。 |
 
 ---
 

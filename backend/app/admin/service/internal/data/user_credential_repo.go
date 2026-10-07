@@ -24,7 +24,8 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 
 	"go-wind-admin/app/admin/service/internal/data/ent/usercredential"
-	passwordPolicy "go-wind-admin/pkg/password"
+
+	"go-wind-admin/pkg/constants"
 
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 )
@@ -457,7 +458,7 @@ func (r *UserCredentialRepo) FindUserCredential(ctx context.Context, tenantID ui
 	if r.verifyCredential(entity.CredentialType, plainCredential, *entity.Credential) {
 		// 等保口令策略：有效期检查——超期拒绝登录，用户走重置/改密流程换新口令
 		// 阈值自 sys_config 平台参数读取（参数管理页可调，<=0 关闭）。
-		if maxAge := r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMaxAgeDays, passwordPolicy.DefaultMaxAgeDays); maxAge > 0 && *entity.CredentialType == usercredential.CredentialTypePasswordHash {
+		if maxAge := r.configRepo.GetConfigInt(ctx, constants.ConfigKeyPasswordMaxAgeDays, constants.DefaultPasswordMaxAgeDays); maxAge > 0 && *entity.CredentialType == usercredential.CredentialTypePasswordHash {
 			if entity.UpdatedAt != nil && time.Since(*entity.UpdatedAt) > time.Duration(maxAge)*24*time.Hour {
 				r.log.Warnf(ctx, "password expired for user [%d] (age > %dd), login denied", *entity.UserID, maxAge)
 				return 0, authenticationV1.ErrorBadRequest("password expired, please reset your password")
@@ -504,8 +505,8 @@ func (r *UserCredentialRepo) prepareCredential(ctx context.Context, credentialTy
 	case usercredential.CredentialTypePasswordHash:
 		// 等保口令策略：哈希前对明文做复杂度校验（覆盖创建/修改/重置全部路径）。
 		// 长度阈值自 sys_config 平台参数读取（参数管理页可调）。
-		if err := passwordPolicy.ValidateComplexity(plainCredential,
-			r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyMinLen, passwordPolicy.DefaultMinLen)); err != nil {
+		if err := password.ValidateComplexity(plainCredential,
+			r.configRepo.GetConfigInt(ctx, constants.ConfigKeyPasswordMinLen, constants.DefaultPasswordMinLen)); err != nil {
 			return "", authenticationV1.ErrorBadRequest("%s", err.Error())
 		}
 		var err error
@@ -607,7 +608,7 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 	}
 
 	extraInfo := appendPasswordHistory(entity.ExtraInfo, *entity.Credential,
-		r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount))
+		r.configRepo.GetConfigInt(ctx, constants.ConfigKeyPasswordHistoryCount, constants.DefaultPasswordHistoryCount))
 
 	builder := r.entClient.Client().UserCredential.Update()
 	builder.Where(tenantWhere...)
@@ -688,7 +689,7 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 	}
 
 	extraInfo := appendPasswordHistory(entity.ExtraInfo, *entity.Credential,
-		r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount))
+		r.configRepo.GetConfigInt(ctx, constants.ConfigKeyPasswordHistoryCount, constants.DefaultPasswordHistoryCount))
 
 	builder := r.entClient.Client().UserCredential.Update()
 	builder.Where(tenantWhere...)

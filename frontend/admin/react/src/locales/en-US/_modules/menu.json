@@ -38,7 +38,6 @@
   "createFailed": "Creation failed",
   "updateFailed": "Update failed",
   "deleteFailed": "Delete failed",
-  "fetchFailed": "Failed to fetch data",
   "maxChars": "Maximum {{max}} characters",
   "requiredTitle": "Please enter menu title",
   "requiredPath": "Please enter route path",

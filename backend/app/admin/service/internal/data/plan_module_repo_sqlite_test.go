@@ -43,7 +43,7 @@ func newPlanModuleRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Cli
 func TestPlanModuleRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pm_create_plan")).
@@ -77,7 +77,7 @@ func TestPlanModuleRepoSqlite_Create(t *testing.T) {
 func TestPlanModuleRepoSqlite_ListFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pm_list_plan")).
@@ -137,7 +137,7 @@ func TestPlanModuleRepoSqlite_ListFilter(t *testing.T) {
 func TestPlanModuleRepoSqlite_ListModulesByPlanId(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	planA, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pm_lmbpi_a")).
@@ -176,7 +176,7 @@ func TestPlanModuleRepoSqlite_ListModulesByPlanId(t *testing.T) {
 func TestPlanModuleRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pm_get_plan")).
@@ -215,7 +215,7 @@ func TestPlanModuleRepoSqlite_Get(t *testing.T) {
 func TestPlanModuleRepoSqlite_ModuleReadView(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		protoModule identityV1.Module
@@ -305,7 +305,7 @@ func TestPlanModuleRepoSqlite_ModuleReadView(t *testing.T) {
 func TestPlanModuleRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pm_update_plan")).
@@ -346,7 +346,7 @@ func TestPlanModuleRepoSqlite_Update(t *testing.T) {
 func TestPlanModuleRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newPlanModuleRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().Plan.Create().
 		SetNillableName(trans.Ptr("sqlite_pm_del_plan")).

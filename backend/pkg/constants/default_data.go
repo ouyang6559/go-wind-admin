@@ -13,8 +13,6 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
-
-	passwordPolicy "go-wind-admin/pkg/password"
 )
 
 const (
@@ -22,7 +20,7 @@ const (
 	DefaultAdminUserName = "admin"
 
 	// DefaultUserPassword 系统初始化默认密码（管理员与普通用户统一，须满足
-	// pkg/password 复杂度策略：≥8位且至少3类字符——种子凭证经 prepareCredential
+	// 口令复杂度策略（go-utils/password）：≥8位且至少3类字符——种子凭证经 prepareCredential
 	// 入库时会做复杂度校验，不达标会被拒、初始化半途而废，admin 从此无法登录）
 	DefaultUserPassword = "Abcd@1234"
 
@@ -107,6 +105,8 @@ var DefaultPermissions = []*permissionV1.Permission{
 			50, 51, 52, 53, 54, 55, 56, 57,
 			60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
 			72, 73, 74,
+			80, 81, 82, 83, 84,
+			101, 102,
 		},
 		ApiIds: []uint32{
 			1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -309,6 +309,8 @@ func ComponentToModule(component string) identityV1.Module {
 		return identityV1.Module_FILE
 	case len(component) >= 9 && component[:9] == "app/task/":
 		return identityV1.Module_TASK
+	case len(component) >= 7 && component[:7] == "app/ai/":
+		return identityV1.Module_AI
 	default:
 		return identityV1.Module_MODULE_UNSPECIFIED
 	}
@@ -1015,30 +1017,156 @@ var DefaultMenus = []*permissionV1.Menu{
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
+	{
+		// 通知模板：可复用的标题/正文占位模板，发送方以 template_code 引用（P3 第二片）
+		Id:        trans.Ptr(uint32(101)),
+		ParentId:  trans.Ptr(uint32(74)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("NotificationTemplateManagement"),
+		Path:      trans.Ptr("templates"),
+		Component: trans.Ptr("app/notification/template/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.notification.templates"),
+			Icon:      trans.Ptr("lucide:layout-template"),
+			Order:     trans.Ptr(int32(4)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		// 监控告警规则：指标阈值 → 触发通知（联动通知域，平台管理员）
+		Id:        trans.Ptr(uint32(102)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("MonitorAlertRule"),
+		Path:      trans.Ptr("monitor-alerts"),
+		Component: trans.Ptr("app/system/monitor_alert/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.monitorAlerts"),
+			Icon:      trans.Ptr("lucide:bell-plus"),
+			Order:     trans.Ptr(int32(10)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		// AI 域：对话助手（普通用户）+ 模型提供商管理（平台管理员）。
+		// 对话页不加 Authority（登录即可用）；提供商管理只留给平台管理员。
+		Id:        trans.Ptr(uint32(80)),
+		ParentId:  nil,
+		Type:      permissionV1.Menu_CATALOG.Enum(),
+		Name:      trans.Ptr("AiAssistant"),
+		Path:      trans.Ptr("/ai"),
+		Redirect:  trans.Ptr("/ai/chat"),
+		Component: trans.Ptr("BasicLayout"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Order:     trans.Ptr(int32(2007)),
+			Title:     trans.Ptr("menu.ai.moduleName"),
+			Icon:      trans.Ptr("lucide:sparkles"),
+			KeepAlive: trans.Ptr(true),
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(81)),
+		ParentId:  trans.Ptr(uint32(80)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("AiChat"),
+		Path:      trans.Ptr("chat"),
+		Component: trans.Ptr("app/ai/chat/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.ai.chat"),
+			Icon:      trans.Ptr("lucide:message-circle"),
+			Order:     trans.Ptr(int32(1)),
+			KeepAlive: trans.Ptr(true),
+		},
+	},
+	{
+		// 智能问数：NL→只读 SQL，平台管理员专属（SQL 直触全平台原生表）
+		Id:        trans.Ptr(uint32(83)),
+		ParentId:  trans.Ptr(uint32(80)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("AiQuery"),
+		Path:      trans.Ptr("query"),
+		Component: trans.Ptr("app/ai/query/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title: trans.Ptr("menu.ai.query"),
+			Icon:  trans.Ptr("lucide:search-code"),
+			Order: trans.Ptr(int32(3)),
+		},
+	},
+	{
+		Id:        trans.Ptr(uint32(82)),
+		ParentId:  trans.Ptr(uint32(80)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("AiProviderManagement"),
+		Path:      trans.Ptr("providers"),
+		Component: trans.Ptr("app/ai/provider/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.ai.providers"),
+			Icon:      trans.Ptr("lucide:cpu"),
+			Order:     trans.Ptr(int32(2)),
+			Authority: []string{"sys:platform_admin"},
+		},
+	},
+	{
+		// 知识库（RAG）：与 chat 同级，登录即可用
+		Id:        trans.Ptr(uint32(84)),
+		ParentId:  trans.Ptr(uint32(80)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("AiKnowledge"),
+		Path:      trans.Ptr("knowledge"),
+		Component: trans.Ptr("app/ai/knowledge/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.ai.knowledge"),
+			Icon:      trans.Ptr("lucide:book-open"),
+			Order:     trans.Ptr(int32(4)),
+			KeepAlive: trans.Ptr(true),
+		},
+	},
+	{
+		// AI 用量：当前用户 tokens 汇总与流水，登录即可用
+		Id:        trans.Ptr(uint32(85)),
+		ParentId:  trans.Ptr(uint32(80)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("AiUsage"),
+		Path:      trans.Ptr("usage"),
+		Component: trans.Ptr("app/ai/usage/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title: trans.Ptr("menu.ai.usage"),
+			Icon:  trans.Ptr("lucide:bar-chart-3"),
+			Order: trans.Ptr(int32(5)),
+		},
+	},
 }
 
 // DefaultConfigs 系统初始化内置平台参数（等保口令策略阈值）。
-// 键与默认值单源引自 pkg/password 的同名常量，保证种子行与 accessor 缺省回退一致；
+// 键与默认值单�源定义于本包，保证种子行与 accessor 缺省回退一致；
 // 服务启动时按键缺一补一（键已存在、值已被管理员改过的行不覆盖），is_built_in 可改不可删。
 var DefaultConfigs = []*configV1.Config{
 	{
-		Key:       trans.Ptr(passwordPolicy.ConfigKeyMinLen),
+		Key:       trans.Ptr(ConfigKeyPasswordMinLen),
 		Name:      trans.Ptr("Password minimum length"),
-		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultMinLen)),
+		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordMinLen)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
 	},
 	{
-		Key:       trans.Ptr(passwordPolicy.ConfigKeyMaxAgeDays),
+		Key:       trans.Ptr(ConfigKeyPasswordMaxAgeDays),
 		Name:      trans.Ptr("Password maximum age in days (0 disables expiry)"),
-		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultMaxAgeDays)),
+		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordMaxAgeDays)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
 	},
 	{
-		Key:       trans.Ptr(passwordPolicy.ConfigKeyHistoryCount),
+		Key:       trans.Ptr(ConfigKeyPasswordHistoryCount),
 		Name:      trans.Ptr("Password history retention count (0 disables history check)"),
-		Value:     trans.Ptr(strconv.Itoa(passwordPolicy.DefaultHistoryCount)),
+		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordHistoryCount)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
 	},

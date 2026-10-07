@@ -7,6 +7,7 @@ import (
 	"time"
 
 	gsEngine "github.com/tx7do/go-scripts"
+	"github.com/tx7do/go-scripts/hostmodule"
 
 	"go-wind-admin/pkg/scripting/api"
 )
@@ -27,6 +28,7 @@ const (
 	jsModuleTask     = "task"
 	jsModuleEventBus = "eventbus"
 	jsModuleOSS      = "oss"
+	jsModuleAI       = "ai"
 )
 
 func init() {
@@ -51,9 +53,9 @@ func (b *JSBinder) WithContext(holder *execCtxHolder, cfg *Config) RuntimeBinder
 }
 
 // httpOpts 从编排器配置取 http 护栏（binder 无 cfg 时 fail-closed 空白名单）。
-func (b *JSBinder) httpOpts() api.HTTPOptions {
+func (b *JSBinder) httpOpts() hostmodule.HTTPOptions {
 	if b.cfg == nil {
-		return api.HTTPOptions{}
+		return hostmodule.HTTPOptions{}
 	}
 	return b.cfg.HTTPOptions
 }
@@ -67,11 +69,11 @@ func (b *JSBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 	}
 
 	// 注入无依赖模块
-	modules := []api.ModuleDef{
-		api.ModuleLogger(deps.Logger),
-		api.ModuleCrypto(),
-		api.ModuleUtil(sleepCap),
-		api.ModuleHTTP(b.httpOpts()), // fail-closed：未配置白名单时调用即报错
+	modules := []hostmodule.ModuleDef{
+		hostmodule.ModuleLogger(deps.Logger),
+		hostmodule.ModuleCrypto(),
+		hostmodule.ModuleUtil(sleepCap),
+		hostmodule.ModuleHTTP(b.httpOpts()), // fail-closed：未配置白名单时调用即报错
 	}
 	for _, m := range modules {
 		if err := eng.RegisterModule(m.Name, m.Funcs); err != nil {
@@ -94,6 +96,11 @@ func (b *JSBinder) Bind(eng gsEngine.Engine, deps *RuntimeDeps) error {
 	if deps.OSSClient != nil {
 		if err := eng.RegisterModule(jsModuleOSS, api.ModuleOSS(deps.OSSClient, deps.Logger).Funcs); err != nil {
 			return fmt.Errorf("js bind module %s: %w", jsModuleOSS, err)
+		}
+	}
+	if deps.AI != nil {
+		if err := eng.RegisterModule(jsModuleAI, api.ModuleAI(deps.AI, deps.Logger).Funcs); err != nil {
+			return fmt.Errorf("js bind module %s: %w", jsModuleAI, err)
 		}
 	}
 

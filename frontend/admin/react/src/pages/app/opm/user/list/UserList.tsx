@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, InfoCircleOutlined , SafetyOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -252,47 +252,42 @@ const UserList: React.FC<UserListProps> = ({ tenantId, orgUnitId }) => {
         className="page-container-content"
         style={{ padding: '0 8px', height: '100%' }}
       >
-        <ProTable<any>
+        <ListTable<any>
           actionRef={actionRef}
           columns={columns}
           headerTitle={false}
           params={{ tenantId, orgUnitId }}
           request={async (params) => {
-            try {
-              const formValues: Record<string, any> = {
-                ...Object.fromEntries(
-                  Object.entries(params).filter(
-                    ([key]) => !['current', 'pageSize', 'tenantId', 'orgUnitId'].includes(key),
-                  ),
+            const formValues: Record<string, any> = {
+              ...Object.fromEntries(
+                Object.entries(params).filter(
+                  ([key]) => !['current', 'pageSize', 'tenantId', 'orgUnitId'].includes(key),
                 ),
-              };
-              // tenantId 存在时带上租户筛选
-              if (tenantId != null) {
-                formValues.tenant_id = tenantId;
-              }
-              // orgUnitId 存在时带上组织筛选
-              if (orgUnitId != null) {
-                formValues.org_unit_id = orgUnitId;
-              }
-              const query = new PaginationQuery({
-                paging: {
-                  page: params.current || 1,
-                  pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
-                },
-                formValues,
-              });
-
-              const response = await fetchListUsers(query);
-
-              return {
-                data: response.items || [],
-                total: response.total || 0,
-                success: true,
-              };
-            } catch (error: any) {
-              message.error(error.message || t('fetchFailed'));
-              return { data: [], total: 0, success: false };
+              ),
+            };
+            // tenantId 存在时带上租户筛选
+            if (tenantId != null) {
+              formValues.tenant_id = tenantId;
             }
+            // orgUnitId 存在时带上组织筛选
+            if (orgUnitId != null) {
+              formValues.org_unit_id = orgUnitId;
+            }
+            const query = new PaginationQuery({
+              paging: {
+                page: params.current || 1,
+                pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
+              },
+              formValues,
+            });
+
+            const response = await fetchListUsers(query);
+
+            return {
+              data: response.items || [],
+              total: response.total || 0,
+              success: true,
+            };
           }}
           rowKey="id"
           search={{

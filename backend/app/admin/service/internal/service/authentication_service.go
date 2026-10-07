@@ -9,6 +9,7 @@ import (
 
 	"github.com/tx7do/go-crud/viewer"
 	"github.com/tx7do/go-utils/captcha"
+	"github.com/tx7do/go-utils/geoip/geolite"
 	"github.com/tx7do/go-utils/timeutil"
 	"github.com/tx7do/go-utils/trans"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
@@ -27,7 +28,6 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 
 	"go-wind-admin/pkg/constants"
-	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/netutil"
 )
@@ -183,12 +183,15 @@ type AuthenticationService struct {
 
 	mfaFactorRepo     *data.UserMfaFactorRepo
 	mfaChallengeCache *data.MfaChallengeCache
+	ssoStateCache     *data.SsoStateCache
+	geoClient         *geolite.Client
 
 	vcodeCache *data.VCodeCache
 	// notifier 是唯一的对外通知出口（找回密码验证码邮件）。
 	// 此前这里持有 notificationChannelRepo 并直接调 mailer.SendMail——渠道选择策略
 	// 与 SMTP 细节因此散落到登录链路里，改一处漏一处。
 	notifier Notifier
+	mailer   *TransactionMailer
 }
 
 func NewAuthenticationService(
@@ -209,6 +212,9 @@ func NewAuthenticationService(
 	loginPolicyRepo *data.LoginPolicyRepo,
 	mfaFactorRepo *data.UserMfaFactorRepo,
 	mfaChallengeCache *data.MfaChallengeCache,
+	ssoStateCache *data.SsoStateCache,
+	geoClient *geolite.Client,
+	mailer *TransactionMailer,
 	vcodeCache *data.VCodeCache,
 	notifier Notifier,
 ) *AuthenticationService {
@@ -230,6 +236,9 @@ func NewAuthenticationService(
 		loginPolicyRepo:         loginPolicyRepo,
 		mfaFactorRepo:           mfaFactorRepo,
 		mfaChallengeCache:       mfaChallengeCache,
+		ssoStateCache:           ssoStateCache,
+		geoClient:               geoClient,
+		mailer:                  mailer,
 		vcodeCache:              vcodeCache,
 		notifier:                notifier,
 	}
@@ -245,7 +254,21 @@ func (s *AuthenticationService) checkLoginPolicies(ctx context.Context, tenantID
 		s.log.Errorf(ctx, "list login policies failed for tenant [%d]: %s", tenantID, err.Error())
 		return false, ""
 	}
-	return data.MatchLoginPolicy(policies, userId, clientIP, deviceId, time.Now())
+	return data.MatchLoginPolicy(policies, userId, clientIP, deviceId, s.resolveRegionFromIP(ctx, clientIP), time.Now())
+}
+
+// resolveRegionFromIP 把客户端 IP 解析为归属地串（取省，空=解析失败）。
+// REGION 策略值与此串精确相等（大小写不敏感）即命中。
+// geolite 客户端内嵌库，失败不阻断登录（REGION 维度按未判定处理）。
+func (s *AuthenticationService) resolveRegionFromIP(ctx context.Context, clientIP string) string {
+	if clientIP == "" || s.geoClient == nil {
+		return ""
+	}
+	res, err := s.geoClient.Query(clientIP)
+	if err != nil {
+		return ""
+	}
+	return res.Province
 }
 
 func (s *AuthenticationService) resetContextForLogin(ctx context.Context) context.Context {
@@ -713,7 +736,7 @@ func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req
 	// ViewerContext，而下方 userRepo.Get 等查询走 ent privacy（缺 viewer 直接 500
 	// "missing ViewerContext"）。uid 来自已验签的自描述 JWT 且按主键精确查询，
 	// 注入系统级 viewer 查询不会越权。
-	ctx = appViewer.NewSystemViewerContext(ctx)
+	ctx = viewer.WithSystemContext(ctx)
 
 	// 获取用户信息
 	user, err := s.userRepo.Get(ctx, &identityV1.GetUserRequest{

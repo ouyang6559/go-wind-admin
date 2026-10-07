@@ -93,7 +93,7 @@ func auditTableCounts(t *testing.T, client *ent.Client, ctx context.Context) map
 func TestAuditLogArchiveRepoSqlite_ArchiveExpiredBeforeNow(t *testing.T) {
 	repo := newAuditLogArchiveRepoSqlite(t)
 	client := repo.client
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	seedOneRowPerAuditTable(t, client, ctx, "future")
 	require.Equal(t, map[string]int{
@@ -168,7 +168,7 @@ func TestAuditLogArchiveRepoSqlite_ArchiveExpiredBeforeNow(t *testing.T) {
 func TestAuditLogArchiveRepoSqlite_ArchiveExpiredAfterNow(t *testing.T) {
 	repo := newAuditLogArchiveRepoSqlite(t)
 	client := repo.client
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	seedOneRowPerAuditTable(t, client, ctx, "past")
 

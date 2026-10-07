@@ -247,11 +247,7 @@ func (x *LoginResponse) Redact() {
 
 	// Safe field: ExpiresIn
 
-	// Safe field: RefreshToken
-
 	// Safe field: Scope
-
-	// Safe field: RefreshExpiresIn
 
 	// Safe field: IdToken
 

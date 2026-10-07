@@ -38,7 +38,7 @@ func newTaskRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Client]) 
 func TestTaskRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newTaskRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &taskV1.CreateTaskRequest{
 		Data: &taskV1.Task{
@@ -67,7 +67,7 @@ func TestTaskRepoSqlite_Create(t *testing.T) {
 func TestTaskRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newTaskRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, createErr := repo.Create(ctx, &taskV1.CreateTaskRequest{
 		Data: &taskV1.Task{
@@ -130,7 +130,7 @@ func TestTaskRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestTaskRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newTaskRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, createErr := repo.Create(ctx, &taskV1.CreateTaskRequest{
 		Data: &taskV1.Task{TypeName: trans.Ptr("sqlite_task_get_name")},
@@ -166,7 +166,7 @@ func TestTaskRepoSqlite_Get(t *testing.T) {
 func TestTaskRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newTaskRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, createErr := repo.Create(ctx, &taskV1.CreateTaskRequest{
 		Data: &taskV1.Task{
@@ -211,7 +211,7 @@ func TestTaskRepoSqlite_Update(t *testing.T) {
 func TestTaskRepoSqlite_TypeReadView(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newTaskRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		protoType taskV1.Task_Type
@@ -294,7 +294,7 @@ func TestTaskRepoSqlite_TypeReadView(t *testing.T) {
 func TestTaskRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newTaskRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, createErr := repo.Create(ctx, &taskV1.CreateTaskRequest{
 		Data: &taskV1.Task{TypeName: trans.Ptr("sqlite_task_delete_name")},

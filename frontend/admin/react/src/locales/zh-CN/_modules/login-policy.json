@@ -24,7 +24,6 @@
   "createFailed": "创建失败",
   "updateFailed": "更新失败",
   "deleteFailed": "删除失败",
-  "fetchFailed": "获取数据失败",
   "requiredType": "请选择策略类型",
   "requiredMethod": "请选择登录方式",
   "requiredValue": "请输入策略值",

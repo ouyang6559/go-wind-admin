@@ -12,7 +12,7 @@
 //     输入清洗（非法 Referer 转义 → 空串；非 Bearer 令牌 → 无身份）；
 //  5. 设备类型分类（桌面 / 移动 / 爬虫 UA）；
 //  6. writeApiLogFunc 为 nil 时只跳过落库、记录构造照常；
-//  7. hashLog/signature 的 nil 边界，以及注入密钥的签名可回验性
+//  7. 哈希/签名（auditutil）的 nil 边界，以及注入密钥的签名可回验性
 //     （DER 拆解 + ecdsa.Verify，证明 WithECPrivateKey 的密钥真实参与签名）。
 package logging
 
@@ -28,6 +28,7 @@ import (
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tx7do/go-utils/auditutil"
 
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
@@ -127,7 +128,7 @@ func TestApiAuditLogHandleFieldMapping(t *testing.T) {
 	assert.Equal(t, "120.0.0.0", di.GetBrowserVersion())
 	assert.Equal(t, "Windows", di.GetOsName())
 	assert.Equal(t, "10.0", di.GetOsVersion())
-	assert.Equal(t, PlatformWeb, di.GetPlatform(), "Mozilla+Windows 桌面浏览器 → Web")
+	assert.Equal(t, auditutil.PlatformWeb, di.GetPlatform(), "Mozilla+Windows 桌面浏览器 → Web")
 	assert.Equal(t, "test-client-id", di.GetClientId(), "ClientId ← 令牌 cid（无 X-Client-ID 头时）")
 
 	// 错误映射：无中间件错误 → 200 / 成功。
@@ -144,7 +145,7 @@ func TestApiAuditLogHandleFieldMapping(t *testing.T) {
 	// 落库不变量。
 	require.Len(t, env.capture.apiMeta, 1)
 	assert.True(t, env.capture.apiMeta[0].Sinking, "落库阶段必须带 sink 标记")
-	assert.True(t, env.capture.apiMeta[0].SystemViewer, "落库必须以系统 viewer 执行")
+	assert.True(t, env.capture.apiMeta[0].SystemContext, "落库必须以系统 viewer 执行")
 }
 
 // TestApiAuditLogHandleErrorStatusMapping 验证中间件错误到
@@ -269,9 +270,9 @@ func TestApiAuditLogHandleDeviceClassification(t *testing.T) {
 		wantPlatform   string
 		wantClientName string
 	}{
-		{"移动Safari", testMobileUA, auditV1.DeviceInfo_MOBILE, PlatformiOSApp, "iPhone"},
-		{"平板Safari", testTabletUA, auditV1.DeviceInfo_TABLET, PlatformiOSApp, "iPad"},
-		{"搜索引擎爬虫", testBotUA, auditV1.DeviceInfo_BOT, PlatformOther, ""},
+		{"移动Safari", testMobileUA, auditV1.DeviceInfo_MOBILE, auditutil.PlatformiOSApp, "iPhone"},
+		{"平板Safari", testTabletUA, auditV1.DeviceInfo_TABLET, auditutil.PlatformiOSApp, "iPad"},
+		{"搜索引擎爬虫", testBotUA, auditV1.DeviceInfo_BOT, auditutil.PlatformOther, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -304,23 +305,18 @@ func TestApiAuditLogHandleWriteFuncNil(t *testing.T) {
 	assert.Len(t, env.capture.permission, 1)
 }
 
-// TestApiAuditLogHashLogAndSignatureEdges 直调覆盖 hashLog/signature 的
-// nil 边界：nil 记录返回空哈希/nil 签名；私钥缺失时签名必须为 nil 而非半成品。
-func TestApiAuditLogHashLogAndSignatureEdges(t *testing.T) {
-	mwNoKey := NewApiAuditLogMiddleware(&options{})
-	assert.Equal(t, "", mwNoKey.hashLog(nil))
-	assert.Nil(t, mwNoKey.signature(nil))
-	assert.Nil(t, mwNoKey.signature(&auditV1.ApiAuditLog{}), "无私钥时签名必须为 nil")
-
-	key, _, err := generateECDSAKeyPair()
-	require.NoError(t, err)
-	mwWithKey := NewApiAuditLogMiddleware(&options{ecPrivateKey: key})
-	assert.Equal(t, "", mwWithKey.hashLog(nil))
-	assert.Nil(t, mwWithKey.signature(nil))
+// TestApiAuditLogHashAndSignatureEdges 直调覆盖哈希/签名的 nil 边界
+// （实现已收敛至 auditutil）：nil 记录哈希归一空串；nil 私钥签名必须
+// 显式报错且产出 nil，而非半成品。
+func TestApiAuditLogHashAndSignatureEdges(t *testing.T) {
+	assert.Equal(t, "", auditutil.HashLog(nil))
+	sig, err := auditutil.SignLogContent(nil, 0, 0, nil, "")
+	assert.Error(t, err, "无私钥时签名必须显式报错")
+	assert.Nil(t, sig)
 }
 
 // apiSignContentReplica 复刻生产签名的载荷结构（字段名与顺序须与
-// api_audit_log.go 内的 signContent 完全一致），用于回验签名内容。
+// auditutil.SignLogContent 的签名载荷结构完全一致），用于回验签名内容。
 type apiSignContentReplica struct {
 	TenantID uint32 `json:"tenant_id"`
 	UserID   uint32 `json:"user_id"`
@@ -334,7 +330,7 @@ type apiSignContentReplica struct {
 // （tenant_id/user_id/零时间戳/log_hash 的 JSON）经 ecdsa.Verify 验证，
 // 同时证明 DER 编码可正确往返。
 func TestApiAuditLogSignatureVerifiesWithInjectedKey(t *testing.T) {
-	key, _, err := generateECDSAKeyPair()
+	key, _, err := auditutil.GenerateECDSAKeyPair()
 	require.NoError(t, err)
 	env := newAuditServer(t,
 		WithECPrivateKey(key),

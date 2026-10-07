@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, App, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -129,39 +129,34 @@ const DictEntryList: React.FC<DictEntryListProps> = ({ typeId }) => {
     <>
       <div ref={containerRef} className="page-container-content" style={{ padding: '0 8px', height: '100%' }}>
         {typeId ? (
-          <ProTable<any>
+          <ListTable<any>
             actionRef={actionRef}
             columns={columns}
             headerTitle={false}
             params={{ typeId }}
             request={async (params) => {
-              try {
-                const query = new PaginationQuery({
-                  paging: {
-                    page: params.current || 1,
-                    pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
-                  },
-                  formValues: {
-                    ...Object.fromEntries(
-                      Object.entries(params).filter(
-                        ([key]) => !['current', 'pageSize', 'typeId'].includes(key),
-                      ),
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || TABLE.DEFAULT_PAGE_SIZE,
+                },
+                formValues: {
+                  ...Object.fromEntries(
+                    Object.entries(params).filter(
+                      ([key]) => !['current', 'pageSize', 'typeId'].includes(key),
                     ),
-                    type_id: typeId,
-                  },
-                });
+                  ),
+                  type_id: typeId,
+                },
+              });
 
-                const response = await fetchListDictEntries(query);
+              const response = await fetchListDictEntries(query);
 
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return { data: [], total: 0, success: false };
-              }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

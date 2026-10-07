@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -141,45 +141,35 @@ const ConfigManagement = () => {
     <>
       <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
         <div ref={containerRef} className="page-container-content">
-          <ProTable<Config>
+          <ListTable<Config>
             actionRef={actionRef}
             columns={columns}
             request={async (params, sorter, _filter) => {
-              try {
-                const query = new PaginationQuery({
-                  paging: {
-                    page: params.current || 1,
-                    pageSize: params.pageSize || 10,
-                  },
-                  formValues: Object.fromEntries(
-                    Object.entries(params).filter(
-                      ([key]) => !['current', 'pageSize'].includes(key),
-                    ),
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || 10,
+                },
+                formValues: Object.fromEntries(
+                  Object.entries(params).filter(
+                    ([key]) => !['current', 'pageSize'].includes(key),
                   ),
-                  orderBy:
-                    sorter && Object.keys(sorter).length > 0
-                      ? Object.entries(sorter).map(([key, value]) =>
-                          value === 'ascend' ? key : `-${key}`,
-                        )
-                      : undefined,
-                });
+                ),
+                orderBy:
+                  sorter && Object.keys(sorter).length > 0
+                    ? Object.entries(sorter).map(([key, value]) =>
+                        value === 'ascend' ? key : `-${key}`,
+                      )
+                    : undefined,
+              });
 
-                const response = await fetchListConfigs(query);
+              const response = await fetchListConfigs(query);
 
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                console.error('fetch config list failed:', error);
-                message.error(error.message || t('fetchFailed'));
-                return {
-                  data: [],
-                  total: 0,
-                  success: false,
-                };
-              }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

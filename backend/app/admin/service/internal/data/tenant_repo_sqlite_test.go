@@ -52,7 +52,7 @@ func newTenantRepoSqlite(t *testing.T) *TenantRepo {
 // 再用 ent client 直查（System viewer）确认记录与各字段确实落库。
 func TestTenantRepoSqlite_Create(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// TenantRepo.Create 的真实签名直接接收 Tenant DTO（无 Request 包装）
 	_, err := repo.Create(ctx, &identityV1.Tenant{
@@ -84,7 +84,7 @@ func TestTenantRepoSqlite_Create(t *testing.T) {
 // contains 模糊搜索过滤语义（仓规：搜索条件一律 contains，不做 EQ）。
 func TestTenantRepoSqlite_List(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 两条带可区分标记的记录
 	_, err := repo.Create(ctx, &identityV1.Tenant{
@@ -126,7 +126,7 @@ func TestTenantRepoSqlite_List(t *testing.T) {
 // TestTenantRepoSqlite_Get 验证 TenantRepo.Get 按主键/编码查询的命中与未命中。
 func TestTenantRepoSqlite_Get(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
 		Name:        trans.Ptr("sqlite查询租户"),
@@ -178,7 +178,7 @@ func TestTenantRepoSqlite_Get(t *testing.T) {
 // 只更新掩码内字段，掩码外字段保持原值。
 func TestTenantRepoSqlite_Update(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
 		Name: trans.Ptr("更新前名称"),
@@ -208,7 +208,7 @@ func TestTenantRepoSqlite_Update(t *testing.T) {
 // 且删除不存在的记录返回错误。
 func TestTenantRepoSqlite_Delete(t *testing.T) {
 	repo := newTenantRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.Tenant{
 		Name: trans.Ptr("待删除租户"),
@@ -233,4 +233,60 @@ func TestTenantRepoSqlite_Delete(t *testing.T) {
 		QueryBy: &identityV1.DeleteTenantRequest_Id{Id: 99999},
 	})
 	require.Error(t, err, "删除不存在的记录应返回错误")
+}
+
+// TestTenantRepoSqlite_PlanIdEdgeBackfill 回归欠账 2：plan_id 在 ent 里是边外键
+// （实体上是非导出字段），CopierMapper 拷不进 DTO；Get/List 须 WithPlan 预载后
+// 从 Edges 回填 PlanId，否则套餐白名单读不到 plan_id，把租户侧边栏整箱清空，
+// 三端租户编辑抽屉的「订阅套餐」下拉也随之恒空。
+func TestTenantRepoSqlite_PlanIdEdgeBackfill(t *testing.T) {
+	repo := newTenantRepoSqlite(t)
+	ctx := enttest.NewSystemContext(context.Background())
+
+	plan, err := repo.entClient.Client().Plan.Create().
+		SetNillableName(trans.Ptr("sqlite_tenant_plan")).
+		Save(ctx)
+	require.NoError(t, err, "直建 plan 应成功")
+
+	withPlan := repo.entClient.Client().Tenant.Create().
+		SetName("t-with-plan").
+		SetCode("t-with-plan").
+		SetPlanID(plan.ID).
+		SaveX(ctx)
+	noPlan := repo.entClient.Client().Tenant.Create().
+		SetName("t-no-plan").
+		SetCode("t-no-plan").
+		SaveX(ctx)
+
+	got, err := repo.Get(ctx, &identityV1.GetTenantRequest{
+		QueryBy: &identityV1.GetTenantRequest_Id{Id: uint32(withPlan.ID)},
+	})
+	require.NoError(t, err, "Get 带套餐租户应成功")
+	require.NotNil(t, got.PlanId, "Get 应从 plan 边回填 PlanId")
+	require.Equal(t, uint32(plan.ID), *got.PlanId, "回填的 PlanId 应等于所绑套餐")
+
+	got, err = repo.Get(ctx, &identityV1.GetTenantRequest{
+		QueryBy: &identityV1.GetTenantRequest_Id{Id: uint32(noPlan.ID)},
+	})
+	require.NoError(t, err, "Get 无套餐租户应成功")
+	require.Nil(t, got.PlanId, "无套餐租户的 PlanId 应保持 nil")
+
+	// 按 code 查询的分支同样要回填
+	got, err = repo.Get(ctx, &identityV1.GetTenantRequest{
+		QueryBy: &identityV1.GetTenantRequest_Code{Code: *withPlan.Code},
+	})
+	require.NoError(t, err, "Get 按 code 查询应成功")
+	require.NotNil(t, got.PlanId, "按 code 查询同样应回填 PlanId")
+	require.Equal(t, uint32(plan.ID), *got.PlanId)
+
+	list, err := repo.List(ctx, &paginationV1.PagingRequest{NoPaging: trans.Ptr(true)})
+	require.NoError(t, err, "List 应成功")
+	require.Len(t, list.Items, 2)
+	byId := make(map[uint32]*identityV1.Tenant, len(list.Items))
+	for _, item := range list.Items {
+		byId[item.GetId()] = item
+	}
+	require.NotNil(t, byId[uint32(withPlan.ID)].PlanId, "List 应为带套餐租户回填 PlanId")
+	require.Equal(t, uint32(plan.ID), *byId[uint32(withPlan.ID)].PlanId)
+	require.Nil(t, byId[uint32(noPlan.ID)].PlanId, "无套餐租户的 PlanId 应保持 nil")
 }

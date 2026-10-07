@@ -27,7 +27,6 @@
   "createFailed": "Create failed",
   "updateFailed": "Update failed",
   "deleteFailed": "Delete failed",
-  "fetchFailed": "Failed to load data",
   "requiredName": "Please enter the config name",
   "requiredKey": "Please enter the config key",
   "requiredValue": "Please enter the config value",

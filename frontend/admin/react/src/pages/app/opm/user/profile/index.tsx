@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Avatar, Card, Tabs, Descriptions, Tag, Form, Input, Select, Button, App, Spin } from 'antd';
+import { Avatar, Card, Tabs, Descriptions, Tag, Form, Input, Select, Button, App, Spin, Progress, Typography} from 'antd';
+
+const { Text } = Typography;
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { identityservicev1_User as User } from '@/api/generated/admin/service/v1';
@@ -10,9 +12,12 @@ import {
 } from '@/api/hooks/user-profile';
 import { useAuthStore } from '@/stores';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import { getCharColor, getRandomColor } from '@/utils/color';
 import { getGenderOptions } from '../constants';
 import MfaManagement from './MfaManagement';
 import MySessions from './MySessions';
+import NotificationPreference from './NotificationPreference';
+import { useMyTenantUsage } from '@/api/hooks/my-tenant-usage';
 
 /** 格式化 wellKnownTimestamp */
 function formatTimestamp(ts: any): string {
@@ -33,18 +38,12 @@ function formatTimestamp(ts: any): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-/** 根据字符串首字符生成固定颜色 */
-function getCharColor(char: string): string {
-  const colors = ['#1677ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
-  const code = char.charCodeAt(0);
-  return colors[code % colors.length];
-}
-
 /**
  * 个人中心页面
  */
 const UserProfile = () => {
   const { t } = useTranslation('profile');
+
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const setUserInfo = useAuthStore((s) => s.setUserInfo);
@@ -52,6 +51,11 @@ const UserProfile = () => {
   // 获取当前用户信息
   const { data: userData, isLoading } = useGetUserProfile();
   const user = userData as User | undefined | null;
+
+  // 租户自助用量：租户管理员可见本租户套餐用量与配额（平台用户不展示）
+  const accessStore = useAuthStore((st) => st.accessToken);
+  const isTenantUser = !!accessStore && (user?.tenantId ?? 0) > 0;
+  const usageQuery = useMyTenantUsage(isTenantUser);
 
   // 编辑表单
   const [form] = Form.useForm();
@@ -170,6 +174,7 @@ const UserProfile = () => {
                         region: user?.region || '',
                         address: user?.address || '',
                         remark: user?.remark || '',
+                        locale: user?.locale || '',
                       }}
                       style={{ maxWidth: 500 }}
                     >
@@ -201,6 +206,17 @@ const UserProfile = () => {
                         <Input placeholder={t('regionPlaceholder')} />
                       </Form.Item>
 
+                      <Form.Item name="locale" label={t('locale')}>
+                        <Select
+                          placeholder={t('localePlaceholder')}
+                          allowClear
+                          options={[
+                            { value: 'zh-CN', label: '中文' },
+                            { value: 'en-US', label: 'English' },
+                          ]}
+                        />
+                      </Form.Item>
+
                       <Form.Item name="address" label={t('address')}>
                         <Input placeholder={t('addressPlaceholder')} />
                       </Form.Item>
@@ -213,21 +229,21 @@ const UserProfile = () => {
                       <Descriptions column={1} size="small" style={{ marginBottom: 16 }}>
                         <Descriptions.Item label={t('roleNames')}>
                           {user?.roleNames?.map((role) => (
-                            <Tag key={role} style={{ backgroundColor: getCharColor(role), color: '#333', border: 'none' }}>
+                            <Tag key={role} style={{ backgroundColor: getRandomColor(role), color: '#333', border: 'none' }}>
                               {role}
                             </Tag>
                           ))}
                         </Descriptions.Item>
                         <Descriptions.Item label={t('orgUnitNames')}>
                           {user?.orgUnitNames?.map((org) => (
-                            <Tag key={org} style={{ backgroundColor: getCharColor(org), color: '#333', border: 'none' }}>
+                            <Tag key={org} style={{ backgroundColor: getRandomColor(org), color: '#333', border: 'none' }}>
                               {org}
                             </Tag>
                           ))}
                         </Descriptions.Item>
                         <Descriptions.Item label={t('positionNames')}>
                           {user?.positionNames?.map((pos) => (
-                            <Tag key={pos} style={{ backgroundColor: getCharColor(pos), color: '#333', border: 'none' }}>
+                            <Tag key={pos} style={{ backgroundColor: getRandomColor(pos), color: '#333', border: 'none' }}>
                               {pos}
                             </Tag>
                           ))}
@@ -294,11 +310,87 @@ const UserProfile = () => {
               label: t('tab.sessions'),
               children: <MySessions />,
             },
+            {
+              key: 'notification',
+              label: t('tab.notification'),
+              children: <NotificationPreference />,
+            },
+            ...(isTenantUser
+              ? [{
+                  key: 'tenantUsage',
+                  label: t('tab.tenantUsage'),
+                  children: <TenantUsagePanel usageQuery={usageQuery} />,
+                }]
+              : []),
           ]}
         />
       </Card>
     </ContentContainer>
   );
 };
+
+/** 租户套餐用量面板：用户数/存储占用 vs 配额上限的进度条。 */
+function TenantUsagePanel({ usageQuery }: {
+  usageQuery: { data?: import('@/api/generated/admin/service/v1').identityservicev1_TenantUsage | undefined; isLoading: boolean };
+}) {
+  const { t } = useTranslation('profile');
+  const usage = usageQuery.data;
+
+  if (usageQuery.isLoading) {
+    return <Spin style={{ display: 'block', margin: '48px auto' }} />;
+  }
+  if (!usage || !usage.quotas || usage.quotas.length === 0) {
+    return <Text type="secondary">{t('tenantUsage.empty')}</Text>;
+  }
+
+  // 64-bit 计数经 protojson 是字符串（文档已知坑），必须 Number() 转换再运算
+  const num = (v: number | string | undefined): number => Number(v ?? 0);
+  const currentOf = (quotaType: string): number => {
+    switch (quotaType) {
+      case 'USER_LIMIT': return num(usage.userCount);
+      case 'STORAGE': return Math.round(num(usage.storageUsedBytes) / 1024 / 1024);
+      case 'API_CALL': return num(usage.apiCallCount);
+      default: return 0;
+    }
+  };
+  const unitOf = (quotaType: string): string =>
+    quotaType === 'STORAGE' ? 'MB' : '';
+
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <p style={{ marginBottom: 16 }}>
+        <Text type="secondary">
+          {t('tenantUsage.plan')}
+          {usage.planName ? <strong>{usage.planName}</strong> : <strong>{t('tenantUsage.noPlan')}</strong>}
+        </Text>
+      </p>
+      {usage.quotas.map((q, idx) => {
+        const quotaType = q.quotaType?.toString() ?? '';
+        const limit = num(q.quotaValue);
+        const current = currentOf(quotaType);
+        const pct = limit > 0 ? Math.min(100, (current / limit) * 100) : 0;
+        const unit = unitOf(quotaType);
+        return (
+          <div key={idx} style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span>{t(`tenantUsage.quota.${quotaType}`, quotaType)}</span>
+              <span>
+                {current}{unit} / {limit}{unit}
+                {pct >= 100 && (
+                  <Text type="danger" style={{ marginLeft: 8 }}>{t('tenantUsage.reached')}</Text>
+                )}
+              </span>
+            </div>
+            <Progress
+              percent={pct}
+              size="small"
+              status={pct >= 100 ? 'exception' : pct >= 80 ? 'active' : 'normal'}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default UserProfile;

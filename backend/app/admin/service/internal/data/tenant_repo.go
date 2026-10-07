@@ -10,6 +10,7 @@ import (
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
+	"github.com/tx7do/go-crud/entgo/field"
 
 	"github.com/tx7do/go-utils/copierutil"
 	"github.com/tx7do/go-utils/mapper"
@@ -96,19 +97,44 @@ func (r *TenantRepo) List(ctx context.Context, req *paginationV1.PagingRequest) 
 		return nil, identityV1.ErrorBadRequest("invalid parameter")
 	}
 
-	builder := r.entClient.Client().Tenant.Query()
+	builder := r.entClient.Client().Tenant.Query().WithPlan()
+	countBuilder := r.entClient.Client().Tenant.Query()
 
-	ret, err := r.repository.ListWithPaging(ctx, builder, builder.Clone(), req)
+	whereSelectors, _, err := r.repository.BuildListSelectorWithPaging(builder, req)
 	if err != nil {
-		return nil, err
+		r.log.Errorf(ctx, "parse list param error [%s]", err.Error())
+		return nil, identityV1.ErrorBadRequest("invalid query parameter")
 	}
-	if ret == nil {
-		return &identityV1.ListTenantResponse{Total: 0, Items: nil}, nil
+
+	entities, err := builder.All(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query tenant list failed: %s", err.Error())
+		return nil, identityV1.ErrorInternalServerError("query tenant list failed")
+	}
+
+	// plan_id 是边外键（实体上是非导出字段），CopierMapper 拷不进 DTO，
+	// 须 WithPlan 预载后从 Edges 回填，否则消费方拿到的 PlanId 恒为 nil。
+	dtos := make([]*identityV1.Tenant, 0, len(entities))
+	for _, entity := range entities {
+		dto := r.mapper.ToDTO(entity)
+		if entity.Edges.Plan != nil {
+			dto.PlanId = &entity.Edges.Plan.ID
+		}
+		dtos = append(dtos, dto)
+	}
+
+	if len(whereSelectors) != 0 {
+		countBuilder.Modify(whereSelectors...)
+	}
+	count, err := countBuilder.Count(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "query tenant count failed: %s", err.Error())
+		return nil, identityV1.ErrorInternalServerError("query count failed")
 	}
 
 	return &identityV1.ListTenantResponse{
-		Total: ret.Total,
-		Items: ret.Items,
+		Total: uint64(count),
+		Items: dtos,
 	}, nil
 }
 
@@ -128,7 +154,7 @@ func (r *TenantRepo) Get(ctx context.Context, req *identityV1.GetTenantRequest) 
 		return nil, identityV1.ErrorBadRequest("invalid parameter")
 	}
 
-	builder := r.entClient.Client().Tenant.Query()
+	builder := r.entClient.Client().Tenant.Query().WithPlan()
 
 	var whereCond []func(s *sql.Selector)
 	switch req.QueryBy.(type) {
@@ -143,12 +169,29 @@ func (r *TenantRepo) Get(ctx context.Context, req *identityV1.GetTenantRequest) 
 		whereCond = append(whereCond, tenant.NameEQ(req.GetName()))
 	}
 
-	dto, err := r.repository.Get(ctx, builder, req.GetViewMask(), whereCond...)
+	if len(whereCond) > 0 {
+		builder.Modify(whereCond...)
+	}
+
+	// repository.Get 泛型实现拿不到 entity 无法回填边，这里按其语义展开
+	//（mask 归一化 + 列裁剪 + Only），并保留 entity 供 Edges 回填。
+	viewMask := req.GetViewMask()
+	field.NormalizeFieldMaskPaths(viewMask)
+	if viewMask != nil && len(viewMask.GetPaths()) > 0 {
+		builder.Select(viewMask.GetPaths()...)
+	}
+
+	entity, err := builder.Only(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return dto, err
+	dto := r.mapper.ToDTO(entity)
+	if entity.Edges.Plan != nil {
+		dto.PlanId = &entity.Edges.Plan.ID
+	}
+
+	return dto, nil
 }
 
 func (r *TenantRepo) BeginTx(ctx context.Context) (tx *ent.Tx, cleanup func(), err error) {

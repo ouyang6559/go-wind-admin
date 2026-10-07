@@ -82,11 +82,20 @@
     @apply opacity-100;
   }
 
-  /* input:-webkit-autofill {
-    @apply border-none;
-
-    box-shadow: 0 0 0 1000px transparent inset;
-  } */
+  /* Chrome 自动填充底色覆盖：保存过密码的浏览器会按账号/密码语义填充
+     登录框，并在页面样式之上强制绘制 input:-webkit-autofill 白底
+     （background 无法覆盖），暗色主题下账号/密码框因此整块发白；无痕
+     窗口没有已存密码、不触发填充，所以"看起来正常"。antd 未开 cssVar
+     （页面上不存在 --ant-* 变量）、输入框底色主题间不定，故用无限过渡
+     冻结 Chrome 的底色绘制，仅恢复文字与光标色。 */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: hsl(var(--foreground));
+    caret-color: hsl(var(--foreground));
+    transition: background-color 99999s ease-in-out 0s;
+  }
 
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {

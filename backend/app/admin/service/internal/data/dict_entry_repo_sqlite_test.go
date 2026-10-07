@@ -47,7 +47,7 @@ func newDictEntryRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Clie
 func TestDictEntryRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_create_type")).
@@ -81,7 +81,7 @@ func TestDictEntryRepoSqlite_Create(t *testing.T) {
 func TestDictEntryRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_list_type")).
@@ -140,7 +140,7 @@ func TestDictEntryRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestDictEntryRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_get_type")).
@@ -192,7 +192,7 @@ func TestDictEntryRepoSqlite_Get(t *testing.T) {
 func TestDictEntryRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_update_type")).
@@ -240,7 +240,7 @@ func TestDictEntryRepoSqlite_Update(t *testing.T) {
 func TestDictEntryRepoSqlite_UpdateI18nReplace(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_updi18n_type")).
@@ -303,7 +303,7 @@ func TestDictEntryRepoSqlite_UpdateI18nReplace(t *testing.T) {
 func TestDictEntryRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	parent, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_del_type")).
@@ -351,7 +351,7 @@ func TestDictEntryRepoSqlite_Delete(t *testing.T) {
 func TestDictEntryRepoSqlite_ListByTypeCode(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newDictEntryRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	typeA, err := entClient.Client().DictType.Create().
 		SetNillableTypeCode(trans.Ptr("sqlite_de_ltc_a")).

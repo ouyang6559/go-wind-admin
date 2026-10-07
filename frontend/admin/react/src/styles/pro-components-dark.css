@@ -510,18 +510,6 @@ html[data-theme='dark'] .ant-form .ant-input:not(.ant-input-affix-wrapper .ant-i
   color: #f0f6fc !important;
 }
 
-/* ========== 暗黑模式：主按钮质感（顶部高光渐变 + 品牌色微光投影） ========== */
-[data-theme='dark'] .ant-btn-primary {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(0, 0, 0, 0.08) 100%);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--ant-color-primary) 35%, transparent);
-}
-[data-theme='dark'] .ant-btn-primary:not(:disabled):hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--ant-color-primary) 45%, transparent);
-}
-[data-theme='dark'] .ant-btn-primary:not(:disabled):active {
-  filter: brightness(0.96);
-}
 
 /* ========== Input 文字垂直居中 ========== */
 .ant-pro-table-search .ant-input-affix-wrapper {

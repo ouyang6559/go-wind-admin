@@ -32,6 +32,14 @@
     "policyEvaluationLog": "策略评估日志",
     "redisCacheMonitor": "Redis缓存监控"
   },
+  "ai": {
+    "moduleName": "AI 助手",
+    "chat": "AI 助手",
+    "providers": "AI 提供商",
+    "knowledge": "知识库",
+    "query": "智能问数",
+    "usage": "用量统计"
+  },
   "system": {
     "moduleName": "系统管理",
     "dict": "字典管理",
@@ -43,13 +51,15 @@
     "serverMonitor": "服务监控",
     "scripts": "脚本管理",
     "config": "参数管理",
-    "accessKeys": "OpenAPI 凭证"
+    "accessKeys": "OpenAPI 凭证",
+    "monitorAlerts": "监控告警"
   },
   "notification": {
     "moduleName": "通知管理",
     "channels": "通知渠道",
     "rules": "通知路由规则",
-    "deliveries": "通知投递台账"
+    "deliveries": "通知投递台账",
+    "templates": "通知模板"
   },
   "tenant": {
     "moduleName": "租户管理",

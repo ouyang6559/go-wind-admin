@@ -23,7 +23,7 @@ docs/                       本文档体系（教程层 + 参考层，见 [docs/
 后端目录的逐项说明见
 [backend_project_struct.md](../backend_project_struct.md)——它是目录职责的权威参考。
 
-**三个前端端口约定（本地开发）**：react `5888`、vue-element `5777`、vue-vben `5666`。
+**三个前端端口约定（本地开发）**：react `15888`、vue-element `15777`、vue-vben `15666`。
 端口写在各自的 dev 环境变量里，键名不统一：react `.env.development` 的 `VITE_SERVER_PORT`、
 vue-element `.env.development` 的 `VITE_APP_PORT`、vue-vben `apps/admin/.env.development` 的 `VITE_PORT`
 （若端口被占用 vite 会自动顺延，启动日志里有实际端口）。
@@ -89,6 +89,7 @@ PostgreSQL / MySQL
 | 脚本系统 | Lua/JS 脚本级插件：实体钩子/定时任务/事件/HTTP 出站 | `pkg/scripting` + 管理页 | [script_system.md](../script_system.md) |
 | SSE 推送 | 服务端推送（站内信通知）；流 ID=userId、连接独立鉴权、事件 best-effort | `internal/service`（生产）+ 三端 `transport/sse` 模块 | [sse_architecture.md](../sse_architecture.md) |
 | 对象存储 | MinIO（S3 兼容），预签名上传下载，元数据落库 | `internal/data` 文件模块 | [backend_file_upload.md](../backend_file_upload.md) |
+| AI 模块 | 模型提供商（表驱动）/ 流式对话 / 知识库 RAG（pgvector）/ 用量配额 / 脚本与任务集成 | `pkg/ai` + `internal/service` ai 服务族 + 三端 `app/ai` | [ai_module.md](../ai_module.md)、第 10 章 |
 
 ## 4. 生成代码与手写代码的边界
 

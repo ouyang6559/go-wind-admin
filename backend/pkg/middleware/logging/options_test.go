@@ -13,13 +13,14 @@ import (
 	"crypto/ecdsa"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tx7do/go-utils/auditutil"
 
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 )
 
 // TestOptionSetters 表驱动验证九个 setter 的字段落位。
 func TestOptionSetters(t *testing.T) {
-	key, _, err := generateECDSAKeyPair()
+	key, _, err := auditutil.GenerateECDSAKeyPair()
 	require.NoError(t, err)
 
 	fApi := func(ctx context.Context, d *auditV1.ApiAuditLog) error { return nil }

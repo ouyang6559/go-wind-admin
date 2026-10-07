@@ -9,6 +9,27 @@ import (
 // AccessKey is the predicate function for accesskey builders.
 type AccessKey func(*sql.Selector)
 
+// AiChunk is the predicate function for aichunk builders.
+type AiChunk func(*sql.Selector)
+
+// AiConversation is the predicate function for aiconversation builders.
+type AiConversation func(*sql.Selector)
+
+// AiDoc is the predicate function for aidoc builders.
+type AiDoc func(*sql.Selector)
+
+// AiKnowledgeBase is the predicate function for aiknowledgebase builders.
+type AiKnowledgeBase func(*sql.Selector)
+
+// AiMessage is the predicate function for aimessage builders.
+type AiMessage func(*sql.Selector)
+
+// AiProvider is the predicate function for aiprovider builders.
+type AiProvider func(*sql.Selector)
+
+// AiUsageLog is the predicate function for aiusagelog builders.
+type AiUsageLog func(*sql.Selector)
+
 // Api is the predicate function for api builders.
 type Api func(*sql.Selector)
 
@@ -63,14 +84,23 @@ type MembershipRole func(*sql.Selector)
 // Menu is the predicate function for menu builders.
 type Menu func(*sql.Selector)
 
+// MonitorAlertRule is the predicate function for monitoralertrule builders.
+type MonitorAlertRule func(*sql.Selector)
+
 // NotificationChannel is the predicate function for notificationchannel builders.
 type NotificationChannel func(*sql.Selector)
 
 // NotificationDelivery is the predicate function for notificationdelivery builders.
 type NotificationDelivery func(*sql.Selector)
 
+// NotificationPreference is the predicate function for notificationpreference builders.
+type NotificationPreference func(*sql.Selector)
+
 // NotificationRule is the predicate function for notificationrule builders.
 type NotificationRule func(*sql.Selector)
+
+// NotificationTemplate is the predicate function for notificationtemplate builders.
+type NotificationTemplate func(*sql.Selector)
 
 // OperationAuditLog is the predicate function for operationauditlog builders.
 type OperationAuditLog func(*sql.Selector)

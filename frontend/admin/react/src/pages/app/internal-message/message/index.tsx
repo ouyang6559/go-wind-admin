@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
-import { ProTable } from '@ant-design/pro-components';
+import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, App } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -131,34 +131,29 @@ const InternalMessageList = () => {
     <>
       <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
         <div ref={containerRef} className="page-container-content">
-          <ProTable<InternalMessage>
+          <ListTable<InternalMessage>
             actionRef={actionRef}
             columns={columns}
             request={async (params, _sorter, _filter) => {
-              try {
-                const formValues: Record<string, any> = {};
-                // 过滤搜索参数
-                Object.entries(params).forEach(([key, value]) => {
-                  if (!['current', 'pageSize'].includes(key) && value !== undefined) {
-                    formValues[key] = value;
-                  }
-                });
+              const formValues: Record<string, any> = {};
+              // 过滤搜索参数
+              Object.entries(params).forEach(([key, value]) => {
+                if (!['current', 'pageSize'].includes(key) && value !== undefined) {
+                  formValues[key] = value;
+                }
+              });
 
-                const query = new PaginationQuery({
-                  formValues,
-                });
+              const query = new PaginationQuery({
+                formValues,
+              });
 
-                const response = await fetchListInternalMessages(query);
+              const response = await fetchListInternalMessages(query);
 
-                return {
-                  data: response.items || [],
-                  total: response.total || 0,
-                  success: true,
-                };
-              } catch (error: any) {
-                message.error(error.message || t('fetchFailed'));
-                return { data: [], total: 0, success: false };
-              }
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
             }}
             rowKey="id"
             search={{

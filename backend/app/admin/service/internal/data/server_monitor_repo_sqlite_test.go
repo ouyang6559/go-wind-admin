@@ -23,7 +23,7 @@ func TestServerMonitorRepoSqlite_GetInfoWithDatabase(t *testing.T) {
 		driverName: "sqlite",
 		startTime:  time.Now().Add(-time.Minute),
 	}
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	info, err := repo.GetInfo(ctx)
 	require.NoError(t, err, "GetInfo 应成功")
@@ -67,7 +67,7 @@ func TestServerMonitorRepoSqlite_GetInfoWithoutDatabase(t *testing.T) {
 		driverName: "",
 		startTime:  time.Now(),
 	}
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	info, err := repo.GetInfo(ctx)
 	require.NoError(t, err, "GetInfo 应成功")

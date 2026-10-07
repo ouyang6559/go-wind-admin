@@ -6,7 +6,26 @@
       "basicSettings": "Basic Settings",
       "securitySettings": "Security Settings",
       "accountBind": "Account Bind",
-      "activeSessions": "Active Sessions"
+      "activeSessions": "Active Sessions",
+      "notification": "Notifications",
+      "tenantUsage": "Plan Usage"
+    },
+    "notification": {
+      "quietTitle": "Quiet Hours",
+      "quietDesc": "During quiet hours, internal message notifications are not pushed in real time (no instant desktop toasts or badge updates). Messages still arrive in your inbox.",
+      "quietEnable": "Enable quiet hours",
+      "quietTimeRange": "Quiet window (supports overnight spans, e.g. 22:00 to 08:00)",
+      "startTime": "Start",
+      "endTime": "End",
+      "quietTimeRequired": "Please select the quiet window",
+      "quietZeroWidth": "Quiet start and end time cannot be the same",
+      "muteTitle": "Category Unsubscribe",
+      "muteDesc": "After unsubscribing, you will no longer receive all-hands broadcast messages of that category. Direct messages addressed to you are not affected.",
+      "noCategories": "No categories available in this tenant",
+      "save": "Save Preferences",
+      "saveSuccess": "Notification preferences saved",
+      "saveFailed": "Failed to save notification preferences",
+      "transactionalNote": "Transactional emails such as verification codes are not affected by this page and are always sent."
     }
   },
   "detail": {

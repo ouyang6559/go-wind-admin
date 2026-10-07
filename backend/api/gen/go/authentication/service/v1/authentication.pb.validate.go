@@ -297,16 +297,8 @@ func (m *LoginResponse) validate(all bool) error {
 
 	// no validation rules for ExpiresIn
 
-	if m.RefreshToken != nil {
-		// no validation rules for RefreshToken
-	}
-
 	if m.Scope != nil {
 		// no validation rules for Scope
-	}
-
-	if m.RefreshExpiresIn != nil {
-		// no validation rules for RefreshExpiresIn
 	}
 
 	if m.IdToken != nil {

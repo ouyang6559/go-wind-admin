@@ -3,6 +3,12 @@
  * 导出所有业务模块的 hooks 及其枚举工具函数
  */
 
+// AI 模块
+export * from './ai-chat';
+export * from './ai-knowledge';
+export * from './ai-provider';
+export * from './ai-content';
+
 // 管理门户相关
 export * from './admin-portal';
 
@@ -49,6 +55,7 @@ export * from './plan';
 export * from './redis-cache-monitor';
 
 // 在线会话
+export * from './notification-preference';
 export * from './online-session';
 
 // 服务监控
@@ -60,6 +67,14 @@ export * from './notification-channel';
 export * from './notification-delivery';
 // 通知路由规则（事件 → 渠道 + 派发方式）
 export * from './notification-rule';
+export * from './notification-template';
+export * from './monitor-alert';
+export * from './audit-export';
+export * from './server-export';
+export * from './my-tenant-usage';
+export * from './task-monitor';
+export * from './sso';
+export * from './tenant-branding';
 export * from './role';
 // 通用枚举与工具函数
 export * from './shared';

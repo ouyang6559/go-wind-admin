@@ -10,13 +10,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	conf "github.com/tx7do/kratos-bootstrap/api/gen/go/conf/v1"
-	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
 
+	"github.com/tx7do/go-utils/authorizer"
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
@@ -24,7 +23,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	entApi "go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/enttest"
-	"go-wind-admin/pkg/authorizer"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -59,11 +57,9 @@ func (s *stubRouteWalker) WalkRoute(fn http.WalkRouteFunc) error {
 func newApiServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Client]) *ApiService {
 	t.Helper()
 	authz := authorizer.NewAuthorizer(
-		bootstrap.NewContextWithParam(
-			context.Background(), nil,
-			&conf.Bootstrap{Authz: &conf.Authorization{Type: "noop"}},
-			bLogger.NopLogger(),
-		),
+		context.Background(),
+		bLogger.NopLogger(),
+		&authorizer.EngineConfig{Type: "noop"},
 		stubAuthzProvider{},
 	)
 	return &ApiService{
@@ -80,7 +76,7 @@ func newApiServiceForTest(t *testing.T, entClient *entCrud.EntClient[*ent.Client
 func TestApiServiceSqlite_InitSeedsApiTableFromOpenAPI(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	svc.init()
 
@@ -106,7 +102,7 @@ func TestApiServiceSqlite_InitSeedsApiTableFromOpenAPI(t *testing.T) {
 func TestApiServiceSqlite_GetWalkRouteData(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := svc.GetWalkRouteData(ctx, &emptypb.Empty{})
 	require.Error(t, err, "未注册 RouteWalker 时应返回错误")
@@ -135,7 +131,7 @@ func TestApiServiceSqlite_GetWalkRouteData(t *testing.T) {
 func TestApiServiceSqlite_CreateGetUpdateDelete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	svc := newApiServiceForTest(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 	opCtx := auth.NewContext(ctx, &authenticationV1.UserTokenPayload{UserId: 7})
 
 	_, err := svc.Create(opCtx, &permissionV1.CreateApiRequest{

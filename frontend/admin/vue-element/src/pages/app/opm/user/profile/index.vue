@@ -42,12 +42,16 @@ import EditPasswordPage from "./edit-password-page.vue";
 import AccountBindPage from "./account-bind-page.vue";
 import SecureSettingPage from "./secure-setting-page.vue";
 import MySessionsPage from "./my-sessions-page.vue";
+import NotificationPreferencePage from "./notification-preference-page.vue";
+import TenantUsagePanel from "./tenant-usage-panel.vue";
+import { useMyTenantUsage } from "@/api/composables";
+import { useAppUserStore } from "@/stores";
 
 import { $t } from "@/core/i18n";
 
 const activeTab = ref("1");
 
-// 消息通知 tab 已移除：后端暂无用户通知偏好能力，原页为模板演示数据。
+// 「消息通知」tab（P3）：后端已有用户通知偏好能力，见 notification-preference-page.vue
 
 // 子页（安全设置/账号绑定）通过 switch-tab 事件跳转到对应设置页
 const handleSwitchTab = (key: string) => {
@@ -80,6 +84,19 @@ const settingList = [
     name: $t("pages.user.profile.tab.activeSessions"),
     component: MySessionsPage,
   },
+  {
+    key: "6",
+    name: $t("pages.user.profile.tab.notification"),
+    component: NotificationPreferencePage,
+  },
+  // 套餐用量：仅租户用户展示（平台用户 tenantId=0 无套餐语义）
+  ...((useAppUserStore().userInfo?.tenantId ?? 0) > 0
+    ? [{
+        key: "7",
+        name: $t("pages.user.profile.tab.tenantUsage"),
+        component: TenantUsagePanel,
+      }]
+    : []),
 ];
 </script>
 
@@ -118,11 +135,11 @@ const settingList = [
 
     &:hover {
       background-color: var(--el-fill-color-light);
-      color: var(--el-color-primary);
+      color: var(--gowind-primary-text);
     }
 
     &.active {
-      color: var(--el-color-primary);
+      color: var(--gowind-primary-text);
       font-weight: 500;
 
       &::after {

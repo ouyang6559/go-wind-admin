@@ -40,7 +40,7 @@ func newScriptRepoSqlite(t *testing.T, entClient *entCrud.EntClient[*ent.Client]
 func TestScriptRepoSqlite_Create(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	err := repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{
@@ -71,7 +71,7 @@ func TestScriptRepoSqlite_Create(t *testing.T) {
 func TestScriptRepoSqlite_ListContainsFilter(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{Name: trans.Ptr("markerxyz_script_a")},
@@ -128,7 +128,7 @@ func TestScriptRepoSqlite_ListContainsFilter(t *testing.T) {
 func TestScriptRepoSqlite_Get(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{
@@ -181,7 +181,7 @@ func TestScriptRepoSqlite_Get(t *testing.T) {
 func TestScriptRepoSqlite_ListEnabled(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{
@@ -207,7 +207,7 @@ func TestScriptRepoSqlite_ListEnabled(t *testing.T) {
 func TestScriptRepoSqlite_IsNameExist(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{Name: trans.Ptr("sqlite_script_nameexist")},
@@ -244,7 +244,7 @@ func TestScriptRepoSqlite_IsNameExist(t *testing.T) {
 func TestScriptRepoSqlite_LanguageReadView(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	cases := []struct {
 		protoLanguage scriptV1.Language
@@ -336,7 +336,7 @@ func TestScriptRepoSqlite_LanguageReadView(t *testing.T) {
 func TestScriptRepoSqlite_Update(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{
@@ -378,7 +378,7 @@ func TestScriptRepoSqlite_Update(t *testing.T) {
 func TestScriptRepoSqlite_Delete(t *testing.T) {
 	entClient := enttest.NewEntClientForTest(t)
 	repo := newScriptRepoSqlite(t, entClient)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	require.NoError(t, repo.Create(ctx, &scriptV1.CreateScriptRequest{
 		Data: &scriptV1.Script{Name: trans.Ptr("sqlite_script_delete_a")},

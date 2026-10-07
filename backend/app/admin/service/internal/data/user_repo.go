@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/tx7do/kratos-bootstrap/bootstrap"
 	bLogger "github.com/tx7do/kratos-bootstrap/logger"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	paginationV1 "github.com/tx7do/go-crud/api/gen/go/pagination/v1"
 	entCrud "github.com/tx7do/go-crud/entgo"
@@ -31,7 +32,6 @@ import (
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 
 	"go-wind-admin/pkg/constants"
-	"go-wind-admin/pkg/utils"
 )
 
 type UserRepo interface {
@@ -518,6 +518,7 @@ func (r *userRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data *identityV
 		SetNillableMobile(data.Mobile).
 		SetNillableTelephone(data.Telephone).
 		SetNillableRegion(data.Region).
+		SetNillableLocale(data.Locale).
 		SetNillableAddress(data.Address).
 		SetNillableDescription(data.Description).
 		SetNillableRemark(data.Remark).
@@ -628,6 +629,12 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 	// maskPathInUpdate：无 mask 视为全量更新（true）；有 mask 则按路径精确匹配。
 	// 注意 User 同时有单数（role_id）和复数（role_ids）字段，两者任一在 mask 内即视为
 	// 本类关联参与本次更新（与下方收集逻辑一致：RoleIds + RoleId 都会被收集）。
+	// nil mask 守卫：无 mask = 全量更新语义，但后续 FilterBlacklist 需要
+	// 非 nil mask 做赋值/剔除，故此处初始化空 mask（panic 修复，e2e 揪出）。
+	if req.GetUpdateMask() == nil {
+		req.UpdateMask = &fieldmaskpb.FieldMask{}
+	}
+
 	maskPathInUpdate := func(paths ...string) bool {
 		fm := req.GetUpdateMask()
 		if fm == nil || len(fm.Paths) == 0 {
@@ -674,7 +681,7 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 		positionIds = sliceutil.Unique(positionIds)
 	}
 
-	req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{
+	req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{
 		"role_ids",
 		"role_id",
 		"position_ids",
@@ -690,11 +697,11 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 	// 若不加拦截会把掩码串当真实值入库造成数据损坏。含 '*' 即视为掩码，跳过写入。
 	if req.Data.Email != nil && strings.Contains(*req.Data.Email, "*") {
 		req.Data.Email = nil
-		req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{"email"})
+		req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{"email"})
 	}
 	if req.Data.Mobile != nil && strings.Contains(*req.Data.Mobile, "*") {
 		req.Data.Mobile = nil
-		req.GetUpdateMask().Paths = utils.FilterBlacklist(req.GetUpdateMask().Paths, []string{"mobile"})
+		req.GetUpdateMask().Paths = sliceutil.FilterBlacklist(req.GetUpdateMask().Paths, []string{"mobile"})
 	}
 
 	var entity *identityV1.User
@@ -709,6 +716,7 @@ func (r *userRepo) Update(ctx context.Context, req *identityV1.UpdateUserRequest
 				SetNillableMobile(req.Data.Mobile).
 				SetNillableTelephone(req.Data.Telephone).
 				SetNillableRegion(req.Data.Region).
+				SetNillableLocale(req.Data.Locale).
 				SetNillableAddress(req.Data.Address).
 				SetNillableDescription(req.Data.Description).
 				SetNillableRemark(req.Data.Remark).

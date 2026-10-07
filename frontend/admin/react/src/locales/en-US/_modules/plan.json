@@ -26,7 +26,6 @@
   "createFailed": "Failed to create",
   "updateFailed": "Failed to update",
   "deleteFailed": "Failed to delete",
-  "fetchFailed": "Failed to fetch data",
   "requiredName": "Please enter plan name",
   "requiredVersion": "Please select version",
   "requiredExpiryPolicy": "Please select expiry policy",

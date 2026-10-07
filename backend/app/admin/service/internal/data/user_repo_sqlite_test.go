@@ -65,7 +65,7 @@ func newUserRepoSqlite(t *testing.T) *userRepo {
 // 读路径经 queryEnumsAndBackfill 统一回填后如实呈现写入值。
 func TestUserRepoSqlite_Get(t *testing.T) {
 	repo := newUserRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	_, err := repo.Create(ctx, &identityV1.CreateUserRequest{
 		Data: &identityV1.User{
@@ -112,7 +112,7 @@ func TestUserRepoSqlite_Get(t *testing.T) {
 // 各行携带不同显式枚举值，读视图按行内实际存储值各自如实回填。
 func TestUserRepoSqlite_List(t *testing.T) {
 	repo := newUserRepoSqlite(t)
-	ctx := enttest.NewSystemViewerCtx(context.Background())
+	ctx := enttest.NewSystemContext(context.Background())
 
 	// 两条带可区分标记、各自携带不同显式枚举值的记录
 	_, err := repo.Create(ctx, &identityV1.CreateUserRequest{

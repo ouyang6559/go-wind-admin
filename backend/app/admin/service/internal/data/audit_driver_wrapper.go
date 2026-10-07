@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 
+	sqlutil "github.com/tx7do/go-utils/sqlutil"
 	"go-wind-admin/pkg/audit"
 )
 
@@ -58,7 +59,7 @@ func collect(ctx context.Context, ev audit.AuditEvent) {
 // collectMasked 对 SQL 做字面量脱敏后采集事件。sql_text 存脱敏文本；
 // sql_digest 基于脱敏文本计算——同构不同参的 SQL 指纹一致，便于按语句分组。
 func collectMasked(ctx context.Context, query string, latency int64, dialectName string, isWrite bool, rows int64) {
-	masked := audit.MaskSQL(query)
+	masked := sqlutil.MaskSQL(query)
 	collect(ctx, audit.AuditEvent{
 		SqlText:      masked,
 		SqlDigest:    digest(masked),
@@ -67,7 +68,7 @@ func collectMasked(ctx context.Context, query string, latency int64, dialectName
 		IsWrite:      isWrite,
 		AffectedRows: rows,
 		DataMasked:   true,
-		MaskingRules: audit.MaskingRules,
+		MaskingRules: sqlutil.MaskingRules,
 	})
 }
 
