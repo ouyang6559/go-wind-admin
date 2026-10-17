@@ -154,6 +154,20 @@ func (_c *NotificationChannelCreate) SetNillableType(v *notificationchannel.Type
 	return _c
 }
 
+// SetSettings sets the "settings" field.
+func (_c *NotificationChannelCreate) SetSettings(v string) *NotificationChannelCreate {
+	_c.mutation.SetSettings(v)
+	return _c
+}
+
+// SetNillableSettings sets the "settings" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSettings(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSettings(*v)
+	}
+	return _c
+}
+
 // SetSMTPHost sets the "smtp_host" field.
 func (_c *NotificationChannelCreate) SetSMTPHost(v string) *NotificationChannelCreate {
 	_c.mutation.SetSMTPHost(v)
@@ -220,6 +234,20 @@ func (_c *NotificationChannelCreate) SetSMTPFrom(v string) *NotificationChannelC
 func (_c *NotificationChannelCreate) SetNillableSMTPFrom(v *string) *NotificationChannelCreate {
 	if v != nil {
 		_c.SetSMTPFrom(*v)
+	}
+	return _c
+}
+
+// SetSMTPFromName sets the "smtp_from_name" field.
+func (_c *NotificationChannelCreate) SetSMTPFromName(v string) *NotificationChannelCreate {
+	_c.mutation.SetSMTPFromName(v)
+	return _c
+}
+
+// SetNillableSMTPFromName sets the "smtp_from_name" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSMTPFromName(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSMTPFromName(*v)
 	}
 	return _c
 }
@@ -294,6 +322,104 @@ func (_c *NotificationChannelCreate) SetNillableWebhookPayloadTemplate(v *string
 	return _c
 }
 
+// SetSmsProvider sets the "sms_provider" field.
+func (_c *NotificationChannelCreate) SetSmsProvider(v notificationchannel.SmsProvider) *NotificationChannelCreate {
+	_c.mutation.SetSmsProvider(v)
+	return _c
+}
+
+// SetNillableSmsProvider sets the "sms_provider" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsProvider(v *notificationchannel.SmsProvider) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsProvider(*v)
+	}
+	return _c
+}
+
+// SetSmsAccessKeyID sets the "sms_access_key_id" field.
+func (_c *NotificationChannelCreate) SetSmsAccessKeyID(v string) *NotificationChannelCreate {
+	_c.mutation.SetSmsAccessKeyID(v)
+	return _c
+}
+
+// SetNillableSmsAccessKeyID sets the "sms_access_key_id" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsAccessKeyID(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsAccessKeyID(*v)
+	}
+	return _c
+}
+
+// SetSmsAccessSecret sets the "sms_access_secret" field.
+func (_c *NotificationChannelCreate) SetSmsAccessSecret(v string) *NotificationChannelCreate {
+	_c.mutation.SetSmsAccessSecret(v)
+	return _c
+}
+
+// SetNillableSmsAccessSecret sets the "sms_access_secret" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsAccessSecret(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsAccessSecret(*v)
+	}
+	return _c
+}
+
+// SetSmsSignName sets the "sms_sign_name" field.
+func (_c *NotificationChannelCreate) SetSmsSignName(v string) *NotificationChannelCreate {
+	_c.mutation.SetSmsSignName(v)
+	return _c
+}
+
+// SetNillableSmsSignName sets the "sms_sign_name" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsSignName(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsSignName(*v)
+	}
+	return _c
+}
+
+// SetSmsTemplateCode sets the "sms_template_code" field.
+func (_c *NotificationChannelCreate) SetSmsTemplateCode(v string) *NotificationChannelCreate {
+	_c.mutation.SetSmsTemplateCode(v)
+	return _c
+}
+
+// SetNillableSmsTemplateCode sets the "sms_template_code" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsTemplateCode(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsTemplateCode(*v)
+	}
+	return _c
+}
+
+// SetSmsAppID sets the "sms_app_id" field.
+func (_c *NotificationChannelCreate) SetSmsAppID(v string) *NotificationChannelCreate {
+	_c.mutation.SetSmsAppID(v)
+	return _c
+}
+
+// SetNillableSmsAppID sets the "sms_app_id" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsAppID(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsAppID(*v)
+	}
+	return _c
+}
+
+// SetSmsRegion sets the "sms_region" field.
+func (_c *NotificationChannelCreate) SetSmsRegion(v string) *NotificationChannelCreate {
+	_c.mutation.SetSmsRegion(v)
+	return _c
+}
+
+// SetNillableSmsRegion sets the "sms_region" field if the given value is not nil.
+func (_c *NotificationChannelCreate) SetNillableSmsRegion(v *string) *NotificationChannelCreate {
+	if v != nil {
+		_c.SetSmsRegion(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *NotificationChannelCreate) SetID(v uint32) *NotificationChannelCreate {
 	_c.mutation.SetID(v)
@@ -351,6 +477,10 @@ func (_c *NotificationChannelCreate) defaults() {
 		v := notificationchannel.DefaultWebhookSignStyle
 		_c.mutation.SetWebhookSignStyle(v)
 	}
+	if _, ok := _c.mutation.SmsProvider(); !ok {
+		v := notificationchannel.DefaultSmsProvider
+		_c.mutation.SetSmsProvider(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -387,6 +517,11 @@ func (_c *NotificationChannelCreate) check() error {
 	if v, ok := _c.mutation.WebhookSignStyle(); ok {
 		if err := notificationchannel.WebhookSignStyleValidator(v); err != nil {
 			return &ValidationError{Name: "webhook_sign_style", err: fmt.Errorf(`ent: validator failed for field "NotificationChannel.webhook_sign_style": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.SmsProvider(); ok {
+		if err := notificationchannel.SmsProviderValidator(v); err != nil {
+			return &ValidationError{Name: "sms_provider", err: fmt.Errorf(`ent: validator failed for field "NotificationChannel.sms_provider": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ID(); ok {
@@ -467,6 +602,10 @@ func (_c *NotificationChannelCreate) createSpec() (*NotificationChannel, *sqlgra
 		_spec.SetField(notificationchannel.FieldType, field.TypeEnum, value)
 		_node.Type = value
 	}
+	if value, ok := _c.mutation.Settings(); ok {
+		_spec.SetField(notificationchannel.FieldSettings, field.TypeString, value)
+		_node.Settings = &value
+	}
 	if value, ok := _c.mutation.SMTPHost(); ok {
 		_spec.SetField(notificationchannel.FieldSMTPHost, field.TypeString, value)
 		_node.SMTPHost = &value
@@ -487,6 +626,10 @@ func (_c *NotificationChannelCreate) createSpec() (*NotificationChannel, *sqlgra
 		_spec.SetField(notificationchannel.FieldSMTPFrom, field.TypeString, value)
 		_node.SMTPFrom = &value
 	}
+	if value, ok := _c.mutation.SMTPFromName(); ok {
+		_spec.SetField(notificationchannel.FieldSMTPFromName, field.TypeString, value)
+		_node.SMTPFromName = &value
+	}
 	if value, ok := _c.mutation.SMTPTLS(); ok {
 		_spec.SetField(notificationchannel.FieldSMTPTLS, field.TypeEnum, value)
 		_node.SMTPTLS = &value
@@ -506,6 +649,34 @@ func (_c *NotificationChannelCreate) createSpec() (*NotificationChannel, *sqlgra
 	if value, ok := _c.mutation.WebhookPayloadTemplate(); ok {
 		_spec.SetField(notificationchannel.FieldWebhookPayloadTemplate, field.TypeString, value)
 		_node.WebhookPayloadTemplate = &value
+	}
+	if value, ok := _c.mutation.SmsProvider(); ok {
+		_spec.SetField(notificationchannel.FieldSmsProvider, field.TypeEnum, value)
+		_node.SmsProvider = &value
+	}
+	if value, ok := _c.mutation.SmsAccessKeyID(); ok {
+		_spec.SetField(notificationchannel.FieldSmsAccessKeyID, field.TypeString, value)
+		_node.SmsAccessKeyID = &value
+	}
+	if value, ok := _c.mutation.SmsAccessSecret(); ok {
+		_spec.SetField(notificationchannel.FieldSmsAccessSecret, field.TypeString, value)
+		_node.SmsAccessSecret = &value
+	}
+	if value, ok := _c.mutation.SmsSignName(); ok {
+		_spec.SetField(notificationchannel.FieldSmsSignName, field.TypeString, value)
+		_node.SmsSignName = &value
+	}
+	if value, ok := _c.mutation.SmsTemplateCode(); ok {
+		_spec.SetField(notificationchannel.FieldSmsTemplateCode, field.TypeString, value)
+		_node.SmsTemplateCode = &value
+	}
+	if value, ok := _c.mutation.SmsAppID(); ok {
+		_spec.SetField(notificationchannel.FieldSmsAppID, field.TypeString, value)
+		_node.SmsAppID = &value
+	}
+	if value, ok := _c.mutation.SmsRegion(); ok {
+		_spec.SetField(notificationchannel.FieldSmsRegion, field.TypeString, value)
+		_node.SmsRegion = &value
 	}
 	return _node, _spec
 }
@@ -721,6 +892,24 @@ func (u *NotificationChannelUpsert) UpdateType() *NotificationChannelUpsert {
 	return u
 }
 
+// SetSettings sets the "settings" field.
+func (u *NotificationChannelUpsert) SetSettings(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSettings, v)
+	return u
+}
+
+// UpdateSettings sets the "settings" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSettings() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSettings)
+	return u
+}
+
+// ClearSettings clears the value of the "settings" field.
+func (u *NotificationChannelUpsert) ClearSettings() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSettings)
+	return u
+}
+
 // SetSMTPHost sets the "smtp_host" field.
 func (u *NotificationChannelUpsert) SetSMTPHost(v string) *NotificationChannelUpsert {
 	u.Set(notificationchannel.FieldSMTPHost, v)
@@ -817,6 +1006,24 @@ func (u *NotificationChannelUpsert) ClearSMTPFrom() *NotificationChannelUpsert {
 	return u
 }
 
+// SetSMTPFromName sets the "smtp_from_name" field.
+func (u *NotificationChannelUpsert) SetSMTPFromName(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSMTPFromName, v)
+	return u
+}
+
+// UpdateSMTPFromName sets the "smtp_from_name" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSMTPFromName() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSMTPFromName)
+	return u
+}
+
+// ClearSMTPFromName clears the value of the "smtp_from_name" field.
+func (u *NotificationChannelUpsert) ClearSMTPFromName() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSMTPFromName)
+	return u
+}
+
 // SetSMTPTLS sets the "smtp_tls" field.
 func (u *NotificationChannelUpsert) SetSMTPTLS(v notificationchannel.SMTPTLS) *NotificationChannelUpsert {
 	u.Set(notificationchannel.FieldSMTPTLS, v)
@@ -904,6 +1111,132 @@ func (u *NotificationChannelUpsert) UpdateWebhookPayloadTemplate() *Notification
 // ClearWebhookPayloadTemplate clears the value of the "webhook_payload_template" field.
 func (u *NotificationChannelUpsert) ClearWebhookPayloadTemplate() *NotificationChannelUpsert {
 	u.SetNull(notificationchannel.FieldWebhookPayloadTemplate)
+	return u
+}
+
+// SetSmsProvider sets the "sms_provider" field.
+func (u *NotificationChannelUpsert) SetSmsProvider(v notificationchannel.SmsProvider) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsProvider, v)
+	return u
+}
+
+// UpdateSmsProvider sets the "sms_provider" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsProvider() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsProvider)
+	return u
+}
+
+// ClearSmsProvider clears the value of the "sms_provider" field.
+func (u *NotificationChannelUpsert) ClearSmsProvider() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsProvider)
+	return u
+}
+
+// SetSmsAccessKeyID sets the "sms_access_key_id" field.
+func (u *NotificationChannelUpsert) SetSmsAccessKeyID(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsAccessKeyID, v)
+	return u
+}
+
+// UpdateSmsAccessKeyID sets the "sms_access_key_id" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsAccessKeyID() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsAccessKeyID)
+	return u
+}
+
+// ClearSmsAccessKeyID clears the value of the "sms_access_key_id" field.
+func (u *NotificationChannelUpsert) ClearSmsAccessKeyID() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsAccessKeyID)
+	return u
+}
+
+// SetSmsAccessSecret sets the "sms_access_secret" field.
+func (u *NotificationChannelUpsert) SetSmsAccessSecret(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsAccessSecret, v)
+	return u
+}
+
+// UpdateSmsAccessSecret sets the "sms_access_secret" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsAccessSecret() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsAccessSecret)
+	return u
+}
+
+// ClearSmsAccessSecret clears the value of the "sms_access_secret" field.
+func (u *NotificationChannelUpsert) ClearSmsAccessSecret() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsAccessSecret)
+	return u
+}
+
+// SetSmsSignName sets the "sms_sign_name" field.
+func (u *NotificationChannelUpsert) SetSmsSignName(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsSignName, v)
+	return u
+}
+
+// UpdateSmsSignName sets the "sms_sign_name" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsSignName() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsSignName)
+	return u
+}
+
+// ClearSmsSignName clears the value of the "sms_sign_name" field.
+func (u *NotificationChannelUpsert) ClearSmsSignName() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsSignName)
+	return u
+}
+
+// SetSmsTemplateCode sets the "sms_template_code" field.
+func (u *NotificationChannelUpsert) SetSmsTemplateCode(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsTemplateCode, v)
+	return u
+}
+
+// UpdateSmsTemplateCode sets the "sms_template_code" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsTemplateCode() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsTemplateCode)
+	return u
+}
+
+// ClearSmsTemplateCode clears the value of the "sms_template_code" field.
+func (u *NotificationChannelUpsert) ClearSmsTemplateCode() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsTemplateCode)
+	return u
+}
+
+// SetSmsAppID sets the "sms_app_id" field.
+func (u *NotificationChannelUpsert) SetSmsAppID(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsAppID, v)
+	return u
+}
+
+// UpdateSmsAppID sets the "sms_app_id" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsAppID() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsAppID)
+	return u
+}
+
+// ClearSmsAppID clears the value of the "sms_app_id" field.
+func (u *NotificationChannelUpsert) ClearSmsAppID() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsAppID)
+	return u
+}
+
+// SetSmsRegion sets the "sms_region" field.
+func (u *NotificationChannelUpsert) SetSmsRegion(v string) *NotificationChannelUpsert {
+	u.Set(notificationchannel.FieldSmsRegion, v)
+	return u
+}
+
+// UpdateSmsRegion sets the "sms_region" field to the value that was provided on create.
+func (u *NotificationChannelUpsert) UpdateSmsRegion() *NotificationChannelUpsert {
+	u.SetExcluded(notificationchannel.FieldSmsRegion)
+	return u
+}
+
+// ClearSmsRegion clears the value of the "sms_region" field.
+func (u *NotificationChannelUpsert) ClearSmsRegion() *NotificationChannelUpsert {
+	u.SetNull(notificationchannel.FieldSmsRegion)
 	return u
 }
 
@@ -1147,6 +1480,27 @@ func (u *NotificationChannelUpsertOne) UpdateType() *NotificationChannelUpsertOn
 	})
 }
 
+// SetSettings sets the "settings" field.
+func (u *NotificationChannelUpsertOne) SetSettings(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSettings(v)
+	})
+}
+
+// UpdateSettings sets the "settings" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSettings() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSettings()
+	})
+}
+
+// ClearSettings clears the value of the "settings" field.
+func (u *NotificationChannelUpsertOne) ClearSettings() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSettings()
+	})
+}
+
 // SetSMTPHost sets the "smtp_host" field.
 func (u *NotificationChannelUpsertOne) SetSMTPHost(v string) *NotificationChannelUpsertOne {
 	return u.Update(func(s *NotificationChannelUpsert) {
@@ -1259,6 +1613,27 @@ func (u *NotificationChannelUpsertOne) ClearSMTPFrom() *NotificationChannelUpser
 	})
 }
 
+// SetSMTPFromName sets the "smtp_from_name" field.
+func (u *NotificationChannelUpsertOne) SetSMTPFromName(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSMTPFromName(v)
+	})
+}
+
+// UpdateSMTPFromName sets the "smtp_from_name" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSMTPFromName() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSMTPFromName()
+	})
+}
+
+// ClearSMTPFromName clears the value of the "smtp_from_name" field.
+func (u *NotificationChannelUpsertOne) ClearSMTPFromName() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSMTPFromName()
+	})
+}
+
 // SetSMTPTLS sets the "smtp_tls" field.
 func (u *NotificationChannelUpsertOne) SetSMTPTLS(v notificationchannel.SMTPTLS) *NotificationChannelUpsertOne {
 	return u.Update(func(s *NotificationChannelUpsert) {
@@ -1361,6 +1736,153 @@ func (u *NotificationChannelUpsertOne) UpdateWebhookPayloadTemplate() *Notificat
 func (u *NotificationChannelUpsertOne) ClearWebhookPayloadTemplate() *NotificationChannelUpsertOne {
 	return u.Update(func(s *NotificationChannelUpsert) {
 		s.ClearWebhookPayloadTemplate()
+	})
+}
+
+// SetSmsProvider sets the "sms_provider" field.
+func (u *NotificationChannelUpsertOne) SetSmsProvider(v notificationchannel.SmsProvider) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsProvider(v)
+	})
+}
+
+// UpdateSmsProvider sets the "sms_provider" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsProvider() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsProvider()
+	})
+}
+
+// ClearSmsProvider clears the value of the "sms_provider" field.
+func (u *NotificationChannelUpsertOne) ClearSmsProvider() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsProvider()
+	})
+}
+
+// SetSmsAccessKeyID sets the "sms_access_key_id" field.
+func (u *NotificationChannelUpsertOne) SetSmsAccessKeyID(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsAccessKeyID(v)
+	})
+}
+
+// UpdateSmsAccessKeyID sets the "sms_access_key_id" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsAccessKeyID() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsAccessKeyID()
+	})
+}
+
+// ClearSmsAccessKeyID clears the value of the "sms_access_key_id" field.
+func (u *NotificationChannelUpsertOne) ClearSmsAccessKeyID() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsAccessKeyID()
+	})
+}
+
+// SetSmsAccessSecret sets the "sms_access_secret" field.
+func (u *NotificationChannelUpsertOne) SetSmsAccessSecret(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsAccessSecret(v)
+	})
+}
+
+// UpdateSmsAccessSecret sets the "sms_access_secret" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsAccessSecret() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsAccessSecret()
+	})
+}
+
+// ClearSmsAccessSecret clears the value of the "sms_access_secret" field.
+func (u *NotificationChannelUpsertOne) ClearSmsAccessSecret() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsAccessSecret()
+	})
+}
+
+// SetSmsSignName sets the "sms_sign_name" field.
+func (u *NotificationChannelUpsertOne) SetSmsSignName(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsSignName(v)
+	})
+}
+
+// UpdateSmsSignName sets the "sms_sign_name" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsSignName() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsSignName()
+	})
+}
+
+// ClearSmsSignName clears the value of the "sms_sign_name" field.
+func (u *NotificationChannelUpsertOne) ClearSmsSignName() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsSignName()
+	})
+}
+
+// SetSmsTemplateCode sets the "sms_template_code" field.
+func (u *NotificationChannelUpsertOne) SetSmsTemplateCode(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsTemplateCode(v)
+	})
+}
+
+// UpdateSmsTemplateCode sets the "sms_template_code" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsTemplateCode() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsTemplateCode()
+	})
+}
+
+// ClearSmsTemplateCode clears the value of the "sms_template_code" field.
+func (u *NotificationChannelUpsertOne) ClearSmsTemplateCode() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsTemplateCode()
+	})
+}
+
+// SetSmsAppID sets the "sms_app_id" field.
+func (u *NotificationChannelUpsertOne) SetSmsAppID(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsAppID(v)
+	})
+}
+
+// UpdateSmsAppID sets the "sms_app_id" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsAppID() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsAppID()
+	})
+}
+
+// ClearSmsAppID clears the value of the "sms_app_id" field.
+func (u *NotificationChannelUpsertOne) ClearSmsAppID() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsAppID()
+	})
+}
+
+// SetSmsRegion sets the "sms_region" field.
+func (u *NotificationChannelUpsertOne) SetSmsRegion(v string) *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsRegion(v)
+	})
+}
+
+// UpdateSmsRegion sets the "sms_region" field to the value that was provided on create.
+func (u *NotificationChannelUpsertOne) UpdateSmsRegion() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsRegion()
+	})
+}
+
+// ClearSmsRegion clears the value of the "sms_region" field.
+func (u *NotificationChannelUpsertOne) ClearSmsRegion() *NotificationChannelUpsertOne {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsRegion()
 	})
 }
 
@@ -1770,6 +2292,27 @@ func (u *NotificationChannelUpsertBulk) UpdateType() *NotificationChannelUpsertB
 	})
 }
 
+// SetSettings sets the "settings" field.
+func (u *NotificationChannelUpsertBulk) SetSettings(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSettings(v)
+	})
+}
+
+// UpdateSettings sets the "settings" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSettings() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSettings()
+	})
+}
+
+// ClearSettings clears the value of the "settings" field.
+func (u *NotificationChannelUpsertBulk) ClearSettings() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSettings()
+	})
+}
+
 // SetSMTPHost sets the "smtp_host" field.
 func (u *NotificationChannelUpsertBulk) SetSMTPHost(v string) *NotificationChannelUpsertBulk {
 	return u.Update(func(s *NotificationChannelUpsert) {
@@ -1882,6 +2425,27 @@ func (u *NotificationChannelUpsertBulk) ClearSMTPFrom() *NotificationChannelUpse
 	})
 }
 
+// SetSMTPFromName sets the "smtp_from_name" field.
+func (u *NotificationChannelUpsertBulk) SetSMTPFromName(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSMTPFromName(v)
+	})
+}
+
+// UpdateSMTPFromName sets the "smtp_from_name" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSMTPFromName() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSMTPFromName()
+	})
+}
+
+// ClearSMTPFromName clears the value of the "smtp_from_name" field.
+func (u *NotificationChannelUpsertBulk) ClearSMTPFromName() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSMTPFromName()
+	})
+}
+
 // SetSMTPTLS sets the "smtp_tls" field.
 func (u *NotificationChannelUpsertBulk) SetSMTPTLS(v notificationchannel.SMTPTLS) *NotificationChannelUpsertBulk {
 	return u.Update(func(s *NotificationChannelUpsert) {
@@ -1984,6 +2548,153 @@ func (u *NotificationChannelUpsertBulk) UpdateWebhookPayloadTemplate() *Notifica
 func (u *NotificationChannelUpsertBulk) ClearWebhookPayloadTemplate() *NotificationChannelUpsertBulk {
 	return u.Update(func(s *NotificationChannelUpsert) {
 		s.ClearWebhookPayloadTemplate()
+	})
+}
+
+// SetSmsProvider sets the "sms_provider" field.
+func (u *NotificationChannelUpsertBulk) SetSmsProvider(v notificationchannel.SmsProvider) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsProvider(v)
+	})
+}
+
+// UpdateSmsProvider sets the "sms_provider" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsProvider() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsProvider()
+	})
+}
+
+// ClearSmsProvider clears the value of the "sms_provider" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsProvider() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsProvider()
+	})
+}
+
+// SetSmsAccessKeyID sets the "sms_access_key_id" field.
+func (u *NotificationChannelUpsertBulk) SetSmsAccessKeyID(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsAccessKeyID(v)
+	})
+}
+
+// UpdateSmsAccessKeyID sets the "sms_access_key_id" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsAccessKeyID() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsAccessKeyID()
+	})
+}
+
+// ClearSmsAccessKeyID clears the value of the "sms_access_key_id" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsAccessKeyID() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsAccessKeyID()
+	})
+}
+
+// SetSmsAccessSecret sets the "sms_access_secret" field.
+func (u *NotificationChannelUpsertBulk) SetSmsAccessSecret(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsAccessSecret(v)
+	})
+}
+
+// UpdateSmsAccessSecret sets the "sms_access_secret" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsAccessSecret() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsAccessSecret()
+	})
+}
+
+// ClearSmsAccessSecret clears the value of the "sms_access_secret" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsAccessSecret() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsAccessSecret()
+	})
+}
+
+// SetSmsSignName sets the "sms_sign_name" field.
+func (u *NotificationChannelUpsertBulk) SetSmsSignName(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsSignName(v)
+	})
+}
+
+// UpdateSmsSignName sets the "sms_sign_name" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsSignName() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsSignName()
+	})
+}
+
+// ClearSmsSignName clears the value of the "sms_sign_name" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsSignName() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsSignName()
+	})
+}
+
+// SetSmsTemplateCode sets the "sms_template_code" field.
+func (u *NotificationChannelUpsertBulk) SetSmsTemplateCode(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsTemplateCode(v)
+	})
+}
+
+// UpdateSmsTemplateCode sets the "sms_template_code" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsTemplateCode() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsTemplateCode()
+	})
+}
+
+// ClearSmsTemplateCode clears the value of the "sms_template_code" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsTemplateCode() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsTemplateCode()
+	})
+}
+
+// SetSmsAppID sets the "sms_app_id" field.
+func (u *NotificationChannelUpsertBulk) SetSmsAppID(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsAppID(v)
+	})
+}
+
+// UpdateSmsAppID sets the "sms_app_id" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsAppID() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsAppID()
+	})
+}
+
+// ClearSmsAppID clears the value of the "sms_app_id" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsAppID() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsAppID()
+	})
+}
+
+// SetSmsRegion sets the "sms_region" field.
+func (u *NotificationChannelUpsertBulk) SetSmsRegion(v string) *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.SetSmsRegion(v)
+	})
+}
+
+// UpdateSmsRegion sets the "sms_region" field to the value that was provided on create.
+func (u *NotificationChannelUpsertBulk) UpdateSmsRegion() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.UpdateSmsRegion()
+	})
+}
+
+// ClearSmsRegion clears the value of the "sms_region" field.
+func (u *NotificationChannelUpsertBulk) ClearSmsRegion() *NotificationChannelUpsertBulk {
+	return u.Update(func(s *NotificationChannelUpsert) {
+		s.ClearSmsRegion()
 	})
 }
 

@@ -1,7 +1,8 @@
 {
   "dashboard": {
     "title": "Overview",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "workspace": "Workbench"
   },
   "opm": {
     "moduleName": "Organization & Personnel",
@@ -34,6 +35,7 @@
   },
   "ai": {
     "moduleName": "AI Assistant",
+    "agents": "Agent Apps",
     "chat": "AI Assistant",
     "providers": "AI Providers",
     "knowledge": "Knowledge Bases",

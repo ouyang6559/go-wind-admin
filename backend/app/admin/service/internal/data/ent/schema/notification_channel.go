@@ -36,12 +36,57 @@ func (NotificationChannel) Fields() []ent.Field {
 			Comment("渠道名称").
 			NotEmpty(),
 		field.Enum("type").
-			Comment("渠道类型（一期仅实现 EMAIL）").
+			Comment("渠道类型（EMAIL/WEBHOOK/SMS 老三样 + EXT_* 扩展渠道）").
 			NamedValues(
 				"Email", "EMAIL",
 				"Webhook", "WEBHOOK",
+				"Sms", "SMS",
+				// EXT_* 扩展渠道（settings 列整包配置；成员名与 proto Type 枚举逐字相同）
+				"WecomApp", "WECOM_APP",
+				"DingtalkApp", "DINGTALK_APP",
+				"FeishuApp", "FEISHU_APP",
+				"Wechat", "WECHAT",
+				"Telegram", "TELEGRAM",
+				"Slack", "SLACK",
+				"Discord", "DISCORD",
+				"Teams", "TEAMS",
+				"Gchat", "GCHAT",
+				"Webex", "WEBEX",
+				"Line", "LINE",
+				"Matrix", "MATRIX",
+				"Mattermost", "MATTERMOST",
+				"Rocketchat", "ROCKETCHAT",
+				"Zulip", "ZULIP",
+				"Bark", "BARK",
+				"Ntfy", "NTFY",
+				"Gotify", "GOTIFY",
+				"Serverchan", "SERVERCHAN",
+				"Wxpusher", "WXPUSHER",
+				"Pushover", "PUSHOVER",
+				"Pushbullet", "PUSHBULLET",
+				"Pushdeer", "PUSHDEER",
+				"Jpush", "JPUSH",
+				"Getui", "GETUI",
+				"Huaweisms", "HUAWEISMS",
+				"Yunpian", "YUNPIAN",
+				"Twilio", "TWILIO",
+				"Vonage", "VONAGE",
+				"Whatsapp", "WHATSAPP",
+				"Mailgun", "MAILGUN",
+				"Sendgrid", "SENDGRID",
+				"Postmark", "POSTMARK",
+				"Ifttt", "IFTTT",
+				"Join", "JOIN",
+				"Homeassistant", "HOMEASSISTANT",
+				"Datadog", "DATADOG",
+				"Opsgenie", "OPSGENIE",
+				"Pagerduty", "PAGERDUTY",
 			).
 			Default("EMAIL"),
+		field.Text("settings").
+			Comment("扩展渠道配置 JSON（sensitive 字段值 EncryptIfNeeded 加密）").
+			Optional().
+			Nillable(),
 		field.String("smtp_host").
 			Comment("SMTP 服务器地址").
 			Optional().
@@ -61,6 +106,10 @@ func (NotificationChannel) Fields() []ent.Field {
 			Nillable(),
 		field.String("smtp_from").
 			Comment("发件人地址").
+			Optional().
+			Nillable(),
+		field.String("smtp_from_name").
+			Comment("发件人显示名（如 GoWind，收件客户端直接显示该名）").
 			Optional().
 			Nillable(),
 		field.Enum("smtp_tls").
@@ -101,6 +150,43 @@ func (NotificationChannel) Fields() []ent.Field {
 			Nillable(),
 		field.String("webhook_payload_template").
 			Comment("Webhook 载荷模板（{{占位符}} 渲染；留空则用该风格的内置默认 JSON）").
+			Optional().
+			Nillable(),
+
+		// SMS 渠道的各列：同 WEBHOOK 的按渠道加列决策——SMTP/WEBHOOK 那些列对它没有意义，
+		// 也不上 settings JSON（同一行只允许一种真相源）。密钥走 EncryptIfNeeded 加密存储。
+		field.Enum("sms_provider").
+			Comment("短信服务商（仅 SMS 渠道）").
+			NamedValues(
+				"Aliyun", "ALIYUN",
+				"Tencent", "TENCENT",
+			).
+			Default("ALIYUN").
+			Optional().
+			Nillable(),
+		field.String("sms_access_key_id").
+			Comment("短信访问密钥 ID（仅 SMS 渠道）").
+			Optional().
+			Nillable(),
+		field.String("sms_access_secret").
+			Comment("短信访问密钥 Secret（EncryptIfNeeded 加密存储，仅 SMS 渠道）").
+			Sensitive().
+			Optional().
+			Nillable(),
+		field.String("sms_sign_name").
+			Comment("短信签名（服务商侧已备案的签名名，仅 SMS 渠道）").
+			Optional().
+			Nillable(),
+		field.String("sms_template_code").
+			Comment("短信验证码模板 ID（服务商侧审核通过的模板，仅 SMS 渠道）").
+			Optional().
+			Nillable(),
+		field.String("sms_app_id").
+			Comment("短信应用 ID（腾讯云 SmsSdkAppId 必填；阿里云留空）").
+			Optional().
+			Nillable(),
+		field.String("sms_region").
+			Comment("服务地域（腾讯云必填如 ap-guangzhou；阿里云留空）").
 			Optional().
 			Nillable(),
 	}

@@ -6,6 +6,7 @@ require (
 	entgo.io/ent v0.14.6
 	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
+	github.com/expr-lang/expr v1.17.8
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-kratos/kratos/v2 v2.9.2
@@ -29,8 +30,8 @@ require (
 	github.com/tx7do/go-crud/pagination v0.0.16
 	github.com/tx7do/go-crud/viewer v0.0.8
 	github.com/tx7do/go-scripts v0.0.9
-	github.com/tx7do/go-scripts/javascript v0.0.9
-	github.com/tx7do/go-scripts/lua v0.0.10
+	github.com/tx7do/go-scripts/javascript v0.0.10
+	github.com/tx7do/go-scripts/lua v0.0.12
 	github.com/tx7do/go-utils v1.1.42
 	github.com/tx7do/go-utils/aggregator v0.0.5
 	github.com/tx7do/go-utils/captcha v0.0.4
@@ -42,9 +43,10 @@ require (
 	github.com/tx7do/go-utils/geoip v1.1.8
 	github.com/tx7do/go-utils/id v0.0.6
 	github.com/tx7do/go-utils/jwtutil v0.0.3
-	github.com/tx7do/go-utils/mailer v0.1.0
+	github.com/tx7do/go-utils/mailer v0.1.1
 	github.com/tx7do/go-utils/mapper v0.0.3
 	github.com/tx7do/go-utils/netutil v0.1.0
+	github.com/tx7do/go-utils/notify v0.0.6
 	github.com/tx7do/go-utils/password v0.1.0
 	github.com/tx7do/go-utils/sqlutil v0.1.0
 	github.com/tx7do/go-wind v0.0.2

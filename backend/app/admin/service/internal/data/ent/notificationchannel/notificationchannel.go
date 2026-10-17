@@ -33,6 +33,8 @@ const (
 	FieldName = "name"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldSettings holds the string denoting the settings field in the database.
+	FieldSettings = "settings"
 	// FieldSMTPHost holds the string denoting the smtp_host field in the database.
 	FieldSMTPHost = "smtp_host"
 	// FieldSMTPPort holds the string denoting the smtp_port field in the database.
@@ -43,6 +45,8 @@ const (
 	FieldSMTPPassword = "smtp_password"
 	// FieldSMTPFrom holds the string denoting the smtp_from field in the database.
 	FieldSMTPFrom = "smtp_from"
+	// FieldSMTPFromName holds the string denoting the smtp_from_name field in the database.
+	FieldSMTPFromName = "smtp_from_name"
 	// FieldSMTPTLS holds the string denoting the smtp_tls field in the database.
 	FieldSMTPTLS = "smtp_tls"
 	// FieldWebhookURL holds the string denoting the webhook_url field in the database.
@@ -53,6 +57,20 @@ const (
 	FieldWebhookSignStyle = "webhook_sign_style"
 	// FieldWebhookPayloadTemplate holds the string denoting the webhook_payload_template field in the database.
 	FieldWebhookPayloadTemplate = "webhook_payload_template"
+	// FieldSmsProvider holds the string denoting the sms_provider field in the database.
+	FieldSmsProvider = "sms_provider"
+	// FieldSmsAccessKeyID holds the string denoting the sms_access_key_id field in the database.
+	FieldSmsAccessKeyID = "sms_access_key_id"
+	// FieldSmsAccessSecret holds the string denoting the sms_access_secret field in the database.
+	FieldSmsAccessSecret = "sms_access_secret"
+	// FieldSmsSignName holds the string denoting the sms_sign_name field in the database.
+	FieldSmsSignName = "sms_sign_name"
+	// FieldSmsTemplateCode holds the string denoting the sms_template_code field in the database.
+	FieldSmsTemplateCode = "sms_template_code"
+	// FieldSmsAppID holds the string denoting the sms_app_id field in the database.
+	FieldSmsAppID = "sms_app_id"
+	// FieldSmsRegion holds the string denoting the sms_region field in the database.
+	FieldSmsRegion = "sms_region"
 	// Table holds the table name of the notificationchannel in the database.
 	Table = "sys_notification_channels"
 )
@@ -70,16 +88,25 @@ var Columns = []string{
 	FieldStatus,
 	FieldName,
 	FieldType,
+	FieldSettings,
 	FieldSMTPHost,
 	FieldSMTPPort,
 	FieldSMTPUsername,
 	FieldSMTPPassword,
 	FieldSMTPFrom,
+	FieldSMTPFromName,
 	FieldSMTPTLS,
 	FieldWebhookURL,
 	FieldWebhookSecret,
 	FieldWebhookSignStyle,
 	FieldWebhookPayloadTemplate,
+	FieldSmsProvider,
+	FieldSmsAccessKeyID,
+	FieldSmsAccessSecret,
+	FieldSmsSignName,
+	FieldSmsTemplateCode,
+	FieldSmsAppID,
+	FieldSmsRegion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -133,8 +160,48 @@ const DefaultType = TypeEmail
 
 // Type values.
 const (
-	TypeEmail   Type = "EMAIL"
-	TypeWebhook Type = "WEBHOOK"
+	TypeEmail         Type = "EMAIL"
+	TypeWebhook       Type = "WEBHOOK"
+	TypeSms           Type = "SMS"
+	TypeWecomApp      Type = "WECOM_APP"
+	TypeDingtalkApp   Type = "DINGTALK_APP"
+	TypeFeishuApp     Type = "FEISHU_APP"
+	TypeWechat        Type = "WECHAT"
+	TypeTelegram      Type = "TELEGRAM"
+	TypeSlack         Type = "SLACK"
+	TypeDiscord       Type = "DISCORD"
+	TypeTeams         Type = "TEAMS"
+	TypeGchat         Type = "GCHAT"
+	TypeWebex         Type = "WEBEX"
+	TypeLine          Type = "LINE"
+	TypeMatrix        Type = "MATRIX"
+	TypeMattermost    Type = "MATTERMOST"
+	TypeRocketchat    Type = "ROCKETCHAT"
+	TypeZulip         Type = "ZULIP"
+	TypeBark          Type = "BARK"
+	TypeNtfy          Type = "NTFY"
+	TypeGotify        Type = "GOTIFY"
+	TypeServerchan    Type = "SERVERCHAN"
+	TypeWxpusher      Type = "WXPUSHER"
+	TypePushover      Type = "PUSHOVER"
+	TypePushbullet    Type = "PUSHBULLET"
+	TypePushdeer      Type = "PUSHDEER"
+	TypeJpush         Type = "JPUSH"
+	TypeGetui         Type = "GETUI"
+	TypeHuaweisms     Type = "HUAWEISMS"
+	TypeYunpian       Type = "YUNPIAN"
+	TypeTwilio        Type = "TWILIO"
+	TypeVonage        Type = "VONAGE"
+	TypeWhatsapp      Type = "WHATSAPP"
+	TypeMailgun       Type = "MAILGUN"
+	TypeSendgrid      Type = "SENDGRID"
+	TypePostmark      Type = "POSTMARK"
+	TypeIfttt         Type = "IFTTT"
+	TypeJoin          Type = "JOIN"
+	TypeHomeassistant Type = "HOMEASSISTANT"
+	TypeDatadog       Type = "DATADOG"
+	TypeOpsgenie      Type = "OPSGENIE"
+	TypePagerduty     Type = "PAGERDUTY"
 )
 
 func (_type Type) String() string {
@@ -144,7 +211,7 @@ func (_type Type) String() string {
 // TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
 func TypeValidator(_type Type) error {
 	switch _type {
-	case TypeEmail, TypeWebhook:
+	case TypeEmail, TypeWebhook, TypeSms, TypeWecomApp, TypeDingtalkApp, TypeFeishuApp, TypeWechat, TypeTelegram, TypeSlack, TypeDiscord, TypeTeams, TypeGchat, TypeWebex, TypeLine, TypeMatrix, TypeMattermost, TypeRocketchat, TypeZulip, TypeBark, TypeNtfy, TypeGotify, TypeServerchan, TypeWxpusher, TypePushover, TypePushbullet, TypePushdeer, TypeJpush, TypeGetui, TypeHuaweisms, TypeYunpian, TypeTwilio, TypeVonage, TypeWhatsapp, TypeMailgun, TypeSendgrid, TypePostmark, TypeIfttt, TypeJoin, TypeHomeassistant, TypeDatadog, TypeOpsgenie, TypePagerduty:
 		return nil
 	default:
 		return fmt.Errorf("notificationchannel: invalid enum value for type field: %q", _type)
@@ -207,6 +274,32 @@ func WebhookSignStyleValidator(wss WebhookSignStyle) error {
 	}
 }
 
+// SmsProvider defines the type for the "sms_provider" enum field.
+type SmsProvider string
+
+// SmsProviderAliyun is the default value of the SmsProvider enum.
+const DefaultSmsProvider = SmsProviderAliyun
+
+// SmsProvider values.
+const (
+	SmsProviderAliyun  SmsProvider = "ALIYUN"
+	SmsProviderTencent SmsProvider = "TENCENT"
+)
+
+func (sp SmsProvider) String() string {
+	return string(sp)
+}
+
+// SmsProviderValidator is a validator for the "sms_provider" field enum values. It is called by the builders before save.
+func SmsProviderValidator(sp SmsProvider) error {
+	switch sp {
+	case SmsProviderAliyun, SmsProviderTencent:
+		return nil
+	default:
+		return fmt.Errorf("notificationchannel: invalid enum value for sms_provider field: %q", sp)
+	}
+}
+
 // OrderOption defines the ordering options for the NotificationChannel queries.
 type OrderOption func(*sql.Selector)
 
@@ -265,6 +358,11 @@ func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
 }
 
+// BySettings orders the results by the settings field.
+func BySettings(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSettings, opts...).ToFunc()
+}
+
 // BySMTPHost orders the results by the smtp_host field.
 func BySMTPHost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSMTPHost, opts...).ToFunc()
@@ -290,6 +388,11 @@ func BySMTPFrom(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSMTPFrom, opts...).ToFunc()
 }
 
+// BySMTPFromName orders the results by the smtp_from_name field.
+func BySMTPFromName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSMTPFromName, opts...).ToFunc()
+}
+
 // BySMTPTLS orders the results by the smtp_tls field.
 func BySMTPTLS(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSMTPTLS, opts...).ToFunc()
@@ -313,4 +416,39 @@ func ByWebhookSignStyle(opts ...sql.OrderTermOption) OrderOption {
 // ByWebhookPayloadTemplate orders the results by the webhook_payload_template field.
 func ByWebhookPayloadTemplate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWebhookPayloadTemplate, opts...).ToFunc()
+}
+
+// BySmsProvider orders the results by the sms_provider field.
+func BySmsProvider(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsProvider, opts...).ToFunc()
+}
+
+// BySmsAccessKeyID orders the results by the sms_access_key_id field.
+func BySmsAccessKeyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsAccessKeyID, opts...).ToFunc()
+}
+
+// BySmsAccessSecret orders the results by the sms_access_secret field.
+func BySmsAccessSecret(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsAccessSecret, opts...).ToFunc()
+}
+
+// BySmsSignName orders the results by the sms_sign_name field.
+func BySmsSignName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsSignName, opts...).ToFunc()
+}
+
+// BySmsTemplateCode orders the results by the sms_template_code field.
+func BySmsTemplateCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsTemplateCode, opts...).ToFunc()
+}
+
+// BySmsAppID orders the results by the sms_app_id field.
+func BySmsAppID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsAppID, opts...).ToFunc()
+}
+
+// BySmsRegion orders the results by the sms_region field.
+func BySmsRegion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsRegion, opts...).ToFunc()
 }

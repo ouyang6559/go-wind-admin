@@ -94,6 +94,11 @@ func Name(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldName, v))
 }
 
+// Settings applies equality check predicate on the "settings" field. It's identical to SettingsEQ.
+func Settings(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSettings, v))
+}
+
 // SMTPHost applies equality check predicate on the "smtp_host" field. It's identical to SMTPHostEQ.
 func SMTPHost(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldSMTPHost, v))
@@ -119,6 +124,11 @@ func SMTPFrom(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldSMTPFrom, v))
 }
 
+// SMTPFromName applies equality check predicate on the "smtp_from_name" field. It's identical to SMTPFromNameEQ.
+func SMTPFromName(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSMTPFromName, v))
+}
+
 // WebhookURL applies equality check predicate on the "webhook_url" field. It's identical to WebhookURLEQ.
 func WebhookURL(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldWebhookURL, v))
@@ -132,6 +142,36 @@ func WebhookSecret(v string) predicate.NotificationChannel {
 // WebhookPayloadTemplate applies equality check predicate on the "webhook_payload_template" field. It's identical to WebhookPayloadTemplateEQ.
 func WebhookPayloadTemplate(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldWebhookPayloadTemplate, v))
+}
+
+// SmsAccessKeyID applies equality check predicate on the "sms_access_key_id" field. It's identical to SmsAccessKeyIDEQ.
+func SmsAccessKeyID(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessSecret applies equality check predicate on the "sms_access_secret" field. It's identical to SmsAccessSecretEQ.
+func SmsAccessSecret(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsAccessSecret, v))
+}
+
+// SmsSignName applies equality check predicate on the "sms_sign_name" field. It's identical to SmsSignNameEQ.
+func SmsSignName(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsSignName, v))
+}
+
+// SmsTemplateCode applies equality check predicate on the "sms_template_code" field. It's identical to SmsTemplateCodeEQ.
+func SmsTemplateCode(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsTemplateCode, v))
+}
+
+// SmsAppID applies equality check predicate on the "sms_app_id" field. It's identical to SmsAppIDEQ.
+func SmsAppID(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsAppID, v))
+}
+
+// SmsRegion applies equality check predicate on the "sms_region" field. It's identical to SmsRegionEQ.
+func SmsRegion(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsRegion, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -614,6 +654,81 @@ func TypeNotIn(vs ...Type) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldNotIn(FieldType, vs...))
 }
 
+// SettingsEQ applies the EQ predicate on the "settings" field.
+func SettingsEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSettings, v))
+}
+
+// SettingsNEQ applies the NEQ predicate on the "settings" field.
+func SettingsNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSettings, v))
+}
+
+// SettingsIn applies the In predicate on the "settings" field.
+func SettingsIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSettings, vs...))
+}
+
+// SettingsNotIn applies the NotIn predicate on the "settings" field.
+func SettingsNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSettings, vs...))
+}
+
+// SettingsGT applies the GT predicate on the "settings" field.
+func SettingsGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSettings, v))
+}
+
+// SettingsGTE applies the GTE predicate on the "settings" field.
+func SettingsGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSettings, v))
+}
+
+// SettingsLT applies the LT predicate on the "settings" field.
+func SettingsLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSettings, v))
+}
+
+// SettingsLTE applies the LTE predicate on the "settings" field.
+func SettingsLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSettings, v))
+}
+
+// SettingsContains applies the Contains predicate on the "settings" field.
+func SettingsContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSettings, v))
+}
+
+// SettingsHasPrefix applies the HasPrefix predicate on the "settings" field.
+func SettingsHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSettings, v))
+}
+
+// SettingsHasSuffix applies the HasSuffix predicate on the "settings" field.
+func SettingsHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSettings, v))
+}
+
+// SettingsIsNil applies the IsNil predicate on the "settings" field.
+func SettingsIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSettings))
+}
+
+// SettingsNotNil applies the NotNil predicate on the "settings" field.
+func SettingsNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSettings))
+}
+
+// SettingsEqualFold applies the EqualFold predicate on the "settings" field.
+func SettingsEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSettings, v))
+}
+
+// SettingsContainsFold applies the ContainsFold predicate on the "settings" field.
+func SettingsContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSettings, v))
+}
+
 // SMTPHostEQ applies the EQ predicate on the "smtp_host" field.
 func SMTPHostEQ(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldSMTPHost, v))
@@ -964,6 +1079,81 @@ func SMTPFromContainsFold(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSMTPFrom, v))
 }
 
+// SMTPFromNameEQ applies the EQ predicate on the "smtp_from_name" field.
+func SMTPFromNameEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameNEQ applies the NEQ predicate on the "smtp_from_name" field.
+func SMTPFromNameNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameIn applies the In predicate on the "smtp_from_name" field.
+func SMTPFromNameIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSMTPFromName, vs...))
+}
+
+// SMTPFromNameNotIn applies the NotIn predicate on the "smtp_from_name" field.
+func SMTPFromNameNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSMTPFromName, vs...))
+}
+
+// SMTPFromNameGT applies the GT predicate on the "smtp_from_name" field.
+func SMTPFromNameGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameGTE applies the GTE predicate on the "smtp_from_name" field.
+func SMTPFromNameGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameLT applies the LT predicate on the "smtp_from_name" field.
+func SMTPFromNameLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameLTE applies the LTE predicate on the "smtp_from_name" field.
+func SMTPFromNameLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameContains applies the Contains predicate on the "smtp_from_name" field.
+func SMTPFromNameContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameHasPrefix applies the HasPrefix predicate on the "smtp_from_name" field.
+func SMTPFromNameHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameHasSuffix applies the HasSuffix predicate on the "smtp_from_name" field.
+func SMTPFromNameHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameIsNil applies the IsNil predicate on the "smtp_from_name" field.
+func SMTPFromNameIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSMTPFromName))
+}
+
+// SMTPFromNameNotNil applies the NotNil predicate on the "smtp_from_name" field.
+func SMTPFromNameNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSMTPFromName))
+}
+
+// SMTPFromNameEqualFold applies the EqualFold predicate on the "smtp_from_name" field.
+func SMTPFromNameEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSMTPFromName, v))
+}
+
+// SMTPFromNameContainsFold applies the ContainsFold predicate on the "smtp_from_name" field.
+func SMTPFromNameContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSMTPFromName, v))
+}
+
 // SMTPTLSEQ applies the EQ predicate on the "smtp_tls" field.
 func SMTPTLSEQ(v SMTPTLS) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldEQ(FieldSMTPTLS, v))
@@ -1247,6 +1437,486 @@ func WebhookPayloadTemplateEqualFold(v string) predicate.NotificationChannel {
 // WebhookPayloadTemplateContainsFold applies the ContainsFold predicate on the "webhook_payload_template" field.
 func WebhookPayloadTemplateContainsFold(v string) predicate.NotificationChannel {
 	return predicate.NotificationChannel(sql.FieldContainsFold(FieldWebhookPayloadTemplate, v))
+}
+
+// SmsProviderEQ applies the EQ predicate on the "sms_provider" field.
+func SmsProviderEQ(v SmsProvider) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsProvider, v))
+}
+
+// SmsProviderNEQ applies the NEQ predicate on the "sms_provider" field.
+func SmsProviderNEQ(v SmsProvider) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsProvider, v))
+}
+
+// SmsProviderIn applies the In predicate on the "sms_provider" field.
+func SmsProviderIn(vs ...SmsProvider) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsProvider, vs...))
+}
+
+// SmsProviderNotIn applies the NotIn predicate on the "sms_provider" field.
+func SmsProviderNotIn(vs ...SmsProvider) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsProvider, vs...))
+}
+
+// SmsProviderIsNil applies the IsNil predicate on the "sms_provider" field.
+func SmsProviderIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsProvider))
+}
+
+// SmsProviderNotNil applies the NotNil predicate on the "sms_provider" field.
+func SmsProviderNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsProvider))
+}
+
+// SmsAccessKeyIDEQ applies the EQ predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDNEQ applies the NEQ predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDIn applies the In predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsAccessKeyID, vs...))
+}
+
+// SmsAccessKeyIDNotIn applies the NotIn predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsAccessKeyID, vs...))
+}
+
+// SmsAccessKeyIDGT applies the GT predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDGTE applies the GTE predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDLT applies the LT predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDLTE applies the LTE predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDContains applies the Contains predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDHasPrefix applies the HasPrefix predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDHasSuffix applies the HasSuffix predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDIsNil applies the IsNil predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsAccessKeyID))
+}
+
+// SmsAccessKeyIDNotNil applies the NotNil predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsAccessKeyID))
+}
+
+// SmsAccessKeyIDEqualFold applies the EqualFold predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessKeyIDContainsFold applies the ContainsFold predicate on the "sms_access_key_id" field.
+func SmsAccessKeyIDContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSmsAccessKeyID, v))
+}
+
+// SmsAccessSecretEQ applies the EQ predicate on the "sms_access_secret" field.
+func SmsAccessSecretEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretNEQ applies the NEQ predicate on the "sms_access_secret" field.
+func SmsAccessSecretNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretIn applies the In predicate on the "sms_access_secret" field.
+func SmsAccessSecretIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsAccessSecret, vs...))
+}
+
+// SmsAccessSecretNotIn applies the NotIn predicate on the "sms_access_secret" field.
+func SmsAccessSecretNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsAccessSecret, vs...))
+}
+
+// SmsAccessSecretGT applies the GT predicate on the "sms_access_secret" field.
+func SmsAccessSecretGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretGTE applies the GTE predicate on the "sms_access_secret" field.
+func SmsAccessSecretGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretLT applies the LT predicate on the "sms_access_secret" field.
+func SmsAccessSecretLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretLTE applies the LTE predicate on the "sms_access_secret" field.
+func SmsAccessSecretLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretContains applies the Contains predicate on the "sms_access_secret" field.
+func SmsAccessSecretContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretHasPrefix applies the HasPrefix predicate on the "sms_access_secret" field.
+func SmsAccessSecretHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretHasSuffix applies the HasSuffix predicate on the "sms_access_secret" field.
+func SmsAccessSecretHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretIsNil applies the IsNil predicate on the "sms_access_secret" field.
+func SmsAccessSecretIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsAccessSecret))
+}
+
+// SmsAccessSecretNotNil applies the NotNil predicate on the "sms_access_secret" field.
+func SmsAccessSecretNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsAccessSecret))
+}
+
+// SmsAccessSecretEqualFold applies the EqualFold predicate on the "sms_access_secret" field.
+func SmsAccessSecretEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSmsAccessSecret, v))
+}
+
+// SmsAccessSecretContainsFold applies the ContainsFold predicate on the "sms_access_secret" field.
+func SmsAccessSecretContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSmsAccessSecret, v))
+}
+
+// SmsSignNameEQ applies the EQ predicate on the "sms_sign_name" field.
+func SmsSignNameEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsSignName, v))
+}
+
+// SmsSignNameNEQ applies the NEQ predicate on the "sms_sign_name" field.
+func SmsSignNameNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsSignName, v))
+}
+
+// SmsSignNameIn applies the In predicate on the "sms_sign_name" field.
+func SmsSignNameIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsSignName, vs...))
+}
+
+// SmsSignNameNotIn applies the NotIn predicate on the "sms_sign_name" field.
+func SmsSignNameNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsSignName, vs...))
+}
+
+// SmsSignNameGT applies the GT predicate on the "sms_sign_name" field.
+func SmsSignNameGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSmsSignName, v))
+}
+
+// SmsSignNameGTE applies the GTE predicate on the "sms_sign_name" field.
+func SmsSignNameGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSmsSignName, v))
+}
+
+// SmsSignNameLT applies the LT predicate on the "sms_sign_name" field.
+func SmsSignNameLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSmsSignName, v))
+}
+
+// SmsSignNameLTE applies the LTE predicate on the "sms_sign_name" field.
+func SmsSignNameLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSmsSignName, v))
+}
+
+// SmsSignNameContains applies the Contains predicate on the "sms_sign_name" field.
+func SmsSignNameContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSmsSignName, v))
+}
+
+// SmsSignNameHasPrefix applies the HasPrefix predicate on the "sms_sign_name" field.
+func SmsSignNameHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSmsSignName, v))
+}
+
+// SmsSignNameHasSuffix applies the HasSuffix predicate on the "sms_sign_name" field.
+func SmsSignNameHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSmsSignName, v))
+}
+
+// SmsSignNameIsNil applies the IsNil predicate on the "sms_sign_name" field.
+func SmsSignNameIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsSignName))
+}
+
+// SmsSignNameNotNil applies the NotNil predicate on the "sms_sign_name" field.
+func SmsSignNameNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsSignName))
+}
+
+// SmsSignNameEqualFold applies the EqualFold predicate on the "sms_sign_name" field.
+func SmsSignNameEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSmsSignName, v))
+}
+
+// SmsSignNameContainsFold applies the ContainsFold predicate on the "sms_sign_name" field.
+func SmsSignNameContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSmsSignName, v))
+}
+
+// SmsTemplateCodeEQ applies the EQ predicate on the "sms_template_code" field.
+func SmsTemplateCodeEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeNEQ applies the NEQ predicate on the "sms_template_code" field.
+func SmsTemplateCodeNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeIn applies the In predicate on the "sms_template_code" field.
+func SmsTemplateCodeIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsTemplateCode, vs...))
+}
+
+// SmsTemplateCodeNotIn applies the NotIn predicate on the "sms_template_code" field.
+func SmsTemplateCodeNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsTemplateCode, vs...))
+}
+
+// SmsTemplateCodeGT applies the GT predicate on the "sms_template_code" field.
+func SmsTemplateCodeGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeGTE applies the GTE predicate on the "sms_template_code" field.
+func SmsTemplateCodeGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeLT applies the LT predicate on the "sms_template_code" field.
+func SmsTemplateCodeLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeLTE applies the LTE predicate on the "sms_template_code" field.
+func SmsTemplateCodeLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeContains applies the Contains predicate on the "sms_template_code" field.
+func SmsTemplateCodeContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeHasPrefix applies the HasPrefix predicate on the "sms_template_code" field.
+func SmsTemplateCodeHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeHasSuffix applies the HasSuffix predicate on the "sms_template_code" field.
+func SmsTemplateCodeHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeIsNil applies the IsNil predicate on the "sms_template_code" field.
+func SmsTemplateCodeIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsTemplateCode))
+}
+
+// SmsTemplateCodeNotNil applies the NotNil predicate on the "sms_template_code" field.
+func SmsTemplateCodeNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsTemplateCode))
+}
+
+// SmsTemplateCodeEqualFold applies the EqualFold predicate on the "sms_template_code" field.
+func SmsTemplateCodeEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSmsTemplateCode, v))
+}
+
+// SmsTemplateCodeContainsFold applies the ContainsFold predicate on the "sms_template_code" field.
+func SmsTemplateCodeContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSmsTemplateCode, v))
+}
+
+// SmsAppIDEQ applies the EQ predicate on the "sms_app_id" field.
+func SmsAppIDEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsAppID, v))
+}
+
+// SmsAppIDNEQ applies the NEQ predicate on the "sms_app_id" field.
+func SmsAppIDNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsAppID, v))
+}
+
+// SmsAppIDIn applies the In predicate on the "sms_app_id" field.
+func SmsAppIDIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsAppID, vs...))
+}
+
+// SmsAppIDNotIn applies the NotIn predicate on the "sms_app_id" field.
+func SmsAppIDNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsAppID, vs...))
+}
+
+// SmsAppIDGT applies the GT predicate on the "sms_app_id" field.
+func SmsAppIDGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSmsAppID, v))
+}
+
+// SmsAppIDGTE applies the GTE predicate on the "sms_app_id" field.
+func SmsAppIDGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSmsAppID, v))
+}
+
+// SmsAppIDLT applies the LT predicate on the "sms_app_id" field.
+func SmsAppIDLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSmsAppID, v))
+}
+
+// SmsAppIDLTE applies the LTE predicate on the "sms_app_id" field.
+func SmsAppIDLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSmsAppID, v))
+}
+
+// SmsAppIDContains applies the Contains predicate on the "sms_app_id" field.
+func SmsAppIDContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSmsAppID, v))
+}
+
+// SmsAppIDHasPrefix applies the HasPrefix predicate on the "sms_app_id" field.
+func SmsAppIDHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSmsAppID, v))
+}
+
+// SmsAppIDHasSuffix applies the HasSuffix predicate on the "sms_app_id" field.
+func SmsAppIDHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSmsAppID, v))
+}
+
+// SmsAppIDIsNil applies the IsNil predicate on the "sms_app_id" field.
+func SmsAppIDIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsAppID))
+}
+
+// SmsAppIDNotNil applies the NotNil predicate on the "sms_app_id" field.
+func SmsAppIDNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsAppID))
+}
+
+// SmsAppIDEqualFold applies the EqualFold predicate on the "sms_app_id" field.
+func SmsAppIDEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSmsAppID, v))
+}
+
+// SmsAppIDContainsFold applies the ContainsFold predicate on the "sms_app_id" field.
+func SmsAppIDContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSmsAppID, v))
+}
+
+// SmsRegionEQ applies the EQ predicate on the "sms_region" field.
+func SmsRegionEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEQ(FieldSmsRegion, v))
+}
+
+// SmsRegionNEQ applies the NEQ predicate on the "sms_region" field.
+func SmsRegionNEQ(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNEQ(FieldSmsRegion, v))
+}
+
+// SmsRegionIn applies the In predicate on the "sms_region" field.
+func SmsRegionIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIn(FieldSmsRegion, vs...))
+}
+
+// SmsRegionNotIn applies the NotIn predicate on the "sms_region" field.
+func SmsRegionNotIn(vs ...string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotIn(FieldSmsRegion, vs...))
+}
+
+// SmsRegionGT applies the GT predicate on the "sms_region" field.
+func SmsRegionGT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGT(FieldSmsRegion, v))
+}
+
+// SmsRegionGTE applies the GTE predicate on the "sms_region" field.
+func SmsRegionGTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldGTE(FieldSmsRegion, v))
+}
+
+// SmsRegionLT applies the LT predicate on the "sms_region" field.
+func SmsRegionLT(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLT(FieldSmsRegion, v))
+}
+
+// SmsRegionLTE applies the LTE predicate on the "sms_region" field.
+func SmsRegionLTE(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldLTE(FieldSmsRegion, v))
+}
+
+// SmsRegionContains applies the Contains predicate on the "sms_region" field.
+func SmsRegionContains(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContains(FieldSmsRegion, v))
+}
+
+// SmsRegionHasPrefix applies the HasPrefix predicate on the "sms_region" field.
+func SmsRegionHasPrefix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasPrefix(FieldSmsRegion, v))
+}
+
+// SmsRegionHasSuffix applies the HasSuffix predicate on the "sms_region" field.
+func SmsRegionHasSuffix(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldHasSuffix(FieldSmsRegion, v))
+}
+
+// SmsRegionIsNil applies the IsNil predicate on the "sms_region" field.
+func SmsRegionIsNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldIsNull(FieldSmsRegion))
+}
+
+// SmsRegionNotNil applies the NotNil predicate on the "sms_region" field.
+func SmsRegionNotNil() predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldNotNull(FieldSmsRegion))
+}
+
+// SmsRegionEqualFold applies the EqualFold predicate on the "sms_region" field.
+func SmsRegionEqualFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldEqualFold(FieldSmsRegion, v))
+}
+
+// SmsRegionContainsFold applies the ContainsFold predicate on the "sms_region" field.
+func SmsRegionContainsFold(v string) predicate.NotificationChannel {
+	return predicate.NotificationChannel(sql.FieldContainsFold(FieldSmsRegion, v))
 }
 
 // And groups predicates with the AND operator between them.

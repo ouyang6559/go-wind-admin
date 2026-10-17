@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Input, Segmented, Table, Tag, Typography, App } from 'antd';
+import { Button, Input, Segmented, Table, Tag, theme, Typography, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { SendOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
@@ -140,7 +140,7 @@ export default function AiQueryPage() {
                         <summary className="cursor-pointer text-xs text-[color:var(--ant-color-text-secondary)]">
                           {t('generatedSql')}
                         </summary>
-                        <pre className="mt-2 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100">
+                        <pre className="mt-2 overflow-x-auto rounded-lg bg-[color:var(--ant-color-fill-tertiary)] p-3 text-xs leading-relaxed text-[color:var(--ant-color-text)]">
                           {round.sql}
                         </pre>
                       </details>
@@ -245,18 +245,33 @@ function QueryChart({
   kind: ChartKind;
 }) {
   const series = columns.map((_, i) => i).filter((i) => i > 0 && isNumericSeries(rows, i));
+  // 画布文字不吃 CSS 层叠：不给颜色时 ECharts 用它自己的默认 #333 文字/浅灰线，
+  // 暗色卡片（#111827）上实测只有 1.4:1。这里与 LineChart 同一口径取 antd token。
+  const { token } = theme.useToken();
   const option = {
+    textStyle: { color: token.colorText },
     // echarts 6：containLabel 已废弃，不加载 LegacyGridContainLabel 时整条被忽略
     // （Grid.js 直接 log 报错），等价写法是 outerBoundsMode/outerBoundsContain。
     grid: { left: 8, right: 8, top: 24, bottom: 8, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
-    legend: { top: 0 },
-    tooltip: { trigger: 'axis' },
+    legend: { top: 0, textStyle: { color: token.colorTextSecondary } },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: token.colorBgElevated,
+      borderColor: token.colorBorder,
+      textStyle: { color: token.colorText },
+    },
     xAxis: {
       type: 'category',
       data: rows.map((r) => (r.values ?? [])[0] ?? ''),
-      axisLabel: { rotate: rows.length > 6 ? 30 : 0 },
+      axisLine: { lineStyle: { color: token.colorSplit } },
+      axisTick: { lineStyle: { color: token.colorSplit } },
+      axisLabel: { rotate: rows.length > 6 ? 30 : 0, color: token.colorTextSecondary },
     },
-    yAxis: { type: 'value' },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: token.colorTextSecondary },
+      splitLine: { lineStyle: { color: token.colorSplit } },
+    },
     series: series.map((colIdx) => ({
       name: columns[colIdx],
       type: kind,

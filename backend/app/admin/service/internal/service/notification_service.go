@@ -289,6 +289,7 @@ func (s *NotificationService) sendOnce(
 		RecipientUserID: req.GetRecipientUserId(),
 		OperatorUserID:  req.GetOperatorUserId(),
 		RelatedID:       req.GetRelatedId(),
+		Params:          req.GetParams(),
 	})
 	if sendErr == nil {
 		sentAt := time.Now()
@@ -296,7 +297,8 @@ func (s *NotificationService) sendOnce(
 			Status: notificationV1.DeliveryStatus_SENT,
 			SentAt: &sentAt,
 			// 自选渠道时 Create 阶段还没有 channel_id（策略在 Sender 内部），发完补上。
-			ChannelID: pickedChannelId(receipt),
+			ChannelID:  pickedChannelId(receipt),
+			ProviderID: pickedProviderId(receipt),
 		}, nil
 	}
 
@@ -312,7 +314,8 @@ func (s *NotificationService) sendOnce(
 		Status: status, LastError: sendErr.Error(),
 		// 失败也补这一格：账号已选出却发不出去，"走的哪条配置"恰恰是排障要先知道的那件事。
 		// 压根没选出账号时 receipt 是 nil，这一格继续留空 —— 那才是它该空的两种情形之一。
-		ChannelID: pickedChannelId(receipt),
+		ChannelID:  pickedChannelId(receipt),
+		ProviderID: pickedProviderId(receipt),
 	}, sendErr
 }
 
@@ -363,6 +366,7 @@ func (s *NotificationService) dispatchAsync(
 			Target:     req.GetTarget(),
 			Title:      req.GetTitle(),
 			Content:    req.GetContent(),
+			Params:     req.GetParams(),
 		},
 		asynq.MaxRetry(notificationDispatchMaxRetry),
 		asynq.Timeout(notificationDispatchTimeout),
@@ -485,6 +489,7 @@ func dispatchRequest(row *notificationV1.NotificationDelivery, payload *task.Not
 		OperatorUserId:  row.CreatedBy,
 		RelatedId:       row.RelatedId,
 		RequestId:       row.RequestId,
+		Params:          payload.Params,
 	}
 }
 
@@ -494,6 +499,14 @@ func pickedChannelId(receipt *channel.SendReceipt) *uint32 {
 		return nil
 	}
 	return trans.Ptr(receipt.ChannelID)
+}
+
+// pickedProviderId 把回执里的服务商消息 ID 转成台账的可选列（空/无回执 → nil，表示不修改）。
+func pickedProviderId(receipt *channel.SendReceipt) *string {
+	if receipt == nil || receipt.ProviderID == "" {
+		return nil
+	}
+	return trans.Ptr(receipt.ProviderID)
 }
 
 const (

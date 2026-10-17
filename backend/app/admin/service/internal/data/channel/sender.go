@@ -7,6 +7,9 @@ package channel
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/tx7do/go-utils/notify"
 
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 )
@@ -39,12 +42,22 @@ type SendRequest struct {
 	// WEBHOOK 必须带上：出站 JSON 是对端唯一的判据，而模板渲染排在 P3，
 	// 正文里此刻没有任何东西说明"这是找回密码还是换绑验证码"。
 	EventType notificationV1.EventType
+
+	// Params 渠道原生参数：不走模板渲染、由渠道实现直接消费的键值。
+	// 当前只有 SMS 消费 params["code"]（服务商审核模板的验证码占位值）——
+	// 短信没有自由文本通道，没有 code 的投递在 SMS 渠道是发不出去的。
+	// 异步派发的载荷会原样带上这一组（notification_dispatch.go 的 TaskData.Params）。
+	Params map[string]string
 }
 
 // SendReceipt 渠道回执。
 type SendReceipt struct {
 	// ChannelID 实际使用的渠道配置 ID——台账要能回答"这条到底走的哪个 SMTP 账号"。
 	ChannelID uint32
+
+	// ProviderID 服务商侧的消息/请求 ID（阿里云 RequestId、腾讯云 SerialNo 等），
+	// 拿得到就带——落台账 provider_id 列，方便对账。多数渠道没有就留空。
+	ProviderID string
 }
 
 // Sender 一种投递渠道的实现。
@@ -65,6 +78,13 @@ type Sender interface {
 // ErrChannelNotConfigured 没有可用的渠道配置（区别于"渠道报错"）。
 // 服务层据此把台账记为 SKIPPED 而非 FAILED：管理员配错与压根没配是两件事。
 var ErrChannelNotConfigured = fmt.Errorf("no enabled notification channel configured")
+
+// stripNotifySentinel 剥掉库层 ErrNotConfigured 的哨兵文本。
+// 它与本包 ErrChannelNotConfigured 同义（都指"一次都没联系对端"），
+// 转译时保留本包一层就够——两层都念出来，台账 last_error 会结巴。
+func stripNotifySentinel(err error) string {
+	return strings.TrimPrefix(err.Error(), notify.ErrNotConfigured.Error()+": ")
+}
 
 // Prechecker 渠道的"配置可用性"自检，由异步派发在入队之前调用。
 //

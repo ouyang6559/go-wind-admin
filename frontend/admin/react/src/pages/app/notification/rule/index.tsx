@@ -3,6 +3,7 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import ListTable from '@/components/common/ListTable';
 import {
   ModalForm,
+  DrawerForm,
   ProFormText,
   ProFormTextArea,
   ProFormSelect,
@@ -17,6 +18,7 @@ import type {
   notificationservicev1_CreateNotificationRuleRequest,
   notificationservicev1_UpdateNotificationRuleRequest,
 } from '@/api/generated/admin/service/v1';
+import { useListChannelSchemas } from '@/api/hooks/notification-channel-schema';
 import { PaginationQuery } from '@/core';
 import { TABLE } from '@/config/constants';
 import {
@@ -45,6 +47,7 @@ const CHANNEL_COLORS: Record<notificationservicev1_Channel, string> = {
   SMS: 'green',
   WEBHOOK: 'purple',
   INTERNAL: 'cyan',
+  EXT: 'geekblue',
   CHANNEL_UNSPECIFIED: 'default',
 };
 
@@ -59,8 +62,19 @@ const channelOptions = (t: (key: string) => string) =>
     label: t(`channelMap.${value}`),
   }));
 
+const extGroupedOptions = (schemas: { type?: unknown; group?: unknown; label?: unknown }[]) => {
+  const groups = new Map<string, { label: string; value: string }[]>();
+  for (const s of schemas) {
+    const g = String(s.group || 'EXT');
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g)!.push({ label: String(s.label), value: String(s.type) });
+  }
+  return [...groups.entries()].map(([group, options]) => ({ label: group, options }));
+};
+
 const NotificationRulePage = () => {
   const { t } = useTranslation('notification-rule');
+  const extSchemas = useListChannelSchemas().data?.items ?? [];
   const actionRef = useRef<ActionType>(null);
   const { message } = App.useApp();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -161,7 +175,12 @@ const NotificationRulePage = () => {
       dataIndex: 'channel',
       width: 110,
       valueType: 'select',
-      fieldProps: { options: channelOptions(t) },
+      fieldProps: {
+        options: [
+          ...channelOptions(t),
+          ...extGroupedOptions(extSchemas),
+        ],
+      },
       render: (_, record) =>
         record.channel ? (
           <Tag color={CHANNEL_COLORS[record.channel]}>{t(`channelMap.${record.channel}`)}</Tag>
@@ -291,12 +310,12 @@ const NotificationRulePage = () => {
         />
       </div>
 
-      <ModalForm
+      <DrawerForm
         title={formMode === 'create' ? t('create') : t('edit')}
         width={520}
         open={formOpen}
         onOpenChange={setFormOpen}
-        modalProps={{ destroyOnHidden: true, mask: { closable: false } }}
+        drawerProps={{ destroyOnHidden: true, mask: { closable: false } }}
         submitTimeout={3000}
         onFinish={handleSubmit}
         initialValues={
@@ -316,13 +335,13 @@ const NotificationRulePage = () => {
         <ProFormSelect
           name="channel"
           label={t('channel')}
-          options={channelOptions(t)}
+          options={[...channelOptions(t), ...extGroupedOptions(extSchemas)]}
           rules={[{ required: true, message: t('requiredChannel') }]}
         />
         <ProFormSwitch name="isAsync" label={t('isAsync')} fieldProps={{ checkedChildren: t('isAsyncOn'), unCheckedChildren: t('isAsyncOff') }} />
         <ProFormSwitch name="isEnabled" label={t('isEnabled')} />
         <ProFormTextArea name="remark" label={t('remark')} fieldProps={{ rows: 2 }} />
-      </ModalForm>
+      </DrawerForm>
 
       <ModalForm<{ target?: string }>
         title={t('testDispatchTitle', {

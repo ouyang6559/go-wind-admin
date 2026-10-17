@@ -131,14 +131,15 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 	}
 
 	// 4. 落 user 消息
-	if _, err = s.messageRepo.Create(ctx, &aiV1.AiMessage{
+	userEntity, err := s.messageRepo.Create(ctx, &aiV1.AiMessage{
 		ConversationId: &conversation.ID,
 		Role:           aiV1.AiRole_USER.Enum(),
 		Content:        &content,
 		UserId:         &operator.UserId,
 		TenantId:       trans.Ptr(operator.GetTenantId()),
 		CreatedBy:      &operator.UserId,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -165,12 +166,14 @@ func (s *AiChatService) Chat(ctx context.Context, req *aiV1.ChatRequest) (*aiV1.
 	if len(systemParts) > 0 {
 		messages = append(messages, openai.ChatCompletionMessage{Role: openai.ChatMessageRoleSystem, Content: strings.Join(systemParts, "\n\n")})
 	}
-	history, err := s.messageRepo.ListRecentByConversation(ctx, conversation.ID, chatContextMaxMessages-1)
+	// 多取一条：第 4 步刚落库的本轮消息必是表内最新一行，会被这次历史查询带出，
+	// 循环里按 ID 剔除后恰好剩 N-1 条历史；本轮消息在下方显式 append，不剔就会重复计两次。
+	history, err := s.messageRepo.ListRecentByConversation(ctx, conversation.ID, chatContextMaxMessages)
 	if err != nil {
 		return nil, err
 	}
 	for _, m := range history {
-		if m.Role == nil {
+		if m.Role == nil || m.ID == userEntity.ID {
 			continue
 		}
 		// ent 枚举是大写（USER/ASSISTANT/SYSTEM），OpenAI 协议要求小写 role——
@@ -318,13 +321,15 @@ func (s *AiChatService) resolveConversation(ctx context.Context, operator *authe
 }
 
 // checkTokenQuota 套餐 AI_TOKENS 月度配额检查；未配置该维度即不限量。
-func (s *AiChatService) checkTokenQuota(ctx context.Context, operator *authenticationV1.UserTokenPayload) error {
+// checkAiTokenQuota 租户级月度 token 配额检查（chat 与 agent 运行共用同一口径）：
+// 平台用户（tenant 0）不限；未配置限额或限额为 0 不限；当月累计达到限额拒绝发起。
+func checkAiTokenQuota(ctx context.Context, usageLogRepo *data.AiUsageLogRepo, log *bLogger.Helper, operator *authenticationV1.UserTokenPayload) error {
 	tenantId := operator.GetTenantId()
 	if tenantId == 0 {
 		return nil // 平台用户不限（运营侧自用）
 	}
 
-	limit, configured, err := s.usageLogRepo.FetchTenantTokenQuotaLimit(ctx, tenantId)
+	limit, configured, err := usageLogRepo.FetchTenantTokenQuotaLimit(ctx, tenantId)
 	if err != nil {
 		return err
 	}
@@ -333,15 +338,19 @@ func (s *AiChatService) checkTokenQuota(ctx context.Context, operator *authentic
 	}
 
 	monthStart := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
-	used, err := s.usageLogRepo.SumTokensByTenantSince(ctx, tenantId, monthStart)
+	used, err := usageLogRepo.SumTokensByTenantSince(ctx, tenantId, monthStart)
 	if err != nil {
 		return err
 	}
 	if used >= limit {
-		s.log.Warnf(ctx, "ai token quota exceeded: tenant=%d used=%d limit=%d", tenantId, used, limit)
+		log.Warnf(ctx, "ai token quota exceeded: tenant=%d used=%d limit=%d", tenantId, used, limit)
 		return adminV1.ErrorBadRequest("ai token quota exceeded for this month")
 	}
 	return nil
+}
+
+func (s *AiChatService) checkTokenQuota(ctx context.Context, operator *authenticationV1.UserTokenPayload) error {
+	return checkAiTokenQuota(ctx, s.usageLogRepo, s.log, operator)
 }
 
 // newOpenAIClientForProvider 从 provider 表行构造客户端（api_key 密文就地解密，

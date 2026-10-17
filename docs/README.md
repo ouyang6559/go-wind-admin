@@ -54,7 +54,7 @@
 | [task_system.md](./task_system.md) | 任务调度系统：配置与启动链、任务数据模型、调度生命周期、系统级常驻任务、脚本任务桥、管理页、多租户语义与排障 | 加任务类型、排"任务没跑"、接新调度需求前 |
 | [sys_config.md](./sys_config.md) | 参数管理（sys_config）：平台全局动态参数的键值模型、缓存读取器（GetConfigBool/Int/String 与负缓存）、写路径与多实例 Redis 失效广播、内置参数按键补种、新参数接入步骤 | 接入新的运行时参数、改口令策略阈值链路、排"改了参数没生效"前 |
 | [sse_architecture.md](./sse_architecture.md) | SSE 推送架构：服务端配置与生命周期、流鉴权与 streamID 语义、事件生产、三端消费模块、部署拓扑与排障 | 改推送链路、加新事件类型、排"收不到通知"前 |
-| [notification_domain_design.md](./notification_domain_design.md) | 通知域：现状盘点、与 go-wind-im 的可抄性对照、运行期实测发现、移植记录与代码生成坑。各阶段（P0–P2 / C / C7 / M / N 及遗留欠账）的落地状态以文内状态标记与验收清单（§4、§7）为准，本索引不转载状态史 | 动通知相关代码前先读；推进 P3、改台账或路由规则语义前回来更新文内状态标记 |
+| [notification_domain_design.md](./notification_domain_design.md) | 通知域：现状盘点、与 go-wind-im 的可抄性对照、运行期实测发现、移植记录与代码生成坑。各阶段（P0–P2 / C / C7 / M / N / P3 / SMS 及遗留欠账）的落地状态以文内状态标记与验收清单（§4、§7）为准，本索引不转载状态史 | 动通知相关代码前先读；推进新阶段（如给告警接短信）、改台账或路由规则语义前回来更新文内状态标记 |
 | [data_scope_design.md](./data_scope_design.md) | 角色级数据范围：五档语义、聚合、执行层、新表接入步骤 | 新表接入数据范围或改聚合规则前 |
 | [audit-log-producer-design.md](./audit-log-producer-design.md) | 六类审计日志的生产者设计与采集层实施状态 | 改审计采集、加新日志字段时 |
 | [script_system.md](./script_system.md) | 脚本级插件系统：五类扩展点、安全模型、运维 | 写脚本/改钩子点/接任务桥前 |
@@ -64,6 +64,8 @@
 | [frontend_development_environment_preparation.md](./frontend_development_environment_preparation.md) | 前端开发工具安装、npm 镜像源 | 新机器搭前端环境时 |
 | [windows-startup-guide.md](./windows-startup-guide.md) | Windows 本地从零启动全流程与常见问题 | Windows 开发机首次搭建时（含 FAQ） |
 | [design-language.md](./design-language.md) | 三端视觉唯一权威值表（颜色/圆角/布局尺寸） | 改任何视觉相关代码前 |
+| [notify_channels_expansion.md](./notify_channels_expansion.md) | 通知渠道全量扩展：settings JSONB + schema 驱动动态表单 + 通用 Sender；39 渠道清单与 Target 语义 | 接新扩展渠道、改渠道配置表单/发送链路前 |
+| [ai_agent_orchestration.md](./ai_agent_orchestration.md) | AI Agent 编排：图 DSL（五种节点）、执行语义、数据模型、M1/M2 分期；复用 AI 模块的提供商/知识库/配额链路 | 做 Agent 编排相关改动（画布/引擎/运行台账）前 |
 | [ai_module.md](./ai_module.md) | AI 模块：流式对话语义、提供商密钥、AI_TOKENS 配额与白名单、知识库 RAG（含文件上传/重索引任务）、脚本 ai 模块、审计日报、安全洞察（告警零文案 i18n 架构）、智能问数（双白名单+租户谓词）与 pgvector 部署要求 | 改 AI 相关代码（对话/提供商/知识库/配额/脚本 ai）前 |
 | [brand/](./brand/) | 品牌资产（logo / favicon / 锁版 / wordmark） | 换品牌或引用素材时 |
 

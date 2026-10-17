@@ -165,6 +165,8 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	aiMessageRepo := data.NewAiMessageRepo(ctx, entClient)
 	aiUsageLogRepo := data.NewAiUsageLogRepo(ctx, entClient)
 	aiKnowledgeRepo := data.NewAiKnowledgeRepo(ctx, entClient)
+	aiAgentAppRepo := data.NewAiAgentAppRepo(ctx, entClient)
+	aiAgentRunRepo := data.NewAiAgentRunRepo(ctx, entClient)
 
 	// ═══════════════════════ 三、认证与鉴权 ═══════════════════════
 
@@ -178,12 +180,14 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 
 	// ═══════════════════════ 四、服务层(internal/service) ═══════════════════════
 
-	// 通知投递：渠道注册表（EMAIL / WEBHOOK / INTERNAL）→ NotificationService → 各业务 service 只拿 Notifier。
+	// 通知投递：渠道注册表（EMAIL / WEBHOOK / SMS / INTERNAL）→ NotificationService → 各业务 service 只拿 Notifier。
 	// 注册顺序即装配位置：新增一种渠道 = 在这里多 Register 一个 Sender，业务调用方不动。
 	// 路由（事件 → 渠道 + 同步/异步）读 sys_notification_rules，不在这里登记，见 resolveRoute。
 	channelRegistry := channel.NewRegistry()
 	channelRegistry.Register(channel.NewEmailSender(notificationChannelRepo))
 	channelRegistry.Register(channel.NewWebhookSender(notificationChannelRepo))
+	channelRegistry.Register(channel.NewSmsSender(notificationChannelRepo))
+	channelRegistry.Register(channel.NewSettingsSender(notificationChannelRepo))
 	notificationService := service.NewNotificationService(ctx, notificationDeliveryRepo, notificationRuleRepo, notificationTemplateRepo, channelRegistry)
 	notificationTemplateService := service.NewNotificationTemplateService(ctx, notificationTemplateRepo)
 	// 监控告警：评估器依赖通知出口，装配顺序在 NotificationService 之后
@@ -314,6 +318,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	aiUsageLogService := service.NewAiUsageLogService(ctx, aiUsageLogRepo)
 	aiKnowledgeService := service.NewAiKnowledgeService(ctx, aiKnowledgeRepo, aiProviderRepo, aiUsageLogRepo)
 	aiChatService := service.NewAiChatService(ctx, aiConversationRepo, aiMessageRepo, aiProviderRepo, aiUsageLogRepo, aiKnowledgeRepo)
+	aaAiAgentService := service.NewAiAgentService(ctx, aiAgentAppRepo, aiAgentRunRepo, aiProviderRepo, aiKnowledgeRepo, aiUsageLogRepo)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 
@@ -353,6 +358,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		aiChatService,
 		aiQueryService,
 		aiContentService,
+		aaAiAgentService,
 	)
 	if err != nil {
 		rollback()
@@ -365,7 +371,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	sseServer := server.NewSseServer(ctx, internalMessageService, aiChatService)
+	sseServer := server.NewSseServer(ctx, internalMessageService, aiChatService, aaAiAgentService)
 
 	return newApp(ctx, restServer, asynqServer, sseServer), rollback, nil
 }

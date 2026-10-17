@@ -187,7 +187,7 @@ export const HeaderContent = ({
   widgetConfig,
 }: HeaderContentProps) => {
   const { t } = useI18n('common');
-  const { t: tRoutes, i18n } = useTranslation(); // 用于路由翻译
+  const { t: tRoutes, i18n } = useTranslation('routes'); // 用于路由翻译（路由标题走 routes 命名空间，含后端菜单种子键 menu.*/page.*）
   const navigate = useNavigate();
   const matches = useMatches();
 
@@ -425,7 +425,7 @@ export const HeaderContent = ({
                 lineHeight: '18px',
                 padding: '0 8px',
                 borderRadius: 10,
-                color: 'var(--ant-color-primary)',
+                color: 'var(--gowind-primary-text)',
                 background: 'rgba(0, 107, 230, 0.12)',
               }}
             >

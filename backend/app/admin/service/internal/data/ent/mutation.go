@@ -10,6 +10,8 @@ import (
 	permissionpb "go-wind-admin/api/gen/go/permission/service/v1"
 	taskpb "go-wind-admin/api/gen/go/task/service/v1"
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiagentapp"
+	"go-wind-admin/app/admin/service/internal/data/ent/aiagentrun"
 	"go-wind-admin/app/admin/service/internal/data/ent/aichunk"
 	"go-wind-admin/app/admin/service/internal/data/ent/aiconversation"
 	"go-wind-admin/app/admin/service/internal/data/ent/aidoc"
@@ -88,6 +90,8 @@ const (
 
 	// Node types.
 	TypeAccessKey                = "AccessKey"
+	TypeAiAgentApp               = "AiAgentApp"
+	TypeAiAgentRun               = "AiAgentRun"
 	TypeAiChunk                  = "AiChunk"
 	TypeAiConversation           = "AiConversation"
 	TypeAiDoc                    = "AiDoc"
@@ -1498,6 +1502,2904 @@ func (m *AccessKeyMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *AccessKeyMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown AccessKey edge %s", name)
+}
+
+// AiAgentAppMutation represents an operation that mutates the AiAgentApp nodes in the graph.
+type AiAgentAppMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uint32
+	created_at    *time.Time
+	updated_at    *time.Time
+	deleted_at    *time.Time
+	created_by    *uint32
+	addcreated_by *int32
+	updated_by    *uint32
+	addupdated_by *int32
+	deleted_by    *uint32
+	adddeleted_by *int32
+	tenant_id     *uint32
+	addtenant_id  *int32
+	name          *string
+	description   *string
+	graph         *string
+	enabled       *bool
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*AiAgentApp, error)
+	predicates    []predicate.AiAgentApp
+}
+
+var _ ent.Mutation = (*AiAgentAppMutation)(nil)
+
+// aiagentappOption allows management of the mutation configuration using functional options.
+type aiagentappOption func(*AiAgentAppMutation)
+
+// newAiAgentAppMutation creates new mutation for the AiAgentApp entity.
+func newAiAgentAppMutation(c config, op Op, opts ...aiagentappOption) *AiAgentAppMutation {
+	m := &AiAgentAppMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAiAgentApp,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAiAgentAppID sets the ID field of the mutation.
+func withAiAgentAppID(id uint32) aiagentappOption {
+	return func(m *AiAgentAppMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AiAgentApp
+		)
+		m.oldValue = func(ctx context.Context) (*AiAgentApp, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AiAgentApp.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAiAgentApp sets the old AiAgentApp of the mutation.
+func withAiAgentApp(node *AiAgentApp) aiagentappOption {
+	return func(m *AiAgentAppMutation) {
+		m.oldValue = func(context.Context) (*AiAgentApp, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AiAgentAppMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AiAgentAppMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AiAgentApp entities.
+func (m *AiAgentAppMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AiAgentAppMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AiAgentAppMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AiAgentApp.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AiAgentAppMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AiAgentAppMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *AiAgentAppMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[aiagentapp.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *AiAgentAppMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AiAgentAppMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, aiagentapp.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AiAgentAppMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AiAgentAppMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *AiAgentAppMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[aiagentapp.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *AiAgentAppMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AiAgentAppMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, aiagentapp.FieldUpdatedAt)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *AiAgentAppMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *AiAgentAppMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *AiAgentAppMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[aiagentapp.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *AiAgentAppMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *AiAgentAppMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, aiagentapp.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *AiAgentAppMutation) SetCreatedBy(u uint32) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *AiAgentAppMutation) CreatedBy() (r uint32, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldCreatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *AiAgentAppMutation) AddCreatedBy(u int32) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *AiAgentAppMutation) AddedCreatedBy() (r int32, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *AiAgentAppMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	m.clearedFields[aiagentapp.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *AiAgentAppMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *AiAgentAppMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	delete(m.clearedFields, aiagentapp.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *AiAgentAppMutation) SetUpdatedBy(u uint32) {
+	m.updated_by = &u
+	m.addupdated_by = nil
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *AiAgentAppMutation) UpdatedBy() (r uint32, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldUpdatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// AddUpdatedBy adds u to the "updated_by" field.
+func (m *AiAgentAppMutation) AddUpdatedBy(u int32) {
+	if m.addupdated_by != nil {
+		*m.addupdated_by += u
+	} else {
+		m.addupdated_by = &u
+	}
+}
+
+// AddedUpdatedBy returns the value that was added to the "updated_by" field in this mutation.
+func (m *AiAgentAppMutation) AddedUpdatedBy() (r int32, exists bool) {
+	v := m.addupdated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *AiAgentAppMutation) ClearUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	m.clearedFields[aiagentapp.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *AiAgentAppMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *AiAgentAppMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	delete(m.clearedFields, aiagentapp.FieldUpdatedBy)
+}
+
+// SetDeletedBy sets the "deleted_by" field.
+func (m *AiAgentAppMutation) SetDeletedBy(u uint32) {
+	m.deleted_by = &u
+	m.adddeleted_by = nil
+}
+
+// DeletedBy returns the value of the "deleted_by" field in the mutation.
+func (m *AiAgentAppMutation) DeletedBy() (r uint32, exists bool) {
+	v := m.deleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedBy returns the old "deleted_by" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldDeletedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedBy: %w", err)
+	}
+	return oldValue.DeletedBy, nil
+}
+
+// AddDeletedBy adds u to the "deleted_by" field.
+func (m *AiAgentAppMutation) AddDeletedBy(u int32) {
+	if m.adddeleted_by != nil {
+		*m.adddeleted_by += u
+	} else {
+		m.adddeleted_by = &u
+	}
+}
+
+// AddedDeletedBy returns the value that was added to the "deleted_by" field in this mutation.
+func (m *AiAgentAppMutation) AddedDeletedBy() (r int32, exists bool) {
+	v := m.adddeleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeletedBy clears the value of the "deleted_by" field.
+func (m *AiAgentAppMutation) ClearDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	m.clearedFields[aiagentapp.FieldDeletedBy] = struct{}{}
+}
+
+// DeletedByCleared returns if the "deleted_by" field was cleared in this mutation.
+func (m *AiAgentAppMutation) DeletedByCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldDeletedBy]
+	return ok
+}
+
+// ResetDeletedBy resets all changes to the "deleted_by" field.
+func (m *AiAgentAppMutation) ResetDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	delete(m.clearedFields, aiagentapp.FieldDeletedBy)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *AiAgentAppMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *AiAgentAppMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *AiAgentAppMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *AiAgentAppMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *AiAgentAppMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[aiagentapp.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *AiAgentAppMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *AiAgentAppMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, aiagentapp.FieldTenantID)
+}
+
+// SetName sets the "name" field.
+func (m *AiAgentAppMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AiAgentAppMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AiAgentAppMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *AiAgentAppMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *AiAgentAppMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldDescription(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *AiAgentAppMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[aiagentapp.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *AiAgentAppMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *AiAgentAppMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, aiagentapp.FieldDescription)
+}
+
+// SetGraph sets the "graph" field.
+func (m *AiAgentAppMutation) SetGraph(s string) {
+	m.graph = &s
+}
+
+// Graph returns the value of the "graph" field in the mutation.
+func (m *AiAgentAppMutation) Graph() (r string, exists bool) {
+	v := m.graph
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGraph returns the old "graph" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldGraph(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGraph is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGraph requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGraph: %w", err)
+	}
+	return oldValue.Graph, nil
+}
+
+// ClearGraph clears the value of the "graph" field.
+func (m *AiAgentAppMutation) ClearGraph() {
+	m.graph = nil
+	m.clearedFields[aiagentapp.FieldGraph] = struct{}{}
+}
+
+// GraphCleared returns if the "graph" field was cleared in this mutation.
+func (m *AiAgentAppMutation) GraphCleared() bool {
+	_, ok := m.clearedFields[aiagentapp.FieldGraph]
+	return ok
+}
+
+// ResetGraph resets all changes to the "graph" field.
+func (m *AiAgentAppMutation) ResetGraph() {
+	m.graph = nil
+	delete(m.clearedFields, aiagentapp.FieldGraph)
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *AiAgentAppMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *AiAgentAppMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the AiAgentApp entity.
+// If the AiAgentApp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentAppMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *AiAgentAppMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// Where appends a list predicates to the AiAgentAppMutation builder.
+func (m *AiAgentAppMutation) Where(ps ...predicate.AiAgentApp) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AiAgentAppMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AiAgentAppMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AiAgentApp, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AiAgentAppMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AiAgentAppMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AiAgentApp).
+func (m *AiAgentAppMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AiAgentAppMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, aiagentapp.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, aiagentapp.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, aiagentapp.FieldDeletedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, aiagentapp.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, aiagentapp.FieldUpdatedBy)
+	}
+	if m.deleted_by != nil {
+		fields = append(fields, aiagentapp.FieldDeletedBy)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, aiagentapp.FieldTenantID)
+	}
+	if m.name != nil {
+		fields = append(fields, aiagentapp.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, aiagentapp.FieldDescription)
+	}
+	if m.graph != nil {
+		fields = append(fields, aiagentapp.FieldGraph)
+	}
+	if m.enabled != nil {
+		fields = append(fields, aiagentapp.FieldEnabled)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AiAgentAppMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case aiagentapp.FieldCreatedAt:
+		return m.CreatedAt()
+	case aiagentapp.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case aiagentapp.FieldDeletedAt:
+		return m.DeletedAt()
+	case aiagentapp.FieldCreatedBy:
+		return m.CreatedBy()
+	case aiagentapp.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case aiagentapp.FieldDeletedBy:
+		return m.DeletedBy()
+	case aiagentapp.FieldTenantID:
+		return m.TenantID()
+	case aiagentapp.FieldName:
+		return m.Name()
+	case aiagentapp.FieldDescription:
+		return m.Description()
+	case aiagentapp.FieldGraph:
+		return m.Graph()
+	case aiagentapp.FieldEnabled:
+		return m.Enabled()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AiAgentAppMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case aiagentapp.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case aiagentapp.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case aiagentapp.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case aiagentapp.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case aiagentapp.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case aiagentapp.FieldDeletedBy:
+		return m.OldDeletedBy(ctx)
+	case aiagentapp.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case aiagentapp.FieldName:
+		return m.OldName(ctx)
+	case aiagentapp.FieldDescription:
+		return m.OldDescription(ctx)
+	case aiagentapp.FieldGraph:
+		return m.OldGraph(ctx)
+	case aiagentapp.FieldEnabled:
+		return m.OldEnabled(ctx)
+	}
+	return nil, fmt.Errorf("unknown AiAgentApp field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiAgentAppMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case aiagentapp.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case aiagentapp.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case aiagentapp.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case aiagentapp.FieldCreatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case aiagentapp.FieldUpdatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case aiagentapp.FieldDeletedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedBy(v)
+		return nil
+	case aiagentapp.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case aiagentapp.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case aiagentapp.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case aiagentapp.FieldGraph:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGraph(v)
+		return nil
+	case aiagentapp.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentApp field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AiAgentAppMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, aiagentapp.FieldCreatedBy)
+	}
+	if m.addupdated_by != nil {
+		fields = append(fields, aiagentapp.FieldUpdatedBy)
+	}
+	if m.adddeleted_by != nil {
+		fields = append(fields, aiagentapp.FieldDeletedBy)
+	}
+	if m.addtenant_id != nil {
+		fields = append(fields, aiagentapp.FieldTenantID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AiAgentAppMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case aiagentapp.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case aiagentapp.FieldUpdatedBy:
+		return m.AddedUpdatedBy()
+	case aiagentapp.FieldDeletedBy:
+		return m.AddedDeletedBy()
+	case aiagentapp.FieldTenantID:
+		return m.AddedTenantID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiAgentAppMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case aiagentapp.FieldCreatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case aiagentapp.FieldUpdatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdatedBy(v)
+		return nil
+	case aiagentapp.FieldDeletedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeletedBy(v)
+		return nil
+	case aiagentapp.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentApp numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AiAgentAppMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(aiagentapp.FieldCreatedAt) {
+		fields = append(fields, aiagentapp.FieldCreatedAt)
+	}
+	if m.FieldCleared(aiagentapp.FieldUpdatedAt) {
+		fields = append(fields, aiagentapp.FieldUpdatedAt)
+	}
+	if m.FieldCleared(aiagentapp.FieldDeletedAt) {
+		fields = append(fields, aiagentapp.FieldDeletedAt)
+	}
+	if m.FieldCleared(aiagentapp.FieldCreatedBy) {
+		fields = append(fields, aiagentapp.FieldCreatedBy)
+	}
+	if m.FieldCleared(aiagentapp.FieldUpdatedBy) {
+		fields = append(fields, aiagentapp.FieldUpdatedBy)
+	}
+	if m.FieldCleared(aiagentapp.FieldDeletedBy) {
+		fields = append(fields, aiagentapp.FieldDeletedBy)
+	}
+	if m.FieldCleared(aiagentapp.FieldTenantID) {
+		fields = append(fields, aiagentapp.FieldTenantID)
+	}
+	if m.FieldCleared(aiagentapp.FieldDescription) {
+		fields = append(fields, aiagentapp.FieldDescription)
+	}
+	if m.FieldCleared(aiagentapp.FieldGraph) {
+		fields = append(fields, aiagentapp.FieldGraph)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AiAgentAppMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AiAgentAppMutation) ClearField(name string) error {
+	switch name {
+	case aiagentapp.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case aiagentapp.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case aiagentapp.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case aiagentapp.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case aiagentapp.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case aiagentapp.FieldDeletedBy:
+		m.ClearDeletedBy()
+		return nil
+	case aiagentapp.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case aiagentapp.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case aiagentapp.FieldGraph:
+		m.ClearGraph()
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentApp nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AiAgentAppMutation) ResetField(name string) error {
+	switch name {
+	case aiagentapp.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case aiagentapp.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case aiagentapp.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case aiagentapp.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case aiagentapp.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case aiagentapp.FieldDeletedBy:
+		m.ResetDeletedBy()
+		return nil
+	case aiagentapp.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case aiagentapp.FieldName:
+		m.ResetName()
+		return nil
+	case aiagentapp.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case aiagentapp.FieldGraph:
+		m.ResetGraph()
+		return nil
+	case aiagentapp.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentApp field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AiAgentAppMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AiAgentAppMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AiAgentAppMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AiAgentAppMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AiAgentAppMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AiAgentAppMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AiAgentAppMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown AiAgentApp unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AiAgentAppMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown AiAgentApp edge %s", name)
+}
+
+// AiAgentRunMutation represents an operation that mutates the AiAgentRun nodes in the graph.
+type AiAgentRunMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *uint32
+	created_at           *time.Time
+	updated_at           *time.Time
+	deleted_at           *time.Time
+	created_by           *uint32
+	addcreated_by        *int32
+	updated_by           *uint32
+	addupdated_by        *int32
+	deleted_by           *uint32
+	adddeleted_by        *int32
+	tenant_id            *uint32
+	addtenant_id         *int32
+	app_id               *uint32
+	addapp_id            *int32
+	status               *aiagentrun.Status
+	input                *string
+	output               *string
+	error                *string
+	trace                *string
+	prompt_tokens        *uint32
+	addprompt_tokens     *int32
+	completion_tokens    *uint32
+	addcompletion_tokens *int32
+	total_tokens         *uint32
+	addtotal_tokens      *int32
+	duration_ms          *uint32
+	addduration_ms       *int32
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*AiAgentRun, error)
+	predicates           []predicate.AiAgentRun
+}
+
+var _ ent.Mutation = (*AiAgentRunMutation)(nil)
+
+// aiagentrunOption allows management of the mutation configuration using functional options.
+type aiagentrunOption func(*AiAgentRunMutation)
+
+// newAiAgentRunMutation creates new mutation for the AiAgentRun entity.
+func newAiAgentRunMutation(c config, op Op, opts ...aiagentrunOption) *AiAgentRunMutation {
+	m := &AiAgentRunMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAiAgentRun,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAiAgentRunID sets the ID field of the mutation.
+func withAiAgentRunID(id uint32) aiagentrunOption {
+	return func(m *AiAgentRunMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AiAgentRun
+		)
+		m.oldValue = func(ctx context.Context) (*AiAgentRun, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AiAgentRun.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAiAgentRun sets the old AiAgentRun of the mutation.
+func withAiAgentRun(node *AiAgentRun) aiagentrunOption {
+	return func(m *AiAgentRunMutation) {
+		m.oldValue = func(context.Context) (*AiAgentRun, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AiAgentRunMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AiAgentRunMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AiAgentRun entities.
+func (m *AiAgentRunMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AiAgentRunMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AiAgentRunMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AiAgentRun.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AiAgentRunMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AiAgentRunMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *AiAgentRunMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[aiagentrun.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *AiAgentRunMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AiAgentRunMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, aiagentrun.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AiAgentRunMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AiAgentRunMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *AiAgentRunMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[aiagentrun.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *AiAgentRunMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AiAgentRunMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, aiagentrun.FieldUpdatedAt)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *AiAgentRunMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *AiAgentRunMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *AiAgentRunMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[aiagentrun.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *AiAgentRunMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *AiAgentRunMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, aiagentrun.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *AiAgentRunMutation) SetCreatedBy(u uint32) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *AiAgentRunMutation) CreatedBy() (r uint32, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldCreatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *AiAgentRunMutation) AddCreatedBy(u int32) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *AiAgentRunMutation) AddedCreatedBy() (r int32, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *AiAgentRunMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	m.clearedFields[aiagentrun.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *AiAgentRunMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *AiAgentRunMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	delete(m.clearedFields, aiagentrun.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *AiAgentRunMutation) SetUpdatedBy(u uint32) {
+	m.updated_by = &u
+	m.addupdated_by = nil
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *AiAgentRunMutation) UpdatedBy() (r uint32, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldUpdatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// AddUpdatedBy adds u to the "updated_by" field.
+func (m *AiAgentRunMutation) AddUpdatedBy(u int32) {
+	if m.addupdated_by != nil {
+		*m.addupdated_by += u
+	} else {
+		m.addupdated_by = &u
+	}
+}
+
+// AddedUpdatedBy returns the value that was added to the "updated_by" field in this mutation.
+func (m *AiAgentRunMutation) AddedUpdatedBy() (r int32, exists bool) {
+	v := m.addupdated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *AiAgentRunMutation) ClearUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	m.clearedFields[aiagentrun.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *AiAgentRunMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *AiAgentRunMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	delete(m.clearedFields, aiagentrun.FieldUpdatedBy)
+}
+
+// SetDeletedBy sets the "deleted_by" field.
+func (m *AiAgentRunMutation) SetDeletedBy(u uint32) {
+	m.deleted_by = &u
+	m.adddeleted_by = nil
+}
+
+// DeletedBy returns the value of the "deleted_by" field in the mutation.
+func (m *AiAgentRunMutation) DeletedBy() (r uint32, exists bool) {
+	v := m.deleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedBy returns the old "deleted_by" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldDeletedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedBy: %w", err)
+	}
+	return oldValue.DeletedBy, nil
+}
+
+// AddDeletedBy adds u to the "deleted_by" field.
+func (m *AiAgentRunMutation) AddDeletedBy(u int32) {
+	if m.adddeleted_by != nil {
+		*m.adddeleted_by += u
+	} else {
+		m.adddeleted_by = &u
+	}
+}
+
+// AddedDeletedBy returns the value that was added to the "deleted_by" field in this mutation.
+func (m *AiAgentRunMutation) AddedDeletedBy() (r int32, exists bool) {
+	v := m.adddeleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeletedBy clears the value of the "deleted_by" field.
+func (m *AiAgentRunMutation) ClearDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	m.clearedFields[aiagentrun.FieldDeletedBy] = struct{}{}
+}
+
+// DeletedByCleared returns if the "deleted_by" field was cleared in this mutation.
+func (m *AiAgentRunMutation) DeletedByCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldDeletedBy]
+	return ok
+}
+
+// ResetDeletedBy resets all changes to the "deleted_by" field.
+func (m *AiAgentRunMutation) ResetDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	delete(m.clearedFields, aiagentrun.FieldDeletedBy)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *AiAgentRunMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *AiAgentRunMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *AiAgentRunMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *AiAgentRunMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *AiAgentRunMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[aiagentrun.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *AiAgentRunMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *AiAgentRunMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, aiagentrun.FieldTenantID)
+}
+
+// SetAppID sets the "app_id" field.
+func (m *AiAgentRunMutation) SetAppID(u uint32) {
+	m.app_id = &u
+	m.addapp_id = nil
+}
+
+// AppID returns the value of the "app_id" field in the mutation.
+func (m *AiAgentRunMutation) AppID() (r uint32, exists bool) {
+	v := m.app_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppID returns the old "app_id" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldAppID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppID: %w", err)
+	}
+	return oldValue.AppID, nil
+}
+
+// AddAppID adds u to the "app_id" field.
+func (m *AiAgentRunMutation) AddAppID(u int32) {
+	if m.addapp_id != nil {
+		*m.addapp_id += u
+	} else {
+		m.addapp_id = &u
+	}
+}
+
+// AddedAppID returns the value that was added to the "app_id" field in this mutation.
+func (m *AiAgentRunMutation) AddedAppID() (r int32, exists bool) {
+	v := m.addapp_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAppID clears the value of the "app_id" field.
+func (m *AiAgentRunMutation) ClearAppID() {
+	m.app_id = nil
+	m.addapp_id = nil
+	m.clearedFields[aiagentrun.FieldAppID] = struct{}{}
+}
+
+// AppIDCleared returns if the "app_id" field was cleared in this mutation.
+func (m *AiAgentRunMutation) AppIDCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldAppID]
+	return ok
+}
+
+// ResetAppID resets all changes to the "app_id" field.
+func (m *AiAgentRunMutation) ResetAppID() {
+	m.app_id = nil
+	m.addapp_id = nil
+	delete(m.clearedFields, aiagentrun.FieldAppID)
+}
+
+// SetStatus sets the "status" field.
+func (m *AiAgentRunMutation) SetStatus(a aiagentrun.Status) {
+	m.status = &a
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *AiAgentRunMutation) Status() (r aiagentrun.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldStatus(ctx context.Context) (v aiagentrun.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *AiAgentRunMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetInput sets the "input" field.
+func (m *AiAgentRunMutation) SetInput(s string) {
+	m.input = &s
+}
+
+// Input returns the value of the "input" field in the mutation.
+func (m *AiAgentRunMutation) Input() (r string, exists bool) {
+	v := m.input
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInput returns the old "input" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldInput(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInput is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInput requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInput: %w", err)
+	}
+	return oldValue.Input, nil
+}
+
+// ClearInput clears the value of the "input" field.
+func (m *AiAgentRunMutation) ClearInput() {
+	m.input = nil
+	m.clearedFields[aiagentrun.FieldInput] = struct{}{}
+}
+
+// InputCleared returns if the "input" field was cleared in this mutation.
+func (m *AiAgentRunMutation) InputCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldInput]
+	return ok
+}
+
+// ResetInput resets all changes to the "input" field.
+func (m *AiAgentRunMutation) ResetInput() {
+	m.input = nil
+	delete(m.clearedFields, aiagentrun.FieldInput)
+}
+
+// SetOutput sets the "output" field.
+func (m *AiAgentRunMutation) SetOutput(s string) {
+	m.output = &s
+}
+
+// Output returns the value of the "output" field in the mutation.
+func (m *AiAgentRunMutation) Output() (r string, exists bool) {
+	v := m.output
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutput returns the old "output" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldOutput(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutput is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutput requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutput: %w", err)
+	}
+	return oldValue.Output, nil
+}
+
+// ClearOutput clears the value of the "output" field.
+func (m *AiAgentRunMutation) ClearOutput() {
+	m.output = nil
+	m.clearedFields[aiagentrun.FieldOutput] = struct{}{}
+}
+
+// OutputCleared returns if the "output" field was cleared in this mutation.
+func (m *AiAgentRunMutation) OutputCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldOutput]
+	return ok
+}
+
+// ResetOutput resets all changes to the "output" field.
+func (m *AiAgentRunMutation) ResetOutput() {
+	m.output = nil
+	delete(m.clearedFields, aiagentrun.FieldOutput)
+}
+
+// SetError sets the "error" field.
+func (m *AiAgentRunMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *AiAgentRunMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldError(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ClearError clears the value of the "error" field.
+func (m *AiAgentRunMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[aiagentrun.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the "error" field was cleared in this mutation.
+func (m *AiAgentRunMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[aiagentrun.FieldError]
+	return ok
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *AiAgentRunMutation) ResetError() {
+	m.error = nil
+	delete(m.clearedFields, aiagentrun.FieldError)
+}
+
+// SetTrace sets the "trace" field.
+func (m *AiAgentRunMutation) SetTrace(s string) {
+	m.trace = &s
+}
+
+// Trace returns the value of the "trace" field in the mutation.
+func (m *AiAgentRunMutation) Trace() (r string, exists bool) {
+	v := m.trace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrace returns the old "trace" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldTrace(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrace is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrace requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrace: %w", err)
+	}
+	return oldValue.Trace, nil
+}
+
+// ResetTrace resets all changes to the "trace" field.
+func (m *AiAgentRunMutation) ResetTrace() {
+	m.trace = nil
+}
+
+// SetPromptTokens sets the "prompt_tokens" field.
+func (m *AiAgentRunMutation) SetPromptTokens(u uint32) {
+	m.prompt_tokens = &u
+	m.addprompt_tokens = nil
+}
+
+// PromptTokens returns the value of the "prompt_tokens" field in the mutation.
+func (m *AiAgentRunMutation) PromptTokens() (r uint32, exists bool) {
+	v := m.prompt_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPromptTokens returns the old "prompt_tokens" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldPromptTokens(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPromptTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPromptTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPromptTokens: %w", err)
+	}
+	return oldValue.PromptTokens, nil
+}
+
+// AddPromptTokens adds u to the "prompt_tokens" field.
+func (m *AiAgentRunMutation) AddPromptTokens(u int32) {
+	if m.addprompt_tokens != nil {
+		*m.addprompt_tokens += u
+	} else {
+		m.addprompt_tokens = &u
+	}
+}
+
+// AddedPromptTokens returns the value that was added to the "prompt_tokens" field in this mutation.
+func (m *AiAgentRunMutation) AddedPromptTokens() (r int32, exists bool) {
+	v := m.addprompt_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPromptTokens resets all changes to the "prompt_tokens" field.
+func (m *AiAgentRunMutation) ResetPromptTokens() {
+	m.prompt_tokens = nil
+	m.addprompt_tokens = nil
+}
+
+// SetCompletionTokens sets the "completion_tokens" field.
+func (m *AiAgentRunMutation) SetCompletionTokens(u uint32) {
+	m.completion_tokens = &u
+	m.addcompletion_tokens = nil
+}
+
+// CompletionTokens returns the value of the "completion_tokens" field in the mutation.
+func (m *AiAgentRunMutation) CompletionTokens() (r uint32, exists bool) {
+	v := m.completion_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompletionTokens returns the old "completion_tokens" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldCompletionTokens(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompletionTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompletionTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompletionTokens: %w", err)
+	}
+	return oldValue.CompletionTokens, nil
+}
+
+// AddCompletionTokens adds u to the "completion_tokens" field.
+func (m *AiAgentRunMutation) AddCompletionTokens(u int32) {
+	if m.addcompletion_tokens != nil {
+		*m.addcompletion_tokens += u
+	} else {
+		m.addcompletion_tokens = &u
+	}
+}
+
+// AddedCompletionTokens returns the value that was added to the "completion_tokens" field in this mutation.
+func (m *AiAgentRunMutation) AddedCompletionTokens() (r int32, exists bool) {
+	v := m.addcompletion_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCompletionTokens resets all changes to the "completion_tokens" field.
+func (m *AiAgentRunMutation) ResetCompletionTokens() {
+	m.completion_tokens = nil
+	m.addcompletion_tokens = nil
+}
+
+// SetTotalTokens sets the "total_tokens" field.
+func (m *AiAgentRunMutation) SetTotalTokens(u uint32) {
+	m.total_tokens = &u
+	m.addtotal_tokens = nil
+}
+
+// TotalTokens returns the value of the "total_tokens" field in the mutation.
+func (m *AiAgentRunMutation) TotalTokens() (r uint32, exists bool) {
+	v := m.total_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalTokens returns the old "total_tokens" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldTotalTokens(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalTokens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalTokens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalTokens: %w", err)
+	}
+	return oldValue.TotalTokens, nil
+}
+
+// AddTotalTokens adds u to the "total_tokens" field.
+func (m *AiAgentRunMutation) AddTotalTokens(u int32) {
+	if m.addtotal_tokens != nil {
+		*m.addtotal_tokens += u
+	} else {
+		m.addtotal_tokens = &u
+	}
+}
+
+// AddedTotalTokens returns the value that was added to the "total_tokens" field in this mutation.
+func (m *AiAgentRunMutation) AddedTotalTokens() (r int32, exists bool) {
+	v := m.addtotal_tokens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalTokens resets all changes to the "total_tokens" field.
+func (m *AiAgentRunMutation) ResetTotalTokens() {
+	m.total_tokens = nil
+	m.addtotal_tokens = nil
+}
+
+// SetDurationMs sets the "duration_ms" field.
+func (m *AiAgentRunMutation) SetDurationMs(u uint32) {
+	m.duration_ms = &u
+	m.addduration_ms = nil
+}
+
+// DurationMs returns the value of the "duration_ms" field in the mutation.
+func (m *AiAgentRunMutation) DurationMs() (r uint32, exists bool) {
+	v := m.duration_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDurationMs returns the old "duration_ms" field's value of the AiAgentRun entity.
+// If the AiAgentRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AiAgentRunMutation) OldDurationMs(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDurationMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDurationMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDurationMs: %w", err)
+	}
+	return oldValue.DurationMs, nil
+}
+
+// AddDurationMs adds u to the "duration_ms" field.
+func (m *AiAgentRunMutation) AddDurationMs(u int32) {
+	if m.addduration_ms != nil {
+		*m.addduration_ms += u
+	} else {
+		m.addduration_ms = &u
+	}
+}
+
+// AddedDurationMs returns the value that was added to the "duration_ms" field in this mutation.
+func (m *AiAgentRunMutation) AddedDurationMs() (r int32, exists bool) {
+	v := m.addduration_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDurationMs resets all changes to the "duration_ms" field.
+func (m *AiAgentRunMutation) ResetDurationMs() {
+	m.duration_ms = nil
+	m.addduration_ms = nil
+}
+
+// Where appends a list predicates to the AiAgentRunMutation builder.
+func (m *AiAgentRunMutation) Where(ps ...predicate.AiAgentRun) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AiAgentRunMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AiAgentRunMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AiAgentRun, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AiAgentRunMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AiAgentRunMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AiAgentRun).
+func (m *AiAgentRunMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AiAgentRunMutation) Fields() []string {
+	fields := make([]string, 0, 17)
+	if m.created_at != nil {
+		fields = append(fields, aiagentrun.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, aiagentrun.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, aiagentrun.FieldDeletedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, aiagentrun.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, aiagentrun.FieldUpdatedBy)
+	}
+	if m.deleted_by != nil {
+		fields = append(fields, aiagentrun.FieldDeletedBy)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, aiagentrun.FieldTenantID)
+	}
+	if m.app_id != nil {
+		fields = append(fields, aiagentrun.FieldAppID)
+	}
+	if m.status != nil {
+		fields = append(fields, aiagentrun.FieldStatus)
+	}
+	if m.input != nil {
+		fields = append(fields, aiagentrun.FieldInput)
+	}
+	if m.output != nil {
+		fields = append(fields, aiagentrun.FieldOutput)
+	}
+	if m.error != nil {
+		fields = append(fields, aiagentrun.FieldError)
+	}
+	if m.trace != nil {
+		fields = append(fields, aiagentrun.FieldTrace)
+	}
+	if m.prompt_tokens != nil {
+		fields = append(fields, aiagentrun.FieldPromptTokens)
+	}
+	if m.completion_tokens != nil {
+		fields = append(fields, aiagentrun.FieldCompletionTokens)
+	}
+	if m.total_tokens != nil {
+		fields = append(fields, aiagentrun.FieldTotalTokens)
+	}
+	if m.duration_ms != nil {
+		fields = append(fields, aiagentrun.FieldDurationMs)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AiAgentRunMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case aiagentrun.FieldCreatedAt:
+		return m.CreatedAt()
+	case aiagentrun.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case aiagentrun.FieldDeletedAt:
+		return m.DeletedAt()
+	case aiagentrun.FieldCreatedBy:
+		return m.CreatedBy()
+	case aiagentrun.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case aiagentrun.FieldDeletedBy:
+		return m.DeletedBy()
+	case aiagentrun.FieldTenantID:
+		return m.TenantID()
+	case aiagentrun.FieldAppID:
+		return m.AppID()
+	case aiagentrun.FieldStatus:
+		return m.Status()
+	case aiagentrun.FieldInput:
+		return m.Input()
+	case aiagentrun.FieldOutput:
+		return m.Output()
+	case aiagentrun.FieldError:
+		return m.Error()
+	case aiagentrun.FieldTrace:
+		return m.Trace()
+	case aiagentrun.FieldPromptTokens:
+		return m.PromptTokens()
+	case aiagentrun.FieldCompletionTokens:
+		return m.CompletionTokens()
+	case aiagentrun.FieldTotalTokens:
+		return m.TotalTokens()
+	case aiagentrun.FieldDurationMs:
+		return m.DurationMs()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AiAgentRunMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case aiagentrun.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case aiagentrun.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case aiagentrun.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case aiagentrun.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case aiagentrun.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case aiagentrun.FieldDeletedBy:
+		return m.OldDeletedBy(ctx)
+	case aiagentrun.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case aiagentrun.FieldAppID:
+		return m.OldAppID(ctx)
+	case aiagentrun.FieldStatus:
+		return m.OldStatus(ctx)
+	case aiagentrun.FieldInput:
+		return m.OldInput(ctx)
+	case aiagentrun.FieldOutput:
+		return m.OldOutput(ctx)
+	case aiagentrun.FieldError:
+		return m.OldError(ctx)
+	case aiagentrun.FieldTrace:
+		return m.OldTrace(ctx)
+	case aiagentrun.FieldPromptTokens:
+		return m.OldPromptTokens(ctx)
+	case aiagentrun.FieldCompletionTokens:
+		return m.OldCompletionTokens(ctx)
+	case aiagentrun.FieldTotalTokens:
+		return m.OldTotalTokens(ctx)
+	case aiagentrun.FieldDurationMs:
+		return m.OldDurationMs(ctx)
+	}
+	return nil, fmt.Errorf("unknown AiAgentRun field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiAgentRunMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case aiagentrun.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case aiagentrun.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case aiagentrun.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case aiagentrun.FieldCreatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case aiagentrun.FieldUpdatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case aiagentrun.FieldDeletedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedBy(v)
+		return nil
+	case aiagentrun.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case aiagentrun.FieldAppID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppID(v)
+		return nil
+	case aiagentrun.FieldStatus:
+		v, ok := value.(aiagentrun.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case aiagentrun.FieldInput:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInput(v)
+		return nil
+	case aiagentrun.FieldOutput:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutput(v)
+		return nil
+	case aiagentrun.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case aiagentrun.FieldTrace:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrace(v)
+		return nil
+	case aiagentrun.FieldPromptTokens:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPromptTokens(v)
+		return nil
+	case aiagentrun.FieldCompletionTokens:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompletionTokens(v)
+		return nil
+	case aiagentrun.FieldTotalTokens:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalTokens(v)
+		return nil
+	case aiagentrun.FieldDurationMs:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDurationMs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentRun field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AiAgentRunMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, aiagentrun.FieldCreatedBy)
+	}
+	if m.addupdated_by != nil {
+		fields = append(fields, aiagentrun.FieldUpdatedBy)
+	}
+	if m.adddeleted_by != nil {
+		fields = append(fields, aiagentrun.FieldDeletedBy)
+	}
+	if m.addtenant_id != nil {
+		fields = append(fields, aiagentrun.FieldTenantID)
+	}
+	if m.addapp_id != nil {
+		fields = append(fields, aiagentrun.FieldAppID)
+	}
+	if m.addprompt_tokens != nil {
+		fields = append(fields, aiagentrun.FieldPromptTokens)
+	}
+	if m.addcompletion_tokens != nil {
+		fields = append(fields, aiagentrun.FieldCompletionTokens)
+	}
+	if m.addtotal_tokens != nil {
+		fields = append(fields, aiagentrun.FieldTotalTokens)
+	}
+	if m.addduration_ms != nil {
+		fields = append(fields, aiagentrun.FieldDurationMs)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AiAgentRunMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case aiagentrun.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case aiagentrun.FieldUpdatedBy:
+		return m.AddedUpdatedBy()
+	case aiagentrun.FieldDeletedBy:
+		return m.AddedDeletedBy()
+	case aiagentrun.FieldTenantID:
+		return m.AddedTenantID()
+	case aiagentrun.FieldAppID:
+		return m.AddedAppID()
+	case aiagentrun.FieldPromptTokens:
+		return m.AddedPromptTokens()
+	case aiagentrun.FieldCompletionTokens:
+		return m.AddedCompletionTokens()
+	case aiagentrun.FieldTotalTokens:
+		return m.AddedTotalTokens()
+	case aiagentrun.FieldDurationMs:
+		return m.AddedDurationMs()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AiAgentRunMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case aiagentrun.FieldCreatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case aiagentrun.FieldUpdatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdatedBy(v)
+		return nil
+	case aiagentrun.FieldDeletedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeletedBy(v)
+		return nil
+	case aiagentrun.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	case aiagentrun.FieldAppID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAppID(v)
+		return nil
+	case aiagentrun.FieldPromptTokens:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPromptTokens(v)
+		return nil
+	case aiagentrun.FieldCompletionTokens:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCompletionTokens(v)
+		return nil
+	case aiagentrun.FieldTotalTokens:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalTokens(v)
+		return nil
+	case aiagentrun.FieldDurationMs:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDurationMs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentRun numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AiAgentRunMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(aiagentrun.FieldCreatedAt) {
+		fields = append(fields, aiagentrun.FieldCreatedAt)
+	}
+	if m.FieldCleared(aiagentrun.FieldUpdatedAt) {
+		fields = append(fields, aiagentrun.FieldUpdatedAt)
+	}
+	if m.FieldCleared(aiagentrun.FieldDeletedAt) {
+		fields = append(fields, aiagentrun.FieldDeletedAt)
+	}
+	if m.FieldCleared(aiagentrun.FieldCreatedBy) {
+		fields = append(fields, aiagentrun.FieldCreatedBy)
+	}
+	if m.FieldCleared(aiagentrun.FieldUpdatedBy) {
+		fields = append(fields, aiagentrun.FieldUpdatedBy)
+	}
+	if m.FieldCleared(aiagentrun.FieldDeletedBy) {
+		fields = append(fields, aiagentrun.FieldDeletedBy)
+	}
+	if m.FieldCleared(aiagentrun.FieldTenantID) {
+		fields = append(fields, aiagentrun.FieldTenantID)
+	}
+	if m.FieldCleared(aiagentrun.FieldAppID) {
+		fields = append(fields, aiagentrun.FieldAppID)
+	}
+	if m.FieldCleared(aiagentrun.FieldInput) {
+		fields = append(fields, aiagentrun.FieldInput)
+	}
+	if m.FieldCleared(aiagentrun.FieldOutput) {
+		fields = append(fields, aiagentrun.FieldOutput)
+	}
+	if m.FieldCleared(aiagentrun.FieldError) {
+		fields = append(fields, aiagentrun.FieldError)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AiAgentRunMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AiAgentRunMutation) ClearField(name string) error {
+	switch name {
+	case aiagentrun.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case aiagentrun.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case aiagentrun.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case aiagentrun.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case aiagentrun.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case aiagentrun.FieldDeletedBy:
+		m.ClearDeletedBy()
+		return nil
+	case aiagentrun.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case aiagentrun.FieldAppID:
+		m.ClearAppID()
+		return nil
+	case aiagentrun.FieldInput:
+		m.ClearInput()
+		return nil
+	case aiagentrun.FieldOutput:
+		m.ClearOutput()
+		return nil
+	case aiagentrun.FieldError:
+		m.ClearError()
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentRun nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AiAgentRunMutation) ResetField(name string) error {
+	switch name {
+	case aiagentrun.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case aiagentrun.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case aiagentrun.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case aiagentrun.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case aiagentrun.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case aiagentrun.FieldDeletedBy:
+		m.ResetDeletedBy()
+		return nil
+	case aiagentrun.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case aiagentrun.FieldAppID:
+		m.ResetAppID()
+		return nil
+	case aiagentrun.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case aiagentrun.FieldInput:
+		m.ResetInput()
+		return nil
+	case aiagentrun.FieldOutput:
+		m.ResetOutput()
+		return nil
+	case aiagentrun.FieldError:
+		m.ResetError()
+		return nil
+	case aiagentrun.FieldTrace:
+		m.ResetTrace()
+		return nil
+	case aiagentrun.FieldPromptTokens:
+		m.ResetPromptTokens()
+		return nil
+	case aiagentrun.FieldCompletionTokens:
+		m.ResetCompletionTokens()
+		return nil
+	case aiagentrun.FieldTotalTokens:
+		m.ResetTotalTokens()
+		return nil
+	case aiagentrun.FieldDurationMs:
+		m.ResetDurationMs()
+		return nil
+	}
+	return fmt.Errorf("unknown AiAgentRun field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AiAgentRunMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AiAgentRunMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AiAgentRunMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AiAgentRunMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AiAgentRunMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AiAgentRunMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AiAgentRunMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown AiAgentRun unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AiAgentRunMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown AiAgentRun edge %s", name)
 }
 
 // AiChunkMutation represents an operation that mutates the AiChunk nodes in the graph.
@@ -42591,17 +45493,26 @@ type NotificationChannelMutation struct {
 	status                   *notificationchannel.Status
 	name                     *string
 	_type                    *notificationchannel.Type
+	settings                 *string
 	smtp_host                *string
 	smtp_port                *uint32
 	addsmtp_port             *int32
 	smtp_username            *string
 	smtp_password            *string
 	smtp_from                *string
+	smtp_from_name           *string
 	smtp_tls                 *notificationchannel.SMTPTLS
 	webhook_url              *string
 	webhook_secret           *string
 	webhook_sign_style       *notificationchannel.WebhookSignStyle
 	webhook_payload_template *string
+	sms_provider             *notificationchannel.SmsProvider
+	sms_access_key_id        *string
+	sms_access_secret        *string
+	sms_sign_name            *string
+	sms_template_code        *string
+	sms_app_id               *string
+	sms_region               *string
 	clearedFields            map[string]struct{}
 	done                     bool
 	oldValue                 func(context.Context) (*NotificationChannel, error)
@@ -43226,6 +46137,55 @@ func (m *NotificationChannelMutation) ResetType() {
 	m._type = nil
 }
 
+// SetSettings sets the "settings" field.
+func (m *NotificationChannelMutation) SetSettings(s string) {
+	m.settings = &s
+}
+
+// Settings returns the value of the "settings" field in the mutation.
+func (m *NotificationChannelMutation) Settings() (r string, exists bool) {
+	v := m.settings
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSettings returns the old "settings" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSettings(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSettings is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSettings requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSettings: %w", err)
+	}
+	return oldValue.Settings, nil
+}
+
+// ClearSettings clears the value of the "settings" field.
+func (m *NotificationChannelMutation) ClearSettings() {
+	m.settings = nil
+	m.clearedFields[notificationchannel.FieldSettings] = struct{}{}
+}
+
+// SettingsCleared returns if the "settings" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SettingsCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSettings]
+	return ok
+}
+
+// ResetSettings resets all changes to the "settings" field.
+func (m *NotificationChannelMutation) ResetSettings() {
+	m.settings = nil
+	delete(m.clearedFields, notificationchannel.FieldSettings)
+}
+
 // SetSMTPHost sets the "smtp_host" field.
 func (m *NotificationChannelMutation) SetSMTPHost(s string) {
 	m.smtp_host = &s
@@ -43492,6 +46452,55 @@ func (m *NotificationChannelMutation) ResetSMTPFrom() {
 	delete(m.clearedFields, notificationchannel.FieldSMTPFrom)
 }
 
+// SetSMTPFromName sets the "smtp_from_name" field.
+func (m *NotificationChannelMutation) SetSMTPFromName(s string) {
+	m.smtp_from_name = &s
+}
+
+// SMTPFromName returns the value of the "smtp_from_name" field in the mutation.
+func (m *NotificationChannelMutation) SMTPFromName() (r string, exists bool) {
+	v := m.smtp_from_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSMTPFromName returns the old "smtp_from_name" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSMTPFromName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSMTPFromName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSMTPFromName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSMTPFromName: %w", err)
+	}
+	return oldValue.SMTPFromName, nil
+}
+
+// ClearSMTPFromName clears the value of the "smtp_from_name" field.
+func (m *NotificationChannelMutation) ClearSMTPFromName() {
+	m.smtp_from_name = nil
+	m.clearedFields[notificationchannel.FieldSMTPFromName] = struct{}{}
+}
+
+// SMTPFromNameCleared returns if the "smtp_from_name" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SMTPFromNameCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSMTPFromName]
+	return ok
+}
+
+// ResetSMTPFromName resets all changes to the "smtp_from_name" field.
+func (m *NotificationChannelMutation) ResetSMTPFromName() {
+	m.smtp_from_name = nil
+	delete(m.clearedFields, notificationchannel.FieldSMTPFromName)
+}
+
 // SetSMTPTLS sets the "smtp_tls" field.
 func (m *NotificationChannelMutation) SetSMTPTLS(n notificationchannel.SMTPTLS) {
 	m.smtp_tls = &n
@@ -43737,6 +46746,349 @@ func (m *NotificationChannelMutation) ResetWebhookPayloadTemplate() {
 	delete(m.clearedFields, notificationchannel.FieldWebhookPayloadTemplate)
 }
 
+// SetSmsProvider sets the "sms_provider" field.
+func (m *NotificationChannelMutation) SetSmsProvider(np notificationchannel.SmsProvider) {
+	m.sms_provider = &np
+}
+
+// SmsProvider returns the value of the "sms_provider" field in the mutation.
+func (m *NotificationChannelMutation) SmsProvider() (r notificationchannel.SmsProvider, exists bool) {
+	v := m.sms_provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsProvider returns the old "sms_provider" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsProvider(ctx context.Context) (v *notificationchannel.SmsProvider, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsProvider is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsProvider requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsProvider: %w", err)
+	}
+	return oldValue.SmsProvider, nil
+}
+
+// ClearSmsProvider clears the value of the "sms_provider" field.
+func (m *NotificationChannelMutation) ClearSmsProvider() {
+	m.sms_provider = nil
+	m.clearedFields[notificationchannel.FieldSmsProvider] = struct{}{}
+}
+
+// SmsProviderCleared returns if the "sms_provider" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsProviderCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsProvider]
+	return ok
+}
+
+// ResetSmsProvider resets all changes to the "sms_provider" field.
+func (m *NotificationChannelMutation) ResetSmsProvider() {
+	m.sms_provider = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsProvider)
+}
+
+// SetSmsAccessKeyID sets the "sms_access_key_id" field.
+func (m *NotificationChannelMutation) SetSmsAccessKeyID(s string) {
+	m.sms_access_key_id = &s
+}
+
+// SmsAccessKeyID returns the value of the "sms_access_key_id" field in the mutation.
+func (m *NotificationChannelMutation) SmsAccessKeyID() (r string, exists bool) {
+	v := m.sms_access_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsAccessKeyID returns the old "sms_access_key_id" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsAccessKeyID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsAccessKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsAccessKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsAccessKeyID: %w", err)
+	}
+	return oldValue.SmsAccessKeyID, nil
+}
+
+// ClearSmsAccessKeyID clears the value of the "sms_access_key_id" field.
+func (m *NotificationChannelMutation) ClearSmsAccessKeyID() {
+	m.sms_access_key_id = nil
+	m.clearedFields[notificationchannel.FieldSmsAccessKeyID] = struct{}{}
+}
+
+// SmsAccessKeyIDCleared returns if the "sms_access_key_id" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsAccessKeyIDCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsAccessKeyID]
+	return ok
+}
+
+// ResetSmsAccessKeyID resets all changes to the "sms_access_key_id" field.
+func (m *NotificationChannelMutation) ResetSmsAccessKeyID() {
+	m.sms_access_key_id = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsAccessKeyID)
+}
+
+// SetSmsAccessSecret sets the "sms_access_secret" field.
+func (m *NotificationChannelMutation) SetSmsAccessSecret(s string) {
+	m.sms_access_secret = &s
+}
+
+// SmsAccessSecret returns the value of the "sms_access_secret" field in the mutation.
+func (m *NotificationChannelMutation) SmsAccessSecret() (r string, exists bool) {
+	v := m.sms_access_secret
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsAccessSecret returns the old "sms_access_secret" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsAccessSecret(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsAccessSecret is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsAccessSecret requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsAccessSecret: %w", err)
+	}
+	return oldValue.SmsAccessSecret, nil
+}
+
+// ClearSmsAccessSecret clears the value of the "sms_access_secret" field.
+func (m *NotificationChannelMutation) ClearSmsAccessSecret() {
+	m.sms_access_secret = nil
+	m.clearedFields[notificationchannel.FieldSmsAccessSecret] = struct{}{}
+}
+
+// SmsAccessSecretCleared returns if the "sms_access_secret" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsAccessSecretCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsAccessSecret]
+	return ok
+}
+
+// ResetSmsAccessSecret resets all changes to the "sms_access_secret" field.
+func (m *NotificationChannelMutation) ResetSmsAccessSecret() {
+	m.sms_access_secret = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsAccessSecret)
+}
+
+// SetSmsSignName sets the "sms_sign_name" field.
+func (m *NotificationChannelMutation) SetSmsSignName(s string) {
+	m.sms_sign_name = &s
+}
+
+// SmsSignName returns the value of the "sms_sign_name" field in the mutation.
+func (m *NotificationChannelMutation) SmsSignName() (r string, exists bool) {
+	v := m.sms_sign_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsSignName returns the old "sms_sign_name" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsSignName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsSignName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsSignName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsSignName: %w", err)
+	}
+	return oldValue.SmsSignName, nil
+}
+
+// ClearSmsSignName clears the value of the "sms_sign_name" field.
+func (m *NotificationChannelMutation) ClearSmsSignName() {
+	m.sms_sign_name = nil
+	m.clearedFields[notificationchannel.FieldSmsSignName] = struct{}{}
+}
+
+// SmsSignNameCleared returns if the "sms_sign_name" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsSignNameCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsSignName]
+	return ok
+}
+
+// ResetSmsSignName resets all changes to the "sms_sign_name" field.
+func (m *NotificationChannelMutation) ResetSmsSignName() {
+	m.sms_sign_name = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsSignName)
+}
+
+// SetSmsTemplateCode sets the "sms_template_code" field.
+func (m *NotificationChannelMutation) SetSmsTemplateCode(s string) {
+	m.sms_template_code = &s
+}
+
+// SmsTemplateCode returns the value of the "sms_template_code" field in the mutation.
+func (m *NotificationChannelMutation) SmsTemplateCode() (r string, exists bool) {
+	v := m.sms_template_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsTemplateCode returns the old "sms_template_code" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsTemplateCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsTemplateCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsTemplateCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsTemplateCode: %w", err)
+	}
+	return oldValue.SmsTemplateCode, nil
+}
+
+// ClearSmsTemplateCode clears the value of the "sms_template_code" field.
+func (m *NotificationChannelMutation) ClearSmsTemplateCode() {
+	m.sms_template_code = nil
+	m.clearedFields[notificationchannel.FieldSmsTemplateCode] = struct{}{}
+}
+
+// SmsTemplateCodeCleared returns if the "sms_template_code" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsTemplateCodeCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsTemplateCode]
+	return ok
+}
+
+// ResetSmsTemplateCode resets all changes to the "sms_template_code" field.
+func (m *NotificationChannelMutation) ResetSmsTemplateCode() {
+	m.sms_template_code = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsTemplateCode)
+}
+
+// SetSmsAppID sets the "sms_app_id" field.
+func (m *NotificationChannelMutation) SetSmsAppID(s string) {
+	m.sms_app_id = &s
+}
+
+// SmsAppID returns the value of the "sms_app_id" field in the mutation.
+func (m *NotificationChannelMutation) SmsAppID() (r string, exists bool) {
+	v := m.sms_app_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsAppID returns the old "sms_app_id" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsAppID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsAppID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsAppID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsAppID: %w", err)
+	}
+	return oldValue.SmsAppID, nil
+}
+
+// ClearSmsAppID clears the value of the "sms_app_id" field.
+func (m *NotificationChannelMutation) ClearSmsAppID() {
+	m.sms_app_id = nil
+	m.clearedFields[notificationchannel.FieldSmsAppID] = struct{}{}
+}
+
+// SmsAppIDCleared returns if the "sms_app_id" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsAppIDCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsAppID]
+	return ok
+}
+
+// ResetSmsAppID resets all changes to the "sms_app_id" field.
+func (m *NotificationChannelMutation) ResetSmsAppID() {
+	m.sms_app_id = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsAppID)
+}
+
+// SetSmsRegion sets the "sms_region" field.
+func (m *NotificationChannelMutation) SetSmsRegion(s string) {
+	m.sms_region = &s
+}
+
+// SmsRegion returns the value of the "sms_region" field in the mutation.
+func (m *NotificationChannelMutation) SmsRegion() (r string, exists bool) {
+	v := m.sms_region
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsRegion returns the old "sms_region" field's value of the NotificationChannel entity.
+// If the NotificationChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationChannelMutation) OldSmsRegion(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsRegion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsRegion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsRegion: %w", err)
+	}
+	return oldValue.SmsRegion, nil
+}
+
+// ClearSmsRegion clears the value of the "sms_region" field.
+func (m *NotificationChannelMutation) ClearSmsRegion() {
+	m.sms_region = nil
+	m.clearedFields[notificationchannel.FieldSmsRegion] = struct{}{}
+}
+
+// SmsRegionCleared returns if the "sms_region" field was cleared in this mutation.
+func (m *NotificationChannelMutation) SmsRegionCleared() bool {
+	_, ok := m.clearedFields[notificationchannel.FieldSmsRegion]
+	return ok
+}
+
+// ResetSmsRegion resets all changes to the "sms_region" field.
+func (m *NotificationChannelMutation) ResetSmsRegion() {
+	m.sms_region = nil
+	delete(m.clearedFields, notificationchannel.FieldSmsRegion)
+}
+
 // Where appends a list predicates to the NotificationChannelMutation builder.
 func (m *NotificationChannelMutation) Where(ps ...predicate.NotificationChannel) {
 	m.predicates = append(m.predicates, ps...)
@@ -43771,7 +47123,7 @@ func (m *NotificationChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NotificationChannelMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, notificationchannel.FieldCreatedAt)
 	}
@@ -43802,6 +47154,9 @@ func (m *NotificationChannelMutation) Fields() []string {
 	if m._type != nil {
 		fields = append(fields, notificationchannel.FieldType)
 	}
+	if m.settings != nil {
+		fields = append(fields, notificationchannel.FieldSettings)
+	}
 	if m.smtp_host != nil {
 		fields = append(fields, notificationchannel.FieldSMTPHost)
 	}
@@ -43817,6 +47172,9 @@ func (m *NotificationChannelMutation) Fields() []string {
 	if m.smtp_from != nil {
 		fields = append(fields, notificationchannel.FieldSMTPFrom)
 	}
+	if m.smtp_from_name != nil {
+		fields = append(fields, notificationchannel.FieldSMTPFromName)
+	}
 	if m.smtp_tls != nil {
 		fields = append(fields, notificationchannel.FieldSMTPTLS)
 	}
@@ -43831,6 +47189,27 @@ func (m *NotificationChannelMutation) Fields() []string {
 	}
 	if m.webhook_payload_template != nil {
 		fields = append(fields, notificationchannel.FieldWebhookPayloadTemplate)
+	}
+	if m.sms_provider != nil {
+		fields = append(fields, notificationchannel.FieldSmsProvider)
+	}
+	if m.sms_access_key_id != nil {
+		fields = append(fields, notificationchannel.FieldSmsAccessKeyID)
+	}
+	if m.sms_access_secret != nil {
+		fields = append(fields, notificationchannel.FieldSmsAccessSecret)
+	}
+	if m.sms_sign_name != nil {
+		fields = append(fields, notificationchannel.FieldSmsSignName)
+	}
+	if m.sms_template_code != nil {
+		fields = append(fields, notificationchannel.FieldSmsTemplateCode)
+	}
+	if m.sms_app_id != nil {
+		fields = append(fields, notificationchannel.FieldSmsAppID)
+	}
+	if m.sms_region != nil {
+		fields = append(fields, notificationchannel.FieldSmsRegion)
 	}
 	return fields
 }
@@ -43860,6 +47239,8 @@ func (m *NotificationChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case notificationchannel.FieldType:
 		return m.GetType()
+	case notificationchannel.FieldSettings:
+		return m.Settings()
 	case notificationchannel.FieldSMTPHost:
 		return m.SMTPHost()
 	case notificationchannel.FieldSMTPPort:
@@ -43870,6 +47251,8 @@ func (m *NotificationChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.SMTPPassword()
 	case notificationchannel.FieldSMTPFrom:
 		return m.SMTPFrom()
+	case notificationchannel.FieldSMTPFromName:
+		return m.SMTPFromName()
 	case notificationchannel.FieldSMTPTLS:
 		return m.SMTPTLS()
 	case notificationchannel.FieldWebhookURL:
@@ -43880,6 +47263,20 @@ func (m *NotificationChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.WebhookSignStyle()
 	case notificationchannel.FieldWebhookPayloadTemplate:
 		return m.WebhookPayloadTemplate()
+	case notificationchannel.FieldSmsProvider:
+		return m.SmsProvider()
+	case notificationchannel.FieldSmsAccessKeyID:
+		return m.SmsAccessKeyID()
+	case notificationchannel.FieldSmsAccessSecret:
+		return m.SmsAccessSecret()
+	case notificationchannel.FieldSmsSignName:
+		return m.SmsSignName()
+	case notificationchannel.FieldSmsTemplateCode:
+		return m.SmsTemplateCode()
+	case notificationchannel.FieldSmsAppID:
+		return m.SmsAppID()
+	case notificationchannel.FieldSmsRegion:
+		return m.SmsRegion()
 	}
 	return nil, false
 }
@@ -43909,6 +47306,8 @@ func (m *NotificationChannelMutation) OldField(ctx context.Context, name string)
 		return m.OldName(ctx)
 	case notificationchannel.FieldType:
 		return m.OldType(ctx)
+	case notificationchannel.FieldSettings:
+		return m.OldSettings(ctx)
 	case notificationchannel.FieldSMTPHost:
 		return m.OldSMTPHost(ctx)
 	case notificationchannel.FieldSMTPPort:
@@ -43919,6 +47318,8 @@ func (m *NotificationChannelMutation) OldField(ctx context.Context, name string)
 		return m.OldSMTPPassword(ctx)
 	case notificationchannel.FieldSMTPFrom:
 		return m.OldSMTPFrom(ctx)
+	case notificationchannel.FieldSMTPFromName:
+		return m.OldSMTPFromName(ctx)
 	case notificationchannel.FieldSMTPTLS:
 		return m.OldSMTPTLS(ctx)
 	case notificationchannel.FieldWebhookURL:
@@ -43929,6 +47330,20 @@ func (m *NotificationChannelMutation) OldField(ctx context.Context, name string)
 		return m.OldWebhookSignStyle(ctx)
 	case notificationchannel.FieldWebhookPayloadTemplate:
 		return m.OldWebhookPayloadTemplate(ctx)
+	case notificationchannel.FieldSmsProvider:
+		return m.OldSmsProvider(ctx)
+	case notificationchannel.FieldSmsAccessKeyID:
+		return m.OldSmsAccessKeyID(ctx)
+	case notificationchannel.FieldSmsAccessSecret:
+		return m.OldSmsAccessSecret(ctx)
+	case notificationchannel.FieldSmsSignName:
+		return m.OldSmsSignName(ctx)
+	case notificationchannel.FieldSmsTemplateCode:
+		return m.OldSmsTemplateCode(ctx)
+	case notificationchannel.FieldSmsAppID:
+		return m.OldSmsAppID(ctx)
+	case notificationchannel.FieldSmsRegion:
+		return m.OldSmsRegion(ctx)
 	}
 	return nil, fmt.Errorf("unknown NotificationChannel field %s", name)
 }
@@ -44008,6 +47423,13 @@ func (m *NotificationChannelMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetType(v)
 		return nil
+	case notificationchannel.FieldSettings:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSettings(v)
+		return nil
 	case notificationchannel.FieldSMTPHost:
 		v, ok := value.(string)
 		if !ok {
@@ -44043,6 +47465,13 @@ func (m *NotificationChannelMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetSMTPFrom(v)
 		return nil
+	case notificationchannel.FieldSMTPFromName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSMTPFromName(v)
+		return nil
 	case notificationchannel.FieldSMTPTLS:
 		v, ok := value.(notificationchannel.SMTPTLS)
 		if !ok {
@@ -44077,6 +47506,55 @@ func (m *NotificationChannelMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWebhookPayloadTemplate(v)
+		return nil
+	case notificationchannel.FieldSmsProvider:
+		v, ok := value.(notificationchannel.SmsProvider)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsProvider(v)
+		return nil
+	case notificationchannel.FieldSmsAccessKeyID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsAccessKeyID(v)
+		return nil
+	case notificationchannel.FieldSmsAccessSecret:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsAccessSecret(v)
+		return nil
+	case notificationchannel.FieldSmsSignName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsSignName(v)
+		return nil
+	case notificationchannel.FieldSmsTemplateCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsTemplateCode(v)
+		return nil
+	case notificationchannel.FieldSmsAppID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsAppID(v)
+		return nil
+	case notificationchannel.FieldSmsRegion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsRegion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown NotificationChannel field %s", name)
@@ -44180,6 +47658,9 @@ func (m *NotificationChannelMutation) ClearedFields() []string {
 	if m.FieldCleared(notificationchannel.FieldRemark) {
 		fields = append(fields, notificationchannel.FieldRemark)
 	}
+	if m.FieldCleared(notificationchannel.FieldSettings) {
+		fields = append(fields, notificationchannel.FieldSettings)
+	}
 	if m.FieldCleared(notificationchannel.FieldSMTPHost) {
 		fields = append(fields, notificationchannel.FieldSMTPHost)
 	}
@@ -44195,6 +47676,9 @@ func (m *NotificationChannelMutation) ClearedFields() []string {
 	if m.FieldCleared(notificationchannel.FieldSMTPFrom) {
 		fields = append(fields, notificationchannel.FieldSMTPFrom)
 	}
+	if m.FieldCleared(notificationchannel.FieldSMTPFromName) {
+		fields = append(fields, notificationchannel.FieldSMTPFromName)
+	}
 	if m.FieldCleared(notificationchannel.FieldSMTPTLS) {
 		fields = append(fields, notificationchannel.FieldSMTPTLS)
 	}
@@ -44209,6 +47693,27 @@ func (m *NotificationChannelMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(notificationchannel.FieldWebhookPayloadTemplate) {
 		fields = append(fields, notificationchannel.FieldWebhookPayloadTemplate)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsProvider) {
+		fields = append(fields, notificationchannel.FieldSmsProvider)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsAccessKeyID) {
+		fields = append(fields, notificationchannel.FieldSmsAccessKeyID)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsAccessSecret) {
+		fields = append(fields, notificationchannel.FieldSmsAccessSecret)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsSignName) {
+		fields = append(fields, notificationchannel.FieldSmsSignName)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsTemplateCode) {
+		fields = append(fields, notificationchannel.FieldSmsTemplateCode)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsAppID) {
+		fields = append(fields, notificationchannel.FieldSmsAppID)
+	}
+	if m.FieldCleared(notificationchannel.FieldSmsRegion) {
+		fields = append(fields, notificationchannel.FieldSmsRegion)
 	}
 	return fields
 }
@@ -44245,6 +47750,9 @@ func (m *NotificationChannelMutation) ClearField(name string) error {
 	case notificationchannel.FieldRemark:
 		m.ClearRemark()
 		return nil
+	case notificationchannel.FieldSettings:
+		m.ClearSettings()
+		return nil
 	case notificationchannel.FieldSMTPHost:
 		m.ClearSMTPHost()
 		return nil
@@ -44260,6 +47768,9 @@ func (m *NotificationChannelMutation) ClearField(name string) error {
 	case notificationchannel.FieldSMTPFrom:
 		m.ClearSMTPFrom()
 		return nil
+	case notificationchannel.FieldSMTPFromName:
+		m.ClearSMTPFromName()
+		return nil
 	case notificationchannel.FieldSMTPTLS:
 		m.ClearSMTPTLS()
 		return nil
@@ -44274,6 +47785,27 @@ func (m *NotificationChannelMutation) ClearField(name string) error {
 		return nil
 	case notificationchannel.FieldWebhookPayloadTemplate:
 		m.ClearWebhookPayloadTemplate()
+		return nil
+	case notificationchannel.FieldSmsProvider:
+		m.ClearSmsProvider()
+		return nil
+	case notificationchannel.FieldSmsAccessKeyID:
+		m.ClearSmsAccessKeyID()
+		return nil
+	case notificationchannel.FieldSmsAccessSecret:
+		m.ClearSmsAccessSecret()
+		return nil
+	case notificationchannel.FieldSmsSignName:
+		m.ClearSmsSignName()
+		return nil
+	case notificationchannel.FieldSmsTemplateCode:
+		m.ClearSmsTemplateCode()
+		return nil
+	case notificationchannel.FieldSmsAppID:
+		m.ClearSmsAppID()
+		return nil
+	case notificationchannel.FieldSmsRegion:
+		m.ClearSmsRegion()
 		return nil
 	}
 	return fmt.Errorf("unknown NotificationChannel nullable field %s", name)
@@ -44313,6 +47845,9 @@ func (m *NotificationChannelMutation) ResetField(name string) error {
 	case notificationchannel.FieldType:
 		m.ResetType()
 		return nil
+	case notificationchannel.FieldSettings:
+		m.ResetSettings()
+		return nil
 	case notificationchannel.FieldSMTPHost:
 		m.ResetSMTPHost()
 		return nil
@@ -44328,6 +47863,9 @@ func (m *NotificationChannelMutation) ResetField(name string) error {
 	case notificationchannel.FieldSMTPFrom:
 		m.ResetSMTPFrom()
 		return nil
+	case notificationchannel.FieldSMTPFromName:
+		m.ResetSMTPFromName()
+		return nil
 	case notificationchannel.FieldSMTPTLS:
 		m.ResetSMTPTLS()
 		return nil
@@ -44342,6 +47880,27 @@ func (m *NotificationChannelMutation) ResetField(name string) error {
 		return nil
 	case notificationchannel.FieldWebhookPayloadTemplate:
 		m.ResetWebhookPayloadTemplate()
+		return nil
+	case notificationchannel.FieldSmsProvider:
+		m.ResetSmsProvider()
+		return nil
+	case notificationchannel.FieldSmsAccessKeyID:
+		m.ResetSmsAccessKeyID()
+		return nil
+	case notificationchannel.FieldSmsAccessSecret:
+		m.ResetSmsAccessSecret()
+		return nil
+	case notificationchannel.FieldSmsSignName:
+		m.ResetSmsSignName()
+		return nil
+	case notificationchannel.FieldSmsTemplateCode:
+		m.ResetSmsTemplateCode()
+		return nil
+	case notificationchannel.FieldSmsAppID:
+		m.ResetSmsAppID()
+		return nil
+	case notificationchannel.FieldSmsRegion:
+		m.ResetSmsRegion()
 		return nil
 	}
 	return fmt.Errorf("unknown NotificationChannel field %s", name)
@@ -44425,6 +47984,7 @@ type NotificationDeliveryMutation struct {
 	attempts             *uint32
 	addattempts          *int32
 	sent_at              *time.Time
+	provider_id          *string
 	clearedFields        map[string]struct{}
 	done                 bool
 	oldValue             func(context.Context) (*NotificationDelivery, error)
@@ -45515,6 +49075,55 @@ func (m *NotificationDeliveryMutation) ResetSentAt() {
 	delete(m.clearedFields, notificationdelivery.FieldSentAt)
 }
 
+// SetProviderID sets the "provider_id" field.
+func (m *NotificationDeliveryMutation) SetProviderID(s string) {
+	m.provider_id = &s
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *NotificationDeliveryMutation) ProviderID() (r string, exists bool) {
+	v := m.provider_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the NotificationDelivery entity.
+// If the NotificationDelivery object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationDeliveryMutation) OldProviderID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (m *NotificationDeliveryMutation) ClearProviderID() {
+	m.provider_id = nil
+	m.clearedFields[notificationdelivery.FieldProviderID] = struct{}{}
+}
+
+// ProviderIDCleared returns if the "provider_id" field was cleared in this mutation.
+func (m *NotificationDeliveryMutation) ProviderIDCleared() bool {
+	_, ok := m.clearedFields[notificationdelivery.FieldProviderID]
+	return ok
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *NotificationDeliveryMutation) ResetProviderID() {
+	m.provider_id = nil
+	delete(m.clearedFields, notificationdelivery.FieldProviderID)
+}
+
 // Where appends a list predicates to the NotificationDeliveryMutation builder.
 func (m *NotificationDeliveryMutation) Where(ps ...predicate.NotificationDelivery) {
 	m.predicates = append(m.predicates, ps...)
@@ -45549,7 +49158,7 @@ func (m *NotificationDeliveryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NotificationDeliveryMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, notificationdelivery.FieldCreatedAt)
 	}
@@ -45601,6 +49210,9 @@ func (m *NotificationDeliveryMutation) Fields() []string {
 	if m.sent_at != nil {
 		fields = append(fields, notificationdelivery.FieldSentAt)
 	}
+	if m.provider_id != nil {
+		fields = append(fields, notificationdelivery.FieldProviderID)
+	}
 	return fields
 }
 
@@ -45643,6 +49255,8 @@ func (m *NotificationDeliveryMutation) Field(name string) (ent.Value, bool) {
 		return m.Attempts()
 	case notificationdelivery.FieldSentAt:
 		return m.SentAt()
+	case notificationdelivery.FieldProviderID:
+		return m.ProviderID()
 	}
 	return nil, false
 }
@@ -45686,6 +49300,8 @@ func (m *NotificationDeliveryMutation) OldField(ctx context.Context, name string
 		return m.OldAttempts(ctx)
 	case notificationdelivery.FieldSentAt:
 		return m.OldSentAt(ctx)
+	case notificationdelivery.FieldProviderID:
+		return m.OldProviderID(ctx)
 	}
 	return nil, fmt.Errorf("unknown NotificationDelivery field %s", name)
 }
@@ -45813,6 +49429,13 @@ func (m *NotificationDeliveryMutation) SetField(name string, value ent.Value) er
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSentAt(v)
+		return nil
+	case notificationdelivery.FieldProviderID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown NotificationDelivery field %s", name)
@@ -45982,6 +49605,9 @@ func (m *NotificationDeliveryMutation) ClearedFields() []string {
 	if m.FieldCleared(notificationdelivery.FieldSentAt) {
 		fields = append(fields, notificationdelivery.FieldSentAt)
 	}
+	if m.FieldCleared(notificationdelivery.FieldProviderID) {
+		fields = append(fields, notificationdelivery.FieldProviderID)
+	}
 	return fields
 }
 
@@ -46047,6 +49673,9 @@ func (m *NotificationDeliveryMutation) ClearField(name string) error {
 	case notificationdelivery.FieldSentAt:
 		m.ClearSentAt()
 		return nil
+	case notificationdelivery.FieldProviderID:
+		m.ClearProviderID()
+		return nil
 	}
 	return fmt.Errorf("unknown NotificationDelivery nullable field %s", name)
 }
@@ -46105,6 +49734,9 @@ func (m *NotificationDeliveryMutation) ResetField(name string) error {
 		return nil
 	case notificationdelivery.FieldSentAt:
 		m.ResetSentAt()
+		return nil
+	case notificationdelivery.FieldProviderID:
+		m.ResetProviderID()
 		return nil
 	}
 	return fmt.Errorf("unknown NotificationDelivery field %s", name)

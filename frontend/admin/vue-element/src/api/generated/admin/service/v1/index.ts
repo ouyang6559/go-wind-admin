@@ -759,6 +759,427 @@ export function createAdminPortalServiceClient(
     },
   };
 }
+// AI Agent 编排管理服务（可视化画布）
+export interface AiAgentService {
+  // 分页查询 Agent 应用列表
+  List(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiAgentAppsResponse>;
+  // 查询 Agent 应用详情
+  Get(
+    request: aiservicev1_GetAiAgentAppRequest,
+  ): Promise<aiservicev1_AiAgentApp>;
+  // 创建 Agent 应用
+  Create(
+    request: aiservicev1_CreateAiAgentAppRequest,
+  ): Promise<aiservicev1_AiAgentApp>;
+  // 更新 Agent 应用
+  Update(
+    request: aiservicev1_UpdateAiAgentAppRequest,
+  ): Promise<wellKnownEmpty>;
+  // 删除 Agent 应用
+  Delete(
+    request: aiservicev1_DeleteAiAgentAppRequest,
+  ): Promise<wellKnownEmpty>;
+  // 试运行（同步执行图，返回含 trace 的运行记录）
+  Run(
+    request: aiservicev1_RunAiAgentAppRequest,
+  ): Promise<aiservicev1_AiAgentRun>;
+  // 查询运行台账（appId eq 过滤走 PagingRequest；独立集合路径，避免与 /{id} 参数路由抢配）
+  ListRuns(
+    request: pagination_PagingRequest,
+  ): Promise<aiservicev1_ListAiAgentRunsResponse>;
+  // 查询运行详情（含 trace JSON）
+  GetRun(
+    request: aiservicev1_GetAiAgentRunRequest,
+  ): Promise<aiservicev1_AiAgentRun>;
+}
+
+export function createAiAgentServiceClient(
+  transport: ClientTransport,
+): AiAgentService {
+  return {
+    List(request) {
+      const path = `admin/v1/ai/agents`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiAgentService',
+        method: 'List',
+      }) as Promise<aiservicev1_ListAiAgentAppsResponse>;
+    },
+    Get(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/agents/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AiAgentService',
+        method: 'Get',
+      }) as Promise<aiservicev1_AiAgentApp>;
+    },
+    Create(request) {
+      const path = `admin/v1/ai/agents`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiAgentService',
+        method: 'Create',
+      }) as Promise<aiservicev1_AiAgentApp>;
+    },
+    Update(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/agents/${request.id}`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'PUT', body, {
+        service: 'AiAgentService',
+        method: 'Update',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Delete(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/agents/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'DELETE', body, {
+        service: 'AiAgentService',
+        method: 'Delete',
+      }) as Promise<wellKnownEmpty>;
+    },
+    Run(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/agents/${request.id}/run`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'AiAgentService',
+        method: 'Run',
+      }) as Promise<aiservicev1_AiAgentRun>;
+    },
+    ListRuns(request) {
+      const path = `admin/v1/ai/agent-runs`;
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.page) {
+        queryParams.push(
+          `page=${encodeURIComponent(request.page.toString())}`,
+        );
+      }
+      if (request.pageSize) {
+        queryParams.push(
+          `pageSize=${encodeURIComponent(request.pageSize.toString())}`,
+        );
+      }
+      if (request.offset) {
+        queryParams.push(
+          `offset=${encodeURIComponent(request.offset.toString())}`,
+        );
+      }
+      if (request.limit) {
+        queryParams.push(
+          `limit=${encodeURIComponent(request.limit.toString())}`,
+        );
+      }
+      if (request.token) {
+        queryParams.push(
+          `token=${encodeURIComponent(request.token.toString())}`,
+        );
+      }
+      if (request.noPaging) {
+        queryParams.push(
+          `noPaging=${encodeURIComponent(request.noPaging.toString())}`,
+        );
+      }
+      if (request.query) {
+        queryParams.push(
+          `query=${encodeURIComponent(request.query.toString())}`,
+        );
+      }
+      if (request.filter) {
+        queryParams.push(
+          `filter=${encodeURIComponent(request.filter.toString())}`,
+        );
+      }
+      if (request.filterExpr?.type) {
+        queryParams.push(
+          `filterExpr.type=${encodeURIComponent(request.filterExpr.type.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.field) {
+        queryParams.push(
+          `filterExpr.conditions.field=${encodeURIComponent(request.filterExpr.conditions.field.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.op) {
+        queryParams.push(
+          `filterExpr.conditions.op=${encodeURIComponent(request.filterExpr.conditions.op.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.value) {
+        queryParams.push(
+          `filterExpr.conditions.value=${encodeURIComponent(request.filterExpr.conditions.value.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonValue) {
+        queryParams.push(
+          `filterExpr.conditions.jsonValue=${encodeURIComponent(request.filterExpr.conditions.jsonValue.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.values) {
+        request.filterExpr.conditions.values.forEach((x) => {
+          queryParams.push(
+            `filterExpr.conditions.values=${encodeURIComponent(x.toString())}`,
+          );
+        });
+      }
+      if (request.filterExpr?.conditions?.datePart) {
+        queryParams.push(
+          `filterExpr.conditions.datePart=${encodeURIComponent(request.filterExpr.conditions.datePart.toString())}`,
+        );
+      }
+      if (request.filterExpr?.conditions?.jsonPath) {
+        queryParams.push(
+          `filterExpr.conditions.jsonPath=${encodeURIComponent(request.filterExpr.conditions.jsonPath.toString())}`,
+        );
+      }
+      if (request.orderBy) {
+        queryParams.push(
+          `orderBy=${encodeURIComponent(request.orderBy.toString())}`,
+        );
+      }
+      if (request.sorting?.field) {
+        queryParams.push(
+          `sorting.field=${encodeURIComponent(request.sorting.field.toString())}`,
+        );
+      }
+      if (request.sorting?.direction) {
+        queryParams.push(
+          `sorting.direction=${encodeURIComponent(request.sorting.direction.toString())}`,
+        );
+      }
+      if (request.fieldMask) {
+        queryParams.push(
+          `fieldMask=${encodeURIComponent(request.fieldMask.toString())}`,
+        );
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join('&')}`;
+      }
+      return transport.unary(uri, 'GET', body, {
+        service: 'AiAgentService',
+        method: 'ListRuns',
+      }) as Promise<aiservicev1_ListAiAgentRunsResponse>;
+    },
+    GetRun(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/ai/agent-runs/${request.id}`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'AiAgentService',
+        method: 'GetRun',
+      }) as Promise<aiservicev1_AiAgentRun>;
+    },
+  };
+}
+// 查询列表 - 回应
+export type aiservicev1_ListAiAgentAppsResponse = {
+  items: aiservicev1_AiAgentApp[] | undefined;
+  total: number | undefined;
+};
+
+// Agent 编排应用
+export type aiservicev1_AiAgentApp = {
+  createdAt?: wellKnownTimestamp;
+  createdBy?: number;
+  description?: string;
+  enabled?: boolean;
+  // 图 DSL（JSON：nodes/edges；节点五种、模板与条件表达式语义见设计文档 §2）
+  graph?: string;
+  id?: number;
+  name?: string;
+  // 创建/更新入参带出（与 AiConversation 同口径）：租户隔离 mixin 无创建钩子，租户必须显式写
+  tenantId?: number;
+  updatedAt?: wellKnownTimestamp;
+  updatedBy?: number;
+};
+
+// 查询详情 - 请求
+export type aiservicev1_GetAiAgentAppRequest = {
+  id: number | undefined;
+};
+
+// 创建 - 请求
+export type aiservicev1_CreateAiAgentAppRequest = {
+  data: aiservicev1_AiAgentApp | undefined;
+};
+
+// 更新 - 请求
+export type aiservicev1_UpdateAiAgentAppRequest = {
+  data: aiservicev1_AiAgentApp | undefined;
+  id: number | undefined;
+  updateMask: undefined | wellKnownFieldMask;
+};
+
+// 删除 - 请求
+export type aiservicev1_DeleteAiAgentAppRequest = {
+  id: number | undefined;
+};
+
+// 试运行 - 请求
+export type aiservicev1_RunAiAgentAppRequest = {
+  id: number | undefined;
+  // 运行入参：start 节点声明的输入变量名 → 值（JSON 对象字符串）
+  input: { [key: string]: string } | undefined;
+};
+
+// Agent 运行记录
+export type aiservicev1_AiAgentRun = {
+  appId?: number;
+  completionTokens?: number;
+  createdAt?: wellKnownTimestamp;
+  durationMs?: number;
+  error?: string;
+  id?: number;
+  // 运行入参（JSON 对象：start 节点 inputVars 的 name → 值）
+  input?: string;
+  output?: string;
+  promptTokens?: number;
+  status?: aiservicev1_AiAgentRun_Status;
+  totalTokens?: number;
+  // 逐节点执行轨迹（JSON 数组：{nodeId,type,status,ms,summary,usage}）
+  trace?: string;
+};
+
+// 运行状态
+export type aiservicev1_AiAgentRun_Status =
+  | 'FAILED'
+  | 'RUNNING'
+  | 'STATUS_UNSPECIFIED'
+  | 'SUCCEEDED';
+// 运行台账列表 - 回应
+export type aiservicev1_ListAiAgentRunsResponse = {
+  items: aiservicev1_AiAgentRun[] | undefined;
+  total: number | undefined;
+};
+
+// 运行详情 - 请求
+export type aiservicev1_GetAiAgentRunRequest = {
+  id: number | undefined;
+};
+
 // AI 对话服务
 // 流式语义：本 RPC 是普通 POST（body 为扁平请求体，**不包 data**），
 // 增量 token 经 SSE `ai_chat_chunk` 事件推送（见 domain proto 注释）。
@@ -6898,6 +7319,7 @@ export type monitor_alertservicev1_AlertOp =
 export type notificationservicev1_Channel =
   | 'CHANNEL_UNSPECIFIED'
   | 'EMAIL'
+  | 'EXT'
   | 'INTERNAL'
   | 'SMS'
   | 'WEBHOOK';
@@ -7173,6 +7595,10 @@ export type notificationservicev1_NotificationDelivery = {
 // 表的初始四行由代码里那份同形常量播种（见 docs/notification_domain_design.md §3.5、§4 P2-C）。
 export type notificationservicev1_EventType =
   | 'CHANNEL_TEST_EMAIL'
+  // 渠道测试消息（扩展渠道 EXT_* 的"测试发送"）。
+  | 'CHANNEL_TEST_EXT'
+  // 渠道配置测试短信（渠道页"测试发送"）：与 CHANNEL_TEST_EMAIL 同因同果，只差渠道。
+  | 'CHANNEL_TEST_SMS'
   | 'CONTACT_BIND_CODE'
   | 'EVENT_TYPE_UNSPECIFIED'
   // 站内信投递：一条站内信发给一个收件人 = 一行台账，related_id 指向 sys_internal_messages.id。
@@ -7182,7 +7608,10 @@ export type notificationservicev1_EventType =
   // 监控告警：监控扫描任务对规则求值后触发（explicit channel + target，不经路由表）。
   // related_id 指向 sys_monitor_alert_rules.id。
   | 'MONITOR_ALERT'
-  | 'PASSWORD_RESET_CODE';
+  | 'PASSWORD_RESET_CODE'
+  // 手机号绑定验证码短信：由 SMS 渠道显式投递（调用方带 channel=SMS，不经路由表），
+  // 正文来自渠道行配置的审核模板，占位值走 params.code。
+  | 'PHONE_BIND_CODE';
 // 投递状态
 export type notificationservicev1_DeliveryStatus =
   | 'DELIVERY_STATUS_UNSPECIFIED'
@@ -7221,6 +7650,14 @@ export interface NotificationChannelService {
   SendTestEmail(
     request: notification_channelservicev1_SendTestEmailRequest,
   ): Promise<wellKnownEmpty>;
+  // 发送测试消息（按渠道类型分派：EMAIL 走邮件，SMS 发测试验证码）
+  SendTest(
+    request: notification_channelservicev1_SendTestRequest,
+  ): Promise<wellKnownEmpty>;
+  // 全量扩展渠道 schema（独立集合路径，避免与 /{id} 参数路由抢配）
+  ListChannelSchemas(
+    request: wellKnownEmpty,
+  ): Promise<notification_channelservicev1_ListChannelSchemasResponse>;
 }
 
 export function createNotificationChannelServiceClient(
@@ -7394,6 +7831,25 @@ export function createNotificationChannelServiceClient(
         method: 'SendTestEmail',
       }) as Promise<wellKnownEmpty>;
     },
+    SendTest(request) {
+      if (request.id === undefined || request.id === null) {
+        throw new Error('missing required field request.id');
+      }
+      const path = `admin/v1/notification-channels/${request.id}/send-test`;
+      const body = JSON.stringify(request);
+      return transport.unary(path, 'POST', body, {
+        service: 'NotificationChannelService',
+        method: 'SendTest',
+      }) as Promise<wellKnownEmpty>;
+    },
+    ListChannelSchemas(_request) {
+      const path = `admin/v1/notification-channel-schemas`;
+      const body = null;
+      return transport.unary(path, 'GET', body, {
+        service: 'NotificationChannelService',
+        method: 'ListChannelSchemas',
+      }) as Promise<notification_channelservicev1_ListChannelSchemasResponse>;
+    },
   };
 }
 // 查询通知渠道列表 - 回应
@@ -7410,11 +7866,27 @@ export type notification_channelservicev1_NotificationChannel = {
   // 密码不回传：仅创建/更新时写入；hasPassword 标识是否已配置
   hasPassword?: boolean;
   // 密钥不回传：与 password 同一条约定，仅写入时接收
+  hasSmsAccessSecret?: boolean;
+  // 密钥不回传：与 password 同一条约定，仅写入时接收
   hasWebhookSecret?: boolean;
   id?: number;
   name?: string;
   remark?: string;
+  // 扩展渠道（EXT_*）的配置整包（JSON）。读回显为**脱敏版**：schema 声明为 sensitive 的
+  // 字段值恒为空串——前端"留空 = 不修改"；写入（Create/Update）时为明文，服务端加密落库。
+  settings?: string;
+  smsAccessKeyId?: string;
+  // 腾讯云必填（SmsSdkAppId，控制台"应用管理"里那串数字）；阿里云留空。
+  smsAppId?: string;
+  smsProvider?: notification_channelservicev1_SmsProvider;
+  // 腾讯云必填（如 ap-guangzhou）；阿里云留空（默认 cn-hangzhou）。
+  smsRegion?: string;
+  smsSignName?: string;
+  // 短信模板必须是服务商侧审核通过的验证码模板：
+  // 阿里云模板正文含 ${code}，腾讯云模板正文含 {1}——同一份占位语义，各家用各家的写法。
+  smsTemplateCode?: string;
   smtpFrom?: string;
+  smtpFromName?: string;
   smtpHost?: string;
   smtpPort?: number;
   smtpTls?: notification_channelservicev1_NotificationChannel_TlsMode;
@@ -7432,8 +7904,55 @@ export type notification_channelservicev1_NotificationChannel = {
 
 // 渠道类型
 export type notification_channelservicev1_NotificationChannel_Type =
+  // ---- 个人推送（8）----
+  | 'BARK'
+  // ---- 运维告警（3）----
+  | 'DATADOG'
+  | 'DINGTALK_APP'
+  | 'DISCORD'
   | 'EMAIL'
-  | 'WEBHOOK';
+  | 'FEISHU_APP'
+  | 'GCHAT'
+  | 'GETUI'
+  | 'GOTIFY'
+  | 'HOMEASSISTANT'
+  // ---- 短信/消息（5）----
+  | 'HUAWEISMS'
+  // ---- 效率自动化（3）----
+  | 'IFTTT'
+  | 'JOIN'
+  // ---- 移动推送服务（2）----
+  | 'JPUSH'
+  | 'LINE'
+  // ---- 邮件 API（3）----
+  | 'MAILGUN'
+  | 'MATRIX'
+  | 'MATTERMOST'
+  | 'NTFY'
+  | 'OPSGENIE'
+  | 'PAGERDUTY'
+  | 'POSTMARK'
+  | 'PUSHBULLET'
+  | 'PUSHDEER'
+  | 'PUSHOVER'
+  | 'ROCKETCHAT'
+  | 'SENDGRID'
+  | 'SERVERCHAN'
+  | 'SLACK'
+  | 'SMS'
+  | 'TEAMS'
+  | 'TELEGRAM'
+  | 'TWILIO'
+  | 'VONAGE'
+  | 'WEBEX'
+  | 'WEBHOOK'
+  | 'WECHAT'
+  // ---- IM（15）----（EXT_* 扩展渠道：配置在 settings 列）
+  | 'WECOM_APP'
+  | 'WHATSAPP'
+  | 'WXPUSHER'
+  | 'YUNPIAN'
+  | 'ZULIP';
 // SMTP 加密方式
 export type notification_channelservicev1_NotificationChannel_TlsMode =
   | 'NONE'
@@ -7452,6 +7971,11 @@ export type notification_channelservicev1_SignStyle =
   | 'FEISHU'
   | 'NONE'
   | 'WECOM';
+// 短信服务商。成员名必须与 ent 列值逐字相同（EnumTypeConverter 按名字字符串配对）。
+// proto3 首成员为零值：库里的存量行在加列时被 DEFAULT 回填成 'ALIYUN'，语义一致。
+export type notification_channelservicev1_SmsProvider =
+  | 'ALIYUN'
+  | 'TENCENT';
 // 查询通知渠道详情 - 请求
 export type notification_channelservicev1_GetNotificationChannelRequest = {
   id: number | undefined;
@@ -7462,6 +7986,10 @@ export type notification_channelservicev1_CreateNotificationChannelRequest = {
   data: notification_channelservicev1_NotificationChannel | undefined;
   // 明文密码（服务端加密存储，不落日志）
   password?: string;
+  // 扩展渠道配置（JSON 明文，含敏感字段；服务端按 schema 加密落库。仅 EXT_* 渠道）
+  settings?: string;
+  // 明文访问密钥 Secret（服务端加密存储，不落日志；仅 SMS 渠道）
+  smsAccessSecret?: string;
   // 明文签名密钥（服务端加密存储，不落日志；留空 = 不签名）
   webhookSecret?: string;
 };
@@ -7472,6 +8000,10 @@ export type notification_channelservicev1_UpdateNotificationChannelRequest = {
   id: number | undefined;
   // 明文密码；留空表示不修改已存密码
   password?: string;
+  // 扩展渠道配置（JSON 明文；仅 EXT_* 渠道。schema sensitive 字段留空 = 保留已存值）
+  settings?: string;
+  // 明文访问密钥 Secret；留空表示不修改已存密钥（仅 SMS 渠道）
+  smsAccessSecret?: string;
   updateMask: undefined | wellKnownFieldMask;
   // 明文签名密钥；留空表示不修改已存密钥
   // （与 password 同形：想清空只能在 data.webhookUrl 之外另走删除重建，一期不做清空口）
@@ -7487,6 +8019,40 @@ export type notification_channelservicev1_DeleteNotificationChannelRequest = {
 export type notification_channelservicev1_SendTestEmailRequest = {
   id: number | undefined;
   recipient: string | undefined;
+};
+
+// 发送测试消息 - 请求（按渠道类型分派：EMAIL 走邮件，SMS 发一条测试验证码；WEBHOOK 不支持）
+export type notification_channelservicev1_SendTestRequest = {
+  id: number | undefined;
+  // 收件目标：EMAIL 为邮箱地址，SMS 为手机号（E.164 或纯号码均可）
+  recipient: string | undefined;
+};
+
+// 全量渠道 schema - 回应
+export type notification_channelservicev1_ListChannelSchemasResponse = {
+  items: notification_channelservicev1_ChannelSchema[] | undefined;
+};
+
+// 扩展渠道声明
+export type notification_channelservicev1_ChannelSchema = {
+  fields: notification_channelservicev1_ChannelField[] | undefined;
+  group: string | undefined;
+  label: string | undefined;
+  needsTarget: boolean | undefined;
+  targetLabel: string | undefined;
+  type: string | undefined;
+};
+
+// 扩展渠道的字段声明（schema 驱动配置表单；见 docs/notify_channels_expansion.md §2.2）
+export type notification_channelservicev1_ChannelField = {
+  hint: string | undefined;
+  label: string | undefined;
+  name: string | undefined;
+  options: string[] | undefined;
+  placeholder: string | undefined;
+  required: boolean | undefined;
+  sensitive: boolean | undefined;
+  type: string | undefined;
 };
 
 // 用户通知偏好服务（自助：读写的都是当前操作人自己的偏好，无管理面）。
@@ -13153,6 +13719,7 @@ export type identityservicev1_EmailVerification = {
 export class ApiClient {
   private _accessKeyService?: AccessKeyService;
   private _adminPortalService?: AdminPortalService;
+  private _aiAgentService?: AiAgentService;
   private _aiChatService?: AiChatService;
   private _aiContentService?: AiContentService;
   private _aiConversationService?: AiConversationService;
@@ -13219,6 +13786,10 @@ export class ApiClient {
 
   get adminPortalService(): AdminPortalService {
     return this._adminPortalService ??= createAdminPortalServiceClient(this._transport);
+  }
+
+  get aiAgentService(): AiAgentService {
+    return this._aiAgentService ??= createAiAgentServiceClient(this._transport);
   }
 
   get aiChatService(): AiChatService {

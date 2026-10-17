@@ -48,6 +48,11 @@ func (NotificationDelivery) Fields() []ent.Field {
 				"InternalMessage", "INTERNAL_MESSAGE",
 				// 监控告警：与 proto 的 EventType 枚举逐字同名（EnumTypeConverter 按名字配对）
 				"MonitorAlert", "MONITOR_ALERT",
+				// SMS 渠道两个新事件：渠道测试短信与手机号绑定验证码
+				"ChannelTestSms", "CHANNEL_TEST_SMS",
+				"PhoneBindCode", "PHONE_BIND_CODE",
+				// 扩展渠道测试消息
+				"ChannelTestExt", "CHANNEL_TEST_EXT",
 			).
 			Optional().
 			Nillable(),
@@ -59,6 +64,8 @@ func (NotificationDelivery) Fields() []ent.Field {
 				"Sms", "SMS",
 				"Webhook", "WEBHOOK",
 				"Internal", "INTERNAL",
+				// 扩展渠道大类（39 个 EXT_* 渠道的台账统一记 EXT，具体渠道由 channel_id 回答）
+				"Ext", "EXT",
 			).
 			Optional().
 			Nillable(),
@@ -125,6 +132,10 @@ func (NotificationDelivery) Fields() []ent.Field {
 
 		field.Time("sent_at").
 			Comment("投递完成时间").
+			Optional().
+			Nillable(),
+		field.String("provider_id").
+			Comment("服务商侧的消息/请求 ID（扩展渠道回执带回，对账用）").
 			Optional().
 			Nillable(),
 	}
