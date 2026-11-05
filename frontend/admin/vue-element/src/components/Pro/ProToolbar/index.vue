@@ -15,7 +15,8 @@
               @click="handleButtonClick(btn)"
             >
               <ElIcon v-if="btn.icon"><component :is="btn.icon" /></ElIcon>
-              {{ btn.text }}
+              <!-- 文本必须包 span：EP 的图标间距规则是 .el-button [class*=el-icon]+span，裸文本节点吃不到 margin -->
+              <span v-if="btn.text">{{ btn.text }}</span>
             </ElButton>
           </AccessControl>
         </template>
@@ -24,6 +25,10 @@
 
       <!-- 右侧工具按钮 -->
       <div class="toolbar-right flex items-center gap-y-2.5 gap-x-1 md:gap-x-1.5 flex-wrap">
+        <!-- 工具栏图标按钮区前插槽（导出全部下拉在此落地，位于页面配置按钮左侧，与 react/vben 同位） -->
+        <slot name="before-tools" />
+
+        <!-- 页面配置按钮（toolbarRight，"add" 惯例收尾）：排在导出下拉之后、内置图标之前 -->
         <template v-for="btn in rightButtons" :key="'right-' + btn.name">
           <AccessControl
             :codes="btn.auth ? (Array.isArray(btn.auth) ? btn.auth : [btn.auth]) : undefined"
@@ -36,13 +41,10 @@
               @click="handleButtonClick(btn)"
             >
               <ElIcon v-if="btn.icon"><component :is="btn.icon" /></ElIcon>
-              {{ btn.text }}
+              <span v-if="btn.text">{{ btn.text }}</span>
             </ElButton>
           </AccessControl>
         </template>
-
-        <!-- 工具栏图标按钮区前插槽 -->
-        <slot name="before-tools" />
 
         <!-- 默认工具栏图标按钮（全部带 Tooltip，对齐 react ProTable options 惯例） -->
         <template v-for="(tool, idx) in defaultToolbar" :key="'tool-' + idx">
@@ -52,24 +54,31 @@
             :content="t('pages.curd.toolbar.refresh')"
             placement="top"
           >
-            <ElButton circle :icon="Refresh" @click="handleDefaultTool('refresh')" />
+            <ElButton circle :icon="RefreshLeft" @click="handleDefaultTool('refresh')" />
           </ElTooltip>
-          <!-- 筛选 -->
-          <ElPopover
+          <!-- 筛选/列设置 -->
+          <ElTooltip
             v-else-if="tool === 'filter' && hasFilterContent"
-            placement="bottom"
-            trigger="click"
-            :width="350"
+            :content="t('pages.curd.toolbar.columnSetting')"
+            placement="top"
           >
-            <template #reference>
-              <ElButton circle :icon="Operation" />
-            </template>
-            <ColumnFilter
-              :columns="filterableColumns"
-              @confirm="handleFilterConfirm"
-              @cancel="handleFilterCancel"
-            />
-          </ElPopover>
+            <span class="inline-flex">
+              <ElPopover
+                placement="bottom"
+                trigger="click"
+                :width="350"
+              >
+                <template #reference>
+                  <ElButton circle :icon="Operation" />
+                </template>
+                <ColumnFilter
+                  :columns="filterableColumns"
+                  @confirm="handleFilterConfirm"
+                  @cancel="handleFilterCancel"
+                />
+              </ElPopover>
+            </span>
+          </ElTooltip>
           <!-- 搜索 -->
           <ElTooltip
             v-else-if="tool === 'search'"
@@ -77,14 +86,6 @@
             placement="top"
           >
             <ElButton circle :icon="Search" @click="handleDefaultTool('search')" />
-          </ElTooltip>
-          <!-- 导出 -->
-          <ElTooltip
-            v-else-if="tool === 'exports'"
-            :content="t('pages.curd.toolbar.batchExport')"
-            placement="top"
-          >
-            <ElButton circle :icon="Download" @click="handleDefaultTool('export')" />
           </ElTooltip>
           <!-- 导入 -->
           <ElTooltip
@@ -94,13 +95,16 @@
           >
             <ElButton circle :icon="Upload" @click="handleDefaultTool('import')" />
           </ElTooltip>
-          <!-- 全屏 -->
+          <!-- 全屏（图标用本地 fullscreen/fullscreen-exit SVG：与 react FullscreenOutlined
+               同款字形、与布局层全屏钮同资源，EP 图标集没有退出全屏的对偶字形） -->
           <ElTooltip
             v-else-if="tool === 'zoom'"
             :content="t('pages.curd.toolbar.fullscreen')"
             placement="top"
           >
-            <ElButton circle :icon="isFullscreen ? Aim : FullScreen" @click="handleZoom" />
+            <ElButton circle @click="handleZoom">
+              <SvgIcon :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'" />
+            </ElButton>
           </ElTooltip>
           <!-- 自定义工具栏按钮 -->
           <AccessControl
@@ -116,7 +120,7 @@
               @click="handleCustomToolClick(tool)"
             >
               <ElIcon v-if="tool.icon"><component :is="tool.icon" /></ElIcon>
-              <template v-if="tool.text">{{ tool.text }}</template>
+              <span v-if="tool.text">{{ tool.text }}</span>
             </ElButton>
           </AccessControl>
         </template>
@@ -130,13 +134,10 @@
 <script setup lang="ts">
 import { ElButton, ElIcon, ElPopover, ElTooltip } from "element-plus";
 import {
-  Refresh,
+  RefreshLeft,
   Operation,
   Search,
-  Download,
   Upload,
-  FullScreen,
-  Aim,
 } from "@element-plus/icons-vue";
 import ColumnFilter from "./ColumnFilter.vue";
 import { AccessControl } from "@/core/access";
@@ -148,14 +149,14 @@ import type {
   ToolbarCustomButton,
   ToolbarRightType,
 } from "./types";
-import { computed, ref, useSlots } from "vue";
+import { computed, ref, useSlots, onMounted, onBeforeUnmount } from "vue";
 import { ProTableColumn } from "@/components/Pro";
 
 defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(defineProps<ProToolbarProps>(), {
   visible: true,
-  defaultToolbar: () => ["refresh", "filter", "search"] as ToolbarRightType[],
+  defaultToolbar: () => ["refresh", "zoom", "filter", "search"] as ToolbarRightType[],
   leftButtons: () => [],
   rightButtons: () => [],
 });
@@ -165,7 +166,18 @@ const slots = useSlots();
 const { t } = useI18n();
 
 // === 全屏状态 ===
+// 图标态完全事件驱动：只跟随浏览器真实全屏状态（fullscreenchange），点击不在这里翻
+// isFullscreen——requestFullscreen 被拒（iframe 未授权）或用户 ESC 退出时，前者不发事件、
+// 后者发事件，乐观翻转在这两种情况下都会让图标停在错误的一侧。全屏元素由 ProPage 挂，
+// 这里只消费 document 级事件（对布局层全屏同样成立）。
 const isFullscreen = ref(false);
+
+function syncFullscreen() {
+  isFullscreen.value = document.fullscreenElement != null;
+}
+
+onMounted(() => document.addEventListener("fullscreenchange", syncFullscreen));
+onBeforeUnmount(() => document.removeEventListener("fullscreenchange", syncFullscreen));
 
 // 可筛选的列（有 prop 和 label，仅 el-table 引擎使用）
 const filterableColumns = computed(() =>
@@ -233,10 +245,9 @@ function handleCustomToolClick(btn: ToolbarCustomButton) {
   emit("button-click", btn.name, btn);
 }
 
-// 全屏切换
+// 全屏切换：只上抛意图（取当前真实态的反面），图标等 fullscreenchange 回报后翻转
 function handleZoom() {
-  isFullscreen.value = !isFullscreen.value;
-  emit("zoom", isFullscreen.value);
+  emit("zoom", !isFullscreen.value);
 }
 
 // 筛选确认

@@ -185,6 +185,7 @@ async function fetchApi() {
 
     if (Array.isArray(res)) {
       refOptions.value = res;
+      expandIfDefault();
       emitChange();
       return;
     }
@@ -192,6 +193,7 @@ async function fetchApi() {
     if (resultField) {
       refOptions.value = get(res, resultField) || [];
     }
+    expandIfDefault();
     emitChange();
   } catch (error) {
     console.warn(error);
@@ -204,6 +206,14 @@ async function fetchApi() {
 
 function getModalValue() {
   return unref(getOptions).length > 0 ? unref(modelValue) : [];
+}
+
+// a-tree 的 defaultExpandAll 只在首次渲染时生效，异步数据到达时树还没挂载节点，
+// 因此 treeDefaultExpandAll 必须在数据加载完成后手动设置 expandedKeys。
+function expandIfDefault() {
+  if (props.treeDefaultExpandAll) {
+    expandedKeys.value = getAllKeys();
+  }
 }
 
 const bindProps = computed(() => {
@@ -287,11 +297,12 @@ watch(
 </script>
 
 <template>
-  <a-space direction="vertical" v-bind="{ ...$attrs }">
-    <a-space>
+  <a-space direction="vertical" class="w-full" v-bind="{ ...$attrs }">
+    <!-- 标题行两端对齐：title 左、工具钮右（原先 ⋮ 紧贴标题，无 title 时钮悬左更怪） -->
+    <div class="flex w-full items-center justify-between">
       <div>{{ props.title }}</div>
       <a-dropdown>
-        <a-button type="link" :icon="h(LucideEllipsisVertical)" />
+        <a-button type="link" size="small" :icon="h(LucideEllipsisVertical)" />
         <template #overlay>
           <a-menu @click="handleMenuClick">
             <template v-for="item in toolbarList" :key="item.value">
@@ -303,14 +314,20 @@ watch(
           </a-menu>
         </template>
       </a-dropdown>
-    </a-space>
-    <a-tree
-      checkable
-      v-bind="bindProps"
-      v-model:expanded-keys="expandedKeys"
-      v-model:selected-keys="selectedKeys"
-      :check-strictly="checkStrictly"
-    />
+    </div>
+    <!-- 树限高滚动 + 卡片容器：裸树会跟着抽屉无限拉长（角色权限 250+ 节点拖到
+         没边），react/ele 同字段分别为 max-h-80/400px 的限高滚动 -->
+    <div
+      class="max-h-[400px] w-full overflow-y-auto rounded-md border border-border p-2"
+    >
+      <a-tree
+        checkable
+        v-bind="bindProps"
+        v-model:expanded-keys="expandedKeys"
+        v-model:selected-keys="selectedKeys"
+        :check-strictly="checkStrictly"
+      />
+    </div>
   </a-space>
 </template>
 

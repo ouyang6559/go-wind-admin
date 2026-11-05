@@ -28,7 +28,7 @@ import AiKnowledgeDrawer from "./ai-knowledge-drawer.vue";
 import DocsModal from "./docs-modal.vue";
 import { PaginationQuery } from "@/core/transport/rest";
 import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from "@/api/generated/admin/service/v1";
-import { createPagedExportAction, deleteAiKnowledgeBase, fetchListAiKnowledgeBases } from "@/api/composables";
+import { deleteAiKnowledgeBase, fetchListAiKnowledgeBases } from "@/api/composables";
 
 const { t } = useI18n();
 
@@ -55,10 +55,9 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deleteAiKnowledgeBase(Number(ids));
     },
-    exportsAction: createPagedExportAction(fetchListAiKnowledgeBases),
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     tableAttrs: { border: true, stripe: true },
     columns: [
       { type: "index", label: t("common.table.seq"), width: 60 },

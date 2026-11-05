@@ -14,5 +14,14 @@
   "edit": "Edit",
   "delete": "Delete",
   "loadDataFailed": "Failed to load data",
-  "retry": "Retry"
+  "retry": "Retry",
+  "fullscreen": "Fullscreen",
+  "exitFullscreen": "Exit Fullscreen",
+  "language": "Language",
+  "download": "Download",
+  "columnSetting": "Column Settings",
+  "save": "Save",
+  "copy": "Copy",
+  "close": "Close",
+  "discardButton": "Discard changes"
 }

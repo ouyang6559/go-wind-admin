@@ -9,10 +9,13 @@ import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 import { notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableAddButton from '#/components/TableAddButton.vue';
 import TableExportButton from '#/components/TableExportButton.vue';
 import { type identityservicev1_PlanQuota as PlanQuota } from '#/api';
 import { planQuotaTypeToName, useDeletePlanQuota } from '#/api';
 import { $t } from '#/locales';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
 import { usePlanViewStore } from '#/views/app/tenant/plan/plan-view.state';
 
 import PlanQuotaDrawer from './plan-quota-drawer.vue';
@@ -74,7 +77,7 @@ const gridOptions: VxeGridProps<PlanQuota> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      minWidth: 90,
+      minWidth: 140,
     },
   ],
 };
@@ -137,37 +140,43 @@ watch(
     gridApi.reload();
   },
 );
+
+/* 操作列描述符：编辑行内、删除 Popconfirm 确认（≤3 个全行内，定式由 TableActions 统一执行） */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: handleEdit,
+    },
+    {
+      key: 'delete',
+      label: $t('common.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      confirm: {
+        title: $t('ui.text.do_you_want_delete', {
+          moduleName: $t('page.plan.moduleName'),
+        }),
+      },
+      onClick: handleDelete,
+    },
+  ];
+}
 </script>
 
 <template>
   <Grid :table-title="$t('page.plan.planQuotaList')">
     <template #toolbar-tools>
-      <a-button type="primary" @click="handleCreate">
-        {{ $t('page.plan.button.create') }}
-      </a-button>
           <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
+          <TableAddButton @click="handleCreate" />
     </template>
     <template #quotaType="{ row }">
       {{ planQuotaTypeToName(row.quotaType) }}
     </template>
     <template #action="{ row }">
-      <a-button
-        type="link"
-        :icon="h(LucideFilePenLine)"
-        @click.stop="handleEdit(row)"
-      />
-      <a-popconfirm
-        :cancel-text="$t('ui.button.cancel')"
-        :ok-text="$t('ui.button.ok')"
-        :title="
-          $t('ui.text.do_you_want_delete', {
-            moduleName: $t('page.plan.moduleName'),
-          })
-        "
-        @confirm="handleDelete(row)"
-      >
-        <a-button danger type="link" :icon="h(LucideTrash2)" />
-      </a-popconfirm>
+      <TableActions :row="row" :actions="buildRowActions()" />
     </template>
   </Grid>
   <Drawer />

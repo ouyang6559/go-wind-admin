@@ -19,8 +19,8 @@
   "senderName": "Sender",
   "createdAt": "Created At",
   "action": "Actions",
-  "create": "New Message",
-  "edit": "Edit Message",
+  "create": "Create Message",
+  "edit": "Update Message",
   "drawerCreate": "New Message",
   "drawerUpdate": "Edit Message",
   "deleteConfirmTitle": "Confirm Delete",
@@ -49,5 +49,6 @@
   "sendScopeUsers": "Selected Users",
   "targetUsers": "Recipients",
   "targetUsersPlaceholder": "Select recipients",
-  "requiredTargetUsers": "Please select recipients"
+  "requiredTargetUsers": "Please select recipients",
+  "requiredContent": "Please enter the message content"
 }

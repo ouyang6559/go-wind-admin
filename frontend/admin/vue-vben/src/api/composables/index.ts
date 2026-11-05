@@ -91,3 +91,7 @@ export * from './user-profile';
 
 // 脚本管理
 export * from './script';
+
+// 打印模板
+export * from './bi_dashboard';
+export * from './print_template';

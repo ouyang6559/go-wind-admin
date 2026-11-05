@@ -8,11 +8,13 @@ import (
 	"github.com/tx7do/go-utils/trans"
 
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
+	biV1 "go-wind-admin/api/gen/go/bi/service/v1"
 	configV1 "go-wind-admin/api/gen/go/config/service/v1"
 	dictV1 "go-wind-admin/api/gen/go/dict/service/v1"
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 	notificationV1 "go-wind-admin/api/gen/go/notification/service/v1"
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
+	printV1 "go-wind-admin/api/gen/go/print/service/v1"
 )
 
 const (
@@ -328,7 +330,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Status:    permissionV1.Menu_ON.Enum(),
 		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
 		Meta: &permissionV1.MenuMeta{
-			Order:     trans.Ptr(int32(-1)),
+			Order:     trans.Ptr(int32(1)),
 			Title:     trans.Ptr("page.dashboard.title"),
 			Icon:      trans.Ptr("lucide:layout-dashboard"),
 			Authority: []string{"sys:platform_admin", "sys:tenant_manager"},
@@ -343,7 +345,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Component: trans.Ptr("dashboard/analytics/index.vue"),
 		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
 		Meta: &permissionV1.MenuMeta{
-			Order:     trans.Ptr(int32(-1)),
+			Order:     trans.Ptr(int32(1)),
 			Title:     trans.Ptr("page.dashboard.analytics"),
 			Icon:      trans.Ptr("lucide:area-chart"),
 			Authority: []string{"sys:platform_admin", "sys:tenant_manager"},
@@ -359,7 +361,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Component: trans.Ptr("dashboard/workspace/index.vue"),
 		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
 		Meta: &permissionV1.MenuMeta{
-			Order:     trans.Ptr(int32(-1)),
+			Order:     trans.Ptr(int32(2)),
 			Title:     trans.Ptr("page.dashboard.workspace"),
 			Icon:      trans.Ptr("lucide:armchair"),
 			Authority: []string{"sys:platform_admin", "sys:tenant_manager"},
@@ -590,7 +592,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.permission.role"),
 			Icon:      trans.Ptr("lucide:shield-user"),
-			Order:     trans.Ptr(int32(2)),
+			Order:     trans.Ptr(int32(4)),
 			Authority: []string{"sys:platform_admin", "sys:tenant_manager"},
 		},
 	},
@@ -605,7 +607,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.permission.menu"),
 			Icon:      trans.Ptr("lucide:square-menu"),
-			Order:     trans.Ptr(int32(1)),
+			Order:     trans.Ptr(int32(2)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -620,7 +622,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.permission.api"),
 			Icon:      trans.Ptr("lucide:route"),
-			Order:     trans.Ptr(int32(2)),
+			Order:     trans.Ptr(int32(3)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -824,7 +826,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.dict"),
 			Icon:      trans.Ptr("lucide:library-big"),
-			Order:     trans.Ptr(int32(3)),
+			Order:     trans.Ptr(int32(1)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -839,7 +841,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.file"),
 			Icon:      trans.Ptr("lucide:file-search"),
-			Order:     trans.Ptr(int32(4)),
+			Order:     trans.Ptr(int32(2)),
 			Authority: []string{"sys:platform_admin", "sys:tenant_manager"},
 		},
 	},
@@ -854,7 +856,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.task"),
 			Icon:      trans.Ptr("lucide:list-todo"),
-			Order:     trans.Ptr(int32(5)),
+			Order:     trans.Ptr(int32(3)),
 			Authority: []string{"sys:platform_admin", "sys:tenant_manager"},
 		},
 	},
@@ -869,7 +871,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.loginPolicy"),
 			Icon:      trans.Ptr("lucide:shield-x"),
-			Order:     trans.Ptr(int32(6)),
+			Order:     trans.Ptr(int32(4)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -884,7 +886,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.language"),
 			Icon:      trans.Ptr("lucide:globe"),
-			Order:     trans.Ptr(int32(7)),
+			Order:     trans.Ptr(int32(5)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -899,7 +901,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.accessKeys"),
 			Icon:      trans.Ptr("lucide:key-round"),
-			Order:     trans.Ptr(int32(9)),
+			Order:     trans.Ptr(int32(11)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -914,7 +916,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.config"),
 			Icon:      trans.Ptr("lucide:sliders-horizontal"),
-			Order:     trans.Ptr(int32(8)),
+			Order:     trans.Ptr(int32(10)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -929,7 +931,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.scripts"),
 			Icon:      trans.Ptr("lucide:file-code-2"),
-			Order:     trans.Ptr(int32(11)),
+			Order:     trans.Ptr(int32(9)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -944,7 +946,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.onlineSessions"),
 			Icon:      trans.Ptr("lucide:monitor"),
-			Order:     trans.Ptr(int32(8)),
+			Order:     trans.Ptr(int32(6)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -959,7 +961,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.serverMonitor"),
 			Icon:      trans.Ptr("lucide:activity"),
-			Order:     trans.Ptr(int32(9)),
+			Order:     trans.Ptr(int32(7)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -1060,7 +1062,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.system.monitorAlerts"),
 			Icon:      trans.Ptr("lucide:bell-plus"),
-			Order:     trans.Ptr(int32(10)),
+			Order:     trans.Ptr(int32(8)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -1109,7 +1111,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title: trans.Ptr("menu.ai.query"),
 			Icon:  trans.Ptr("lucide:search-code"),
-			Order: trans.Ptr(int32(3)),
+			Order: trans.Ptr(int32(2)),
 		},
 	},
 	{
@@ -1123,7 +1125,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.ai.providers"),
 			Icon:      trans.Ptr("lucide:cpu"),
-			Order:     trans.Ptr(int32(2)),
+			Order:     trans.Ptr(int32(6)),
 			Authority: []string{"sys:platform_admin"},
 		},
 	},
@@ -1139,7 +1141,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.ai.knowledge"),
 			Icon:      trans.Ptr("lucide:book-open"),
-			Order:     trans.Ptr(int32(4)),
+			Order:     trans.Ptr(int32(3)),
 			KeepAlive: trans.Ptr(true),
 		},
 	},
@@ -1155,7 +1157,7 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title:     trans.Ptr("menu.ai.agents"),
 			Icon:      trans.Ptr("lucide:workflow"),
-			Order:     trans.Ptr(int32(6)),
+			Order:     trans.Ptr(int32(5)),
 			KeepAlive: trans.Ptr(true),
 		},
 	},
@@ -1171,7 +1173,23 @@ var DefaultMenus = []*permissionV1.Menu{
 		Meta: &permissionV1.MenuMeta{
 			Title: trans.Ptr("menu.ai.usage"),
 			Icon:  trans.Ptr("lucide:bar-chart-3"),
-			Order: trans.Ptr(int32(5)),
+			Order: trans.Ptr(int32(4)),
+		},
+	},
+	{
+		// 打印模板：单据打印设计器的模板管理页（内置模板禁删，可复制派生）
+		Id:        trans.Ptr(uint32(87)),
+		ParentId:  trans.Ptr(uint32(60)),
+		Type:      permissionV1.Menu_MENU.Enum(),
+		Name:      trans.Ptr("PrintTemplateManagement"),
+		Path:      trans.Ptr("print-templates"),
+		Component: trans.Ptr("app/system/print_template/index.vue"),
+		CreatedAt: timeutil.TimeToTimestamppb(trans.Ptr(time.Now())),
+		Meta: &permissionV1.MenuMeta{
+			Title:     trans.Ptr("menu.system.printTemplates"),
+			Icon:      trans.Ptr("lucide:printer"),
+			Order:     trans.Ptr(int32(12)),
+			Authority: []string{"sys:platform_admin"},
 		},
 	},
 }
@@ -1200,6 +1218,65 @@ var DefaultConfigs = []*configV1.Config{
 		Value:     trans.Ptr(strconv.Itoa(DefaultPasswordHistoryCount)),
 		ValueType: configV1.Config_INT.Enum(),
 		IsBuiltIn: trans.Ptr(true),
+	},
+}
+
+// DefaultPrintTemplates 内置打印模板种子（基线版式，M1 起用；M2 管理页提供
+// "复制内置模板派生本租户行"）。payload 为 go-wind-print 设计器 TemplateData JSON
+// （毫米布局），elements 留空——内置行只保证编码/纸张元数据与链路可用，真实版式随 M2 沉淀。
+// 启动期按 code 缺一补一（PrintTemplateService.init → SeedDefaults），已存在不覆盖。
+var DefaultPrintTemplates = []*printV1.PrintTemplate{
+	{
+		Code:        trans.Ptr("builtin.generic.a4"),
+		Name:        trans.Ptr("通用单据模板（A4）"),
+		ResourceKey: trans.Ptr(""),
+		Payload: trans.Ptr(`{"unit":"mm","paperSize":"A4","orientation":"portrait","schemaVersion":1,` +
+			`"margins":{"top":10,"right":10,"bottom":10,"left":10},` +
+			`"header":{"height":10,"elements":[]},"footer":{"height":10,"elements":[]},` +
+			`"elements":[],"watermark":{},"guides":[],"name":"页面 1"}`),
+		IsBuiltIn:   trans.Ptr(true),
+		PaperSize:   trans.Ptr("A4"),
+		Orientation: trans.Ptr("portrait"),
+		IsEnabled:   trans.Ptr(true),
+		SortOrder:   trans.Ptr(uint32(1)),
+	},
+	{
+		Code:        trans.Ptr("builtin.generic.a5"),
+		Name:        trans.Ptr("通用单据模板（A5）"),
+		ResourceKey: trans.Ptr(""),
+		Payload: trans.Ptr(`{"unit":"mm","paperSize":"A5","orientation":"portrait","schemaVersion":1,` +
+			`"margins":{"top":8,"right":8,"bottom":8,"left":8},` +
+			`"header":{"height":8,"elements":[]},"footer":{"height":8,"elements":[]},` +
+			`"elements":[],"watermark":{},"guides":[],"name":"页面 1"}`),
+		IsBuiltIn:   trans.Ptr(true),
+		PaperSize:   trans.Ptr("A5"),
+		Orientation: trans.Ptr("portrait"),
+		IsEnabled:   trans.Ptr(true),
+		SortOrder:   trans.Ptr(uint32(2)),
+	},
+	{
+		// 用户工牌演示：绑定 system/user 资源（行打印定式的参考样例，
+		// 元素 options.formatter 内 {field} 绑定用户行字段）。
+		Code:        trans.Ptr("demo.user.badge"),
+		Name:        trans.Ptr("用户工牌（A4）"),
+		ResourceKey: trans.Ptr("system/user"),
+		Payload: trans.Ptr(`{"unit":"mm","paperSize":"A4","orientation":"portrait","schemaVersion":1,` +
+			`"margins":{"top":10,"right":10,"bottom":10,"left":10},` +
+			`"header":{"height":10,"elements":[]},"footer":{"height":10,"elements":[]},` +
+			`"watermark":{},"guides":[],"name":"页面 1","elements":[` +
+			`{"id":"el-badge-title","type":"text","options":{"left":55,"top":35,"width":100,"height":12,"formatter":"GoWind Admin 用户工牌","fontSize":20,"textAlign":"center","fontWeight":"bold"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u1","type":"text","options":{"left":40,"top":80,"width":130,"height":8,"formatter":"用户名：{username}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u2","type":"text","options":{"left":40,"top":95,"width":130,"height":8,"formatter":"姓名：{realname}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u3","type":"text","options":{"left":40,"top":110,"width":130,"height":8,"formatter":"昵称：{nickname}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u4","type":"text","options":{"left":40,"top":125,"width":130,"height":8,"formatter":"邮箱：{email}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u5","type":"text","options":{"left":40,"top":140,"width":130,"height":8,"formatter":"手机：{mobile}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u6","type":"text","options":{"left":40,"top":155,"width":130,"height":8,"formatter":"组织：{orgUnitNames}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}},` +
+			`{"id":"el-badge-u7","type":"text","options":{"left":40,"top":170,"width":130,"height":8,"formatter":"创建时间：{createdAt}","fontSize":13,"textAlign":"left"},"printElementType":{"type":"text","title":"文本"}}]}`),
+		IsBuiltIn:   trans.Ptr(true),
+		PaperSize:   trans.Ptr("A4"),
+		Orientation: trans.Ptr("portrait"),
+		IsEnabled:   trans.Ptr(true),
+		SortOrder:   trans.Ptr(uint32(3)),
 	},
 }
 
@@ -1243,5 +1320,28 @@ var DefaultNotificationRules = []*notificationV1.NotificationRule{
 		IsAsync:   trans.Ptr(false),
 		IsEnabled: trans.Ptr(true),
 		Remark:    trans.Ptr("站内信：收件行主键要在同一趟里回给调用方（SSE 载荷依赖它）"),
+	},
+}
+
+// DefaultBiDashboards 内置 BI 模板种子（启动期按 code 缺一补一，已存在不覆盖）。
+// payload 是设计器（@go-wind/bi-core）schema 的 JSON 原文，服务端不解析。
+// 内置行 is_built_in=true：禁删、可复制派生到本租户。
+var DefaultBiDashboards = []*biV1.BiDashboard{
+	{
+		Code:       trans.Ptr("builtin.bi.basic"),
+		Name:       trans.Ptr("基础仪表盘模板"),
+		Kind:       biV1.BiDashboardKind_TEMPLATE.Enum(),
+		Remark:     trans.Ptr("内置基线：一张柱状图，复制后换成自己的数据集即可"),
+		ChartCount: trans.Ptr(uint32(1)),
+		Payload: trans.Ptr(`{"schemaVersion":2,"name":"builtin.bi.basic",` +
+			`"grid":{"columns":12,"rowHeight":80,"gap":8},` +
+			`"datasets":[{"id":"ds_sales","name":"月度销售额","type":"static","rows":[` +
+			`{"month":"1月","sales":120},{"month":"2月","sales":180},{"month":"3月","sales":150}]}],` +
+			`"charts":[{"id":"c_bar","title":"月度销售额","datasetId":"ds_sales","type":"bar",` +
+			`"x":0,"y":0,"w":6,"h":4,"encoding":{"dimension":"month","measure":"sales"},` +
+			`"aggregation":"sum"}]}`),
+		IsBuiltIn: trans.Ptr(true),
+		IsEnabled: trans.Ptr(true),
+		SortOrder: trans.Ptr(uint32(1)),
 	},
 }

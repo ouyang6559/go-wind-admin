@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
+import TableActions from '@/components/common/TableActions';
 import ListTable from '@/components/common/ListTable';
 import { Button, Popconfirm, Tag, Switch, App } from 'antd';
 import { EditOutlined,
@@ -29,6 +30,8 @@ import ContentContainer from '@/layouts/components/PageContainer/ContentContaine
 import SystemTasksModal from './SystemTasksModal';
 import { getTaskTypeMap, getTaskTypeOptions } from './constants';
 import TaskDrawer from './components/TaskDrawer';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 /**
  * 任务管理页面
@@ -208,67 +211,75 @@ const [sysTasksOpen, setSysTasksOpen] = useState(false);
     {
       title: t('action'),
       valueType: 'option',
-      width: 200,
-      render: (_, record) => [
-        <a
-          key="edit"
-          onClick={() => {
-            setDrawerMode('edit');
-            setSelectedTask(record);
-            setDrawerOpen(true);
-          }}
-        >
-          <EditOutlined />
-        </a>,
-        <Popconfirm
-          key="start"
-          title={t('startTaskConfirmTitle')}
-          description={t('startTaskConfirmDesc', { moduleName: t('moduleName') })}
-          onConfirm={() =>
-            controlMutation.mutate({ typeName: record.typeName as string, controlType: 'Start' })
-          }
-          okText={t('common:button.ok')}
-          cancelText={t('common:button.cancel')}
-        >
-          {/* 取 §2.1 的文字档而不是 var(--ant-color-success)：浅色 success #57D188 在白底实测
-              只有 1.93:1（旧值 #52c41a 也才 2.27:1），连图标的 3:1 档都不够 */}
-          <a style={{ color: 'var(--gowind-success-text)' }}><CaretRightOutlined /></a>
-        </Popconfirm>,
-        <Popconfirm
-          key="stop"
-          title={t('stopTaskConfirmTitle')}
-          description={t('stopTaskConfirmDesc', { moduleName: t('moduleName') })}
-          onConfirm={() =>
-            controlMutation.mutate({ typeName: record.typeName as string, controlType: 'Stop' })
-          }
-          okText={t('common:button.ok')}
-          cancelText={t('common:button.cancel')}
-        >
-          <a style={{ color: 'var(--ant-color-error)' }}><PauseOutlined /></a>
-        </Popconfirm>,
-        <Popconfirm
-          key="restart"
-          title={t('restartTaskConfirmTitle')}
-          description={t('restartTaskConfirmDesc', { moduleName: t('moduleName') })}
-          onConfirm={() =>
-            controlMutation.mutate({ typeName: record.typeName as string, controlType: 'Restart' })
-          }
-          okText={t('common:button.ok')}
-          cancelText={t('common:button.cancel')}
-        >
-          <a><ReloadOutlined /></a>
-        </Popconfirm>,
-        <Popconfirm
-          key="delete"
-          title={t('deleteConfirmTitle')}
-          description={t('deleteConfirmDesc', { moduleName: t('moduleName') })}
-          onConfirm={() => record.id && deleteMutation.mutate({ id: record.id })}
-          okText={t('common:button.ok')}
-          cancelText={t('common:button.cancel')}
-        >
-          <a style={{ color: 'var(--ant-color-error)' }}><DeleteOutlined /></a>
-        </Popconfirm>,
-      ],
+      width: 310,
+      render: (_, record) => (
+        <TableActions
+          record={record}
+          actions={[
+            {
+              key: 'edit',
+              label: t('common:button.edit'),
+              icon: <EditOutlined />,
+              onClick: () => {
+                setDrawerMode('edit');
+                setSelectedTask(record);
+                setDrawerOpen(true);
+              },
+            },
+            {
+              key: 'start',
+              label: t('start'),
+              icon: <CaretRightOutlined />,
+              success: true,
+              // 取 §2.1 的文字档而不是 var(--ant-color-success)：浅色 success #57D188 在白底实测
+              // 只有 1.93:1（旧值 #52c41a 也才 2.27:1），连图标的 3:1 档都不够
+              confirm: {
+                title: t('startTaskConfirmTitle'),
+                description: t('startTaskConfirmDesc', { moduleName: t('moduleName') }),
+              },
+              onClick: () =>
+                controlMutation.mutate({ typeName: record.typeName as string, controlType: 'Start' }),
+            },
+            {
+              key: 'stop',
+              label: t('stop'),
+              icon: <PauseOutlined />,
+              danger: true,
+              confirm: {
+                title: t('stopTaskConfirmTitle'),
+                description: t('stopTaskConfirmDesc', { moduleName: t('moduleName') }),
+              },
+              onClick: () =>
+                controlMutation.mutate({ typeName: record.typeName as string, controlType: 'Stop' }),
+            },
+            {
+              key: 'restart',
+              label: t('restart'),
+              icon: <ReloadOutlined />,
+              confirm: {
+                title: t('restartTaskConfirmTitle'),
+                description: t('restartTaskConfirmDesc', { moduleName: t('moduleName') }),
+              },
+              onClick: () =>
+                controlMutation.mutate({
+                  typeName: record.typeName as string,
+                  controlType: 'Restart',
+                }),
+            },
+            {
+              key: 'delete',
+              label: t('common:button.delete'),
+              icon: <DeleteOutlined />,
+              danger: true,
+              confirm: {
+                title: t('deleteConfirmTitle'),
+                description: t('deleteConfirmDesc', { moduleName: t('moduleName') }),
+              },
+              onClick: () => record.id && deleteMutation.mutate({ id: record.id }),
+            },
+          ]}
+        />
+      ),
     },
   ];
 
@@ -301,31 +312,18 @@ const [sysTasksOpen, setSysTasksOpen] = useState(false);
               };
             }}
             rowKey="id"
-            search={{
+            search={{ optionRender: searchOptionRender,
               labelWidth: 'auto',
               defaultCollapsed: false,
             }}
             pagination={false}
             toolBarRender={() => [
-              <TableExportButton key="export" fetcher={fetchListTasks} columns={columns} filename="tasks" />,
               <Button
                 key="sysTasks"
                 icon={<CloudServerOutlined />}
                 onClick={() => setSysTasksOpen(true)}
               >
                 {t('sysTasksButton')}
-              </Button>,
-              <Button
-                key="create"
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setDrawerMode('create');
-                  setSelectedTask(undefined);
-                  setDrawerOpen(true);
-                }}
-              >
-                {t('create')}
               </Button>,
               <Popconfirm
                 key="startAll"
@@ -335,21 +333,7 @@ const [sysTasksOpen, setSysTasksOpen] = useState(false);
                 okText={t('common:button.ok')}
                 cancelText={t('common:button.cancel')}
               >
-                <Button
-                  // type="primary" 是必需的：styles/pro-components-dark.css:499 的暗色兜底规则
-                  // 命中 `.ant-btn:not(.ant-btn-primary)…` 并带 !important，会把这颗按钮整个覆盖成
-                  // 中性灰底——绿色"启动"语义在暗色下从未生效（实测 bg #1c2128）。
-                  // 前景取 §2.3 暗色 L0 #0B0F19 而非白色：语义色实底（success #4db577/#57D188，
-                  // 亮度 0.36–0.49）配近白前景实测只有 1.85:1（vben 同按钮）～2.56:1，深色墨在同一底上 ≥6.4:1。
-                  type="primary"
-                  style={{
-                    backgroundColor: 'var(--ant-color-success)',
-                    borderColor: 'var(--ant-color-success)',
-                    color: '#0b0f19',
-                  }}
-                  icon={<CaretRightOutlined />}
-                  loading={startAllMutation.isPending}
-                >
+                <Button color="green" variant="outlined" icon={<CaretRightOutlined />} loading={startAllMutation.isPending}>
                   {t('startAll')}
                 </Button>
               </Popconfirm>,
@@ -361,7 +345,7 @@ const [sysTasksOpen, setSysTasksOpen] = useState(false);
                 okText={t('common:button.ok')}
                 cancelText={t('common:button.cancel')}
               >
-                <Button danger icon={<PauseOutlined />} loading={stopAllMutation.isPending}>
+                <Button color="danger" variant="outlined" icon={<PauseOutlined />} loading={stopAllMutation.isPending}>
                   {t('stopAll')}
                 </Button>
               </Popconfirm>,
@@ -373,15 +357,29 @@ const [sysTasksOpen, setSysTasksOpen] = useState(false);
                 okText={t('common:button.ok')}
                 cancelText={t('common:button.cancel')}
               >
-                <Button icon={<ReloadOutlined />} loading={restartAllMutation.isPending}>
+                <Button color="orange" variant="outlined" icon={<ReloadOutlined />} loading={restartAllMutation.isPending}>
                   {t('restartAll')}
                 </Button>
               </Popconfirm>,
+              <TableExportButton key="export" fetcher={fetchListTasks} columns={columns} filename="tasks" />,
+              <Button
+                key="create"
+                color="primary"
+                variant="outlined"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setDrawerMode('create');
+                  setSelectedTask(undefined);
+                  setDrawerOpen(true);
+                }}
+              >
+                {t('common:button.add')}
+              </Button>,
             ]}
             options={{
               density: true,
               fullScreen: true,
-              setting: true,
+              setting: { settingIcon: <ColumnSlidersIcon /> },
               reload: true,
             }}
             size="middle"

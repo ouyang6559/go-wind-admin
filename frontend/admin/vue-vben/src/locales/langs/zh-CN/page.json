@@ -71,6 +71,7 @@
       "address": "住址",
       "region": "国家地区",
       "description": "个人描述",
+      "locale": "偏好语言",
       "lastLoginAt": "最后登录时间",
       "lastLoginIp": "最后登录IP",
       "roleId": "角色",
@@ -87,7 +88,8 @@
       "updateUserInfo": "更新基本信息",
       "updatePassword": "更新密码",
       "uploadAvatar": "上传头像",
-      "deleteAvatar": "删除头像"
+      "deleteAvatar": "删除头像",
+      "resetMfa": "重置 MFA"
     },
     "profile": {
       "tab": {
@@ -96,7 +98,8 @@
         "editPassword": "修改密码",
         "accountBind": "账号绑定",
         "activeSessions": "活跃会话",
-        "notification": "通知偏好"
+        "notification": "通知偏好",
+        "tenantUsage": "套餐用量"
       },
       "security": {
         "password": "登录密码",
@@ -143,6 +146,27 @@
         "transactionalNote": "验证码等事务性邮件不受本页配置影响，始终照常发送。",
         "startTime": "开始时间",
         "endTime": "结束时间"
+      },
+      "info": {
+        "username": "用户名",
+        "roleNames": "角色",
+        "orgUnitNames": "所属组织",
+        "positionNames": "所属岗位",
+        "tenantName": "所属租户",
+        "lastLoginAt": "最后登录时间",
+        "lastLoginIp": "最后登录IP",
+        "createdAt": "创建时间"
+      },
+      "usage": {
+        "plan": "当前套餐：",
+        "noPlan": "未订阅套餐",
+        "empty": "当前账号无套餐用量数据。",
+        "loading": "加载中…",
+        "reached": "已达上限",
+        "USER_LIMIT": "用户数",
+        "STORAGE": "存储空间 (MB)",
+        "API_CALL": "API 调用次数",
+        "AI_TOKENS": "AI Token 用量"
       }
     },
     "detail": {
@@ -190,6 +214,8 @@
     "orgUnits": "授权组织单元",
     "fieldPerm": {
       "title": "字段权限",
+      "userTitle": "字段权限（User）",
+      "roleTitle": "字段权限（Role）",
       "hint": "勾选的字段对该角色用户不可见：列表/详情不再显示，且不能通过创建/编辑写入（重新登录后生效）。",
       "field": {
         "email": "邮箱",
@@ -198,7 +224,8 @@
         "address": "地址",
         "region": "区域",
         "lastLoginAt": "最后登录时间",
-        "lastLoginIp": "最后登录 IP"
+        "lastLoginIp": "最后登录 IP",
+        "permissions": "权限集（角色绑定的权限列表）"
       }
     }
   },
@@ -209,8 +236,14 @@
     "path": "树路径",
     "groupId": "分组",
     "groupName": "分组名称",
-    "menuIds": "分配菜单",
-    "apiIds": "分配API",
+    "menuIds": "关联菜单",
+    "apiIds": "关联API",
+    "menuIdsPlaceholder": "请选择关联菜单",
+    "apiIdsPlaceholder": "请选择关联API",
+    "treeExpandAll": "展开",
+    "treeCollapseAll": "折叠",
+    "selectAll": "全选",
+    "deselectAll": "取选",
     "description": "权限描述",
     "button": {
       "create": "创建权限",
@@ -224,7 +257,8 @@
     "parentId": "上级分组",
     "button": {
       "create": "创建分组"
-    }
+    },
+    "moduleOther": "其他"
   },
   "dict": {
     "moduleName": "字典",
@@ -368,7 +402,9 @@
     "notification": {
       "tenant_code_exists": "租户编码已存在，请更换后重新创建！",
       "user_username_exists": "管理员用户名已存在，请更换后重新创建！"
-    }
+    },
+    "quotaType": "配额类型",
+    "tenant_code_exists": "租户编码已存在"
   },
   "file": {
     "moduleName": "文件",
@@ -403,12 +439,12 @@
     "enable": "启用状态",
     "button": {
       "create": "创建任务",
-      "start": "启动任务",
-      "restart": "重启任务",
-      "stop": "停止任务",
-      "startAll": "启动全部任务",
-      "restartAll": "重启全部任务",
-      "stopAll": "停止全部任务"
+      "start": "启动",
+      "restart": "重启",
+      "stop": "停止",
+      "startAll": "全部启动",
+      "restartAll": "全部重启",
+      "stopAll": "全部停止"
     },
     "text": {
       "do_you_want_start_all_task": "您确定要启动全部任务吗？",
@@ -417,26 +453,51 @@
       "do_you_want_start_task": "您确定要启动该任务吗？",
       "do_you_want_restart_task": "您确定要重启该任务吗？",
       "do_you_want_stop_task": "您确定要停止该任务吗？"
-    }
+    },
+    "sysTasksButton": "系统级任务",
+    "sysTasksTitle": "系统级常驻任务",
+    "sysTaskType": "任务类型",
+    "sysTaskCron": "调度计划",
+    "sysTaskNext": "下次执行",
+    "sysTaskPrev": "上次执行",
+    "sysTaskNeverRun": "从未运行",
+    "sysTaskSchedules": "调度计划",
+    "sysTaskStates": "运行状态",
+    "sysTaskFailures": "最近失败",
+    "sysTaskQueueHint": "队列 {queue}（只读 asynq，每 5 分钟自动评估的任务在此可见）",
+    "sysTaskActive": "执行中",
+    "sysTaskPending": "待执行",
+    "sysTaskRetry": "重试",
+    "sysTaskArchived": "已归档",
+    "sysTaskState": "状态",
+    "sysTaskLastError": "最后错误",
+    "sysTaskFailedAt": "失败时间",
+    "sysTaskRetried": "已试/上限",
+    "sysTaskNoFailures": "没有失败记录。",
+    "sysTaskLoading": "读取中…",
+    "sysTaskLoadFailed": "读取失败"
   },
   "internalMessage": {
-    "moduleName": "消息管理",
-    "title": "消息主题",
+    "moduleName": "站内信",
+    "title": "消息标题",
     "content": "消息内容",
     "type": "消息类型",
-    "status": "消息状态",
+    "status": "状态",
     "categoryName": "消息分类",
-    "senderName": "发送者",
+    "senderName": "发送人",
+    "senderSystem": "系统",
     "categoryId": "消息分类",
-    "readAt": "读取时间",
+    "createdAt": "接收时间",
+    "readAt": "已读时间",
     "detail": "消息详情",
     "button": {
-      "create": "发布消息",
-      "markAsRead": "标记为已读"
+      "create": "创建消息",
+      "markAsRead": "标记为已读",
+      "markAllRead": "全部已读"
     },
     "drawer": {
-      "create": "发布消息",
-      "update": "修改消息"
+      "create": "创建消息",
+      "update": "更新消息"
     },
     "sendScope": "发送范围",
     "sendScopeAll": "全员",
@@ -498,7 +559,31 @@
     "createdAt": "日志时间",
     "path": "请求路径",
     "httpMethod": "请求方法",
-    "latencyMs": "耗时（毫秒）"
+    "latencyMs": "耗时（毫秒）",
+    "sectionBasic": "基本信息",
+    "sectionDevice": "设备信息",
+    "sectionApi": "接口信息",
+    "sectionOther": "其他信息",
+    "userId": "用户ID",
+    "statusCode": "状态码",
+    "tenantName": "所属租户",
+    "requestUri": "请求URI",
+    "apiModule": "API模块",
+    "apiOperation": "API操作",
+    "apiDescription": "API描述",
+    "requestBody": "请求体",
+    "requestHeader": "请求头",
+    "response": "响应内容",
+    "reason": "原因",
+    "referer": "来源页",
+    "spanId": "Span ID",
+    "requestId": "请求ID",
+    "traceId": "链路ID",
+    "logHash": "日志哈希",
+    "signature": "签名",
+    "osName": "操作系统",
+    "browserName": "浏览器",
+    "userAgent": "User-Agent"
   },
   "redisCacheMonitor": {
     "moduleName": "Redis缓存监控",
@@ -646,7 +731,7 @@
     }
   },
   "language": {
-    "moduleName": "语言管理",
+    "moduleName": "语言",
     "languageName": "语言名称",
     "languageCode": "语言代码",
     "nativeName": "本地名称",
@@ -915,7 +1000,8 @@
     "logCreatedAt": "执行时间",
     "logPurge": "清理90天前",
     "logPurgeConfirmDesc": "将删除 90 天前的全部执行日志，确定继续吗？",
-    "logPurgeSuccess": "已清理 {count} 条日志"
+    "logPurgeSuccess": "已清理 {count} 条日志",
+    "viewLogTitle": "查看脚本日志"
   },
   "accessKey": {
     "moduleName": "访问凭证",
@@ -1294,5 +1380,78 @@
       "remove": "删除",
       "configAutoSaved": "配置修改即时写入画布，点「保存画布」才落库"
     }
+  },
+  "printTemplate": {
+    "moduleName": "打印模板",
+    "name": "模板名称",
+    "code": "模板编码",
+    "resourceKey": "绑定资源",
+    "paperSize": "纸张尺寸",
+    "orientation": "纸张方向",
+    "portrait": "纵向",
+    "landscape": "横向",
+    "isEnabled": "启用",
+    "enabledTag": "启用",
+    "disabledTag": "停用",
+    "isBuiltIn": "类型",
+    "builtInTag": "内置",
+    "customTag": "自定义",
+    "copySuffix": "副本",
+    "preview": "预览",
+    "previewTitle": "打印预览",
+    "print": "打印",
+    "rendering": "渲染中…",
+    "renderFailed": "渲染失败",
+    "designerNotReady": "设计器尚未就绪，请稍候重试",
+    "sampleData": "示例数据",
+    "sampleDataTip": "JSON 对象：字段面板由它派生，预览/打印以它为数据源；列表行打印时使用真实行数据。",
+    "sortOrder": "排序",
+    "printTitle": "打印预览",
+    "noTemplate": "该资源暂无可用打印模板",
+    "noTemplateHint": "可到「系统管理 → 打印模板」新建并绑定该资源，或将通用模板复制派生",
+    "serverPdf": "服务端 PDF",
+    "serverPdfFailed": "服务端 PDF 生成失败",
+    "batchPrint": "批量打印",
+    "noSelection": "请先勾选要打印的行"
+  },
+  "bi": {
+    "title": "BI 分析",
+    "dashboard": "仪表盘",
+    "dashboardTitle": "BI 仪表盘",
+    "designer": "设计器",
+    "manage": "仪表盘管理",
+    "moduleName": "BI 仪表盘",
+    "name": "名称",
+    "code": "编码",
+    "kind": "种类",
+    "kindDashboard": "仪表盘",
+    "kindScreen": "大屏",
+    "kindTemplate": "模板",
+    "remark": "备注",
+    "chartCount": "图表数",
+    "themeKey": "主题",
+    "isEnabled": "启用",
+    "enabledTag": "启用",
+    "disabledTag": "停用",
+    "isBuiltIn": "类型",
+    "builtInTag": "内置",
+    "customTag": "自定义",
+    "isPublic": "共享",
+    "version": "版本",
+    "createTitle": "创建 BI 仪表盘",
+    "editTitle": "编辑 BI 仪表盘",
+    "openDesigner": "设计",
+    "copySuccess": "复制成功",
+    "copyFailed": "复制失败",
+    "saveConflict": "仪表盘已被其他会话修改，请刷新后重试",
+    "designerNotReady": "设计器尚未就绪，请稍候重试",
+    "preview": "预览",
+    "localDraft": "本地草稿",
+    "statusSaving": "保存中…",
+    "statusSaved": "已保存",
+    "statusConflict": "保存冲突，已刷新版本",
+    "loadFailed": "加载失败，已切换为本地草稿",
+    "fullscreen": "全屏",
+    "exitFullscreen": "退出全屏"
   }
 }

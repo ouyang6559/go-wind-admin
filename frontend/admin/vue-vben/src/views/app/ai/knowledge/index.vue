@@ -5,8 +5,10 @@ import { h, ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
 import { $t } from '@vben/locales';
-import { LucideFilePenLine, LucidePlus, LucideTrash2 } from '@vben/icons';
 import { Icon as Iconify } from '@iconify/vue';
+import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
 
 import { message } from 'ant-design-vue';
 
@@ -16,6 +18,8 @@ import type { aiservicev1_AiKnowledgeBase as AiKnowledgeBase } from '#/api/gener
 
 import AiKnowledgeDrawer from './ai-knowledge-drawer.vue';
 import DocsModal from './docs-modal.vue';
+import TableAddButton from '#/components/TableAddButton.vue';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 const [BaseDrawer, baseDrawerApi] = useVbenDrawer({
   connectedComponent: AiKnowledgeDrawer,
@@ -73,10 +77,13 @@ const gridOptions: VxeGridProps<AiKnowledgeBase> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      width: 170,
+      width: 200,
     },
   ],
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListAiKnowledgeBases(new PaginationQuery({ paging: { page, pageSize } }));
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -104,36 +111,47 @@ function handleDocs(row: AiKnowledgeBase) {
   docsTarget.value = row;
   docsVisible.value = true;
 }
+
+/* 操作列描述符：文档/编辑/删除三钮全行内，删除 Popconfirm 确认 */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'docs',
+      label: $t('page.aiKnowledge.docs'),
+      icon: h(Iconify, { icon: 'lucide:file-text' }),
+      onClick: handleDocs,
+    },
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: handleEdit,
+    },
+    {
+      key: 'delete',
+      label: $t('common.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      confirm: {
+        title: $t('ui.text.do_you_want_delete', {
+          moduleName: $t('page.aiKnowledge.moduleName'),
+        }),
+      },
+      onClick: handleDelete,
+    },
+  ];
+}
 </script>
 
 <template>
   <Page auto-content-height>
     <Grid :table-title="$t('page.aiKnowledge.moduleName')">
       <template #toolbar-tools>
-        <a-button
-          class="mr-2 whitespace-nowrap [&>svg]:inline-block [&>svg]:align-middle"
-          type="primary"
-          @click="handleAdd"
-        >
-          <template #icon>
-            <LucidePlus />
-          </template>
-          {{ $t('page.aiKnowledge.button.create') }}
-        </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="ai-knowledge-bases" />
+        <TableAddButton @click="handleAdd" />
       </template>
       <template #action="{ row }">
-        <a-button type="link" size="small" @click.stop="handleDocs(row)">
-          <Iconify icon="lucide:file-text" />
-        </a-button>
-        <a-button type="link" size="small" :icon="h(LucideFilePenLine)" @click.stop="handleEdit(row)" />
-        <a-popconfirm
-          :cancel-text="$t('ui.button.cancel')"
-          :ok-text="$t('ui.button.ok')"
-          :title="$t('ui.text.do_you_want_delete', { moduleName: $t('page.aiKnowledge.moduleName') })"
-          @confirm="handleDelete(row)"
-        >
-          <a-button danger type="link" size="small" :icon="h(LucideTrash2)" />
-        </a-popconfirm>
+        <TableActions :row="row" :actions="buildRowActions()" />
       </template>
     </Grid>
     <BaseDrawer />

@@ -2,15 +2,27 @@
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
+import {
+  LucideCirclePlay,
+  LucideFilePenLine,
+  LucideHistory,
+  LucideNetwork,
+  LucideTrash2,
+} from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { notification } from 'ant-design-vue';
+import { h } from 'vue';
+
+import { Modal, notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   deleteAiAgentApp,
   fetchListAiAgentApps,
 } from '#/api';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
+import TableAddButton from '#/components/TableAddButton.vue';
 import TableExportButton from '#/components/TableExportButton.vue';
 import type {
   aiservicev1_AiAgentApp as AiAgentApp,
@@ -71,7 +83,7 @@ const gridOptions: VxeGridProps<AiAgentApp> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      width: 300,
+      width: 360,
     },
   ],
 };
@@ -108,6 +120,55 @@ function openRuns(row: AiAgentApp) {
   runsDrawerApi.open();
 }
 
+/* 「更多」下拉里的删除走 Modal 确认（下拉里放不下 Popconfirm） */
+function confirmDelete(row: AiAgentApp) {
+  Modal.confirm({
+    title: $t('page.aiAgent.deleteConfirm'),
+    okText: $t('ui.button.ok'),
+    cancelText: $t('ui.button.cancel'),
+    okType: 'danger',
+    onOk: () => handleDelete(row),
+  });
+}
+
+/* 操作列描述符：画布/编辑/测试运行行内，运行台账/删除溢出进「更多」。
+   confirmDelete 内部已弹 Modal.confirm，不再挂 confirm 免双重确认 */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'canvas',
+      label: $t('page.aiAgent.openCanvas'),
+      icon: h(LucideNetwork),
+      onClick: (row) => openCanvas(row),
+    },
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: (row) => openEdit(row),
+    },
+    {
+      key: 'runs',
+      label: $t('page.aiAgent.runsTitle'),
+      icon: h(LucideHistory),
+      onClick: (row) => openRuns(row),
+    },
+    {
+      key: 'test-run',
+      label: $t('page.aiAgent.testRun'),
+      icon: h(LucideCirclePlay),
+      onClick: (row) => openRun(row),
+    },
+    {
+      key: 'delete',
+      label: $t('common.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      onClick: (row) => confirmDelete(row),
+    },
+  ];
+}
+
 async function handleDelete(row: AiAgentApp) {
   try {
     await deleteAiAgentApp(row.id!);
@@ -124,10 +185,8 @@ async function handleDelete(row: AiAgentApp) {
   <Page auto-content-height>
     <Grid :table-title="$t('page.aiAgent.moduleName')">
       <template #toolbar-tools>
-        <a-button type="primary" class="mr-2" @click="openCreate">
-          {{ $t('page.aiAgent.create') }}
-        </a-button>
         <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="ai-agent-apps" />
+        <TableAddButton @click="openCreate" />
       </template>
       <template #enabled="{ row }">
         <a-tag v-if="row.enabled" color="success">
@@ -136,28 +195,7 @@ async function handleDelete(row: AiAgentApp) {
         <a-tag v-else>{{ $t('page.aiAgent.enabledOff') }}</a-tag>
       </template>
       <template #action="{ row }">
-        <a-button type="link" size="small" @click.stop="openCanvas(row)">
-          {{ $t('page.aiAgent.openCanvas') }}
-        </a-button>
-        <a-button type="link" size="small" @click.stop="openEdit(row)">
-          {{ $t('common.edit') }}
-        </a-button>
-        <a-button type="link" size="small" @click.stop="openRun(row)">
-          {{ $t('page.aiAgent.testRun') }}
-        </a-button>
-        <a-button type="link" size="small" @click.stop="openRuns(row)">
-          {{ $t('page.aiAgent.runsTitle') }}
-        </a-button>
-        <a-popconfirm
-          :cancel-text="$t('ui.button.cancel')"
-          :ok-text="$t('ui.button.ok')"
-          :title="$t('page.aiAgent.deleteConfirm')"
-          @confirm="handleDelete(row)"
-        >
-          <a-button danger type="link" size="small">
-            {{ $t('common.delete') }}
-          </a-button>
-        </a-popconfirm>
+        <TableActions :row="row" :actions="buildRowActions()" />
       </template>
     </Grid>
     <CanvasDrawer />

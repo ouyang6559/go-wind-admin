@@ -22,6 +22,8 @@ import {
 } from '#/api';
 import { type permissionservicev1_PolicyEvaluationLog as PolicyEvaluationLog } from '#/api';
 import { $t } from '#/locales';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
 import { downloadTableFile } from '#/utils/csv';
 
 import PolicyEvaluationLogDetailDrawer from './policy-evaluation-log-detail-drawer.vue';
@@ -259,13 +261,15 @@ const gridOptions: VxeGridProps<PolicyEvaluationLog> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      width: 80,
+      width: 100,
     },
   ],
 };
 
 // 当前搜索条件（服务端导出透传用，与 Grid proxy 查询同源——"导出的就是当前搜索看到的"）
 const latestFormValuesRef = ref<Record<string, unknown>>({});
+
+const exporting = ref(false);
 
 const [Grid] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -302,24 +306,51 @@ async function handleExportAll(info: { key: string | number }) {
     return;
   }
   if (format !== 'csv' && format !== 'xlsx') return;
-  const pageSize = 1000;
-  const maxRows = 10000;
-  const rows: any[] = [];
-  for (let p = 1; rows.length < maxRows; p++) {
-    const resp = await fetchListPolicyEvaluationLogs(
-      new PaginationQuery({ paging: { page: p, pageSize } }),
-    );
-    const items = (resp.items ?? []) as any[];
-    rows.push(...items);
-    if (items.length < pageSize) break;
+  exporting.value = true;
+  try {
+    const pageSize = 1000;
+    const maxRows = 10000;
+    const rows: any[] = [];
+    for (let p = 1; rows.length < maxRows; p++) {
+      const resp = await fetchListPolicyEvaluationLogs(
+        new PaginationQuery({
+          paging: { page: p, pageSize },
+          // 客户端聚合与服务端导出同口径：透传当前搜索条件——导出的即当前搜索看到的
+          formValues: latestFormValuesRef.value,
+        }),
+      );
+      const items = (resp.items ?? []) as any[];
+      rows.push(...items);
+      if (items.length < pageSize) break;
+    }
+    const gridColumns = (gridOptions.columns ?? []) as any[];
+    const cols = gridColumns
+      .filter((c) => c.field)
+      .map((c) => ({ title: c.title as string, key: c.field as string }));
+    const sliced = rows.slice(0, maxRows);
+    await downloadTableFile(format, `policy-evaluation-logs-${Date.now()}`, cols, sliced);
+    message.success($t('ui.export.success', { count: sliced.length }));
+  } catch (error: any) {
+    // 原始错误必须留在控制台：翻译文案不含原因
+    console.error('[export] client-side export failed', error);
+    message.error(error?.message || $t('ui.export.failed'));
+  } finally {
+    exporting.value = false;
   }
-  const gridColumns = (gridOptions.columns ?? []) as any[];
-  const cols = gridColumns
-    .filter((c) => c.field)
-    .map((c) => ({ title: c.title as string, key: c.field as string }));
-  await downloadTableFile(format, `policy-evaluation-logs-${Date.now()}`, cols, rows.slice(0, maxRows));
 }
 
+
+/* 操作列描述符：单详情钮（定式由 TableActions 统一执行） */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'detail',
+      label: $t('ui.button.detail'),
+      icon: h(LucideEye),
+      onClick: handleView,
+    },
+  ];
+}
 </script>
 
 <template>
@@ -327,7 +358,7 @@ async function handleExportAll(info: { key: string | number }) {
     <Grid :table-title="$t('menu.log.policyEvaluationLog')">
       <template #toolbar-tools>
         <a-dropdown class="mr-2">
-          <a-button>{{ $t('ui.button.exportAll') }}</a-button>
+          <a-button :loading="exporting">{{ $t('ui.button.exportAll') }}</a-button>
           <template #overlay>
             <a-menu @click="handleExportAll">
               <a-menu-item key="csv">{{ $t('ui.button.exportFormatCsv') }}</a-menu-item>
@@ -344,11 +375,7 @@ async function handleExportAll(info: { key: string | number }) {
         </a-tag>
       </template>
       <template #action="{ row }">
-        <a-button
-          type="link"
-          :icon="h(LucideEye)"
-          @click="handleView(row)"
-        />
+        <TableActions :row="row" :actions="buildRowActions()" />
       </template>
     </Grid>
     <Drawer />

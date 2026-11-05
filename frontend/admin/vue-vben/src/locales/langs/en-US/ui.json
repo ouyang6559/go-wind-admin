@@ -31,13 +31,14 @@
     "disable": "Disable"
   },
   "button": {
+    "add": "Add",
     "exportFormatCsv": "CSV (Comma Separated)",
     "exportFormatXlsx": "Excel Workbook",
     "ok": "OK",
     "confirm": "Confirm",
     "cancel": "Cancel",
     "close": "Close",
-    "view": "View",
+    "view": "View {moduleName}",
     "submit": "Submit",
     "reset": "Reset",
     "save": "Save",
@@ -68,12 +69,19 @@
     "login": "Login",
     "logout": "Logout",
     "register": "Register",
-    "exportAll": "Export All"
+    "exportAll": "Export All",
+    "detail": "Detail",
+    "more": "More"
   },
   "modal": {
     "create": "Create {moduleName}",
-    "update": "Edit {moduleName}",
-    "delete": "Delete {moduleName}"
+    "update": "Update {moduleName}",
+    "delete": "Delete {moduleName}",
+    "view": "View {moduleName}"
+  },
+  "drawer": {
+    "unsavedMessage": "The form has been modified. Do you want to discard this edit?",
+    "discardButton": "Discard"
   },
   "notification": {
     "create_success": "Created successfully",
@@ -95,7 +103,10 @@
     "download_success": "Downloaded successfully",
     "download_failed": "Download failed",
     "password_mismatch": "Passwords do not match",
-    "password_changed": "Password changed, please sign in again"
+    "password_changed": "Password changed, please sign in again",
+    "input_old_password": "Please enter the old password",
+    "input_new_password": "Please enter the new password",
+    "input_confirm_password": "Please confirm the new password"
   },
   "text": {
     "do_you_want_delete": "Do you want to delete this {moduleName}?",
@@ -117,7 +128,7 @@
   },
   "title": {
     "create": "Create {moduleName}",
-    "update": "Edit {moduleName}",
+    "update": "Update {moduleName}",
     "delete": "Delete {moduleName}",
     "insert_url": "Insert Link",
     "confirm": "Confirm {action}"

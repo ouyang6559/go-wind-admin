@@ -5,7 +5,9 @@ import { h } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
-import { LucideFilePenLine, LucidePlus, LucideTrash2 } from '@vben/icons';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
+import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 
 import { message } from 'ant-design-vue';
 
@@ -16,6 +18,8 @@ import { PaginationQuery, deleteAiProvider, fetchListAiProviders } from '#/api';
 import type { aiservicev1_AiProvider as AiProvider } from '#/api/generated/admin/service/v1';
 
 import AiProviderDrawer from './ai-provider-drawer.vue';
+import TableAddButton from '#/components/TableAddButton.vue';
+import TableExportButton from '#/components/TableExportButton.vue';
 
 const formOptions = {
   collapsed: false,
@@ -88,10 +92,13 @@ const gridOptions: VxeGridProps<AiProvider> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      width: 130,
+      width: 140,
     },
   ],
 };
+
+const exportFetcher = (page: number, pageSize: number) =>
+  fetchListAiProviders(new PaginationQuery({ paging: { page, pageSize } }));
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions, formOptions });
 
@@ -123,6 +130,30 @@ async function handleDelete(row: AiProvider) {
   }
 }
 
+/* 操作列描述符：编辑行内、删除 Popconfirm 确认（≤3 个全行内，定式由 TableActions 统一执行） */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: handleEdit,
+    },
+    {
+      key: 'delete',
+      label: $t('common.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      confirm: {
+        title: $t('ui.text.do_you_want_delete', {
+          moduleName: $t('page.aiProvider.moduleName'),
+        }),
+      },
+      onClick: handleDelete,
+    },
+  ];
+}
+
 function modelTypeLabel(type?: string): string {
   if (type === 'CLOUD') return $t('page.aiProvider.modelTypeCloud');
   if (type === 'LOCAL') return $t('page.aiProvider.modelTypeLocal');
@@ -149,16 +180,8 @@ function endpointText(row: AiProvider): string {
     <Grid :table-title="$t('page.aiProvider.moduleName')">
       <template #toolbar-tools>
         <!-- Preflight svg{display:block} 会把 icon+文本竖排，定式见 vben-tailwind-preflight-svg-block-icon-wrap -->
-        <a-button
-          type="primary"
-          class="mr-2 whitespace-nowrap [&>svg]:inline-block [&>svg]:align-middle"
-          @click="handleAdd"
-        >
-          <template #icon>
-            <LucidePlus />
-          </template>
-          {{ $t('page.aiProvider.button.create') }}
-        </a-button>
+        <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="ai-providers" />
+        <TableAddButton @click="handleAdd" />
       </template>
       <template #modelType="{ row }">
         <a-tag v-if="row.modelType" :color="modelTypeColor(row.modelType)">
@@ -176,20 +199,7 @@ function endpointText(row: AiProvider): string {
         <a-tag v-else>{{ $t('page.aiProvider.enabledOff') }}</a-tag>
       </template>
       <template #action="{ row }">
-        <a-button
-          type="link"
-          size="small"
-          :icon="h(LucideFilePenLine)"
-          @click.stop="handleEdit(row)"
-        />
-        <a-popconfirm
-          :cancel-text="$t('ui.button.cancel')"
-          :ok-text="$t('ui.button.ok')"
-          :title="$t('ui.text.do_you_want_delete', { moduleName: $t('page.aiProvider.moduleName') })"
-          @confirm="handleDelete(row)"
-        >
-          <a-button danger type="link" size="small" :icon="h(LucideTrash2)" />
-        </a-popconfirm>
+        <TableActions :row="row" :actions="buildRowActions()" />
       </template>
     </Grid>
     <Drawer />

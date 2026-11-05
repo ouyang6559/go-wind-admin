@@ -1,15 +1,16 @@
 ﻿<script lang="ts" setup>
 import type { VxeGridListeners, VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, h, watch } from 'vue';
+import { computed, h, ref, watch } from 'vue';
 
 import { useVbenDrawer, type VbenFormProps } from '@vben/common-ui';
-import { LucideFilePenLine, LucideInfo, LucideShieldOff, LucideTrash2 } from '@vben/icons';
+import { LucideFilePenLine, LucideInfo, LucidePrinter, LucideShieldOff, LucideTrash2 } from '@vben/icons';
 import { isEqual } from '@vben/utils';
 
-import { notification } from 'ant-design-vue';
+import { Modal, notification } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import TableAddButton from '#/components/TableAddButton.vue';
 import TableExportButton from '#/components/TableExportButton.vue';
 import { useAccessStore, useUserStore } from '@vben/stores';
 import { type identityservicev1_User as User } from '#/api';
@@ -26,6 +27,9 @@ import {
   userStatusToName,
 } from '#/api';
 import { $t } from '#/locales';
+import TableActions from '#/components/TableActions.vue';
+import PrintTemplatePrint from '#/components/PrintTemplatePrint.vue';
+import type { TableAction } from '#/components/TableActions.vue';
 import { router } from '#/router';
 import { parseResourceHiddenFields } from '#/utils';
 import { getRandomColor } from '#/utils/color';
@@ -200,6 +204,7 @@ const gridOptions: VxeGridProps<User> = {
   },
 
   columns: ([
+    { type: 'checkbox', width: 44 },
     { title: $t('ui.table.seq'), type: 'seq', width: 50 },
     { title: $t('page.user.table.username'), field: 'username', width: 120 },
     { title: $t('page.user.table.realname'), field: 'realname', width: 100 },
@@ -250,9 +255,8 @@ const gridOptions: VxeGridProps<User> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      // 4 个图标按钮（详情/编辑/重置MFA/删除）实际渲染约 130px+，
-      // 列宽 120 时删除按钮溢出 fixed 列容器被裁剪，无法点击
-      width: 160,
+      // 平台侧最多 4 项（详情/编辑/重置MFA/更多），文本+图标实测约 250px
+      width: 310,
     },
   ] satisfies VxeGridProps<User>['columns']).filter(
     (col) => !userHiddenFields.has(col.field as string),
@@ -268,11 +272,24 @@ const gridEvents: VxeGridListeners<User> = {
 const exportFetcher = (page: number, pageSize: number) =>
   userViewStore.fetchUserList(page, pageSize, {});
 
+const printRef = ref();
+
 const [Grid, gridApi] = useVbenVxeGrid({
+
   gridOptions,
   formOptions,
   gridEvents,
 });
+
+/** 批量打印：勾选行合并渲染为单文档（内核份数分页），走行打印同一定式入口 */
+function handleBatchPrint() {
+  const records: any[] = (gridApi.grid.getCheckboxRecords() || []) as any[];
+  if (records.length === 0) {
+    notification.warning({ message: $t('page.printTemplate.noSelection') });
+    return;
+  }
+  printRef.value?.print('system/user', records);
+}
 
 const [Drawer, drawerApi] = useVbenDrawer({
   // 连接抽离的组件
@@ -337,9 +354,63 @@ async function handleDelete(row: any) {
   }
 }
 
+/* 「更多」下拉里的删除走 Modal 确认（下拉里放不下 Popconfirm） */
+function confirmDelete(row: any) {
+  Modal.confirm({
+    title: $t('ui.text.do_you_want_delete', {
+      moduleName: $t('page.user.moduleName'),
+    }),
+    okText: $t('ui.button.ok'),
+    cancelText: $t('ui.button.cancel'),
+    okType: 'danger',
+    onOk: () => handleDelete(row),
+  });
+}
+
 /* 详情 */
 function handleDetail(row: any) {
   router.push(`/opm/users/detail/${row.id}`);
+}
+
+/* 操作列描述符：详情/编辑 + 平台侧才有重置 MFA（hidden 计溢出前剔除），
+   删除溢出进「更多」由组件降级 Modal.confirm（confirmDelete） */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'detail',
+      label: $t('ui.button.detail'),
+      icon: h(LucideInfo),
+      onClick: handleDetail,
+    },
+    {
+      key: 'print',
+      label: $t('page.printTemplate.print'),
+      icon: h(LucidePrinter),
+      onClick: (row: any) => printRef.value?.print('system/user', row),
+    },
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: handleEdit,
+    },
+    {
+      key: 'reset-mfa',
+      label: $t('page.user.button.resetMfa'),
+      icon: h(LucideShieldOff),
+      hidden: !isPlatformSide.value,
+      confirm: { title: $t('page.user.resetMfaConfirmTitle') },
+      onClick: handleResetMfa,
+    },
+    {
+      key: 'delete',
+      label: $t('common.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      // confirmDelete 内部已弹 Modal.confirm（含 okType danger），不再挂 confirm 免双重确认
+      onClick: confirmDelete,
+    },
+  ];
 }
 
 watch(
@@ -356,10 +427,14 @@ watch(
 <template>
   <Grid :table-title="$t('menu.opm.user')">
     <template #toolbar-tools>
-      <a-button type="primary" @click="handleCreate">
-        {{ $t('page.user.button.create') }}
-      </a-button>
+        <a-button
+          class="mr-2"
+          @click="handleBatchPrint"
+        >
+          {{ $t('page.printTemplate.batchPrint') }}
+        </a-button>
           <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="export" />
+          <TableAddButton @click="handleCreate" />
     </template>
     <template #status="{ row }">
       <a-tag :color="userStatusToColor(row.status)">
@@ -408,40 +483,10 @@ watch(
       </div>
     </template>
     <template #action="{ row }">
-      <a-button
-        type="link"
-        :icon="h(LucideInfo)"
-        @click.stop="handleDetail(row)"
-      />
-
-      <a-button
-        type="link"
-        :icon="h(LucideFilePenLine)"
-        @click.stop="handleEdit(row)"
-      />
-      <a-popconfirm
-        v-if="isPlatformSide"
-        :cancel-text="$t('ui.button.cancel')"
-        :ok-text="$t('ui.button.ok')"
-        :title="$t('page.user.resetMfaConfirmTitle')"
-        @confirm="handleResetMfa(row)"
-      >
-        <a-button type="link" :icon="h(LucideShieldOff)" />
-      </a-popconfirm>
-      <a-popconfirm
-        :cancel-text="$t('ui.button.cancel')"
-        :ok-text="$t('ui.button.ok')"
-        :title="
-          $t('ui.text.do_you_want_delete', {
-            moduleName: $t('page.user.moduleName'),
-          })
-        "
-        @confirm="handleDelete(row)"
-      >
-        <a-button danger type="link" :icon="h(LucideTrash2)" />
-      </a-popconfirm>
+      <TableActions :row="row" :actions="buildRowActions()" />
     </template>
   </Grid>
+  <PrintTemplatePrint ref="printRef" />
   <Drawer />
 </template>
 

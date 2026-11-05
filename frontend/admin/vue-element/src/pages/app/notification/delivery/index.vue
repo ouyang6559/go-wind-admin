@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full flex flex-1 flex-col">
-    <ProPage ref="pageRef" :config="pageConfig" @toolbar="handleToolbar">
+    <ProPage ref="pageRef" :config="pageConfig">
       <!-- 渠道 -->
       <template #channel="scope: any">
         <ElTag
@@ -38,7 +38,6 @@ import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import type { notificationservicev1_NotificationDelivery as NotificationDelivery } from "@/api/generated/admin/service/v1";
 import {
-  createPagedExportAction,
   fetchListNotificationDeliveries,
   notificationDeliveryChannelFilterList,
   notificationDeliveryChannelToName,
@@ -90,15 +89,6 @@ async function handleServerExport() {
   }
 }
 
-// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
-// exportServer 是工具栏按钮，此处承接。
-function handleToolbar(name: string) {
-  if (name === "exportServer") {
-    handleServerExport();
-    return;
-  }
-}
-
 const pageConfig = computed<ProPageConfig<NotificationDelivery>>(() => ({
   skeleton: true,
   exportFilename: "notification-deliveries",
@@ -138,7 +128,8 @@ const pageConfig = computed<ProPageConfig<NotificationDelivery>>(() => ({
   },
 
   table: {
-    exportsAction: createPagedExportAction(fetchListNotificationDeliveries),
+    // 服务端全量导出：导出全部下拉的第三项，错误处理在本页 handleServerExport
+    exportServer: handleServerExport,
 
     listAction: async (query: any) => {
       const { page, pageSize, ...queryParams } = query;
@@ -157,15 +148,9 @@ const pageConfig = computed<ProPageConfig<NotificationDelivery>>(() => ({
       );
       return { items: result.items || [], total: result.total || 0 };
     },
-    toolbar: [
-      {
-        name: "exportServer",
-        label: $t("pages.notification_delivery.exportServer"),
-        icon: "lucide:download",
-      },
-    ],
+    toolbar: [],
     toolbarRight: [],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     tableAttrs: { border: true, stripe: false },
     columns: [
       {

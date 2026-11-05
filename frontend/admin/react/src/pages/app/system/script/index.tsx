@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
+import TableActions from '@/components/common/TableActions';
 import ListTable from '@/components/common/ListTable';
-import { Button, Popconfirm, Popover, Switch, Tag, Tooltip, App } from 'antd';
-import { ApiOutlined, CodeOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, PlusOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { Button, Popover, Switch, Tag, App } from 'antd';
+import { ApiOutlined, DeleteOutlined, EditOutlined, PlusOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { scriptservicev1_Script as Script } from '@/api/generated/admin/service/v1';
@@ -16,6 +17,8 @@ import { getLanguageOptions, languageColorMap } from './constants';
 import ScriptDrawer from './components/ScriptDrawer';
 import ScriptLogDrawer from './components/ScriptLogDrawer';
 import TestRunModal from './components/TestRunModal';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 /**
  * 脚本管理页面
@@ -166,42 +169,45 @@ const ScriptManagement = () => {
     {
       title: t('action'),
       valueType: 'option',
-      width: 120,
+      width: 250,
       fixed: 'right',
-      render: (_, record) => [
-        <Tooltip key="testRun" title={t('testRun')}>
-          <a
-            onClick={() => {
-              setTestRunTarget(record);
-              setTestRunOpen(true);
-            }}
-          >
-            <PlayCircleOutlined />
-          </a>
-        </Tooltip>,
-        <a
-          key="edit"
-          onClick={() => {
-            setDrawerMode('edit');
-            setSelectedScript(record);
-            setDrawerOpen(true);
-          }}
-        >
-          <EditOutlined />
-        </a>,
-        <Popconfirm
-          key="delete"
-          title={t('deleteConfirmTitle')}
-          description={t('deleteConfirmDesc', { moduleName: t('moduleName') })}
-          onConfirm={() => record.id && deleteMutation.mutate({ ids: [record.id] })}
-          okText={t('common:button.ok')}
-          cancelText={t('common:button.cancel')}
-        >
-          <a style={{ color: 'var(--ant-color-error)' }}>
-            <DeleteOutlined />
-          </a>
-        </Popconfirm>,
-      ],
+      render: (_, record) => (
+        <TableActions
+          record={record}
+          actions={[
+            {
+              key: 'testRun',
+              label: t('testRun'),
+              icon: <PlayCircleOutlined />,
+              onClick: () => {
+                setTestRunTarget(record);
+                setTestRunOpen(true);
+              },
+            },
+            {
+              key: 'edit',
+              label: t('common:button.edit'),
+              icon: <EditOutlined />,
+              onClick: () => {
+                setDrawerMode('edit');
+                setSelectedScript(record);
+                setDrawerOpen(true);
+              },
+            },
+            {
+              key: 'delete',
+              label: t('common:button.delete'),
+              icon: <DeleteOutlined />,
+              danger: true,
+              confirm: {
+                title: t('deleteConfirmTitle'),
+                description: t('deleteConfirmDesc', { moduleName: t('moduleName') }),
+              },
+              onClick: () => record.id && deleteMutation.mutate({ ids: [record.id] }),
+            },
+          ]}
+        />
+      ),
     },
   ];
 
@@ -234,7 +240,7 @@ const ScriptManagement = () => {
               };
             }}
             rowKey="id"
-            search={{
+            search={{ optionRender: searchOptionRender,
               labelWidth: 'auto',
               defaultCollapsed: false,
             }}
@@ -276,14 +282,15 @@ const ScriptManagement = () => {
                   </div>
                 }
               >
-                <Button icon={<CodeOutlined />}>{t('hookPoints')}</Button>
+                <Button>{t('hookPoints')}</Button>
               </Popover>,
-              <Button key="logs" icon={<FileTextOutlined />} onClick={() => setLogOpen(true)}>
+              <Button key="logs" onClick={() => setLogOpen(true)}>
                 {t('logTitle')}
               </Button>,
               <Button
                 key="create"
-                type="primary"
+                color="primary"
+                variant="outlined"
                 icon={<PlusOutlined />}
                 onClick={() => {
                   setDrawerMode('create');
@@ -291,13 +298,13 @@ const ScriptManagement = () => {
                   setDrawerOpen(true);
                 }}
               >
-                {t('create')}
+                {t('common:button.add')}
               </Button>,
             ]}
             options={{
               density: true,
               fullScreen: true,
-              setting: true,
+              setting: { settingIcon: <ColumnSlidersIcon /> },
               reload: true,
             }}
             size="middle"

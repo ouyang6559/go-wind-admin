@@ -42,7 +42,7 @@ import AiAgentRunDrawer from "./ai-agent-run-drawer.vue";
 import AiAgentRunsDrawer from "./ai-agent-runs-drawer.vue";
 import { useI18n } from "@/core/i18n";
 import { PaginationQuery } from "@/core/transport/rest";
-import { createPagedExportAction, deleteAiAgentApp, fetchListAiAgentApps } from "@/api/composables";
+import { deleteAiAgentApp, fetchListAiAgentApps } from "@/api/composables";
 
 const { t } = useI18n();
 
@@ -70,10 +70,9 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deleteAiAgentApp(Number(ids));
     },
-    exportsAction: createPagedExportAction(fetchListAiAgentApps),
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     tableAttrs: { border: true, stripe: true },
     emptyActionText: "common.button.add",
     columns: [

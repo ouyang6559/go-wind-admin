@@ -23,6 +23,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/apiauditlog"
+	"go-wind-admin/app/admin/service/internal/data/ent/bidashboard"
 	"go-wind-admin/app/admin/service/internal/data/ent/dataaccessauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/dictentry"
 	"go-wind-admin/app/admin/service/internal/data/ent/dictentryi18n"
@@ -58,6 +59,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/planquota"
 	"go-wind-admin/app/admin/service/internal/data/ent/policyevaluationlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/position"
+	"go-wind-admin/app/admin/service/internal/data/ent/printtemplate"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolefieldpermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
@@ -110,6 +112,8 @@ type Client struct {
 	Api *APIClient
 	// ApiAuditLog is the client for interacting with the ApiAuditLog builders.
 	ApiAuditLog *ApiAuditLogClient
+	// BiDashboard is the client for interacting with the BiDashboard builders.
+	BiDashboard *BiDashboardClient
 	// DataAccessAuditLog is the client for interacting with the DataAccessAuditLog builders.
 	DataAccessAuditLog *DataAccessAuditLogClient
 	// DictEntry is the client for interacting with the DictEntry builders.
@@ -180,6 +184,8 @@ type Client struct {
 	PolicyEvaluationLog *PolicyEvaluationLogClient
 	// Position is the client for interacting with the Position builders.
 	Position *PositionClient
+	// PrintTemplate is the client for interacting with the PrintTemplate builders.
+	PrintTemplate *PrintTemplateClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
 	// RoleFieldPermission is the client for interacting with the RoleFieldPermission builders.
@@ -235,6 +241,7 @@ func (c *Client) init() {
 	c.AiUsageLog = NewAiUsageLogClient(c.config)
 	c.Api = NewAPIClient(c.config)
 	c.ApiAuditLog = NewApiAuditLogClient(c.config)
+	c.BiDashboard = NewBiDashboardClient(c.config)
 	c.DataAccessAuditLog = NewDataAccessAuditLogClient(c.config)
 	c.DictEntry = NewDictEntryClient(c.config)
 	c.DictEntryI18n = NewDictEntryI18nClient(c.config)
@@ -270,6 +277,7 @@ func (c *Client) init() {
 	c.PlanQuota = NewPlanQuotaClient(c.config)
 	c.PolicyEvaluationLog = NewPolicyEvaluationLogClient(c.config)
 	c.Position = NewPositionClient(c.config)
+	c.PrintTemplate = NewPrintTemplateClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.RoleFieldPermission = NewRoleFieldPermissionClient(c.config)
 	c.RoleMetadata = NewRoleMetadataClient(c.config)
@@ -390,6 +398,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AiUsageLog:               NewAiUsageLogClient(cfg),
 		Api:                      NewAPIClient(cfg),
 		ApiAuditLog:              NewApiAuditLogClient(cfg),
+		BiDashboard:              NewBiDashboardClient(cfg),
 		DataAccessAuditLog:       NewDataAccessAuditLogClient(cfg),
 		DictEntry:                NewDictEntryClient(cfg),
 		DictEntryI18n:            NewDictEntryI18nClient(cfg),
@@ -425,6 +434,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PlanQuota:                NewPlanQuotaClient(cfg),
 		PolicyEvaluationLog:      NewPolicyEvaluationLogClient(cfg),
 		Position:                 NewPositionClient(cfg),
+		PrintTemplate:            NewPrintTemplateClient(cfg),
 		Role:                     NewRoleClient(cfg),
 		RoleFieldPermission:      NewRoleFieldPermissionClient(cfg),
 		RoleMetadata:             NewRoleMetadataClient(cfg),
@@ -472,6 +482,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AiUsageLog:               NewAiUsageLogClient(cfg),
 		Api:                      NewAPIClient(cfg),
 		ApiAuditLog:              NewApiAuditLogClient(cfg),
+		BiDashboard:              NewBiDashboardClient(cfg),
 		DataAccessAuditLog:       NewDataAccessAuditLogClient(cfg),
 		DictEntry:                NewDictEntryClient(cfg),
 		DictEntryI18n:            NewDictEntryI18nClient(cfg),
@@ -507,6 +518,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PlanQuota:                NewPlanQuotaClient(cfg),
 		PolicyEvaluationLog:      NewPolicyEvaluationLogClient(cfg),
 		Position:                 NewPositionClient(cfg),
+		PrintTemplate:            NewPrintTemplateClient(cfg),
 		Role:                     NewRoleClient(cfg),
 		RoleFieldPermission:      NewRoleFieldPermissionClient(cfg),
 		RoleMetadata:             NewRoleMetadataClient(cfg),
@@ -554,15 +566,16 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AccessKey, c.AiAgentApp, c.AiAgentRun, c.AiChunk, c.AiConversation, c.AiDoc,
 		c.AiKnowledgeBase, c.AiMessage, c.AiProvider, c.AiUsageLog, c.Api,
-		c.ApiAuditLog, c.DataAccessAuditLog, c.DictEntry, c.DictEntryI18n, c.DictType,
-		c.File, c.InternalMessage, c.InternalMessageCategory,
-		c.InternalMessageRecipient, c.Language, c.LoginAuditLog, c.LoginPolicy,
-		c.Membership, c.MembershipOrgUnit, c.MembershipPosition, c.MembershipRole,
-		c.Menu, c.MonitorAlertRule, c.NotificationChannel, c.NotificationDelivery,
-		c.NotificationPreference, c.NotificationRule, c.NotificationTemplate,
-		c.OperationAuditLog, c.OrgUnit, c.Permission, c.PermissionApi,
-		c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy,
-		c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog, c.Position, c.Role,
+		c.ApiAuditLog, c.BiDashboard, c.DataAccessAuditLog, c.DictEntry,
+		c.DictEntryI18n, c.DictType, c.File, c.InternalMessage,
+		c.InternalMessageCategory, c.InternalMessageRecipient, c.Language,
+		c.LoginAuditLog, c.LoginPolicy, c.Membership, c.MembershipOrgUnit,
+		c.MembershipPosition, c.MembershipRole, c.Menu, c.MonitorAlertRule,
+		c.NotificationChannel, c.NotificationDelivery, c.NotificationPreference,
+		c.NotificationRule, c.NotificationTemplate, c.OperationAuditLog, c.OrgUnit,
+		c.Permission, c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup,
+		c.PermissionMenu, c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota,
+		c.PolicyEvaluationLog, c.Position, c.PrintTemplate, c.Role,
 		c.RoleFieldPermission, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission,
 		c.Script, c.ScriptLog, c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential,
 		c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
@@ -577,15 +590,16 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AccessKey, c.AiAgentApp, c.AiAgentRun, c.AiChunk, c.AiConversation, c.AiDoc,
 		c.AiKnowledgeBase, c.AiMessage, c.AiProvider, c.AiUsageLog, c.Api,
-		c.ApiAuditLog, c.DataAccessAuditLog, c.DictEntry, c.DictEntryI18n, c.DictType,
-		c.File, c.InternalMessage, c.InternalMessageCategory,
-		c.InternalMessageRecipient, c.Language, c.LoginAuditLog, c.LoginPolicy,
-		c.Membership, c.MembershipOrgUnit, c.MembershipPosition, c.MembershipRole,
-		c.Menu, c.MonitorAlertRule, c.NotificationChannel, c.NotificationDelivery,
-		c.NotificationPreference, c.NotificationRule, c.NotificationTemplate,
-		c.OperationAuditLog, c.OrgUnit, c.Permission, c.PermissionApi,
-		c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy,
-		c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog, c.Position, c.Role,
+		c.ApiAuditLog, c.BiDashboard, c.DataAccessAuditLog, c.DictEntry,
+		c.DictEntryI18n, c.DictType, c.File, c.InternalMessage,
+		c.InternalMessageCategory, c.InternalMessageRecipient, c.Language,
+		c.LoginAuditLog, c.LoginPolicy, c.Membership, c.MembershipOrgUnit,
+		c.MembershipPosition, c.MembershipRole, c.Menu, c.MonitorAlertRule,
+		c.NotificationChannel, c.NotificationDelivery, c.NotificationPreference,
+		c.NotificationRule, c.NotificationTemplate, c.OperationAuditLog, c.OrgUnit,
+		c.Permission, c.PermissionApi, c.PermissionAuditLog, c.PermissionGroup,
+		c.PermissionMenu, c.PermissionPolicy, c.Plan, c.PlanModule, c.PlanQuota,
+		c.PolicyEvaluationLog, c.Position, c.PrintTemplate, c.Role,
 		c.RoleFieldPermission, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission,
 		c.Script, c.ScriptLog, c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential,
 		c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
@@ -621,6 +635,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Api.mutate(ctx, m)
 	case *ApiAuditLogMutation:
 		return c.ApiAuditLog.mutate(ctx, m)
+	case *BiDashboardMutation:
+		return c.BiDashboard.mutate(ctx, m)
 	case *DataAccessAuditLogMutation:
 		return c.DataAccessAuditLog.mutate(ctx, m)
 	case *DictEntryMutation:
@@ -691,6 +707,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PolicyEvaluationLog.mutate(ctx, m)
 	case *PositionMutation:
 		return c.Position.mutate(ctx, m)
+	case *PrintTemplateMutation:
+		return c.PrintTemplate.mutate(ctx, m)
 	case *RoleMutation:
 		return c.Role.mutate(ctx, m)
 	case *RoleFieldPermissionMutation:
@@ -2427,6 +2445,140 @@ func (c *ApiAuditLogClient) mutate(ctx context.Context, m *ApiAuditLogMutation) 
 		return (&ApiAuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ApiAuditLog mutation op: %q", m.Op())
+	}
+}
+
+// BiDashboardClient is a client for the BiDashboard schema.
+type BiDashboardClient struct {
+	config
+}
+
+// NewBiDashboardClient returns a client for the BiDashboard from the given config.
+func NewBiDashboardClient(c config) *BiDashboardClient {
+	return &BiDashboardClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `bidashboard.Hooks(f(g(h())))`.
+func (c *BiDashboardClient) Use(hooks ...Hook) {
+	c.hooks.BiDashboard = append(c.hooks.BiDashboard, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `bidashboard.Intercept(f(g(h())))`.
+func (c *BiDashboardClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BiDashboard = append(c.inters.BiDashboard, interceptors...)
+}
+
+// Create returns a builder for creating a BiDashboard entity.
+func (c *BiDashboardClient) Create() *BiDashboardCreate {
+	mutation := newBiDashboardMutation(c.config, OpCreate)
+	return &BiDashboardCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BiDashboard entities.
+func (c *BiDashboardClient) CreateBulk(builders ...*BiDashboardCreate) *BiDashboardCreateBulk {
+	return &BiDashboardCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BiDashboardClient) MapCreateBulk(slice any, setFunc func(*BiDashboardCreate, int)) *BiDashboardCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BiDashboardCreateBulk{err: fmt.Errorf("calling to BiDashboardClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BiDashboardCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BiDashboardCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BiDashboard.
+func (c *BiDashboardClient) Update() *BiDashboardUpdate {
+	mutation := newBiDashboardMutation(c.config, OpUpdate)
+	return &BiDashboardUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BiDashboardClient) UpdateOne(_m *BiDashboard) *BiDashboardUpdateOne {
+	mutation := newBiDashboardMutation(c.config, OpUpdateOne, withBiDashboard(_m))
+	return &BiDashboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BiDashboardClient) UpdateOneID(id uint32) *BiDashboardUpdateOne {
+	mutation := newBiDashboardMutation(c.config, OpUpdateOne, withBiDashboardID(id))
+	return &BiDashboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BiDashboard.
+func (c *BiDashboardClient) Delete() *BiDashboardDelete {
+	mutation := newBiDashboardMutation(c.config, OpDelete)
+	return &BiDashboardDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BiDashboardClient) DeleteOne(_m *BiDashboard) *BiDashboardDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BiDashboardClient) DeleteOneID(id uint32) *BiDashboardDeleteOne {
+	builder := c.Delete().Where(bidashboard.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BiDashboardDeleteOne{builder}
+}
+
+// Query returns a query builder for BiDashboard.
+func (c *BiDashboardClient) Query() *BiDashboardQuery {
+	return &BiDashboardQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBiDashboard},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BiDashboard entity by its id.
+func (c *BiDashboardClient) Get(ctx context.Context, id uint32) (*BiDashboard, error) {
+	return c.Query().Where(bidashboard.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BiDashboardClient) GetX(ctx context.Context, id uint32) *BiDashboard {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *BiDashboardClient) Hooks() []Hook {
+	hooks := c.hooks.BiDashboard
+	return append(hooks[:len(hooks):len(hooks)], bidashboard.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *BiDashboardClient) Interceptors() []Interceptor {
+	return c.inters.BiDashboard
+}
+
+func (c *BiDashboardClient) mutate(ctx context.Context, m *BiDashboardMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BiDashboardCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BiDashboardUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BiDashboardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BiDashboardDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BiDashboard mutation op: %q", m.Op())
 	}
 }
 
@@ -7344,6 +7496,140 @@ func (c *PositionClient) mutate(ctx context.Context, m *PositionMutation) (Value
 	}
 }
 
+// PrintTemplateClient is a client for the PrintTemplate schema.
+type PrintTemplateClient struct {
+	config
+}
+
+// NewPrintTemplateClient returns a client for the PrintTemplate from the given config.
+func NewPrintTemplateClient(c config) *PrintTemplateClient {
+	return &PrintTemplateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `printtemplate.Hooks(f(g(h())))`.
+func (c *PrintTemplateClient) Use(hooks ...Hook) {
+	c.hooks.PrintTemplate = append(c.hooks.PrintTemplate, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `printtemplate.Intercept(f(g(h())))`.
+func (c *PrintTemplateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PrintTemplate = append(c.inters.PrintTemplate, interceptors...)
+}
+
+// Create returns a builder for creating a PrintTemplate entity.
+func (c *PrintTemplateClient) Create() *PrintTemplateCreate {
+	mutation := newPrintTemplateMutation(c.config, OpCreate)
+	return &PrintTemplateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PrintTemplate entities.
+func (c *PrintTemplateClient) CreateBulk(builders ...*PrintTemplateCreate) *PrintTemplateCreateBulk {
+	return &PrintTemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PrintTemplateClient) MapCreateBulk(slice any, setFunc func(*PrintTemplateCreate, int)) *PrintTemplateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PrintTemplateCreateBulk{err: fmt.Errorf("calling to PrintTemplateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PrintTemplateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PrintTemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PrintTemplate.
+func (c *PrintTemplateClient) Update() *PrintTemplateUpdate {
+	mutation := newPrintTemplateMutation(c.config, OpUpdate)
+	return &PrintTemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PrintTemplateClient) UpdateOne(_m *PrintTemplate) *PrintTemplateUpdateOne {
+	mutation := newPrintTemplateMutation(c.config, OpUpdateOne, withPrintTemplate(_m))
+	return &PrintTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PrintTemplateClient) UpdateOneID(id uint32) *PrintTemplateUpdateOne {
+	mutation := newPrintTemplateMutation(c.config, OpUpdateOne, withPrintTemplateID(id))
+	return &PrintTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PrintTemplate.
+func (c *PrintTemplateClient) Delete() *PrintTemplateDelete {
+	mutation := newPrintTemplateMutation(c.config, OpDelete)
+	return &PrintTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PrintTemplateClient) DeleteOne(_m *PrintTemplate) *PrintTemplateDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PrintTemplateClient) DeleteOneID(id uint32) *PrintTemplateDeleteOne {
+	builder := c.Delete().Where(printtemplate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PrintTemplateDeleteOne{builder}
+}
+
+// Query returns a query builder for PrintTemplate.
+func (c *PrintTemplateClient) Query() *PrintTemplateQuery {
+	return &PrintTemplateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePrintTemplate},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PrintTemplate entity by its id.
+func (c *PrintTemplateClient) Get(ctx context.Context, id uint32) (*PrintTemplate, error) {
+	return c.Query().Where(printtemplate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PrintTemplateClient) GetX(ctx context.Context, id uint32) *PrintTemplate {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PrintTemplateClient) Hooks() []Hook {
+	hooks := c.hooks.PrintTemplate
+	return append(hooks[:len(hooks):len(hooks)], printtemplate.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *PrintTemplateClient) Interceptors() []Interceptor {
+	return c.inters.PrintTemplate
+}
+
+func (c *PrintTemplateClient) mutate(ctx context.Context, m *PrintTemplateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PrintTemplateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PrintTemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PrintTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PrintTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PrintTemplate mutation op: %q", m.Op())
+	}
+}
+
 // RoleClient is a client for the Role schema.
 type RoleClient struct {
 	config
@@ -9505,30 +9791,31 @@ type (
 	hooks struct {
 		AccessKey, AiAgentApp, AiAgentRun, AiChunk, AiConversation, AiDoc,
 		AiKnowledgeBase, AiMessage, AiProvider, AiUsageLog, Api, ApiAuditLog,
-		DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File, InternalMessage,
-		InternalMessageCategory, InternalMessageRecipient, Language, LoginAuditLog,
-		LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition, MembershipRole,
-		Menu, MonitorAlertRule, NotificationChannel, NotificationDelivery,
-		NotificationPreference, NotificationRule, NotificationTemplate,
-		OperationAuditLog, OrgUnit, Permission, PermissionApi, PermissionAuditLog,
-		PermissionGroup, PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
-		PolicyEvaluationLog, Position, Role, RoleFieldPermission, RoleMetadata,
-		RoleOrgUnit, RolePermission, Script, ScriptLog, SysConfig, Task, Tenant, User,
-		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
+		BiDashboard, DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File,
+		InternalMessage, InternalMessageCategory, InternalMessageRecipient, Language,
+		LoginAuditLog, LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition,
+		MembershipRole, Menu, MonitorAlertRule, NotificationChannel,
+		NotificationDelivery, NotificationPreference, NotificationRule,
+		NotificationTemplate, OperationAuditLog, OrgUnit, Permission, PermissionApi,
+		PermissionAuditLog, PermissionGroup, PermissionMenu, PermissionPolicy, Plan,
+		PlanModule, PlanQuota, PolicyEvaluationLog, Position, PrintTemplate, Role,
+		RoleFieldPermission, RoleMetadata, RoleOrgUnit, RolePermission, Script,
+		ScriptLog, SysConfig, Task, Tenant, User, UserCredential, UserMfaFactor,
+		UserOrgUnit, UserPosition, UserRole []ent.Hook
 	}
 	inters struct {
 		AccessKey, AiAgentApp, AiAgentRun, AiChunk, AiConversation, AiDoc,
 		AiKnowledgeBase, AiMessage, AiProvider, AiUsageLog, Api, ApiAuditLog,
-		DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File, InternalMessage,
-		InternalMessageCategory, InternalMessageRecipient, Language, LoginAuditLog,
-		LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition, MembershipRole,
-		Menu, MonitorAlertRule, NotificationChannel, NotificationDelivery,
-		NotificationPreference, NotificationRule, NotificationTemplate,
-		OperationAuditLog, OrgUnit, Permission, PermissionApi, PermissionAuditLog,
-		PermissionGroup, PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
-		PolicyEvaluationLog, Position, Role, RoleFieldPermission, RoleMetadata,
-		RoleOrgUnit, RolePermission, Script, ScriptLog, SysConfig, Task, Tenant, User,
-		UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
-		UserRole []ent.Interceptor
+		BiDashboard, DataAccessAuditLog, DictEntry, DictEntryI18n, DictType, File,
+		InternalMessage, InternalMessageCategory, InternalMessageRecipient, Language,
+		LoginAuditLog, LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition,
+		MembershipRole, Menu, MonitorAlertRule, NotificationChannel,
+		NotificationDelivery, NotificationPreference, NotificationRule,
+		NotificationTemplate, OperationAuditLog, OrgUnit, Permission, PermissionApi,
+		PermissionAuditLog, PermissionGroup, PermissionMenu, PermissionPolicy, Plan,
+		PlanModule, PlanQuota, PolicyEvaluationLog, Position, PrintTemplate, Role,
+		RoleFieldPermission, RoleMetadata, RoleOrgUnit, RolePermission, Script,
+		ScriptLog, SysConfig, Task, Tenant, User, UserCredential, UserMfaFactor,
+		UserOrgUnit, UserPosition, UserRole []ent.Interceptor
 	}
 )

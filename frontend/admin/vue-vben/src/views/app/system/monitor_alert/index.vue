@@ -4,10 +4,13 @@ import type {
   monitor_alertservicev1_MonitorAlertRule as MonitorAlertRule,
 } from '#/api';
 
-import { reactive, ref } from 'vue';
+import { h, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 import { $t } from '@vben/locales';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
 
 import { message, notification } from 'ant-design-vue';
 
@@ -20,6 +23,7 @@ import {
   useEvaluateMonitorAlerts,
   useUpdateMonitorAlertRule,
 } from '#/api';
+import TableAddButton from '#/components/TableAddButton.vue';
 
 /**
  * 监控告警规则：指标阈值 → 触发通知（联动通知域）。
@@ -321,6 +325,25 @@ async function handleEvaluate() {
     evaluateSaving.value = false;
   }
 }
+/* 操作列描述符：编辑/删除两钮全行内，删除 Popconfirm 确认 */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: openEdit,
+    },
+    {
+      key: 'delete',
+      label: $t('page.monitorAlert.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      confirm: { title: $t('page.monitorAlert.deleteConfirm') },
+      onClick: handleDelete,
+    },
+  ];
+}
 </script>
 
 <template>
@@ -330,9 +353,7 @@ async function handleEvaluate() {
         <a-button class="mr-2" @click="openEvaluate">
           {{ $t('page.monitorAlert.evaluateNow') }}
         </a-button>
-        <a-button type="primary" @click="openCreate">
-          {{ $t('page.monitorAlert.create') }}
-        </a-button>
+        <TableAddButton @click="openCreate" />
       </template>
       <template #metric="{ row }">
         <a-tag v-if="row.metric" color="geekblue">
@@ -366,19 +387,7 @@ async function handleEvaluate() {
         </a-tag>
       </template>
       <template #action="{ row }">
-        <a-button type="link" size="small" @click.stop="openEdit(row)">
-          {{ $t('page.monitorAlert.edit') }}
-        </a-button>
-        <a-popconfirm
-          :cancel-text="$t('ui.button.cancel')"
-          :ok-text="$t('ui.button.ok')"
-          :title="$t('page.monitorAlert.deleteConfirm')"
-          @confirm="handleDelete(row)"
-        >
-          <a-button danger type="link" size="small">
-            {{ $t('page.monitorAlert.delete') }}
-          </a-button>
-        </a-popconfirm>
+        <TableActions :row="row" :actions="buildRowActions()" />
       </template>
     </Grid>
 

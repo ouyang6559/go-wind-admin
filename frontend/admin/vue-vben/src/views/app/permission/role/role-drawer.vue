@@ -2,6 +2,7 @@
 import { computed, h, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
+import { useFormCloseGuard } from '#/composables/use-form-close-guard';
 import { $t } from '@vben/locales';
 
 import { notification } from 'ant-design-vue';
@@ -21,12 +22,42 @@ import {
   useUpdateRole,
 } from '#/api';
 import { deepClone, filterNumbers } from '#/utils';
+import PermissionCheckTree from '../permission/permission-check-tree.vue';
+import RoleFieldPermCard from './role-field-perm-card.vue';
 
 const { mutateAsync: createRole } = useCreateRole();
 const { mutateAsync: updateRole } = useUpdateRole();
 
 const data = ref();
 const groups = ref<PermissionGroup[]>([]);
+
+// 分配权限勾选树：数据与装载态由抽屉 onOpenChange 拉取（对齐权限点抽屉的
+// PermissionCheckTree 用法），提交时勾选 key 数组即权限 ID。
+const permTreeData = ref<any[]>([]);
+const permTreeLoading = ref(false);
+
+async function loadPermTree() {
+  permTreeLoading.value = true;
+  try {
+    const groupData = await fetchListPermissionGroups(
+      new PaginationQuery({
+        formValues: { status: 'ON' },
+      }),
+    );
+    groups.value = groupData.items ?? [];
+    const permData = await fetchListPermissions(
+      new PaginationQuery({
+        formValues: { status: 'ON' },
+      }),
+    );
+    permTreeData.value = buildPermissionTree(groups.value, permData.items ?? []);
+  } catch (error) {
+    console.error('load permission tree failed', error);
+    permTreeData.value = [];
+  } finally {
+    permTreeLoading.value = false;
+  }
+}
 
 const getTitle = computed(() =>
   data.value?.create
@@ -39,6 +70,10 @@ const [BaseForm, baseFormApi] = useVbenForm({
   showDefaultActions: false,
   // 所有表单项共用，可单独在表单内覆盖
   commonConfig: {
+    // react 基准抽屉标签列为 120px，这里放宽到 130 容纳「字段权限（User）」整行不折行
+    labelWidth: 130,
+    // 标签列内左对齐（font 尺寸三端本就同为 14px，字重交由 FormLabel 默认）
+    labelClass: 'justify-start',
     // 所有表单项
     componentProps: {
       class: 'w-full',
@@ -73,6 +108,8 @@ const [BaseForm, baseFormApi] = useVbenForm({
       componentProps: {
         placeholder: $t('ui.placeholder.input'),
         allowClear: true,
+        min: 0,
+        precision: 0,
       },
       rules: 'required',
     },
@@ -128,63 +165,48 @@ const [BaseForm, baseFormApi] = useVbenForm({
       component: 'Textarea',
       fieldName: 'description',
       label: $t('ui.table.description'),
-      componentProps: {
-        placeholder: $t('ui.placeholder.input'),
-        allowClear: true,
-      },
-      // AI 内容生成（表单助手）：生成结果回填 description
-      suffix: () =>
-        h(
-          'div',
-          // shrink-0：flex 行内不被 textarea 挤压换行；self-start 顶部对齐
-          { class: 'ml-1 shrink-0 self-start pt-1' },
+      // 与 react/ele 对齐：AI 生成钮进 label、textarea 占满整行（放 suffix 会把
+      // 输入框压掉约 90px 宽），3 行起步比默认的两行高（ele rows:3 同款）
+      labelRender: () =>
+        h('span', { class: 'inline-flex items-center' }, [
+          $t('ui.table.description'),
           h(AiGenerateButton, {
             scene: 'DESCRIPTION',
             onGenerate: (content: string) =>
               baseFormApi.setFieldValue('description', content),
           }),
-        ),
-    },
-    {
-      component: 'ApiTree',
-      fieldName: 'permissions',
+        ]),
       componentProps: {
-        title: $t('page.role.permissions'),
-        showSearch: true,
-        treeDefaultExpandAll: false,
-        loadingSlot: 'suffixIcon',
-        childrenField: 'children',
-        labelField: 'title',
-        valueField: 'key',
-        resultField: 'items',
-        api: async () => {
-          const groupData = await fetchListPermissionGroups(
-            new PaginationQuery({
-              formValues: { status: 'ON' },
-            }),
-          );
-          groups.value = groupData.items ?? [];
-
-          return await fetchListPermissions(
-            new PaginationQuery({
-              formValues: { status: 'ON' },
-            }),
-          );
-        },
-        afterFetch: (data: any) => {
-          return buildPermissionTree(groups.value, data.items);
-        },
+        placeholder: $t('ui.placeholder.input'),
+        allowClear: true,
+        rows: 3,
       },
     },
     {
-      // 字段权限：勾选 = 对该角色用户隐藏（黑名单语义，User 资源试点）。
-      // value 与后端 identity User proto 字段 json_name 逐字一致。
-      component: 'CheckboxGroup',
-      fieldName: 'userHiddenFields',
-      defaultValue: [],
-      label: $t('page.role.fieldPerm.title'),
-      componentProps: {
-        options: [
+      // 分配权限：直接复用权限点抽屉的 PermissionCheckTree（对齐 ele 权限配置
+      // 段的形态——段头顶格左对齐 + 全宽圆角边框盒内滚动 + 空态虚线占位）。
+      // hideLabel 让该行脱离 130px 标签列、通栏铺满，段头由组件 title 承担。
+      component: PermissionCheckTree,
+      fieldName: 'permissions',
+      hideLabel: true,
+      componentProps: () => ({
+        title: $t('page.role.permissions'),
+        treeData: permTreeData.value,
+        loading: permTreeLoading.value,
+        emptyText: $t('common.noData'),
+      }),
+    },
+    {
+      // 字段权限：勾选 = 对该角色用户隐藏（黑名单语义）。对齐 react 基准——
+      // 「字段权限」段头顶格 + 一张边框卡内 提示语 + User/Role 两组竖排勾选。
+      // value 与后端各资源 proto 字段 json_name 逐字一致（当前 User/Role 两资源）。
+      component: RoleFieldPermCard,
+      fieldName: 'fieldPerm',
+      hideLabel: true,
+      componentProps: () => ({
+        title: $t('page.role.fieldPerm.title'),
+        hint: $t('page.role.fieldPerm.hint'),
+        userOptions: [
           { label: $t('page.role.fieldPerm.field.email'), value: 'email' },
           { label: $t('page.role.fieldPerm.field.mobile'), value: 'mobile' },
           { label: $t('page.role.fieldPerm.field.telephone'), value: 'telephone' },
@@ -193,12 +215,22 @@ const [BaseForm, baseFormApi] = useVbenForm({
           { label: $t('page.role.fieldPerm.field.lastLoginAt'), value: 'lastLoginAt' },
           { label: $t('page.role.fieldPerm.field.lastLoginIp'), value: 'lastLoginIp' },
         ],
-      },
+        roleOptions: [
+          {
+            label: $t('page.role.fieldPerm.field.permissions'),
+            value: 'permissions',
+          },
+        ],
+      }),
     },
   ],
 });
 
+// 关闭守卫：遮罩/ESC/X/取消统一，脏数据先确认（docs/form_drawer_close_guard.md）
+const closeGuard = useFormCloseGuard(baseFormApi);
+
 const [Drawer, drawerApi] = useVbenDrawer({
+  onBeforeClose: () => closeGuard.onBeforeClose(),
   onCancel() {
     drawerApi.close();
   },
@@ -237,20 +269,20 @@ const [Drawer, drawerApi] = useVbenDrawer({
     }
 
     // 字段权限始终随表单提交（含清空场景）：抽屉所见即保存后的最终态。
-    // userHiddenFields 是表单专用中间字段，不是 Role proto 字段，提交前必须移除。
-    finalValues.fieldPermissions =
-      Array.isArray(finalValues.userHiddenFields) &&
-      finalValues.userHiddenFields.length > 0
-        ? [
-            {
-              resource: 'User',
-              hiddenFields: finalValues.userHiddenFields.filter(
-                (v: any) => typeof v === 'string',
-              ),
-            },
-          ]
-        : [];
-    delete finalValues.userHiddenFields;
+    // fieldPerm 是表单专用中间字段（{ user, role } 两组勾选），不是 Role proto
+    // 字段，提交前必须折算成 fieldPermissions 多资源数组并移除。
+    finalValues.fieldPermissions = (
+      [
+        ['User', finalValues.fieldPerm?.user],
+        ['Role', finalValues.fieldPerm?.role],
+      ] as const
+    )
+      .filter(([, fields]) => Array.isArray(fields) && fields.length > 0)
+      .map(([resource, fields]) => ({
+        resource,
+        hiddenFields: fields.filter((v: unknown) => typeof v === 'string'),
+      }));
+    delete finalValues.fieldPerm;
 
 
     try {
@@ -263,6 +295,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
           ? $t('ui.notification.create_success')
           : $t('ui.notification.update_success'),
       });
+      closeGuard.markClean();
     } catch {
       notification.error({
         message: data.value?.create
@@ -275,24 +308,34 @@ const [Drawer, drawerApi] = useVbenDrawer({
     }
   },
 
-  onOpenChange(isOpen) {
+  async onOpenChange(isOpen) {
     if (isOpen) {
       // 获取传入的数据
       data.value = drawerApi.getData<Record<string, any>>();
 
       // 为表单赋值。注意：setValues 必须只调一次——连调两次时后一次会清掉
       // 前一次刚设置的值（vee-validate setValues 非合并语义），因此把字段权限
-      // 的中间态 userHiddenFields 合并在同一次调用里。
+      // 的中间态 fieldPerm（User/Role 两组）合并在同一次调用里。
       const row = data.value?.row;
-      const fpEntry = Array.isArray(row?.fieldPermissions)
-        ? row.fieldPermissions.find((e: any) => e?.resource === 'User')
-        : undefined;
-      baseFormApi.setValues({
+      const findHiddenFields = (resource: string) => {
+        const entry = Array.isArray(row?.fieldPermissions)
+          ? row.fieldPermissions.find((e: any) => e?.resource === resource)
+          : undefined;
+        return Array.isArray(entry?.hiddenFields)
+          ? entry.hiddenFields.filter((v: any) => typeof v === 'string')
+          : [];
+      };
+      await baseFormApi.setValues({
         ...(row ?? {}),
-        userHiddenFields: Array.isArray(fpEntry?.hiddenFields)
-          ? fpEntry.hiddenFields.filter((v: any) => typeof v === 'string')
-          : [],
+        fieldPerm: {
+          user: findHiddenFields('User'),
+          role: findHiddenFields('Role'),
+        },
       });
+      await closeGuard.syncBaseline();
+
+      // 分配权限勾选树（打开抽屉时拉取，对齐权限点抽屉）
+      loadPermTree();
 
       // setLoading(true);
       setLoading(false);

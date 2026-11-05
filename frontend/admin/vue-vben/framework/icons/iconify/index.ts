@@ -30,6 +30,10 @@ export const LucideLogOut = createIconifyIcon('lucide:log-out');
 export const LucidePencil = createIconifyIcon('lucide:pencil');
 export const LucidePencilOff = createIconifyIcon('lucide:pencil-off');
 
+export const LucideCopy = createIconifyIcon('lucide:copy');
+
+export const LucidePrinter = createIconifyIcon('lucide:printer');
+
 export const LucideNotebookPen = createIconifyIcon('lucide:notebook-pen');
 export const LucideFilePenLine = createIconifyIcon('lucide:file-pen-line');
 
@@ -39,6 +43,10 @@ export const LucideEllipsisVertical = createIconifyIcon(
   'lucide:ellipsis-vertical',
 );
 export const LucideEllipsis = createIconifyIcon('lucide:ellipsis');
+
+export const LucideChevronDown = createIconifyIcon('lucide:chevron-down');
+export const LucideHistory = createIconifyIcon('lucide:history');
+export const LucideNetwork = createIconifyIcon('lucide:network');
 
 export const LucideCirclePlay = createIconifyIcon('lucide:circle-play');
 export const LucideCircleStop = createIconifyIcon('lucide:circle-stop');
@@ -50,6 +58,10 @@ export const LucideCirclePlus = createIconifyIcon('lucide:circle-plus');
 export const LucideBuilding = createIconifyIcon('lucide:building');
 
 export const LucideRefreshCw = createIconifyIcon('lucide:refresh-cw');
+export const LucidePlay = createIconifyIcon('lucide:play');
+export const LucidePause = createIconifyIcon('lucide:pause');
+export const LucideRotateCw = createIconifyIcon('lucide:rotate-cw');
+export const LucideServerCog = createIconifyIcon('lucide:server-cog');
 
 export const LucideDownload = createIconifyIcon('lucide:download');
 export const LucideCloudDownload = createIconifyIcon('lucide:cloud-download');
@@ -59,6 +71,8 @@ export const LucideUserRoundPen = createIconifyIcon('lucide:user-round-pen');
 export const LucideInbox = createIconifyIcon('lucide:inbox');
 
 export const LucideEye = createIconifyIcon('lucide:eye');
+export const LucideSend = createIconifyIcon('lucide:send');
+export const LucideZap = createIconifyIcon('lucide:zap');
 export const LucideCheck = createIconifyIcon('lucide:check');
 
 export const LucideCircleAlert = createIconifyIcon('lucide:circle-alert');

@@ -14,7 +14,7 @@ backend/                    Go + Kratos + Ent（DI 手写装配 wiring_*.go，�
 frontend/admin/
 ├── react/                  React 19 + antd 6 + ProComponents + TanStack Query + zustand
 ├── vue-element/            Vue 3 + Element Plus + vxe-table + TanStack vue-query + Pinia
-└── vue-vben/               Vben Admin 5.x monorepo（apps/admin + packages/*）+ Ant Design Vue
+└── vue-vben/               Vben Admin 5.x 单包结构（src/ 应用 + framework/ 框架壳，原 apps/packages 已并入）+ Ant Design Vue
 docs/                       文档体系（总入口 docs/README.md：教程层 docs/tutorial/ + 参考层专题文档）
 ```
 
@@ -75,6 +75,7 @@ gow 未覆盖的任务（三端 TS 生成 `make ts`、OpenAPI `make openapi`、`
 
 - **文档总入口（两层索引：教程层 + 参考层）**：`docs/README.md`；渐进教程系列（面向采用者的 10 章学习路径）在 `docs/tutorial/`
 - 各端规范：`frontend/admin/{react,vue-element,vue-vben}/AGENTS.md`
+- **表单抽屉关闭守卫**：`docs/form_drawer_close_guard.md`（遮罩/ESC/X/取消四路径脏数据确认的三端统一规范）——新做或改表单抽屉关闭行为前必读
 - 后端：`docs/backend_project_struct.md`、`docs/backend_deploy.md`、`docs/audit-log-producer-design.md`
 - go-zero .api 文件规范：`docs/go-zero-api-spec.md`（`.api` DSL 语法、参数修饰符、生成命令与坑）
 - 前端权限模型：`docs/frontend_authority.md`
@@ -90,4 +91,6 @@ gow 未覆盖的任务（三端 TS 生成 `make ts`、OpenAPI `make openapi`、`
 - 数据权限范围：`docs/data_scope_design.md`（角色级行数据范围：语义/聚合/接入步骤/运维边界；新表接入数据范围或改聚合规则先读它）
 - 设计语言规范：`docs/design-language.md`（三端视觉唯一权威值表，改颜色/圆角/布局尺寸先改这里再同步三端）
 - AI 模块：`docs/ai_module.md`（模型提供商/流式对话/用量配额/知识库 RAG/脚本 ai 模块/安全洞察/智能问数的架构与部署要求；改 AI 相关代码、接新模型、部署 pgvector 或排租户 AI 403 前先读它）
+- 打印模板：`docs/print_template.md`（单据打印设计器：定位边界/fork 接管 MIT 内核选型/三端接入/输出链与 M0–M4 分期；动打印模板相关代码前先读它）
+- BI 仪表盘：`docs/bi_dashboard.md`（BI 设计器+大屏渲染：定位边界/数据模型（乐观锁）/三端入口/主题跟随语义/宿主集成注意；动 BI 模块相关代码前先读它）
 - 教程第 10 章：`docs/tutorial/10-ai-module.md`（AI 功能的采用者上手路径：配置三步/使用/集成）

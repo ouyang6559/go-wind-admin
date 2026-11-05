@@ -42,6 +42,9 @@ type Api func(*sql.Selector)
 // ApiAuditLog is the predicate function for apiauditlog builders.
 type ApiAuditLog func(*sql.Selector)
 
+// BiDashboard is the predicate function for bidashboard builders.
+type BiDashboard func(*sql.Selector)
+
 // DataAccessAuditLog is the predicate function for dataaccessauditlog builders.
 type DataAccessAuditLog func(*sql.Selector)
 
@@ -146,6 +149,9 @@ type PolicyEvaluationLog func(*sql.Selector)
 
 // Position is the predicate function for position builders.
 type Position func(*sql.Selector)
+
+// PrintTemplate is the predicate function for printtemplate builders.
+type PrintTemplate func(*sql.Selector)
 
 // Role is the predicate function for role builders.
 type Role func(*sql.Selector)

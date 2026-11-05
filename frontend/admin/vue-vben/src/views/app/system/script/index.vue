@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 import { h, ref } from 'vue';
 
 import { Page, useVbenDrawer, type VbenFormProps } from '@vben/common-ui';
-import { LucideFilePenLine, LucideCirclePlay, LucideTrash2 } from '@vben/icons';
+import { LucideCirclePlay, LucideFilePenLine, LucideTrash2 } from '@vben/icons';
 
 import { notification } from 'ant-design-vue';
 
@@ -21,6 +21,9 @@ import {
 } from '#/api';
 import { type scriptservicev1_Script as Script } from '#/api';
 import { $t } from '#/locales';
+import TableActions from '#/components/TableActions.vue';
+import type { TableAction } from '#/components/TableActions.vue';
+import TableAddButton from '#/components/TableAddButton.vue';
 import TableExportButton from '#/components/TableExportButton.vue';
 
 import ScriptDrawer from './script-drawer.vue';
@@ -133,7 +136,7 @@ const gridOptions: VxeGridProps<Script> = {
       field: 'action',
       fixed: 'right',
       slots: { default: 'action' },
-      width: 130,
+      width: 240,
     },
   ],
 };
@@ -247,6 +250,36 @@ async function handleTestRun() {
     testRunLoading.value = false;
   }
 }
+/* 操作列描述符：试运行/编辑/删除三钮全行内，删除 Popconfirm 确认 */
+function buildRowActions(): TableAction[] {
+  return [
+    {
+      key: 'test-run',
+      label: $t('page.script.testRun'),
+      icon: h(LucideCirclePlay),
+      tooltip: $t('page.script.testRun'),
+      onClick: openTestRun,
+    },
+    {
+      key: 'edit',
+      label: $t('common.edit'),
+      icon: h(LucideFilePenLine),
+      onClick: handleEdit,
+    },
+    {
+      key: 'delete',
+      label: $t('common.delete'),
+      icon: h(LucideTrash2),
+      danger: true,
+      confirm: {
+        title: $t('ui.text.do_you_want_delete', {
+          moduleName: $t('page.script.moduleName'),
+        }),
+      },
+      onClick: handleDelete,
+    },
+  ];
+}
 </script>
 
 <template>
@@ -256,10 +289,8 @@ async function handleTestRun() {
         <a-button class="mr-2" @click="handleOpenLogs">
           {{ $t('page.script.logTitle') }}
         </a-button>
-        <a-button class="mr-2" type="primary" @click="handleCreate">
-          {{ $t('page.script.button.create') }}
-        </a-button>
         <TableExportButton :fetcher="exportFetcher" :columns="gridOptions.columns" filename="scripts" />
+        <TableAddButton @click="handleCreate" />
       </template>
       <template #language="{ row }">
         <a-tag :color="scriptLanguageToColor(row.language)">
@@ -279,20 +310,7 @@ async function handleTestRun() {
         />
       </template>
       <template #action="{ row }">
-        <a-tooltip :title="$t('page.script.testRun')">
-          <a-button type="link" :icon="h(LucideCirclePlay)" @click.stop="openTestRun(row)" />
-        </a-tooltip>
-        <a-button type="link" :icon="h(LucideFilePenLine)" @click.stop="handleEdit(row)" />
-        <a-popconfirm
-          :cancel-text="$t('ui.button.cancel')"
-          :ok-text="$t('ui.button.ok')"
-          :title="
-            $t('ui.text.do_you_want_delete', { moduleName: $t('page.script.moduleName') })
-          "
-          @confirm="handleDelete(row)"
-        >
-          <a-button danger type="link" :icon="h(LucideTrash2)" />
-        </a-popconfirm>
+        <TableActions :row="row" :actions="buildRowActions()" />
       </template>
     </Grid>
     <Drawer />

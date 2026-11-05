@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import dayjs, { type Dayjs } from 'dayjs';
 import ListTable from '@/components/common/ListTable';
 import { Tag } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +13,8 @@ import {
   getRecipientStatusMap,
   getRecipientStatusOptions,
 } from '@/pages/app/internal-message/inbox/constants';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 interface InternalMessagePageProps {
   userId: number | undefined;
@@ -63,6 +66,61 @@ const InternalMessagePage: React.FC<InternalMessagePageProps> = ({ userId }) => 
       valueType: 'dateTime',
       hideInSearch: true,
     },
+
+    {
+      title: t('createdAt'),
+      dataIndex: 'createdAt',
+      valueType: 'dateTimeRange',
+      hideInTable: true,
+      search: {
+        transform: (values?: Array<string | Dayjs>) => {
+          const fmt = (v?: string | Dayjs) =>
+            typeof v === 'string' ? v : v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : undefined;
+          return {
+            created_at__gte: fmt(values?.[0]),
+            created_at__lte: fmt(values?.[1]),
+          };
+        },
+      },
+      fieldProps: {
+        showTime: true,
+        presets: [
+          {
+            label: t('common:dateRange.today'),
+            value: [dayjs().startOf('day'), dayjs().endOf('day')],
+          },
+          {
+            label: t('common:dateRange.yesterday'),
+            value: [
+              dayjs().subtract(1, 'day').startOf('day'),
+              dayjs().subtract(1, 'day').endOf('day'),
+            ],
+          },
+          {
+            label: t('common:dateRange.thisWeek'),
+            value: [dayjs().startOf('week'), dayjs().endOf('week')],
+          },
+          {
+            label: t('common:dateRange.lastWeek'),
+            value: [
+              dayjs().subtract(1, 'week').startOf('week'),
+              dayjs().subtract(1, 'week').endOf('week'),
+            ],
+          },
+          {
+            label: t('common:dateRange.thisMonth'),
+            value: [dayjs().startOf('month'), dayjs().endOf('month')],
+          },
+          {
+            label: t('common:dateRange.lastMonth'),
+            value: [
+              dayjs().subtract(1, 'month').startOf('month'),
+              dayjs().subtract(1, 'month').endOf('month'),
+            ],
+          },
+        ],
+      },
+    },
   ];
 
   return (
@@ -103,7 +161,7 @@ const InternalMessagePage: React.FC<InternalMessagePageProps> = ({ userId }) => 
           };
         }}
         rowKey="id"
-        search={{
+        search={{ optionRender: searchOptionRender,
           labelWidth: 'auto',
           defaultCollapsed: false,
         }}
@@ -115,7 +173,7 @@ const InternalMessagePage: React.FC<InternalMessagePageProps> = ({ userId }) => 
         options={{
           density: true,
           fullScreen: true,
-          setting: true,
+          setting: { settingIcon: <ColumnSlidersIcon /> },
           reload: true,
         }}
         size="middle"

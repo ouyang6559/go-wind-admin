@@ -1,7 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import dayjs, { type Dayjs } from 'dayjs';
 import ListTable from '@/components/common/ListTable';
-import { DownloadOutlined } from '@ant-design/icons';
+import TableActions from '@/components/common/TableActions';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Tag, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { auditservicev1_OperationAuditLog as OperationAuditLog } from '@/api/generated/admin/service/v1';
@@ -19,6 +21,9 @@ import {
   successToColor,
   successToName,
 } from './constants';
+import OperationAuditLogDetailDrawer from './DetailDrawer';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 /**
  * 操作审计日志页面
@@ -29,6 +34,7 @@ const OperationAuditLogPage = () => {
   // 最近一次列表查询参数：导出 CSV 时沿用当前搜索/排序条件
   const latestParamsRef = useRef<Record<string, any>>({});
   const { message } = App.useApp();
+  const [detailRecord, setDetailRecord] = useState<OperationAuditLog | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const tableScrollY = useProTableScrollY(containerRef);
@@ -56,6 +62,61 @@ const OperationAuditLogPage = () => {
       valueType: 'dateTime',
       hideInSearch: true,
       sorter: true,
+    },
+
+    {
+      title: t('createdAt'),
+      dataIndex: 'createdAt',
+      valueType: 'dateTimeRange',
+      hideInTable: true,
+      search: {
+        transform: (values?: Array<string | Dayjs>) => {
+          const fmt = (v?: string | Dayjs) =>
+            typeof v === 'string' ? v : v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : undefined;
+          return {
+            created_at__gte: fmt(values?.[0]),
+            created_at__lte: fmt(values?.[1]),
+          };
+        },
+      },
+      fieldProps: {
+        showTime: true,
+        presets: [
+          {
+            label: t('common:dateRange.today'),
+            value: [dayjs().startOf('day'), dayjs().endOf('day')],
+          },
+          {
+            label: t('common:dateRange.yesterday'),
+            value: [
+              dayjs().subtract(1, 'day').startOf('day'),
+              dayjs().subtract(1, 'day').endOf('day'),
+            ],
+          },
+          {
+            label: t('common:dateRange.thisWeek'),
+            value: [dayjs().startOf('week'), dayjs().endOf('week')],
+          },
+          {
+            label: t('common:dateRange.lastWeek'),
+            value: [
+              dayjs().subtract(1, 'week').startOf('week'),
+              dayjs().subtract(1, 'week').endOf('week'),
+            ],
+          },
+          {
+            label: t('common:dateRange.thisMonth'),
+            value: [dayjs().startOf('month'), dayjs().endOf('month')],
+          },
+          {
+            label: t('common:dateRange.lastMonth'),
+            value: [
+              dayjs().subtract(1, 'month').startOf('month'),
+              dayjs().subtract(1, 'month').endOf('month'),
+            ],
+          },
+        ],
+      },
     },
     {
       title: t('success'),
@@ -127,6 +188,25 @@ const OperationAuditLogPage = () => {
       dataIndex: 'ipAddress',
       width: 140,
     },
+    {
+      // 行操作列标题：页面 ns 的 action 键已被「操作类型」数据列占用，走独立键
+      title: t('rowActions'),
+      valueType: 'option',
+      width: 110,
+      render: (_, record) => (
+        <TableActions
+          record={record}
+          actions={[
+            {
+              key: 'detail',
+              label: t('detail'),
+              icon: <InfoCircleOutlined />,
+              onClick: () => setDetailRecord(record),
+            },
+          ]}
+        />
+      ),
+    },
   ];
 
   // 按当前搜索条件导出 CSV（客户端分页聚合，上限 1 万行；全量归档走后端 JSONL 任务）
@@ -174,85 +254,94 @@ const OperationAuditLogPage = () => {
   };
 
   return (
-    <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
-      <div ref={containerRef} className="page-container-content">
-        <ListTable<OperationAuditLog>
-          actionRef={actionRef}
-          columns={columns}
-          request={async (params, sorter) => {
-            latestParamsRef.current = params;
-            const query = new PaginationQuery({
-              paging: {
-                page: params.current || 1,
-                pageSize: params.pageSize || 20,
-              },
-              formValues: Object.fromEntries(
-                Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
-              ),
-              orderBy:
-                sorter && Object.keys(sorter).length > 0
-                  ? Object.entries(sorter).map(([key, value]) =>
-                      value === 'ascend' ? key : `-${key}`,
-                    )
-                  : undefined,
-            });
-
-            const response = await fetchListOperationAuditLogs(query);
-
-            return {
-              data: response.items || [],
-              total: response.total || 0,
-              success: true,
-            };
-          }}
-          rowKey="id"
-          search={{
-            labelWidth: 'auto',
-            defaultCollapsed: false,
-          }}
-          pagination={{
-            defaultPageSize: TABLE.DEFAULT_PAGE_SIZE,
-            showSizeChanger: true,
-            showQuickJumper: true,
-          }}
-          toolBarRender={() => [
-            <Dropdown
-              key="export"
-              menu={{
-                items: [
-                  { key: 'csv', label: t('exportCsv') },
-                  { key: 'xlsx', label: t('exportXlsx') },
-                  { key: 'server-xlsx', label: t('exportServerXlsx') },
-                ],
-                onClick: ({ key }) => {
-                  if (key === 'server-xlsx') {
-                    handleServerExport();
-                    return;
-                  }
-                  handleExport(key as AuditExportFormat);
+    <>
+      <ContentContainer heightMode="fixed" padding="16px" bottomMargin={0}>
+        <div ref={containerRef} className="page-container-content">
+          <ListTable<OperationAuditLog>
+            actionRef={actionRef}
+            columns={columns}
+            request={async (params, sorter) => {
+              latestParamsRef.current = params;
+              const query = new PaginationQuery({
+                paging: {
+                  page: params.current || 1,
+                  pageSize: params.pageSize || 20,
                 },
-              }}
-            >
-              <Button icon={<DownloadOutlined />}>{t('export')}</Button>
-            </Dropdown>,
-          ]}
+                formValues: Object.fromEntries(
+                  Object.entries(params).filter(([key]) => !['current', 'pageSize'].includes(key)),
+                ),
+                orderBy:
+                  sorter && Object.keys(sorter).length > 0
+                    ? Object.entries(sorter).map(([key, value]) =>
+                        value === 'ascend' ? key : `-${key}`,
+                      )
+                    : undefined,
+              });
 
-          options={{
-            density: true,
-            fullScreen: true,
-            setting: true,
-            reload: true,
-          }}
-          size="middle"
-          bordered
-          cardBordered={false}
-          scroll={{
-            y: tableScrollY,
-            x: 1500,
-          }}
-        />
-      </div>
-    </ContentContainer>
+              const response = await fetchListOperationAuditLogs(query);
+
+              return {
+                data: response.items || [],
+                total: response.total || 0,
+                success: true,
+              };
+            }}
+            rowKey="id"
+            search={{ optionRender: searchOptionRender,
+              labelWidth: 'auto',
+              defaultCollapsed: false,
+            }}
+            pagination={{
+              defaultPageSize: TABLE.DEFAULT_PAGE_SIZE,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+            toolBarRender={() => [
+              <Dropdown
+                key="export"
+                menu={{
+                  items: [
+                    { key: 'csv', label: t('exportCsv') },
+                    { key: 'xlsx', label: t('exportXlsx') },
+                    { type: 'divider' },
+                    { key: 'server-xlsx', label: t('exportServerXlsx') },
+                  ],
+                  onClick: ({ key }) => {
+                    if (key === 'server-xlsx') {
+                      handleServerExport();
+                      return;
+                    }
+                    handleExport(key as AuditExportFormat);
+                  },
+                }}
+              >
+                <Button>{t('export')}</Button>
+              </Dropdown>,
+            ]}
+
+            options={{
+              density: true,
+              fullScreen: true,
+              setting: { settingIcon: <ColumnSlidersIcon /> },
+              reload: true,
+            }}
+            size="middle"
+            bordered
+            cardBordered={false}
+            scroll={{
+              y: tableScrollY,
+              x: 1500,
+            }}
+          />
+        </div>
+      </ContentContainer>
+
+      <OperationAuditLogDetailDrawer
+        open={detailRecord !== null}
+        data={detailRecord}
+        onClose={() => setDetailRecord(null)}
+      />
+    </>
   );
 };
 

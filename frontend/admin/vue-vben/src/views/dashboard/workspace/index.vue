@@ -76,7 +76,10 @@ const todayText = computed(() => {
   return $t('page.workspace.today', { date });
 });
 
-// 站内信未读数与最近消息：queryKey 与顶栏通知弹层口径一致，缓存天然共享
+// 站内信未读数与最近消息：queryKey 与顶栏通知弹层口径一致，缓存天然共享。
+// userInfo 未就绪时禁用查询：undefined 条目会被 PaginationQuery 剥掉，
+// 请求变成无 recipient 过滤的租户级查询，列出其他用户的收件记录。
+const hasUserId = computed(() => !!userStore.userInfo?.id);
 const unreadQuery = useListUserInbox(
   new PaginationQuery({
     paging: { page: 1, pageSize: 1 },
@@ -86,15 +89,17 @@ const unreadQuery = useListUserInbox(
     },
     orderBy: ['-created_at'],
   }),
+  { enabled: hasUserId },
 );
 const unreadCount = computed(() => unreadQuery.data.value?.total ?? 0);
 
 const inboxRecentQuery = useListUserInbox(
   new PaginationQuery({
-    paging: { page: 1, pageSize: 5 },
+    paging: { page: 1, pageSize: 7 },
     formValues: { recipient_user_id: userStore.userInfo?.id.toString() },
     orderBy: ['-created_at'],
   }),
+  { enabled: hasUserId },
 );
 const inboxItems = computed(
   () => (inboxRecentQuery.data.value?.items ?? []) as InboxItem[],
@@ -155,9 +160,11 @@ const sessionItems = computed(
       </Card>
 
       <Row :gutter="16">
-        <!-- 我的站内信 -->
-        <Col :xs="24" :lg="12" class="mb-4 lg:mb-0">
-          <Card>
+        <!-- 我的站内信 / 我的活跃会话：两列等高——Col 转 flex 让 Card 纵向撑满（Row
+             默认 align-items:stretch，两 Col 高度本就相同，Card 不撑满才显参差）；
+             lg 起给共同 min-height 整体拉高（站内信 7 行正好填满），窄屏单列不设免留白 -->
+        <Col :xs="24" :lg="12" class="mb-4 flex lg:mb-0">
+          <Card class="w-full lg:min-h-[360px]">
             <template #title>{{ $t('page.workspace.myMessages.title') }}</template>
             <template #extra>
               <a-button
@@ -203,8 +210,8 @@ const sessionItems = computed(
         </Col>
 
         <!-- 我的活跃会话 -->
-        <Col :xs="24" :lg="12">
-          <Card>
+        <Col :xs="24" :lg="12" class="flex">
+          <Card class="w-full lg:min-h-[360px]">
             <template #title>{{ $t('page.workspace.mySessions.title') }}</template>
             <template #extra>
               <a-button

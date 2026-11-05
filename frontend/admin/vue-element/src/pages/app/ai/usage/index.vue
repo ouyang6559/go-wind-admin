@@ -17,7 +17,7 @@
 
     <!-- 流水列表：ProPage 统一搜索/分页/导出约定（与其余管理页一致） -->
     <div class="flex-1 min-h-0">
-      <ProPage ref="pageRef" :config="pageConfig" @toolbar="handleToolbar" />
+      <ProPage ref="pageRef" :config="pageConfig" />
     </div>
   </div>
 </template>
@@ -30,7 +30,6 @@ import ProPage from "@/components/Pro/ProPage/index.vue";
 import type { ProPageConfig } from "@/components/Pro/ProPage/types";
 import { PaginationQuery } from "@/core/transport/rest";
 import { apiClient } from "@/api/client";
-import { createPagedExportAction } from "@/api/composables";
 import { serverExportFile } from "@/api/composables/server-export";
 
 const { t } = useI18n();
@@ -96,16 +95,6 @@ async function handleServerExport() {
   }
 }
 
-// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
-// exportServer 是工具栏按钮，此处承接。
-function handleToolbar(name: string) {
-  if (name === "exportServer") {
-    handleServerExport();
-    return;
-  }
-}
-
-
 const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
   exportFilename: "ai-usage-logs",
@@ -121,6 +110,8 @@ const pageConfig = computed<ProPageConfig>(() => ({
     ],
   },
   table: {
+    // 服务端全量导出：导出全部下拉的第三项，错误处理在本页 handleServerExport
+    exportServer: handleServerExport,
     listAction: async (query: any) => {
       const { page, pageSize, ...rest } = query;
       latestFormValuesRef.value = rest;
@@ -133,16 +124,9 @@ const pageConfig = computed<ProPageConfig>(() => ({
       );
       return { items: result.items || [], total: Number(result.total || 0) };
     },
-    exportsAction: createPagedExportAction(fetchUsageLogs),
-    toolbar: [
-      {
-        name: "exportServer",
-        label: t("pages.ai_usage.exportServer"),
-        icon: "lucide:download",
-      },
-    ],
+    toolbar: [],
     toolbarRight: [],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     tableAttrs: { border: true, stripe: true },
     columns: [
       { type: "index", label: t("common.table.seq"), width: 60 },

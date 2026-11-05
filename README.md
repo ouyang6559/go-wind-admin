@@ -45,6 +45,18 @@
 
 ---
 
+## 代码仓库
+
+本项目在以下三个平台同步发布，内容一致，任选其一克隆 / Star 即可：
+
+| 平台 | 地址 |
+|------|------|
+| GitHub | <https://github.com/tx7do/go-wind-admin> |
+| Gitee | <https://gitee.com/tx7do/go-wind-admin> |
+| AtomGit | <https://atomgit.com/tx7do/go-wind-admin> |
+
+---
+
 ## 演示地址
 
 三个地址是同一套后端能力的三个并列演示——**逐个点开对比，你只会要其中一套**：
@@ -67,7 +79,7 @@
 | 工具 | 版本 |
 |------|------|
 | Go | 1.26+（以 `backend/go.mod` 为准） |
-| Node.js | `^20.19.0 \|\| >=22.12.0`——三端 `engines` 的交集由 vue-element 决定（vue-vben 只要求 `>=20.10.0`，react 未声明）。**21.x 不满足**，20.18 及以下也不满足 |
+| Node.js | `^20.19.0 \|\| >=22.12.0`——三端 `engines` 的交集由 vue-element 决定（vue-vben 只要求 `>=20.11.0`，react 未声明）。**21.x 不满足**，20.18 及以下也不满足 |
 | pnpm | `>= 9.12.0`（下限来自 vue-vben 的 `engines.pnpm`）。vue-vben 另用 `packageManager` 钉死 `pnpm@11.18.0`：启用 corepack（`corepack enable`）即自动切换，未启用则手动 `npm i -g pnpm@11.18.0` 或至少对齐 major |
 | Docker | 20.0+ |
 
@@ -137,7 +149,7 @@ gow run admin
 |---------|------|---------|------|
 | React | `frontend/admin/react` | `pnpm dev` | 15888 |
 | Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev` | 15666 |
 
 ```shell
 # 三选一：先 cd 进你选的那一端，再装依赖、再启动。
@@ -149,10 +161,10 @@ pnpm dev                    # 端口 15888
 
 # 换成另外两端：
 cd frontend/admin/vue-element && pnpm install && pnpm dev            # 端口 15777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 15666
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev             # 端口 15666
 ```
 
-> vue-vben 本身是个 pnpm workspace（`pnpm-workspace.yaml` + `apps/` + `packages/`），所以必须在它的**根目录**装依赖，`pnpm dev:antd` 再从 workspace 里挑出 `@vben/web-antd` 这个 app 启动——在 `apps/admin` 下单独 `pnpm install` 会破坏 catalog 版本锁定。
+> vue-vben 已由 Vben 5 官方的多包 monorepo（`apps/` + `packages/`）合并为**单包结构**：应用源码在 `src/`，框架壳在 `framework/`，`pnpm dev` 直接启动唯一应用。依赖仍必须装在它的**根目录**——`pnpm-workspace.yaml` 仍保留 catalog 版本锁定。
 
 ---
 
@@ -162,7 +174,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 15
 <tr><th>层级</th><th>技术</th></tr>
 <tr><td><strong>后端框架</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
 <tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code>（二选一，构建标签切换，默认 Ent） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
-<tr><td><strong>中间件</strong></td><td><code>Redis</code>（compose 拉 <code>bitnami/redis:latest</code>，未固定版本；代码只用到 Set/Expire/Publish 一类的长期命令，未使用 Redis 8 专属命令） · <code>MinIO</code>（S3 兼容对象存储）</td></tr>
+<tr><td><strong>中间件</strong></td><td><code>Redis</code>（compose 拉 <code>bitnami/redis:latest</code>，未固定版本；代码只用到 Set/Expire/Publish 一类的长期命令，未使用 Redis 8 专属命令） · <code>SeaweedFS</code>（S3 兼容对象存储，MinIO 社区版停维护后的替代，容器服务名沿用 minio）</td></tr>
 <tr><td><strong>认证授权</strong></td><td><code>JWT</code>（认证） · <code>Casbin</code> / <code>OPA</code>（鉴权引擎，二选一，默认 noop 全放行）</td></tr>
 <tr><td><strong>实时通信</strong></td><td><code>SSE</code>（服务端推送） · <code>Asynq</code>（异步任务）</td></tr>
 <tr><td><strong>脚本引擎</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多语言 Hook 插件系统</td></tr>
@@ -231,6 +243,8 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # 端口 15
 | 参数管理 | 平台全局系统参数的键值管理（区别于业务字典），内置参数启动时播种、禁删可改；服务侧经缓存 accessor 读取，多实例部署下参数变更经 Redis 发布订阅广播失效各实例缓存 |
 | 机器凭证（AK/SK） | 租户级 AccessKey / SecretKey 管理：创建时 Secret 一次性展示，支持启停、删除与密钥轮换重置（轮换后旧 Secret 立即失效）；AK / Secret 可经令牌交换端点换取租户作用域机器 JWT（machine 角色、仅签发 access 令牌），交换端点按 IP + AK 接入尝试限流 |
 | 语言管理 | 管理系统支持的多语言，配置语言名称、语言代码、本地名称、启用与默认状态 |
+| 打印模板 | 单据打印设计器：可视化拖拽设计打印模板（文本/表格/条码/二维码，毫米精确布局，多页跨页表头），模板按资源绑定，任意列表行可一键打印或批量打印（勾选行合并为单文档）；支持浏览器打印与服务端 PDF（后端 Chromium 渲染，部署需启用打印浏览器层，见 [docs/print_template.md](./docs/print_template.md)） |
+| BI 仪表盘 | BI 设计器（@go-wind/bi-*，拖拽画布、跨图联动、下钻、主题预设），仪表盘/大屏持久化入库（`bi_dashboards`，乐观锁防并发覆盖、内置禁删可复制派生）；三端同构：仪表盘渲染、设计器编辑（管理抽屉或独立页 `?id=`）、管理页列表；演示数据 static 内嵌，真实业务由宿主注入数据集 resolver；详见 [docs/bi_dashboard.md](./docs/bi_dashboard.md) |
 
 ### 消息与日志
 
@@ -270,7 +284,7 @@ go-wind-admin/
 │   │   └── internal/               # 业务核心（data/service/server）
 │   ├── pkg/                        # 公共包
 │   │   ├── scripting/              # 多语言脚本引擎（Lua + JavaScript）
-│   │   ├── oss/                    # 对象存储（MinIO）
+│   │   ├── oss/                    # 对象存储（S3 兼容：SeaweedFS）
 │   │   ├── eventbus/               # 事件总线
 │   │   └── ...                     # 其他工具包
 │   ├── scripts/                    # 部署与备份脚本（env/docker/deploy/backup）

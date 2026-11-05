@@ -10,6 +10,8 @@ import { PaginationQuery } from '@/core';
 import { fetchListScriptLogs, usePurgeScriptLogs } from '@/api/hooks/script-log';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import { TABLE } from '@/config/constants.ts';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 interface ScriptLogDrawerProps {
   open: boolean;
@@ -131,12 +133,13 @@ const ScriptLogDrawer: React.FC<ScriptLogDrawerProps> = ({ open, onClose }) => {
 
   return (
     <Drawer
-      title={t('logTitle')}
+      title={t('viewTitle')}
       open={open}
       onClose={onClose}
       size={960}
-      destroyOnHidden
+      forceRender
     >
+      <div ref={containerRef} className="page-container-content h-full">
       <ListTable<ScriptLog>
         actionRef={actionRef}
         columns={columns}
@@ -162,7 +165,7 @@ const ScriptLogDrawer: React.FC<ScriptLogDrawerProps> = ({ open, onClose }) => {
           };
         }}
         rowKey="id"
-        search={{
+        search={{ optionRender: searchOptionRender,
           labelWidth: 'auto',
           defaultCollapsed: false,
         }}
@@ -188,10 +191,11 @@ const ScriptLogDrawer: React.FC<ScriptLogDrawerProps> = ({ open, onClose }) => {
             </Button>
           </Popconfirm>,
         ]}
-        options={{ density: true, reload: true }}
+        options={{ setting: { settingIcon: <ColumnSlidersIcon /> }, density: true, reload: true }}
         size="middle"
         scroll={{ y: tableScrollY }}
       />
+      </div>
     </Drawer>
   );
 };

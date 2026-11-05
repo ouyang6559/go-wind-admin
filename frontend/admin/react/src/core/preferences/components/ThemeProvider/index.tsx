@@ -4,6 +4,8 @@ import { ConfigProvider, Watermark, theme as antdTheme, type ThemeConfig } from 
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
 // import jaJP from 'antd/locale/ja_JP';
+import { ProConfigProvider, enUSIntl, zhCNIntl } from '@ant-design/pro-components';
+import i18n from 'i18next';
 
 import { usePreferencesStore } from '../../store';
 import {
@@ -11,6 +13,7 @@ import {
   LIGHT_PALETTE,
   darkThemeComponents,
   darkThemeTokens,
+  lightThemeComponents,
   lightThemeTokens,
 } from '../../config';
 import { SECONDARY_TEXT_DARK, SECONDARY_TEXT_LIGHT } from '../../config/constants';
@@ -91,8 +94,9 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 
     // 输入类控件的内嵌底色、抽屉遮罩、表格行悬停等组件级精调只在暗色需要：
     // 浅色的对应档由 defaultAlgorithm 派生即可，额外覆写会形成第二套真相。
+    // 浅色那套只有一条 Menu.subMenuItemBg（见 lightTheme.ts），不是"没有组件级 token"了。
     const components: ThemeConfig['components'] =
-      effectiveMode === 'dark' ? darkThemeComponents : undefined;
+      effectiveMode === 'dark' ? darkThemeComponents : lightThemeComponents;
 
     return {
       algorithm: algorithms.length > 0 ? algorithms : antdTheme.defaultAlgorithm,
@@ -123,12 +127,17 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 
     // 标记主题模式，供 CSS 选择器使用
     root.setAttribute('data-theme', effectiveMode);
+    // 同时维护标准的 html.dark class：本应用自己的样式一律读 data-theme，
+    // 但第三方组件（@go-wind/editor-react、@go-wind/bi-vue 等）按 html.dark 判暗色，
+    // 只给 data-theme 它们会退回去跟随系统偏好，出现"应用亮色、组件暗色"。
+    root.classList.toggle('dark', effectiveMode === 'dark');
 
     return () => {
       root.style.backgroundColor = '';
       body.style.backgroundColor = '';
       root.style.color = '';
       root.removeAttribute('data-theme');
+      root.classList.remove('dark');
     };
   }, [effectiveMode]);
 
@@ -164,6 +173,19 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   // 6. 国际化配置
   const locale = localeMap[appPrefs.locale] ?? zhCN;
 
+  // 6.1 ProComponents 搜索表单按钮文案统一为「搜索」（内置 zh_CN 是「查询」），
+  //     其余文案透传对应内置语言包
+  const proIntl = useMemo(() => {
+    const base = appPrefs.locale === 'en-US' ? enUSIntl : zhCNIntl;
+    return {
+      locale: base.locale,
+      getMessage: (id: string, defaultMessage: string) =>
+        id === 'tableForm.search'
+          ? i18n.t('button.search', { ns: 'common' })
+          : base.getMessage(id, defaultMessage),
+    };
+  }, [appPrefs.locale]);
+
   // 7. 水印内容
   const watermarkText = appPrefs.watermark ? `${appPrefs.name} ${appPrefs.version}` : '';
 
@@ -176,20 +198,22 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 
   return (
     <ConfigProvider theme={themeConfig} locale={locale}>
-      {watermarkText ? (
-        <Watermark
-          content={watermarkText}
-          font={{ fontSize: 14, color: watermarkColor }}
-          gap={[120, 120]}
-          offset={[60, 60]}
-          rotate={-22}
-          zIndex={1}
-        >
-          {children}
-        </Watermark>
-      ) : (
-        children
-      )}
+      <ProConfigProvider intl={proIntl}>
+        {watermarkText ? (
+          <Watermark
+            content={watermarkText}
+            font={{ fontSize: 14, color: watermarkColor }}
+            gap={[120, 120]}
+            offset={[60, 60]}
+            rotate={-22}
+            zIndex={1}
+          >
+            {children}
+          </Watermark>
+        ) : (
+          children
+        )}
+      </ProConfigProvider>
     </ConfigProvider>
   );
 };

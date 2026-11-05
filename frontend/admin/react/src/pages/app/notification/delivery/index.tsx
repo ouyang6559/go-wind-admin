@@ -14,6 +14,8 @@ import { TABLE } from '@/config/constants';
 import { fetchListNotificationDeliveries } from '@/api/hooks/notification-delivery';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 /**
  * 通知投递台账（只读）
@@ -234,7 +236,7 @@ const NotificationDeliveryPage = () => {
             };
           }}
           rowKey="id"
-          search={{
+          search={{ optionRender: searchOptionRender,
             labelWidth: 'auto',
             defaultCollapsed: false,
           }}
@@ -260,7 +262,7 @@ const NotificationDeliveryPage = () => {
           options={{
             density: true,
             fullScreen: true,
-            setting: true,
+            setting: { settingIcon: <ColumnSlidersIcon /> },
             reload: true,
           }}
           size="middle"

@@ -1,5 +1,5 @@
 <template>
-  <div class="pro-page">
+  <div ref="rootRef" class="pro-page">
     <!-- 搜索区 -->
     <ProSearch
       v-if="!showSkeleton && searchVisible && config.search?.fields?.length"
@@ -51,7 +51,20 @@
           @filter-change="handleFilterChange"
         >
           <template #left><slot name="toolbar-left" /></template>
-          <template #before-tools><slot name="toolbar-before-tools" /></template>
+          <template #before-tools>
+            <slot name="toolbar-before-tools" />
+            <!-- 导出全部（exports 工具的落地形态，置于图标工具区之前，与 react/vben 同位）：
+                 CSV/Excel 按当前搜索条件经 listAction 聚合（上限 1 万行）；
+                 服务端全量项由页面经 table.exportServer 提供 -->
+            <ExportAllDropdown
+              v-if="hasExportAllDropdown"
+              :fetcher="exportFetcher"
+              :columns="config.table.columns"
+              :params="searchParams"
+              :filename="config.exportFilename ?? 'export'"
+              :server-export="config.table.exportServer"
+            />
+          </template>
           <template v-if="!!$slots['toolbar-filter']" #filter>
             <slot name="toolbar-filter" />
           </template>
@@ -101,17 +114,6 @@
       </template>
     </div>
 
-    <!-- 导出弹窗 -->
-    <ExportModal
-      ref="exportModalRef"
-      :columns="exportableColumns"
-      :selection-data="selectionData"
-      :table-data="tableData"
-      :exports-action="config.table.exportsAction"
-      :search-params="searchParams"
-      :default-filename="config.exportFilename"
-    />
-
     <!-- 导入弹窗 -->
     <ImportModal
       ref="importModalRef"
@@ -143,12 +145,13 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { useRoute } from "vue-router";
 import { useI18n } from "@/core/i18n";
 import { preferences } from "@/core/preferences";
+import { PaginationQuery } from "@/core/transport/rest";
 
 import ProSearch from "../ProSearch/index.vue";
 import ProTable from "../ProTable/index.vue";
 import ProModal from "../ProModal/index.vue";
 import ProToolbar from "../ProToolbar/index.vue";
-import ExportModal from "./ExportModal.vue";
+import ExportAllDropdown from "../ExportAllDropdown.vue";
 import ImportModal from "./ImportModal.vue";
 import TableSkeleton from "./TableSkeleton.vue";
 
@@ -193,8 +196,8 @@ const tableState = useTableState<T, Q>({
 const modalState = useModalState<T>(rowKey);
 const tableRef = ref<any>(null);
 const searchRef = ref<any>(null);
+const rootRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
-const exportModalRef = ref<InstanceType<typeof ExportModal>>();
 const importModalRef = ref<InstanceType<typeof ImportModal>>();
 
 const tableData = computed(() => tableState.data.value);
@@ -238,9 +241,6 @@ function handleRetry() {
   tableState.fetch(searchParams);
 }
 
-// === 选中数据（用于导出） ===
-const selectionData = computed(() => tableState.selection.value);
-
 // === filter 列显隐 ===
 // vxe-table 引擎由 customConfig 接管列显隐；el-table 引擎使用 checkbox
 const filterColumns = computed(() => {
@@ -251,10 +251,24 @@ const filterColumns = computed(() => {
   );
 });
 
-// === 可导出的列（有 prop 和 label 的普通列） ===
-const exportableColumns = computed(() =>
-  props.config.table.columns.filter((col: any) => col.prop && col.label && !col.type)
+// === 导出全部：exports 工具的落地形态 ===
+// defaultToolbar 含 "exports" 即渲染「导出全部」下拉（图标弹窗形态已退役）。
+const hasExportAllDropdown = computed(() =>
+  (props.config.table.defaultToolbar ?? []).some((item) => item === "exports")
 );
+
+// 聚合 fetcher：复用页面 listAction（与表格加载同一入口、同一参数映射），
+// 分页字段摊平 + 搜索条件原样透传——导出的即当前搜索看到的。
+const exportFetcher = async (query: PaginationQuery) => {
+  const listAction = props.config.table.listAction as unknown as (
+    q: Record<string, any>
+  ) => Promise<{ items?: any[]; total?: number }>;
+  return await listAction({
+    page: query.paging?.page ?? 1,
+    pageSize: query.paging?.pageSize ?? 1000,
+    ...(query.formValues ?? {}),
+  });
+};
 
 // === 区分表格插槽和弹窗插槽 ===
 const tableColumnProps = computed(() =>
@@ -316,22 +330,27 @@ const rightButtons = computed(() => toToolbarButtons(props.config.table.toolbarR
 const defaultToolbarButtons = computed(() => {
   const dt = props.config.table.defaultToolbar;
   if (!dt?.length)
-    return ["refresh", "filter", "search"] as Array<ToolbarRightType | ToolbarCustomButton>;
-  return dt.map((item) => {
-    if (typeof item === "string") return item as ToolbarRightType;
-    // ToolsButton (label) -> ToolbarCustomButton (text)
-    return {
-      name: item.name,
-      text: item.label,
-      icon: item.icon,
-      auth: item.auth,
-      attrs: item.attrs,
-      hidden: item.hidden,
-      disabled: item.disabled,
-      loading: item.loading,
-      visible: item.visible,
-    } as ToolbarCustomButton;
-  });
+    return ["refresh", "filter", "search", "zoom"] as Array<
+      ToolbarRightType | ToolbarCustomButton
+    >;
+  // "exports" 已由 before-tools 区的「导出全部」下拉承载，不再渲染图标钮
+  return dt
+    .filter((item) => item !== "exports")
+    .map((item) => {
+      if (typeof item === "string") return item as ToolbarRightType;
+      // ToolsButton (label) -> ToolbarCustomButton (text)
+      return {
+        name: item.name,
+        text: item.label,
+        icon: item.icon,
+        auth: item.auth,
+        attrs: item.attrs,
+        hidden: item.hidden,
+        disabled: item.disabled,
+        loading: item.loading,
+        visible: item.visible,
+      } as ToolbarCustomButton;
+    });
 });
 
 // === 搜索处理 ===
@@ -374,10 +393,6 @@ function handleToolbarClick(name: string) {
       break;
     case "delete":
       handleBatchDelete();
-      break;
-    case "export":
-    case "exports":
-      openExportsModal();
       break;
     case "import":
     case "imports":
@@ -467,18 +482,21 @@ async function handleDelete(row: T) {
 }
 
 // === 全屏缩放 ===
+// 全屏目标是整页根节点（搜索卡 + 工具栏 + 表格），对齐 react ProTable fullScreen /
+// vben vxe zoom 的范围（两端都把搜索区一起带进全屏）。
 function handleZoom(isFullscreen: boolean) {
-  const el = contentRef.value;
+  const el = rootRef.value;
   if (!el) return;
   if (isFullscreen) {
-    el.requestFullscreen?.();
+    // requestFullscreen 可能被拒绝（iframe 未授权 / 用户拒绝权限提示），拒绝是正常路径
+    el.requestFullscreen?.()?.catch((error: unknown) => {
+      console.error("[ProPage] 进入全屏失败", error);
+    });
   } else {
-    document.exitFullscreen?.();
+    document.exitFullscreen?.()?.catch((error: unknown) => {
+      console.error("[ProPage] 退出全屏失败", error);
+    });
   }
-}
-
-function openExportsModal() {
-  exportModalRef.value?.open();
 }
 
 function openImportsModal() {
@@ -568,8 +586,9 @@ defineExpose({
 .pro-page {
   display: flex;
   flex-direction: column;
-  /* 搜索卡 → 列表卡 16px：与 §2.6「内容边距 16」「表格→分页 16」同族（react 端 2026-10-17 定稿同一档） */
-  gap: 16px;
+  /* 搜索卡 → 列表卡 12px：8px 太挤，两块"贴一块"；16px 又让列表数据显示空间被压缩。
+     取中间值，既保留两张卡的独立感，又不浪费垂直空间。 */
+  gap: 12px;
   height: 100%;
 
   &__content {
@@ -602,6 +621,14 @@ defineExpose({
 
   &__error-alert {
     margin-bottom: 8px;
+  }
+
+  // 全屏态：铺满视口时去掉卡片圆角，露出根节点背景色的只有搜索卡与列表卡之间的 12px 缝，
+  // 用页面底色填充；小视口下内容超出时允许滚动兜底。
+  &:fullscreen {
+    background: var(--el-bg-color-page);
+    border-radius: 0;
+    overflow: auto;
   }
 }
 </style>

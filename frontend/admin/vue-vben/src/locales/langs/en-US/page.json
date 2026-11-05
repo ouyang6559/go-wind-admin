@@ -71,6 +71,7 @@
       "address": "Address",
       "region": "Region",
       "description": "Description",
+      "locale": "Preferred Language",
       "lastLoginAt": "Last Login At",
       "lastLoginIp": "Last Login IP",
       "roleId": "Role",
@@ -87,7 +88,8 @@
       "updateUserInfo": "Update Profile",
       "updatePassword": "Change Password",
       "uploadAvatar": "Upload Avatar",
-      "deleteAvatar": "Delete Avatar"
+      "deleteAvatar": "Delete Avatar",
+      "resetMfa": "Reset MFA"
     },
     "profile": {
       "tab": {
@@ -96,7 +98,8 @@
         "editPassword": "Change Password",
         "accountBind": "Account Bindings",
         "activeSessions": "Active Sessions",
-        "notification": "Notifications"
+        "notification": "Notifications",
+        "tenantUsage": "Plan Usage"
       },
       "security": {
         "password": "Login Password",
@@ -143,6 +146,27 @@
         "transactionalNote": "Transactional emails such as verification codes are not affected by this page and are always sent.",
         "startTime": "Start",
         "endTime": "End"
+      },
+      "info": {
+        "username": "Username",
+        "roleNames": "Roles",
+        "orgUnitNames": "Organizations",
+        "positionNames": "Positions",
+        "tenantName": "Tenant",
+        "lastLoginAt": "Last Login At",
+        "lastLoginIp": "Last Login IP",
+        "createdAt": "Created At"
+      },
+      "usage": {
+        "plan": "Current plan: ",
+        "noPlan": "No plan subscribed",
+        "empty": "This account has no plan usage data.",
+        "loading": "Loading…",
+        "reached": "Limit reached",
+        "USER_LIMIT": "Users",
+        "STORAGE": "Storage (MB)",
+        "API_CALL": "API Calls",
+        "AI_TOKENS": "AI Token Usage"
       }
     },
     "detail": {
@@ -190,6 +214,8 @@
     "orgUnits": "Authorized Org Units",
     "fieldPerm": {
       "title": "Field Permissions",
+      "userTitle": "Field Permissions (User)",
+      "roleTitle": "Field Permissions (Role)",
       "hint": "Checked fields are hidden for users with this role: removed from list/detail views and stripped from create/update payloads (takes effect after re-login).",
       "field": {
         "email": "Email",
@@ -198,7 +224,8 @@
         "address": "Address",
         "region": "Region",
         "lastLoginAt": "Last Login At",
-        "lastLoginIp": "Last Login IP"
+        "lastLoginIp": "Last Login IP",
+        "permissions": "Permission set"
       }
     }
   },
@@ -209,8 +236,14 @@
     "path": "Tree Path",
     "groupId": "Group",
     "groupName": "Group Name",
-    "menuIds": "Assigned Menus",
-    "apiIds": "Assigned APIs",
+    "menuIds": "Associated Menus",
+    "apiIds": "Associated APIs",
+    "menuIdsPlaceholder": "Select associated menus",
+    "apiIdsPlaceholder": "Select associated APIs",
+    "treeExpandAll": "Expand",
+    "treeCollapseAll": "Collapse",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect",
     "description": "Permission Description",
     "button": {
       "create": "Create Permission",
@@ -224,7 +257,8 @@
     "parentId": "Parent Group",
     "button": {
       "create": "Create Group"
-    }
+    },
+    "moduleOther": "Other"
   },
   "dict": {
     "moduleName": "Dictionary",
@@ -368,7 +402,9 @@
     "notification": {
       "tenant_code_exists": "Tenant code already exists, please change and try again!",
       "user_username_exists": "Admin username already exists, please change and try again!"
-    }
+    },
+    "quotaType": "Quota Type",
+    "tenant_code_exists": "Tenant code already exists"
   },
   "file": {
     "moduleName": "File",
@@ -403,12 +439,12 @@
     "enable": "Enabled",
     "button": {
       "create": "Create Task",
-      "start": "Start Task",
-      "restart": "Restart Task",
-      "stop": "Stop Task",
-      "startAll": "Start All Tasks",
-      "restartAll": "Restart All Tasks",
-      "stopAll": "Stop All Tasks"
+      "start": "Start",
+      "restart": "Restart",
+      "stop": "Stop",
+      "startAll": "Start All",
+      "restartAll": "Restart All",
+      "stopAll": "Stop All"
     },
     "text": {
       "do_you_want_start_all_task": "Are you sure you want to start all tasks?",
@@ -417,25 +453,50 @@
       "do_you_want_start_task": "Are you sure you want to start this task?",
       "do_you_want_restart_task": "Are you sure you want to restart this task?",
       "do_you_want_stop_task": "Are you sure you want to stop this task?"
-    }
+    },
+    "sysTasksButton": "System Tasks",
+    "sysTasksTitle": "System Resident Tasks",
+    "sysTaskType": "Task Type",
+    "sysTaskCron": "Schedule",
+    "sysTaskNext": "Next Run",
+    "sysTaskPrev": "Last Run",
+    "sysTaskNeverRun": "never run",
+    "sysTaskSchedules": "Schedules",
+    "sysTaskStates": "States",
+    "sysTaskFailures": "Recent Failures",
+    "sysTaskQueueHint": "queue {queue} (read-only asynq; tasks evaluated every 5 min show up here)",
+    "sysTaskActive": "Active",
+    "sysTaskPending": "Pending",
+    "sysTaskRetry": "Retry",
+    "sysTaskArchived": "Archived",
+    "sysTaskState": "State",
+    "sysTaskLastError": "Last Error",
+    "sysTaskFailedAt": "Failed At",
+    "sysTaskRetried": "Tried/Max",
+    "sysTaskNoFailures": "No failures recorded.",
+    "sysTaskLoading": "Loading…",
+    "sysTaskLoadFailed": "Load failed"
   },
   "internalMessage": {
-    "moduleName": "Message Management",
-    "title": "Message Subject",
+    "moduleName": "Message",
+    "title": "Title",
     "content": "Message Content",
     "type": "Message Type",
-    "status": "Message Status",
+    "status": "Status",
     "categoryName": "Category",
     "senderName": "Sender",
+    "senderSystem": "System",
     "categoryId": "Category",
+    "createdAt": "Received At",
     "readAt": "Read At",
     "detail": "Message Detail",
     "button": {
-      "create": "Publish Message",
-      "markAsRead": "Mark as Read"
+      "create": "Create Message",
+      "markAsRead": "Mark as Read",
+      "markAllRead": "Mark All Read"
     },
     "drawer": {
-      "create": "Publish Message",
+      "create": "Create Message",
       "update": "Update Message"
     },
     "sendScope": "Send To",
@@ -498,7 +559,31 @@
     "createdAt": "Logged At",
     "path": "Request Path",
     "httpMethod": "HTTP Method",
-    "latencyMs": "API Latency (ms)"
+    "latencyMs": "API Latency (ms)",
+    "sectionBasic": "Basic Information",
+    "sectionDevice": "Device Information",
+    "sectionApi": "API Information",
+    "sectionOther": "Other Information",
+    "userId": "User ID",
+    "statusCode": "Status Code",
+    "tenantName": "Tenant",
+    "requestUri": "Request URI",
+    "apiModule": "API Module",
+    "apiOperation": "API Operation",
+    "apiDescription": "API Description",
+    "requestBody": "Request Body",
+    "requestHeader": "Request Header",
+    "response": "Response",
+    "reason": "Reason",
+    "referer": "Referer",
+    "spanId": "Span ID",
+    "requestId": "Request ID",
+    "traceId": "Trace ID",
+    "logHash": "Log Hash",
+    "signature": "Signature",
+    "osName": "OS",
+    "browserName": "Browser",
+    "userAgent": "User-Agent"
   },
   "redisCacheMonitor": {
     "moduleName": "Redis Cache Monitor",
@@ -903,7 +988,8 @@
     "logCreatedAt": "Executed At",
     "logPurge": "Purge >90d",
     "logPurgeConfirmDesc": "This deletes all execution logs older than 90 days. Continue?",
-    "logPurgeSuccess": "Purged {count} log entries"
+    "logPurgeSuccess": "Purged {count} log entries",
+    "viewLogTitle": "View Script Log"
   },
   "accessKey": {
     "moduleName": "credential",
@@ -1282,5 +1368,90 @@
       "remove": "Remove",
       "configAutoSaved": "Edits write into the canvas immediately; click \"Save Canvas\" to persist"
     }
+  },
+  "language": {
+    "moduleName": "Language",
+    "languageName": "Language Name",
+    "languageCode": "Language Code",
+    "nativeName": "Native Name",
+    "isEnabled": "Enabled",
+    "isDefault": "Default",
+    "button": {
+      "create": "Create Language",
+      "update": "Update Language"
+    }
+  },
+  "printTemplate": {
+    "moduleName": "Print Template",
+    "name": "Template Name",
+    "code": "Code",
+    "resourceKey": "Bound Resource",
+    "paperSize": "Paper Size",
+    "orientation": "Orientation",
+    "portrait": "Portrait",
+    "landscape": "Landscape",
+    "isEnabled": "Enabled",
+    "enabledTag": "Enabled",
+    "disabledTag": "Disabled",
+    "isBuiltIn": "Type",
+    "builtInTag": "Built-in",
+    "customTag": "Custom",
+    "copySuffix": "Copy",
+    "preview": "Preview",
+    "previewTitle": "Print Preview",
+    "print": "Print",
+    "rendering": "Rendering…",
+    "renderFailed": "Render failed",
+    "designerNotReady": "Designer is not ready yet, please retry",
+    "sampleData": "Sample Data",
+    "sampleDataTip": "JSON object: the field panel derives from it; preview/print use it as data source. Row printing uses real row data.",
+    "sortOrder": "Sort Order",
+    "printTitle": "Print Preview",
+    "noTemplate": "No print template available for this resource",
+    "noTemplateHint": "Create one under System → Print Templates bound to this resource, or copy a generic template",
+    "serverPdf": "Server PDF",
+    "serverPdfFailed": "Server PDF failed",
+    "batchPrint": "Batch Print",
+    "noSelection": "Select rows to print first"
+  },
+  "bi": {
+    "title": "BI Analytics",
+    "dashboard": "Dashboard",
+    "dashboardTitle": "BI Dashboard",
+    "designer": "Designer",
+    "manage": "Dashboard Manager",
+    "moduleName": "BI Dashboard",
+    "name": "Name",
+    "code": "Code",
+    "kind": "Kind",
+    "kindDashboard": "Dashboard",
+    "kindScreen": "Screen",
+    "kindTemplate": "Template",
+    "remark": "Remark",
+    "chartCount": "Charts",
+    "themeKey": "Theme",
+    "isEnabled": "Enabled",
+    "enabledTag": "Enabled",
+    "disabledTag": "Disabled",
+    "isBuiltIn": "Type",
+    "builtInTag": "Built-in",
+    "customTag": "Custom",
+    "isPublic": "Sharing",
+    "version": "Version",
+    "createTitle": "Create BI Dashboard",
+    "editTitle": "Edit BI Dashboard",
+    "openDesigner": "Design",
+    "copySuccess": "Copied",
+    "copyFailed": "Copy failed",
+    "saveConflict": "Dashboard was modified by another session, please reload",
+    "designerNotReady": "Designer not ready",
+    "preview": "Preview",
+    "localDraft": "Local Draft",
+    "statusSaving": "Saving…",
+    "statusSaved": "Saved",
+    "statusConflict": "Save conflict, version refreshed",
+    "loadFailed": "Load failed, switched to local draft",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen"
   }
 }

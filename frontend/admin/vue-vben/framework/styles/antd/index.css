@@ -13,6 +13,37 @@
   }
 }
 
+/*
+ * antdv4 按钮统一 icon+文本布局基座：antdv 的 #icon 插槽 / :icon prop 渲染的是裸 svg
+ * （无 .ant-btn-icon 包裹，antd React 版才有），svg 落在 inline 布局里——
+ * vertical-align:middle 只对齐基线+x高一半（图标中心比文本低约 3px），且与文本无间距。
+ * 这里按 antd React 5 的官方形态把按钮升级为 flex 容器：垂直居中 + 8px 间距，
+ * 对所有 .ant-btn 生效（页面/抽屉/适配器一次治愈，新增按钮勿再手写对齐类）。
+ * 必须保持无 @layer：antdv4 cssinjs 虽是 :where() 零特异性，但 unlayered 规则
+ * 只输给更高的特异性或 !important，套 layer 会被 antd 的 display:inline-block 反杀。
+ * 纯文本/纯图标单子元素按钮不受影响；block 钮 width:100% 照常通栏。
+ */
+.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/*
+ * 表格操作列 link 按钮收窄（2026-10-21 操作列定式：行内按钮 图标+文本，>3 个走「更多」下拉）：
+ * antdv link 按钮默认 padding-inline 15px + 高 32px，单枚 2 字钮实测 81px，vxe 固定 width
+ * 的操作列装 3+ 枚会被裁切/换行截断（悬浮 title 露出全部文案而行内只见半截）。
+ * 收到 react 端 size="small" 同档（padding 4 / 高 24 / 字号 12，iconify 图标随 1em 缩放），
+ * 只命中表格行内按钮，工具栏/抽屉/弹窗按钮不受影响。antdv4 cssinjs 是 :where() 零特异性，
+ * 这条 0-2-0 unlayered 规则必胜出（同 .ant-btn flex 基座的.layer 理由）。
+ */
+.vxe-body--column .ant-btn-link {
+  padding-inline: 4px;
+  height: 24px;
+  font-size: 12px;
+}
+
 .ant-message-notice-content,
 .ant-notification-notice {
   @apply dark:border-border/60 dark:border;
@@ -126,6 +157,67 @@ html:not(.dark) {
   color: var(--gowind-primary-text) !important;
 }
 
+/* 橙色描边按钮（工具栏「同步菜单/同步API」定式）：antd-vue 4.2 没有 react v6 的
+   color/variant 新 API，用类补齐同款观感。色值对齐 react 端 color="orange" 的 antd
+   色板阶梯（orange-6 #fa8c16 / 暗色 orange-7 #d87a16，hover orange-5/orange-3 + orange-1 底）——
+   2026-10-21 用户反馈：用 --warning 语义 token（#EFBD48 琥珀 + 橄榄文字档）整钮发黄没识别度，
+   与蓝色描边的新增钮放一起尤其明显；真橙（色相 27°）才与 react/ele 的观感对齐。
+   这里是有意偏离 --warning token 的裸色值，改色阶先对照 react 端渲染。
+   !important 理由同上：运行时样式表后注入、顺序不定。 */
+.ant-btn.gowind-btn-warning-outline {
+  color: #fa8c16 !important;
+  border-color: #fa8c16 !important;
+}
+
+html.dark .ant-btn.gowind-btn-warning-outline {
+  color: #d87a16 !important;
+  border-color: #d87a16 !important;
+}
+
+.ant-btn.gowind-btn-warning-outline:not(:disabled):hover {
+  color: #ffa940 !important;
+  border-color: #ffa940 !important;
+  background: #fff7e6 !important;
+}
+
+html.dark .ant-btn.gowind-btn-warning-outline:not(:disabled):hover {
+  color: #ffc069 !important;
+  border-color: #ffc069 !important;
+  background: rgba(250, 140, 22, 0.15) !important;
+}
+
+/* 绿/红描边按钮（工具栏「启动全部/停止全部」定式，2026-10-21 与橙描边同批）：色值对齐
+   react 端 color="green|danger" variant="outlined" 的 antd 色板渲染实测值
+   （亮 green-6 #52c41a / danger 边 #ff3860 + 字 #b62c4b；暗 #49aa19 / #dc3355 + #ff4c70）。
+   hover 只叠 12% 底，色阶随 react 端渲染走。 */
+.ant-btn.gowind-btn-success-outline {
+  color: #52c41a !important;
+  border-color: #52c41a !important;
+}
+
+html.dark .ant-btn.gowind-btn-success-outline {
+  color: #49aa19 !important;
+  border-color: #49aa19 !important;
+}
+
+.ant-btn.gowind-btn-success-outline:not(:disabled):hover {
+  background: color-mix(in srgb, #52c41a 12%, transparent) !important;
+}
+
+.ant-btn.gowind-btn-danger-outline {
+  color: #b62c4b !important;
+  border-color: #ff3860 !important;
+}
+
+html.dark .ant-btn.gowind-btn-danger-outline {
+  color: #ff4c70 !important;
+  border-color: #dc3355 !important;
+}
+
+.ant-btn.gowind-btn-danger-outline:not(:disabled):hover {
+  background: color-mix(in srgb, #ff3860 12%, transparent) !important;
+}
+
 /* 枚举色相标签只改读不懂的那几个：浅色 gold 2.72 / green 3.37 / cyan 3.39 / orange 3.34
    压暗到 60% 后 5.89~6.92；暗色 purple 3.39 / geekblue 4.16 升到 80% 白后 4.95 / 5.81。
    blue / red / pink / magenta / volcano 等原值已达标，保持不动。与 react 端同一组比例。 */
@@ -182,4 +274,19 @@ html.dark .ant-tag.ant-tag-geekblue {
    仅浅色：暗色侧两轮扫测都没有开关违规。 */
 html:not(.dark) .ant-switch[aria-checked='false'] .ant-switch-inner > span {
   color: var(--gowind-solid-ink) !important;
+}
+
+/*
+ * 多行文本框（TextArea）allowClear 的 × 清除图标与文本框自身滚动条同占右缘一条竖带：
+ * 内容溢出出现滚动条（全局 10px）时二者贴死甚至叠压（角色管理「描述」框实测图标带
+ * [右20..右8] 压着滚动条带 [右10..右0] 重叠 3px）。正文右移留出图标带，图标内缩到
+ * 滚动条带之外（14px > 10px 滚动条 + 4px 间距）。只命中 textarea-with-clear 包裹层，
+ * 单行 Input 的 affix-wrapper 不含该类，清除图标位置不变。
+ */
+.ant-input-affix-wrapper-textarea-with-clear-btn > textarea.ant-input {
+  padding-inline-end: 28px;
+}
+
+.ant-input-affix-wrapper-textarea-with-clear-btn .ant-input-clear-icon {
+  inset-inline-end: 14px;
 }

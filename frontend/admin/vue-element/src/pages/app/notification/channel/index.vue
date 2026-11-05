@@ -105,7 +105,6 @@ import { useI18n } from "@/core/i18n";
 import { PaginationQuery } from "@/core/transport/rest";
 import type { notification_channelservicev1_NotificationChannel as NotificationChannel } from "@/api/generated/admin/service/v1";
 import {
-  createPagedExportAction,
   deleteNotificationChannel,
   fetchListNotificationChannels,
   sendTest,
@@ -194,10 +193,9 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deleteNotificationChannel(Number(ids));
     },
-    exportsAction: createPagedExportAction(fetchListNotificationChannels),
     toolbar: [],
     toolbarRight: ["add"],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     tableAttrs: { border: true, stripe: true },
     emptyActionText: "common.button.add",
     columns: [

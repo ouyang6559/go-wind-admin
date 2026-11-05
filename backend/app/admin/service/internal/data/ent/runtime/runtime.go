@@ -17,6 +17,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/apiauditlog"
+	"go-wind-admin/app/admin/service/internal/data/ent/bidashboard"
 	"go-wind-admin/app/admin/service/internal/data/ent/dataaccessauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/dictentry"
 	"go-wind-admin/app/admin/service/internal/data/ent/dictentryi18n"
@@ -52,6 +53,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/planquota"
 	"go-wind-admin/app/admin/service/internal/data/ent/policyevaluationlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/position"
+	"go-wind-admin/app/admin/service/internal/data/ent/printtemplate"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolefieldpermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
@@ -374,6 +376,58 @@ func init() {
 	apiauditlogDescID := apiauditlogMixinFields0[0].Descriptor()
 	// apiauditlog.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	apiauditlog.IDValidator = apiauditlogDescID.Validators[0].(func(uint32) error)
+	bidashboardMixin := schema.BiDashboard{}.Mixin()
+	bidashboard.Policy = privacy.NewPolicies(bidashboardMixin[5], schema.BiDashboard{})
+	bidashboard.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := bidashboard.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	bidashboardMixinFields0 := bidashboardMixin[0].Fields()
+	_ = bidashboardMixinFields0
+	bidashboardMixinFields3 := bidashboardMixin[3].Fields()
+	_ = bidashboardMixinFields3
+	bidashboardMixinFields4 := bidashboardMixin[4].Fields()
+	_ = bidashboardMixinFields4
+	bidashboardMixinFields5 := bidashboardMixin[5].Fields()
+	_ = bidashboardMixinFields5
+	bidashboardFields := schema.BiDashboard{}.Fields()
+	_ = bidashboardFields
+	// bidashboardDescIsEnabled is the schema descriptor for is_enabled field.
+	bidashboardDescIsEnabled := bidashboardMixinFields3[0].Descriptor()
+	// bidashboard.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	bidashboard.DefaultIsEnabled = bidashboardDescIsEnabled.Default.(bool)
+	// bidashboardDescSortOrder is the schema descriptor for sort_order field.
+	bidashboardDescSortOrder := bidashboardMixinFields4[0].Descriptor()
+	// bidashboard.DefaultSortOrder holds the default value on creation for the sort_order field.
+	bidashboard.DefaultSortOrder = bidashboardDescSortOrder.Default.(uint32)
+	// bidashboardDescTenantID is the schema descriptor for tenant_id field.
+	bidashboardDescTenantID := bidashboardMixinFields5[0].Descriptor()
+	// bidashboard.DefaultTenantID holds the default value on creation for the tenant_id field.
+	bidashboard.DefaultTenantID = bidashboardDescTenantID.Default.(uint32)
+	// bidashboardDescChartCount is the schema descriptor for chart_count field.
+	bidashboardDescChartCount := bidashboardFields[5].Descriptor()
+	// bidashboard.DefaultChartCount holds the default value on creation for the chart_count field.
+	bidashboard.DefaultChartCount = bidashboardDescChartCount.Default.(uint32)
+	// bidashboardDescIsBuiltIn is the schema descriptor for is_built_in field.
+	bidashboardDescIsBuiltIn := bidashboardFields[8].Descriptor()
+	// bidashboard.DefaultIsBuiltIn holds the default value on creation for the is_built_in field.
+	bidashboard.DefaultIsBuiltIn = bidashboardDescIsBuiltIn.Default.(bool)
+	// bidashboardDescIsPublic is the schema descriptor for is_public field.
+	bidashboardDescIsPublic := bidashboardFields[9].Descriptor()
+	// bidashboard.DefaultIsPublic holds the default value on creation for the is_public field.
+	bidashboard.DefaultIsPublic = bidashboardDescIsPublic.Default.(bool)
+	// bidashboardDescVersion is the schema descriptor for version field.
+	bidashboardDescVersion := bidashboardFields[10].Descriptor()
+	// bidashboard.DefaultVersion holds the default value on creation for the version field.
+	bidashboard.DefaultVersion = bidashboardDescVersion.Default.(uint32)
+	// bidashboardDescID is the schema descriptor for id field.
+	bidashboardDescID := bidashboardMixinFields0[0].Descriptor()
+	// bidashboard.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	bidashboard.IDValidator = bidashboardDescID.Validators[0].(func(uint32) error)
 	dataaccessauditlogMixin := schema.DataAccessAuditLog{}.Mixin()
 	dataaccessauditlog.Policy = privacy.NewPolicies(dataaccessauditlogMixin[2], schema.DataAccessAuditLog{})
 	dataaccessauditlog.Hooks[0] = func(next ent.Mutator) ent.Mutator {
@@ -1268,6 +1322,46 @@ func init() {
 	positionDescID := positionMixinFields0[0].Descriptor()
 	// position.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	position.IDValidator = positionDescID.Validators[0].(func(uint32) error)
+	printtemplateMixin := schema.PrintTemplate{}.Mixin()
+	printtemplate.Policy = privacy.NewPolicies(printtemplateMixin[5], schema.PrintTemplate{})
+	printtemplate.Hooks[0] = func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if err := printtemplate.Policy.EvalMutation(ctx, m); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+	printtemplateMixinFields0 := printtemplateMixin[0].Fields()
+	_ = printtemplateMixinFields0
+	printtemplateMixinFields3 := printtemplateMixin[3].Fields()
+	_ = printtemplateMixinFields3
+	printtemplateMixinFields4 := printtemplateMixin[4].Fields()
+	_ = printtemplateMixinFields4
+	printtemplateMixinFields5 := printtemplateMixin[5].Fields()
+	_ = printtemplateMixinFields5
+	printtemplateFields := schema.PrintTemplate{}.Fields()
+	_ = printtemplateFields
+	// printtemplateDescIsEnabled is the schema descriptor for is_enabled field.
+	printtemplateDescIsEnabled := printtemplateMixinFields3[0].Descriptor()
+	// printtemplate.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	printtemplate.DefaultIsEnabled = printtemplateDescIsEnabled.Default.(bool)
+	// printtemplateDescSortOrder is the schema descriptor for sort_order field.
+	printtemplateDescSortOrder := printtemplateMixinFields4[0].Descriptor()
+	// printtemplate.DefaultSortOrder holds the default value on creation for the sort_order field.
+	printtemplate.DefaultSortOrder = printtemplateDescSortOrder.Default.(uint32)
+	// printtemplateDescTenantID is the schema descriptor for tenant_id field.
+	printtemplateDescTenantID := printtemplateMixinFields5[0].Descriptor()
+	// printtemplate.DefaultTenantID holds the default value on creation for the tenant_id field.
+	printtemplate.DefaultTenantID = printtemplateDescTenantID.Default.(uint32)
+	// printtemplateDescIsBuiltIn is the schema descriptor for is_built_in field.
+	printtemplateDescIsBuiltIn := printtemplateFields[4].Descriptor()
+	// printtemplate.DefaultIsBuiltIn holds the default value on creation for the is_built_in field.
+	printtemplate.DefaultIsBuiltIn = printtemplateDescIsBuiltIn.Default.(bool)
+	// printtemplateDescID is the schema descriptor for id field.
+	printtemplateDescID := printtemplateMixinFields0[0].Descriptor()
+	// printtemplate.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	printtemplate.IDValidator = printtemplateDescID.Validators[0].(func(uint32) error)
 	roleMixin := schema.Role{}.Mixin()
 	role.Policy = privacy.NewPolicies(roleMixin[6], schema.Role{})
 	role.Hooks[0] = func(next ent.Mutator) ent.Mutator {

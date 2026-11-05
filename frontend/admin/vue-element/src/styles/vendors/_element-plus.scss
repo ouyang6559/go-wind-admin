@@ -68,6 +68,17 @@
 
 $border: 1px solid var(--el-border-color-light);
 
+/* ---------- 表格行背景过渡：全局禁用 ---------- */
+/* EP 给 .el-table--enable-row-transition td 挂了 `transition: background-color .25s`
+   （行背景渐变装饰）。主题切换（html.dark 增删）时行背景由 CSS 变量驱动变化，
+   Chromium 会把这个过渡的终帧画丢——computed 已是新主题值、paint 停在旧主题值：
+   暗→亮整行残留暗底、亮→暗斑马纹残留 #FAFAFA 白条，重载页面才自愈
+   （2026-10-31 go-wind-shop 端 hover 场景像素级实测，含暗色悬停中切换）。
+   该渐变纯属装饰，直接全局禁用；不影响 hover 高亮本身（那是变量即时切换）。 */
+.el-table--enable-row-transition .el-table__body td.el-table__cell {
+  transition: none !important;
+}
+
 /* ---------- 表格变量 ---------- */
 /* 表格的 --el-table-* 变量由 Element Plus 主题系统（含 dark/css-vars.css）
    按亮/暗模式自动提供，此处不再硬编码覆盖，避免亮/暗覆盖不全导致暗黑下出现
@@ -248,6 +259,18 @@ body,
   display: flex !important;
   align-items: center !important;
   line-height: normal !important;
+
+  // 表格操作列「更多」下拉里的危险项（删除等）：常态与 hover 都钉住 danger 墨，
+  // EP 的 hover 会整体改写主色墨，不加这条 danger 项 hover 会变蓝。
+  &.pro-table__more-item--danger {
+    color: var(--el-color-danger);
+
+    &:not(.is-disabled):hover,
+    &:not(.is-disabled):focus {
+      color: var(--el-color-danger);
+      background-color: var(--el-color-danger-light-9);
+    }
+  }
 }
 
 // --- Select 选项 ---
@@ -532,8 +555,11 @@ body,
    * 悬浮才是 `0 4px 12px rgba(0,0,0,.08)`）。原先 Pro 卡/骨架卡直接吃 `--el-box-shadow-light`，
    * 运行时实测是出厂值 `0 0 12px rgba(0,0,0,.12)`——比本端的**悬浮档还重**（.12 > .08），
    * 且没有 Y 偏移（全向扩散），静止态读起来像"发一圈灰光飘着"，层级语言是反的。
-   * 不复用 `--el-box-shadow-light`：改完之后它剩下的 7 处使用者全是浮层（下拉/通知面板/页签/
-   * hover 展开的侧栏覆盖层/聊天页/`.el-card`），浮层要的就是那圈 12px 晕。
+   * 不复用 `--el-box-shadow-light`：它剩下的使用者里**只有两处是页面卡**，其余是浮层
+   * （下拉 `.el-select-dropdown`/`.el-popper.is-light`、`.el-notification`、通知面板、页签右键菜单、
+   * hover 展开的侧栏覆盖层 —— 这些要的就是那圈 12px 晕，保持不动）。两处页面卡：
+   * 聊天页 `.chat-card`（2026-10-18 已改走本对变量）与 `.el-card`（:282，**亮色仍吃 12px 晕、
+   * 暗色已被 _dark-mode.scss:110 覆成静止档 —— 同一组件两态不同档，属已知待决，未批不动**）。
    * 描边同理走 `--gowind-card-border`（§2.2 = #E4E4E7）：EP 的 `--el-border-color-lighter`
    * 运行时实测是出厂 #EBEEF5，比权威淡一档；本文件顶部 `@forward ... with (...)` 那张 map
    * 里的 `#E4E4E7` 到不了运行时（机制同下面那段"页面画布"注释——bootstrap.ts:4 引的是预编译 dist/index.css，

@@ -45,6 +45,18 @@ Keeping all three usable is a cost borne **upstream**; as an adopter you maintai
 
 ---
 
+## Code Repositories
+
+This project is published in sync on the three platforms below — identical content, clone or star whichever you prefer:
+
+| Platform | URL |
+|----------|-----|
+| GitHub | <https://github.com/tx7do/go-wind-admin> |
+| Gitee | <https://gitee.com/tx7do/go-wind-admin> |
+| AtomGit | <https://atomgit.com/tx7do/go-wind-admin> |
+
+---
+
 ## Demo
 
 Three URLs, three parallel demos of the same backend capabilities — **open each, compare, you will want only one**:
@@ -67,7 +79,7 @@ Three URLs, three parallel demos of the same backend capabilities — **open eac
 | Tool | Version |
 |------|---------|
 | Go | 1.26+ (follow `backend/go.mod`) |
-| Node.js | `^20.19.0 \|\| >=22.12.0` — the intersection of the three `engines` fields is set by vue-element (vue-vben only asks `>=20.10.0`, react declares none). **21.x is not covered**, nor is 20.18 and below |
+| Node.js | `^20.19.0 \|\| >=22.12.0` — the intersection of the three `engines` fields is set by vue-element (vue-vben only asks `>=20.11.0`, react declares none). **21.x is not covered**, nor is 20.18 and below |
 | pnpm | `>= 9.12.0` (floor from vue-vben's `engines.pnpm`). vue-vben additionally pins `pnpm@11.18.0` via `packageManager`: enable corepack (`corepack enable`) to switch automatically, otherwise `npm i -g pnpm@11.18.0` — or at least match the major version |
 | Docker | 20.0+ |
 
@@ -137,7 +149,7 @@ All three live under the `frontend/admin` directory — **pick one**, install it
 |------------------|-----------|---------|------|
 | React | `frontend/admin/react` | `pnpm dev` | 15888 |
 | Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev` | 15666 |
 
 ```shell
 # Pick ONE: cd into that frontend first, then install and start.
@@ -149,10 +161,10 @@ pnpm dev                    # port 15888
 
 # The other two ends:
 cd frontend/admin/vue-element && pnpm install && pnpm dev            # port 15777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # port 15666
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev             # port 15666
 ```
 
-> vue-vben is itself a pnpm workspace (`pnpm-workspace.yaml` + `apps/` + `packages/`), so dependencies must be installed at **its** root; `pnpm dev:antd` then selects the `@vben/web-antd` app from the workspace. Installing inside `apps/admin` bypasses the catalog version pins.
+> vue-vben has been merged from the upstream Vben 5 multi-package monorepo (`apps/` + `packages/`) into a **single-package** structure: app source lives in `src/`, the framework shell in `framework/`, and `pnpm dev` starts the single app directly. Dependencies still install at **its** root — `pnpm-workspace.yaml` keeps the catalog version pins.
 
 ---
 
@@ -162,7 +174,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # port 1566
 <tr><th>Layer</th><th>Technologies</th></tr>
 <tr><td><strong>Backend Framework</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
 <tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code> (choose one — switched by build tag, Ent by default) · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
-<tr><td><strong>Middleware</strong></td><td><code>Redis</code> (compose pulls <code>bitnami/redis:latest</code>, no version pin; the codebase uses only long-standing commands such as Set/Expire/Publish — nothing Redis-8-specific) · <code>MinIO</code> (S3-compatible object storage)</td></tr>
+<tr><td><strong>Middleware</strong></td><td><code>Redis</code> (compose pulls <code>bitnami/redis:latest</code>, no version pin; the codebase uses only long-standing commands such as Set/Expire/Publish — nothing Redis-8-specific) · <code>SeaweedFS</code> (S3-compatible object storage — the replacement after MinIO Community went unmaintained; the container service name stays <code>minio</code>)</td></tr>
 <tr><td><strong>Authentication & Authorization</strong></td><td><code>JWT</code> (authentication) · <code>Casbin</code> / <code>OPA</code> (authorization engine — choose one; defaults to allow-all noop)</td></tr>
 <tr><td><strong>Realtime</strong></td><td><code>SSE</code> (server push) · <code>Asynq</code> (async tasks)</td></tr>
 <tr><td><strong>Scripting Engine</strong></td><td><code>go-scripts</code> · <code>Lua</code> (gopher-lua) · <code>JavaScript</code> (goja) · multi-language hook plugin system</td></tr>
@@ -231,6 +243,8 @@ Security capabilities are designed with reference to the technical requirements 
 | Parameter Management | Manage platform-wide system parameters as key/value pairs (distinct from business dictionaries); built-in parameters are seeded at startup and cannot be deleted; reads go through a server-side caching accessor, and in multi-instance deployments changes are broadcast over Redis pub/sub to invalidate every instance's cache. |
 | Machine Credentials (AK/SK) | Tenant-scoped AccessKey / SecretKey management: the Secret is shown exactly once at creation; enable/disable, delete, and secret rotation are supported (rotation immediately invalidates the previous Secret). An AK / Secret pair can be exchanged at the token-exchange endpoint for a tenant-scoped machine JWT (machine role, access token only); the exchange endpoint applies per-IP + per-AK failure rate limiting. |
 | Language Management | Manage supported languages: name, code, native name, enabled and default status. |
+| Print Templates | Document print designer: drag-drop visual template design (text / table / barcode / QR code, millimeter-precise layout, multi-page with repeated headers across pages). Templates bind to resources, and any list row can be printed individually or in batch (checked rows merged into one document). Supports browser printing and server-side PDF (backend Chromium rendering; enable the print-browser image layer at deploy time — see [docs/print_template.md](./docs/print_template.md)). |
+| BI Dashboard | BI designer (@go-wind/bi-*, drag canvas, cross-chart linkage, drill-down, theme presets) with dashboards/screens persisted to the database (`bi_dashboards`, optimistic locking against concurrent overwrites, built-in rows are undeletable but duplicable). All three frontends share the same shape: dashboard render, designer edit (manage drawer or standalone page `?id=`), manage list. Demo data is static-embedded; real datasets are injected by the host via dataset resolvers. See [docs/bi_dashboard.md](./docs/bi_dashboard.md) |
 
 ### Messaging & Logs
 
@@ -270,7 +284,7 @@ go-wind-admin/
 │   │   └── internal/               # Business core (data/service/server)
 │   ├── pkg/                        # Shared packages
 │   │   ├── scripting/              # Multi-language scripting engine (Lua + JavaScript)
-│   │   ├── oss/                    # Object storage (MinIO)
+│   │   ├── oss/                    # Object storage (S3-compatible: SeaweedFS)
 │   │   ├── eventbus/               # Event bus
 │   │   └── ...                     # Other utility packages
 │   ├── scripts/                    # Deployment & backup scripts (env/docker/deploy/backup)

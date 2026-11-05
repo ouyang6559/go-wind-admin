@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
+import dayjs, { type Dayjs } from 'dayjs';
 import ListTable from '@/components/common/ListTable';
+import TableActions from '@/components/common/TableActions';
 import { Button, Dropdown, Tag, App } from 'antd';
-import { DownloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { auditservicev1_LoginAuditLog as LoginAuditLog } from '@/api/generated/admin/service/v1';
 import { PaginationQuery } from '@/core';
@@ -21,6 +23,8 @@ import {
   getRiskLevelOptions,
 } from './constants';
 import LoginAuditLogDetailDrawer from './DetailDrawer';
+import { searchOptionRender } from '@/components/common/searchSubmitter';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
 
 /**
  * 登录审计日志页面
@@ -61,6 +65,61 @@ const LoginAuditLogPage = () => {
       valueType: 'dateTime',
       hideInSearch: true,
       sorter: true,
+    },
+
+    {
+      title: t('createdAt'),
+      dataIndex: 'createdAt',
+      valueType: 'dateTimeRange',
+      hideInTable: true,
+      search: {
+        transform: (values?: Array<string | Dayjs>) => {
+          const fmt = (v?: string | Dayjs) =>
+            typeof v === 'string' ? v : v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : undefined;
+          return {
+            created_at__gte: fmt(values?.[0]),
+            created_at__lte: fmt(values?.[1]),
+          };
+        },
+      },
+      fieldProps: {
+        showTime: true,
+        presets: [
+          {
+            label: t('common:dateRange.today'),
+            value: [dayjs().startOf('day'), dayjs().endOf('day')],
+          },
+          {
+            label: t('common:dateRange.yesterday'),
+            value: [
+              dayjs().subtract(1, 'day').startOf('day'),
+              dayjs().subtract(1, 'day').endOf('day'),
+            ],
+          },
+          {
+            label: t('common:dateRange.thisWeek'),
+            value: [dayjs().startOf('week'), dayjs().endOf('week')],
+          },
+          {
+            label: t('common:dateRange.lastWeek'),
+            value: [
+              dayjs().subtract(1, 'week').startOf('week'),
+              dayjs().subtract(1, 'week').endOf('week'),
+            ],
+          },
+          {
+            label: t('common:dateRange.thisMonth'),
+            value: [dayjs().startOf('month'), dayjs().endOf('month')],
+          },
+          {
+            label: t('common:dateRange.lastMonth'),
+            value: [
+              dayjs().subtract(1, 'month').startOf('month'),
+              dayjs().subtract(1, 'month').endOf('month'),
+            ],
+          },
+        ],
+      },
     },
     {
       title: t('status'),
@@ -139,16 +198,20 @@ const LoginAuditLogPage = () => {
     {
       title: t('action'),
       valueType: 'option',
-      width: 80,
-      render: (_, record) => [
-        <a
-          key="detail"
-          title={t('detail')}
-          onClick={() => setDetailRecord(record)}
-        >
-          <InfoCircleOutlined />
-        </a>,
-      ],
+      width: 110,
+      render: (_, record) => (
+        <TableActions
+          record={record}
+          actions={[
+            {
+              key: 'detail',
+              label: t('detail'),
+              icon: <InfoCircleOutlined />,
+              onClick: () => setDetailRecord(record),
+            },
+          ]}
+        />
+      ),
     },
   ];
 
@@ -232,7 +295,7 @@ const LoginAuditLogPage = () => {
               };
             }}
             rowKey="id"
-            search={{
+            search={{ optionRender: searchOptionRender,
               labelWidth: 'auto',
               defaultCollapsed: false,
             }}
@@ -248,6 +311,7 @@ const LoginAuditLogPage = () => {
                   items: [
                     { key: 'csv', label: t('exportCsv') },
                     { key: 'xlsx', label: t('exportXlsx') },
+                    { type: 'divider' },
                     { key: 'server-xlsx', label: t('exportServerXlsx') },
                   ],
                   onClick: ({ key }) => {
@@ -259,14 +323,14 @@ const LoginAuditLogPage = () => {
                   },
                 }}
               >
-                <Button icon={<DownloadOutlined />}>{t('export')}</Button>
+                <Button>{t('export')}</Button>
               </Dropdown>,
             ]}
 
             options={{
               density: true,
               fullScreen: true,
-              setting: true,
+              setting: { settingIcon: <ColumnSlidersIcon /> },
               reload: true,
             }}
             size="middle"

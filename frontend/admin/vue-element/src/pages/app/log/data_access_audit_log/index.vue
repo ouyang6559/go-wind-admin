@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full flex flex-1 flex-col">
-    <ProPage ref="pageRef" :config="pageConfig" @operate="handleOperate" @toolbar="handleToolbar">
+    <ProPage ref="pageRef" :config="pageConfig" @operate="handleOperate">
       <!-- 是否成功 -->
       <template #success="scope: any">
         <ElTag size="small" round :type="successToType(scope.row.success)">
@@ -60,7 +60,6 @@ import {
   successToType,
   successToNameWithStatusCode,
   fetchListDataAccessAuditLogs,
-  createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { exportAuditLogsServer } from "@/api/composables";
@@ -90,15 +89,6 @@ async function handleServerExport() {
   }
 }
 
-// ProPage 的 toolbar 自定义按钮走 @toolbar 事件（与行操作 @operate 分流）：
-// exportServer 是工具栏按钮，此处承接。
-function handleToolbar(name: string) {
-  if (name === "exportServer") {
-    handleServerExport();
-    return;
-  }
-}
-
 function handleOperate(data: { name: string; row: any }) {
   // 服务端全量导出（XLSX，上限 50 万行）：不带搜索条件，突破导出弹窗
   // 客户端聚合的 1 万行上限；带条件的导出走右侧既有的导出弹窗
@@ -109,6 +99,7 @@ function handleOperate(data: { name: string; row: any }) {
 
 const pageConfig = computed<ProPageConfig>(() => ({
   skeleton: true,
+  exportFilename: "data-access-audit-logs",
   search: {
     grid: true,
     fields: [
@@ -194,7 +185,8 @@ const pageConfig = computed<ProPageConfig>(() => ({
   },
 
   table: {
-    exportsAction: createPagedExportAction(fetchListDataAccessAuditLogs),
+    // 服务端全量导出：导出全部下拉的第三项，错误处理在本页 handleServerExport
+    exportServer: handleServerExport,
 
     listAction: async (query: any) => {
       const { page, pageSize, createdAt, ...queryParams } = query;
@@ -227,15 +219,9 @@ const pageConfig = computed<ProPageConfig>(() => ({
       );
       return { items: result.items || [], total: result.total || 0 };
     },
-    toolbar: [
-      {
-        name: "exportServer",
-        label: $t("pages.data_access_audit_log.exportServer"),
-        icon: "lucide:download",
-      },
-    ],
+    toolbar: [],
     toolbarRight: [],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     tableAttrs: { border: true, stripe: false },
     columns: [
       {

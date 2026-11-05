@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import TableExportButton from '@/components/common/TableExportButton';
+import TableActions from '@/components/common/TableActions';
 import ListTable from '@/components/common/ListTable';
 import {
   ModalForm,
@@ -12,7 +13,7 @@ import {
   ProFormSwitch,
   ProFormDependency,
 } from '@ant-design/pro-components';
-import { Button, Popconfirm, Tag, App } from 'antd';
+import { Button, Tag, App } from 'antd';
 import type { ProFormItemProps } from '@ant-design/pro-components';
 import { EditOutlined, DeleteOutlined, PlusOutlined, SendOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,6 +36,8 @@ import {
 import { useListChannelSchemas, type ChannelSchema } from '@/api/hooks/notification-channel-schema';
 import { useProTableScrollY } from '@/hooks/useProTableScrollY';
 import ContentContainer from '@/layouts/components/PageContainer/ContentContainer';
+import { ColumnSlidersIcon } from '@/components/common/columnSettingIcon';
+import { useDrawerCloseGuard } from '@/components/common/use-drawer-close-guard';
 
 /**
  * 渠道类型 → 文案/颜色。列必须按 record.type 渲染：一个渠道类型对应一列自己的配置
@@ -153,6 +156,8 @@ const NotificationChannelManagement = () => {
   }, [schemas, t]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // 关闭守卫：遮罩/ESC/X/取消统一，脏数据先确认（docs/form_drawer_close_guard.md）
+  const { guardClose, handleValuesChange } = useDrawerCloseGuard(drawerOpen, () => setDrawerOpen(false));
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [selected, setSelected] = useState<NotificationChannel | undefined>();
   const [testTarget, setTestTarget] = useState<NotificationChannel | undefined>();
@@ -383,35 +388,43 @@ const NotificationChannelManagement = () => {
     {
       title: t('actions'),
       valueType: 'option',
-      width: 220,
+      // 编辑渠道+测试发送+删除 三个图标+文字按钮实测需 284px，250 会被截断
+      width: 290,
       fixed: 'right',
-      render: (_, record) => [
-        <Button
-          key="edit"
-          type="link"
-          size="small"
-          icon={<EditOutlined />}
-          onClick={() => {
-            setDrawerMode('edit');
-            setSelected(record);
-            setDrawerOpen(true);
-          }}
-        >
-          {t('edit')}
-        </Button>,
-        // 测试发送对"有收件目标语义"的渠道有意义：EMAIL 测 SMTP、SMS 发真验证码、
-        // EXT_* 按 schema 发一条测试消息；WEBHOOK 的端到端验证在路由规则页。
-        (record.type === 'EMAIL' || record.type === 'SMS' || isExtType(record.type)) && (
-          <Button key="test" type="link" size="small" icon={<SendOutlined />} onClick={() => setTestTarget(record)}>
-            {t('testSend')}
-          </Button>
-        ),
-        <Popconfirm key="delete" title={t('deleteConfirm')} onConfirm={() => handleDelete(record)}>
-          <Button danger type="link" size="small" icon={<DeleteOutlined />}>
-            {t('delete')}
-          </Button>
-        </Popconfirm>,
-      ],
+      render: (_, record) => (
+        <TableActions
+          record={record}
+          actions={[
+            {
+              key: 'edit',
+              label: t('edit'),
+              icon: <EditOutlined />,
+              onClick: () => {
+                setDrawerMode('edit');
+                setSelected(record);
+                setDrawerOpen(true);
+              },
+            },
+            {
+              // 测试发送对"有收件目标语义"的渠道有意义：EMAIL 测 SMTP、SMS 发真验证码、
+              // EXT_* 按 schema 发一条测试消息；WEBHOOK 的端到端验证在路由规则页。
+              key: 'test',
+              label: t('testSend'),
+              icon: <SendOutlined />,
+              hidden: !(record.type === 'EMAIL' || record.type === 'SMS' || isExtType(record.type)),
+              onClick: () => setTestTarget(record),
+            },
+            {
+              key: 'delete',
+              label: t('delete'),
+              icon: <DeleteOutlined />,
+              danger: true,
+              confirm: { title: t('deleteConfirm') },
+              onClick: () => handleDelete(record),
+            },
+          ]}
+        />
+      ),
     },
   ];
 
@@ -437,12 +450,13 @@ const NotificationChannelManagement = () => {
             defaultPageSize: TABLE.DEFAULT_PAGE_SIZE,
             showSizeChanger: true,
           }}
-          options={{ density: true, fullScreen: true, setting: true, reload: true }}
+          options={{ density: true, fullScreen: true, setting: { settingIcon: <ColumnSlidersIcon /> }, reload: true }}
           toolBarRender={() => [
             <TableExportButton key="export" fetcher={fetchListNotificationChannels} columns={columns} filename="notification-channels" />,
             <Button
               key="create"
-              type="primary"
+              color="primary"
+              variant="outlined"
               icon={<PlusOutlined />}
               onClick={() => {
                 setDrawerMode('create');
@@ -450,7 +464,7 @@ const NotificationChannelManagement = () => {
                 setDrawerOpen(true);
               }}
             >
-              {t('create')}
+              {t('common:button.add')}
             </Button>,
           ]}
           size="middle"
@@ -462,11 +476,14 @@ const NotificationChannelManagement = () => {
       {/* 新建/编辑用抽屉不用弹窗：扩展渠道的 settings 动态表单字段多（6~8 个），
           弹窗高度挤不下；抽屉纵向空间足、与 ele 端渠道抽屉同形。 */}
       <DrawerForm
-        title={drawerMode === 'create' ? t('create') : t('edit')}
-        width={560}
+        title={drawerMode === 'create' ? t('common:modal.create', { moduleName: t('title') }) : t('common:modal.update', { moduleName: t('title') })}
         open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        drawerProps={{ destroyOnHidden: true, maskClosable: false }}
+        onOpenChange={(v) => {
+          // 关闭一律走 drawerProps.onClose 守卫；这里只放行打开
+          if (v) setDrawerOpen(true);
+        }}
+        onValuesChange={handleValuesChange}
+        drawerProps={{ destroyOnHidden: true, size: 600, onClose: guardClose }}
         submitTimeout={3000}
         onFinish={handleSubmit}
         initialValues={
@@ -489,6 +506,9 @@ const NotificationChannelManagement = () => {
                 settings: selected?.settings ? safeParseSettings(selected.settings) : undefined,
               }
         }
+        layout="horizontal"
+        labelCol={{ flex: '0 0 120px' }}
+        wrapperCol={{ flex: 'auto' }}
       >
         <ProFormText
           name="name"
@@ -657,7 +677,11 @@ const NotificationChannelManagement = () => {
           }
         </ProFormDependency>
         <ProFormSwitch name="enabled" label={t('enabled')} />
-        <ProFormTextArea name="remark" label={t('remark')} fieldProps={{ rows: 2 }} />
+        <ProFormTextArea
+          name="remark"
+          label={t('remark')}
+          fieldProps={{ rows: 2 }}
+        />
       </DrawerForm>
 
       <ModalForm<{ recipient: string }>
@@ -722,9 +746,21 @@ function SettingsFormFields({ schema }: { schema: ChannelSchema | undefined }) {
         const common = { name, label, rules, tooltip: f.hint || undefined, extra: undefined };
         switch (f.type) {
           case 'textarea':
-            return <ProFormTextArea key={f.name} {...common} fieldProps={{ rows: 3, placeholder: f.placeholder }} />;
+            return (
+              <ProFormTextArea
+                key={f.name}
+                {...common}
+                fieldProps={{ rows: 3, placeholder: f.placeholder }}
+              />
+            );
           case 'number':
-            return <ProFormDigit key={f.name} {...common} fieldProps={{ precision: 0, placeholder: f.placeholder }} />;
+            return (
+              <ProFormDigit
+                key={f.name}
+                {...common}
+                fieldProps={{ precision: 0, placeholder: f.placeholder }}
+              />
+            );
           case 'password':
             return (
               <ProFormText.Password

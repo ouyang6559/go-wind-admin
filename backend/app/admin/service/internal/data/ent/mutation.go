@@ -21,6 +21,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/aiusagelog"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/apiauditlog"
+	"go-wind-admin/app/admin/service/internal/data/ent/bidashboard"
 	"go-wind-admin/app/admin/service/internal/data/ent/dataaccessauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/dictentry"
 	"go-wind-admin/app/admin/service/internal/data/ent/dictentryi18n"
@@ -57,6 +58,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/policyevaluationlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/position"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
+	"go-wind-admin/app/admin/service/internal/data/ent/printtemplate"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolefieldpermission"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolemetadata"
@@ -101,6 +103,7 @@ const (
 	TypeAiUsageLog               = "AiUsageLog"
 	TypeAPI                      = "Api"
 	TypeApiAuditLog              = "ApiAuditLog"
+	TypeBiDashboard              = "BiDashboard"
 	TypeDataAccessAuditLog       = "DataAccessAuditLog"
 	TypeDictEntry                = "DictEntry"
 	TypeDictEntryI18n            = "DictEntryI18n"
@@ -136,6 +139,7 @@ const (
 	TypePlanQuota                = "PlanQuota"
 	TypePolicyEvaluationLog      = "PolicyEvaluationLog"
 	TypePosition                 = "Position"
+	TypePrintTemplate            = "PrintTemplate"
 	TypeRole                     = "Role"
 	TypeRoleFieldPermission      = "RoleFieldPermission"
 	TypeRoleMetadata             = "RoleMetadata"
@@ -18419,6 +18423,1988 @@ func (m *ApiAuditLogMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ApiAuditLogMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ApiAuditLog edge %s", name)
+}
+
+// BiDashboardMutation represents an operation that mutates the BiDashboard nodes in the graph.
+type BiDashboardMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uint32
+	created_at     *time.Time
+	updated_at     *time.Time
+	deleted_at     *time.Time
+	created_by     *uint32
+	addcreated_by  *int32
+	updated_by     *uint32
+	addupdated_by  *int32
+	deleted_by     *uint32
+	adddeleted_by  *int32
+	is_enabled     *bool
+	sort_order     *uint32
+	addsort_order  *int32
+	tenant_id      *uint32
+	addtenant_id   *int32
+	name           *string
+	code           *string
+	kind           *bidashboard.Kind
+	remark         *string
+	payload        *string
+	chart_count    *uint32
+	addchart_count *int32
+	theme_key      *string
+	thumbnail      *string
+	is_built_in    *bool
+	is_public      *bool
+	version        *uint32
+	addversion     *int32
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*BiDashboard, error)
+	predicates     []predicate.BiDashboard
+}
+
+var _ ent.Mutation = (*BiDashboardMutation)(nil)
+
+// bidashboardOption allows management of the mutation configuration using functional options.
+type bidashboardOption func(*BiDashboardMutation)
+
+// newBiDashboardMutation creates new mutation for the BiDashboard entity.
+func newBiDashboardMutation(c config, op Op, opts ...bidashboardOption) *BiDashboardMutation {
+	m := &BiDashboardMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBiDashboard,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBiDashboardID sets the ID field of the mutation.
+func withBiDashboardID(id uint32) bidashboardOption {
+	return func(m *BiDashboardMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BiDashboard
+		)
+		m.oldValue = func(ctx context.Context) (*BiDashboard, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BiDashboard.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBiDashboard sets the old BiDashboard of the mutation.
+func withBiDashboard(node *BiDashboard) bidashboardOption {
+	return func(m *BiDashboardMutation) {
+		m.oldValue = func(context.Context) (*BiDashboard, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BiDashboardMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BiDashboardMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of BiDashboard entities.
+func (m *BiDashboardMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BiDashboardMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BiDashboardMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BiDashboard.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BiDashboardMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BiDashboardMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *BiDashboardMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[bidashboard.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *BiDashboardMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BiDashboardMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, bidashboard.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *BiDashboardMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *BiDashboardMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *BiDashboardMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[bidashboard.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *BiDashboardMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *BiDashboardMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, bidashboard.FieldUpdatedAt)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *BiDashboardMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *BiDashboardMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *BiDashboardMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[bidashboard.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *BiDashboardMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *BiDashboardMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, bidashboard.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *BiDashboardMutation) SetCreatedBy(u uint32) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *BiDashboardMutation) CreatedBy() (r uint32, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldCreatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *BiDashboardMutation) AddCreatedBy(u int32) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *BiDashboardMutation) AddedCreatedBy() (r int32, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *BiDashboardMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	m.clearedFields[bidashboard.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *BiDashboardMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *BiDashboardMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	delete(m.clearedFields, bidashboard.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *BiDashboardMutation) SetUpdatedBy(u uint32) {
+	m.updated_by = &u
+	m.addupdated_by = nil
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *BiDashboardMutation) UpdatedBy() (r uint32, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldUpdatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// AddUpdatedBy adds u to the "updated_by" field.
+func (m *BiDashboardMutation) AddUpdatedBy(u int32) {
+	if m.addupdated_by != nil {
+		*m.addupdated_by += u
+	} else {
+		m.addupdated_by = &u
+	}
+}
+
+// AddedUpdatedBy returns the value that was added to the "updated_by" field in this mutation.
+func (m *BiDashboardMutation) AddedUpdatedBy() (r int32, exists bool) {
+	v := m.addupdated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *BiDashboardMutation) ClearUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	m.clearedFields[bidashboard.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *BiDashboardMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *BiDashboardMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	delete(m.clearedFields, bidashboard.FieldUpdatedBy)
+}
+
+// SetDeletedBy sets the "deleted_by" field.
+func (m *BiDashboardMutation) SetDeletedBy(u uint32) {
+	m.deleted_by = &u
+	m.adddeleted_by = nil
+}
+
+// DeletedBy returns the value of the "deleted_by" field in the mutation.
+func (m *BiDashboardMutation) DeletedBy() (r uint32, exists bool) {
+	v := m.deleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedBy returns the old "deleted_by" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldDeletedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedBy: %w", err)
+	}
+	return oldValue.DeletedBy, nil
+}
+
+// AddDeletedBy adds u to the "deleted_by" field.
+func (m *BiDashboardMutation) AddDeletedBy(u int32) {
+	if m.adddeleted_by != nil {
+		*m.adddeleted_by += u
+	} else {
+		m.adddeleted_by = &u
+	}
+}
+
+// AddedDeletedBy returns the value that was added to the "deleted_by" field in this mutation.
+func (m *BiDashboardMutation) AddedDeletedBy() (r int32, exists bool) {
+	v := m.adddeleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeletedBy clears the value of the "deleted_by" field.
+func (m *BiDashboardMutation) ClearDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	m.clearedFields[bidashboard.FieldDeletedBy] = struct{}{}
+}
+
+// DeletedByCleared returns if the "deleted_by" field was cleared in this mutation.
+func (m *BiDashboardMutation) DeletedByCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldDeletedBy]
+	return ok
+}
+
+// ResetDeletedBy resets all changes to the "deleted_by" field.
+func (m *BiDashboardMutation) ResetDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	delete(m.clearedFields, bidashboard.FieldDeletedBy)
+}
+
+// SetIsEnabled sets the "is_enabled" field.
+func (m *BiDashboardMutation) SetIsEnabled(b bool) {
+	m.is_enabled = &b
+}
+
+// IsEnabled returns the value of the "is_enabled" field in the mutation.
+func (m *BiDashboardMutation) IsEnabled() (r bool, exists bool) {
+	v := m.is_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsEnabled returns the old "is_enabled" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldIsEnabled(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsEnabled: %w", err)
+	}
+	return oldValue.IsEnabled, nil
+}
+
+// ClearIsEnabled clears the value of the "is_enabled" field.
+func (m *BiDashboardMutation) ClearIsEnabled() {
+	m.is_enabled = nil
+	m.clearedFields[bidashboard.FieldIsEnabled] = struct{}{}
+}
+
+// IsEnabledCleared returns if the "is_enabled" field was cleared in this mutation.
+func (m *BiDashboardMutation) IsEnabledCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldIsEnabled]
+	return ok
+}
+
+// ResetIsEnabled resets all changes to the "is_enabled" field.
+func (m *BiDashboardMutation) ResetIsEnabled() {
+	m.is_enabled = nil
+	delete(m.clearedFields, bidashboard.FieldIsEnabled)
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *BiDashboardMutation) SetSortOrder(u uint32) {
+	m.sort_order = &u
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *BiDashboardMutation) SortOrder() (r uint32, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldSortOrder(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds u to the "sort_order" field.
+func (m *BiDashboardMutation) AddSortOrder(u int32) {
+	if m.addsort_order != nil {
+		*m.addsort_order += u
+	} else {
+		m.addsort_order = &u
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *BiDashboardMutation) AddedSortOrder() (r int32, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSortOrder clears the value of the "sort_order" field.
+func (m *BiDashboardMutation) ClearSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+	m.clearedFields[bidashboard.FieldSortOrder] = struct{}{}
+}
+
+// SortOrderCleared returns if the "sort_order" field was cleared in this mutation.
+func (m *BiDashboardMutation) SortOrderCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldSortOrder]
+	return ok
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *BiDashboardMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+	delete(m.clearedFields, bidashboard.FieldSortOrder)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *BiDashboardMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *BiDashboardMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *BiDashboardMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *BiDashboardMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *BiDashboardMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[bidashboard.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *BiDashboardMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *BiDashboardMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, bidashboard.FieldTenantID)
+}
+
+// SetName sets the "name" field.
+func (m *BiDashboardMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *BiDashboardMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *BiDashboardMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[bidashboard.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *BiDashboardMutation) NameCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *BiDashboardMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, bidashboard.FieldName)
+}
+
+// SetCode sets the "code" field.
+func (m *BiDashboardMutation) SetCode(s string) {
+	m.code = &s
+}
+
+// Code returns the value of the "code" field in the mutation.
+func (m *BiDashboardMutation) Code() (r string, exists bool) {
+	v := m.code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCode returns the old "code" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+	}
+	return oldValue.Code, nil
+}
+
+// ClearCode clears the value of the "code" field.
+func (m *BiDashboardMutation) ClearCode() {
+	m.code = nil
+	m.clearedFields[bidashboard.FieldCode] = struct{}{}
+}
+
+// CodeCleared returns if the "code" field was cleared in this mutation.
+func (m *BiDashboardMutation) CodeCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldCode]
+	return ok
+}
+
+// ResetCode resets all changes to the "code" field.
+func (m *BiDashboardMutation) ResetCode() {
+	m.code = nil
+	delete(m.clearedFields, bidashboard.FieldCode)
+}
+
+// SetKind sets the "kind" field.
+func (m *BiDashboardMutation) SetKind(b bidashboard.Kind) {
+	m.kind = &b
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *BiDashboardMutation) Kind() (r bidashboard.Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldKind(ctx context.Context) (v *bidashboard.Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ClearKind clears the value of the "kind" field.
+func (m *BiDashboardMutation) ClearKind() {
+	m.kind = nil
+	m.clearedFields[bidashboard.FieldKind] = struct{}{}
+}
+
+// KindCleared returns if the "kind" field was cleared in this mutation.
+func (m *BiDashboardMutation) KindCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldKind]
+	return ok
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *BiDashboardMutation) ResetKind() {
+	m.kind = nil
+	delete(m.clearedFields, bidashboard.FieldKind)
+}
+
+// SetRemark sets the "remark" field.
+func (m *BiDashboardMutation) SetRemark(s string) {
+	m.remark = &s
+}
+
+// Remark returns the value of the "remark" field in the mutation.
+func (m *BiDashboardMutation) Remark() (r string, exists bool) {
+	v := m.remark
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemark returns the old "remark" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldRemark(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemark is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemark requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemark: %w", err)
+	}
+	return oldValue.Remark, nil
+}
+
+// ClearRemark clears the value of the "remark" field.
+func (m *BiDashboardMutation) ClearRemark() {
+	m.remark = nil
+	m.clearedFields[bidashboard.FieldRemark] = struct{}{}
+}
+
+// RemarkCleared returns if the "remark" field was cleared in this mutation.
+func (m *BiDashboardMutation) RemarkCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldRemark]
+	return ok
+}
+
+// ResetRemark resets all changes to the "remark" field.
+func (m *BiDashboardMutation) ResetRemark() {
+	m.remark = nil
+	delete(m.clearedFields, bidashboard.FieldRemark)
+}
+
+// SetPayload sets the "payload" field.
+func (m *BiDashboardMutation) SetPayload(s string) {
+	m.payload = &s
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *BiDashboardMutation) Payload() (r string, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldPayload(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (m *BiDashboardMutation) ClearPayload() {
+	m.payload = nil
+	m.clearedFields[bidashboard.FieldPayload] = struct{}{}
+}
+
+// PayloadCleared returns if the "payload" field was cleared in this mutation.
+func (m *BiDashboardMutation) PayloadCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldPayload]
+	return ok
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *BiDashboardMutation) ResetPayload() {
+	m.payload = nil
+	delete(m.clearedFields, bidashboard.FieldPayload)
+}
+
+// SetChartCount sets the "chart_count" field.
+func (m *BiDashboardMutation) SetChartCount(u uint32) {
+	m.chart_count = &u
+	m.addchart_count = nil
+}
+
+// ChartCount returns the value of the "chart_count" field in the mutation.
+func (m *BiDashboardMutation) ChartCount() (r uint32, exists bool) {
+	v := m.chart_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChartCount returns the old "chart_count" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldChartCount(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChartCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChartCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChartCount: %w", err)
+	}
+	return oldValue.ChartCount, nil
+}
+
+// AddChartCount adds u to the "chart_count" field.
+func (m *BiDashboardMutation) AddChartCount(u int32) {
+	if m.addchart_count != nil {
+		*m.addchart_count += u
+	} else {
+		m.addchart_count = &u
+	}
+}
+
+// AddedChartCount returns the value that was added to the "chart_count" field in this mutation.
+func (m *BiDashboardMutation) AddedChartCount() (r int32, exists bool) {
+	v := m.addchart_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearChartCount clears the value of the "chart_count" field.
+func (m *BiDashboardMutation) ClearChartCount() {
+	m.chart_count = nil
+	m.addchart_count = nil
+	m.clearedFields[bidashboard.FieldChartCount] = struct{}{}
+}
+
+// ChartCountCleared returns if the "chart_count" field was cleared in this mutation.
+func (m *BiDashboardMutation) ChartCountCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldChartCount]
+	return ok
+}
+
+// ResetChartCount resets all changes to the "chart_count" field.
+func (m *BiDashboardMutation) ResetChartCount() {
+	m.chart_count = nil
+	m.addchart_count = nil
+	delete(m.clearedFields, bidashboard.FieldChartCount)
+}
+
+// SetThemeKey sets the "theme_key" field.
+func (m *BiDashboardMutation) SetThemeKey(s string) {
+	m.theme_key = &s
+}
+
+// ThemeKey returns the value of the "theme_key" field in the mutation.
+func (m *BiDashboardMutation) ThemeKey() (r string, exists bool) {
+	v := m.theme_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThemeKey returns the old "theme_key" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldThemeKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThemeKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThemeKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThemeKey: %w", err)
+	}
+	return oldValue.ThemeKey, nil
+}
+
+// ClearThemeKey clears the value of the "theme_key" field.
+func (m *BiDashboardMutation) ClearThemeKey() {
+	m.theme_key = nil
+	m.clearedFields[bidashboard.FieldThemeKey] = struct{}{}
+}
+
+// ThemeKeyCleared returns if the "theme_key" field was cleared in this mutation.
+func (m *BiDashboardMutation) ThemeKeyCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldThemeKey]
+	return ok
+}
+
+// ResetThemeKey resets all changes to the "theme_key" field.
+func (m *BiDashboardMutation) ResetThemeKey() {
+	m.theme_key = nil
+	delete(m.clearedFields, bidashboard.FieldThemeKey)
+}
+
+// SetThumbnail sets the "thumbnail" field.
+func (m *BiDashboardMutation) SetThumbnail(s string) {
+	m.thumbnail = &s
+}
+
+// Thumbnail returns the value of the "thumbnail" field in the mutation.
+func (m *BiDashboardMutation) Thumbnail() (r string, exists bool) {
+	v := m.thumbnail
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThumbnail returns the old "thumbnail" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldThumbnail(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThumbnail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThumbnail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThumbnail: %w", err)
+	}
+	return oldValue.Thumbnail, nil
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (m *BiDashboardMutation) ClearThumbnail() {
+	m.thumbnail = nil
+	m.clearedFields[bidashboard.FieldThumbnail] = struct{}{}
+}
+
+// ThumbnailCleared returns if the "thumbnail" field was cleared in this mutation.
+func (m *BiDashboardMutation) ThumbnailCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldThumbnail]
+	return ok
+}
+
+// ResetThumbnail resets all changes to the "thumbnail" field.
+func (m *BiDashboardMutation) ResetThumbnail() {
+	m.thumbnail = nil
+	delete(m.clearedFields, bidashboard.FieldThumbnail)
+}
+
+// SetIsBuiltIn sets the "is_built_in" field.
+func (m *BiDashboardMutation) SetIsBuiltIn(b bool) {
+	m.is_built_in = &b
+}
+
+// IsBuiltIn returns the value of the "is_built_in" field in the mutation.
+func (m *BiDashboardMutation) IsBuiltIn() (r bool, exists bool) {
+	v := m.is_built_in
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsBuiltIn returns the old "is_built_in" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldIsBuiltIn(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsBuiltIn is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsBuiltIn requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsBuiltIn: %w", err)
+	}
+	return oldValue.IsBuiltIn, nil
+}
+
+// ClearIsBuiltIn clears the value of the "is_built_in" field.
+func (m *BiDashboardMutation) ClearIsBuiltIn() {
+	m.is_built_in = nil
+	m.clearedFields[bidashboard.FieldIsBuiltIn] = struct{}{}
+}
+
+// IsBuiltInCleared returns if the "is_built_in" field was cleared in this mutation.
+func (m *BiDashboardMutation) IsBuiltInCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldIsBuiltIn]
+	return ok
+}
+
+// ResetIsBuiltIn resets all changes to the "is_built_in" field.
+func (m *BiDashboardMutation) ResetIsBuiltIn() {
+	m.is_built_in = nil
+	delete(m.clearedFields, bidashboard.FieldIsBuiltIn)
+}
+
+// SetIsPublic sets the "is_public" field.
+func (m *BiDashboardMutation) SetIsPublic(b bool) {
+	m.is_public = &b
+}
+
+// IsPublic returns the value of the "is_public" field in the mutation.
+func (m *BiDashboardMutation) IsPublic() (r bool, exists bool) {
+	v := m.is_public
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsPublic returns the old "is_public" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldIsPublic(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsPublic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsPublic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsPublic: %w", err)
+	}
+	return oldValue.IsPublic, nil
+}
+
+// ClearIsPublic clears the value of the "is_public" field.
+func (m *BiDashboardMutation) ClearIsPublic() {
+	m.is_public = nil
+	m.clearedFields[bidashboard.FieldIsPublic] = struct{}{}
+}
+
+// IsPublicCleared returns if the "is_public" field was cleared in this mutation.
+func (m *BiDashboardMutation) IsPublicCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldIsPublic]
+	return ok
+}
+
+// ResetIsPublic resets all changes to the "is_public" field.
+func (m *BiDashboardMutation) ResetIsPublic() {
+	m.is_public = nil
+	delete(m.clearedFields, bidashboard.FieldIsPublic)
+}
+
+// SetVersion sets the "version" field.
+func (m *BiDashboardMutation) SetVersion(u uint32) {
+	m.version = &u
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *BiDashboardMutation) Version() (r uint32, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the BiDashboard entity.
+// If the BiDashboard object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BiDashboardMutation) OldVersion(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds u to the "version" field.
+func (m *BiDashboardMutation) AddVersion(u int32) {
+	if m.addversion != nil {
+		*m.addversion += u
+	} else {
+		m.addversion = &u
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *BiDashboardMutation) AddedVersion() (r int32, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearVersion clears the value of the "version" field.
+func (m *BiDashboardMutation) ClearVersion() {
+	m.version = nil
+	m.addversion = nil
+	m.clearedFields[bidashboard.FieldVersion] = struct{}{}
+}
+
+// VersionCleared returns if the "version" field was cleared in this mutation.
+func (m *BiDashboardMutation) VersionCleared() bool {
+	_, ok := m.clearedFields[bidashboard.FieldVersion]
+	return ok
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *BiDashboardMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+	delete(m.clearedFields, bidashboard.FieldVersion)
+}
+
+// Where appends a list predicates to the BiDashboardMutation builder.
+func (m *BiDashboardMutation) Where(ps ...predicate.BiDashboard) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BiDashboardMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BiDashboardMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BiDashboard, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BiDashboardMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BiDashboardMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BiDashboard).
+func (m *BiDashboardMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BiDashboardMutation) Fields() []string {
+	fields := make([]string, 0, 20)
+	if m.created_at != nil {
+		fields = append(fields, bidashboard.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, bidashboard.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, bidashboard.FieldDeletedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, bidashboard.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, bidashboard.FieldUpdatedBy)
+	}
+	if m.deleted_by != nil {
+		fields = append(fields, bidashboard.FieldDeletedBy)
+	}
+	if m.is_enabled != nil {
+		fields = append(fields, bidashboard.FieldIsEnabled)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, bidashboard.FieldSortOrder)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, bidashboard.FieldTenantID)
+	}
+	if m.name != nil {
+		fields = append(fields, bidashboard.FieldName)
+	}
+	if m.code != nil {
+		fields = append(fields, bidashboard.FieldCode)
+	}
+	if m.kind != nil {
+		fields = append(fields, bidashboard.FieldKind)
+	}
+	if m.remark != nil {
+		fields = append(fields, bidashboard.FieldRemark)
+	}
+	if m.payload != nil {
+		fields = append(fields, bidashboard.FieldPayload)
+	}
+	if m.chart_count != nil {
+		fields = append(fields, bidashboard.FieldChartCount)
+	}
+	if m.theme_key != nil {
+		fields = append(fields, bidashboard.FieldThemeKey)
+	}
+	if m.thumbnail != nil {
+		fields = append(fields, bidashboard.FieldThumbnail)
+	}
+	if m.is_built_in != nil {
+		fields = append(fields, bidashboard.FieldIsBuiltIn)
+	}
+	if m.is_public != nil {
+		fields = append(fields, bidashboard.FieldIsPublic)
+	}
+	if m.version != nil {
+		fields = append(fields, bidashboard.FieldVersion)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BiDashboardMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case bidashboard.FieldCreatedAt:
+		return m.CreatedAt()
+	case bidashboard.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case bidashboard.FieldDeletedAt:
+		return m.DeletedAt()
+	case bidashboard.FieldCreatedBy:
+		return m.CreatedBy()
+	case bidashboard.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case bidashboard.FieldDeletedBy:
+		return m.DeletedBy()
+	case bidashboard.FieldIsEnabled:
+		return m.IsEnabled()
+	case bidashboard.FieldSortOrder:
+		return m.SortOrder()
+	case bidashboard.FieldTenantID:
+		return m.TenantID()
+	case bidashboard.FieldName:
+		return m.Name()
+	case bidashboard.FieldCode:
+		return m.Code()
+	case bidashboard.FieldKind:
+		return m.Kind()
+	case bidashboard.FieldRemark:
+		return m.Remark()
+	case bidashboard.FieldPayload:
+		return m.Payload()
+	case bidashboard.FieldChartCount:
+		return m.ChartCount()
+	case bidashboard.FieldThemeKey:
+		return m.ThemeKey()
+	case bidashboard.FieldThumbnail:
+		return m.Thumbnail()
+	case bidashboard.FieldIsBuiltIn:
+		return m.IsBuiltIn()
+	case bidashboard.FieldIsPublic:
+		return m.IsPublic()
+	case bidashboard.FieldVersion:
+		return m.Version()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BiDashboardMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case bidashboard.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case bidashboard.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case bidashboard.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case bidashboard.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case bidashboard.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case bidashboard.FieldDeletedBy:
+		return m.OldDeletedBy(ctx)
+	case bidashboard.FieldIsEnabled:
+		return m.OldIsEnabled(ctx)
+	case bidashboard.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case bidashboard.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case bidashboard.FieldName:
+		return m.OldName(ctx)
+	case bidashboard.FieldCode:
+		return m.OldCode(ctx)
+	case bidashboard.FieldKind:
+		return m.OldKind(ctx)
+	case bidashboard.FieldRemark:
+		return m.OldRemark(ctx)
+	case bidashboard.FieldPayload:
+		return m.OldPayload(ctx)
+	case bidashboard.FieldChartCount:
+		return m.OldChartCount(ctx)
+	case bidashboard.FieldThemeKey:
+		return m.OldThemeKey(ctx)
+	case bidashboard.FieldThumbnail:
+		return m.OldThumbnail(ctx)
+	case bidashboard.FieldIsBuiltIn:
+		return m.OldIsBuiltIn(ctx)
+	case bidashboard.FieldIsPublic:
+		return m.OldIsPublic(ctx)
+	case bidashboard.FieldVersion:
+		return m.OldVersion(ctx)
+	}
+	return nil, fmt.Errorf("unknown BiDashboard field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BiDashboardMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case bidashboard.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case bidashboard.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case bidashboard.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case bidashboard.FieldCreatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case bidashboard.FieldUpdatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case bidashboard.FieldDeletedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedBy(v)
+		return nil
+	case bidashboard.FieldIsEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsEnabled(v)
+		return nil
+	case bidashboard.FieldSortOrder:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case bidashboard.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case bidashboard.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case bidashboard.FieldCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCode(v)
+		return nil
+	case bidashboard.FieldKind:
+		v, ok := value.(bidashboard.Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	case bidashboard.FieldRemark:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemark(v)
+		return nil
+	case bidashboard.FieldPayload:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	case bidashboard.FieldChartCount:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChartCount(v)
+		return nil
+	case bidashboard.FieldThemeKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThemeKey(v)
+		return nil
+	case bidashboard.FieldThumbnail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThumbnail(v)
+		return nil
+	case bidashboard.FieldIsBuiltIn:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsBuiltIn(v)
+		return nil
+	case bidashboard.FieldIsPublic:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsPublic(v)
+		return nil
+	case bidashboard.FieldVersion:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BiDashboard field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BiDashboardMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, bidashboard.FieldCreatedBy)
+	}
+	if m.addupdated_by != nil {
+		fields = append(fields, bidashboard.FieldUpdatedBy)
+	}
+	if m.adddeleted_by != nil {
+		fields = append(fields, bidashboard.FieldDeletedBy)
+	}
+	if m.addsort_order != nil {
+		fields = append(fields, bidashboard.FieldSortOrder)
+	}
+	if m.addtenant_id != nil {
+		fields = append(fields, bidashboard.FieldTenantID)
+	}
+	if m.addchart_count != nil {
+		fields = append(fields, bidashboard.FieldChartCount)
+	}
+	if m.addversion != nil {
+		fields = append(fields, bidashboard.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BiDashboardMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case bidashboard.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case bidashboard.FieldUpdatedBy:
+		return m.AddedUpdatedBy()
+	case bidashboard.FieldDeletedBy:
+		return m.AddedDeletedBy()
+	case bidashboard.FieldSortOrder:
+		return m.AddedSortOrder()
+	case bidashboard.FieldTenantID:
+		return m.AddedTenantID()
+	case bidashboard.FieldChartCount:
+		return m.AddedChartCount()
+	case bidashboard.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BiDashboardMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case bidashboard.FieldCreatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case bidashboard.FieldUpdatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdatedBy(v)
+		return nil
+	case bidashboard.FieldDeletedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeletedBy(v)
+		return nil
+	case bidashboard.FieldSortOrder:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
+	case bidashboard.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	case bidashboard.FieldChartCount:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChartCount(v)
+		return nil
+	case bidashboard.FieldVersion:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BiDashboard numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BiDashboardMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(bidashboard.FieldCreatedAt) {
+		fields = append(fields, bidashboard.FieldCreatedAt)
+	}
+	if m.FieldCleared(bidashboard.FieldUpdatedAt) {
+		fields = append(fields, bidashboard.FieldUpdatedAt)
+	}
+	if m.FieldCleared(bidashboard.FieldDeletedAt) {
+		fields = append(fields, bidashboard.FieldDeletedAt)
+	}
+	if m.FieldCleared(bidashboard.FieldCreatedBy) {
+		fields = append(fields, bidashboard.FieldCreatedBy)
+	}
+	if m.FieldCleared(bidashboard.FieldUpdatedBy) {
+		fields = append(fields, bidashboard.FieldUpdatedBy)
+	}
+	if m.FieldCleared(bidashboard.FieldDeletedBy) {
+		fields = append(fields, bidashboard.FieldDeletedBy)
+	}
+	if m.FieldCleared(bidashboard.FieldIsEnabled) {
+		fields = append(fields, bidashboard.FieldIsEnabled)
+	}
+	if m.FieldCleared(bidashboard.FieldSortOrder) {
+		fields = append(fields, bidashboard.FieldSortOrder)
+	}
+	if m.FieldCleared(bidashboard.FieldTenantID) {
+		fields = append(fields, bidashboard.FieldTenantID)
+	}
+	if m.FieldCleared(bidashboard.FieldName) {
+		fields = append(fields, bidashboard.FieldName)
+	}
+	if m.FieldCleared(bidashboard.FieldCode) {
+		fields = append(fields, bidashboard.FieldCode)
+	}
+	if m.FieldCleared(bidashboard.FieldKind) {
+		fields = append(fields, bidashboard.FieldKind)
+	}
+	if m.FieldCleared(bidashboard.FieldRemark) {
+		fields = append(fields, bidashboard.FieldRemark)
+	}
+	if m.FieldCleared(bidashboard.FieldPayload) {
+		fields = append(fields, bidashboard.FieldPayload)
+	}
+	if m.FieldCleared(bidashboard.FieldChartCount) {
+		fields = append(fields, bidashboard.FieldChartCount)
+	}
+	if m.FieldCleared(bidashboard.FieldThemeKey) {
+		fields = append(fields, bidashboard.FieldThemeKey)
+	}
+	if m.FieldCleared(bidashboard.FieldThumbnail) {
+		fields = append(fields, bidashboard.FieldThumbnail)
+	}
+	if m.FieldCleared(bidashboard.FieldIsBuiltIn) {
+		fields = append(fields, bidashboard.FieldIsBuiltIn)
+	}
+	if m.FieldCleared(bidashboard.FieldIsPublic) {
+		fields = append(fields, bidashboard.FieldIsPublic)
+	}
+	if m.FieldCleared(bidashboard.FieldVersion) {
+		fields = append(fields, bidashboard.FieldVersion)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BiDashboardMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BiDashboardMutation) ClearField(name string) error {
+	switch name {
+	case bidashboard.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case bidashboard.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case bidashboard.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case bidashboard.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case bidashboard.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case bidashboard.FieldDeletedBy:
+		m.ClearDeletedBy()
+		return nil
+	case bidashboard.FieldIsEnabled:
+		m.ClearIsEnabled()
+		return nil
+	case bidashboard.FieldSortOrder:
+		m.ClearSortOrder()
+		return nil
+	case bidashboard.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case bidashboard.FieldName:
+		m.ClearName()
+		return nil
+	case bidashboard.FieldCode:
+		m.ClearCode()
+		return nil
+	case bidashboard.FieldKind:
+		m.ClearKind()
+		return nil
+	case bidashboard.FieldRemark:
+		m.ClearRemark()
+		return nil
+	case bidashboard.FieldPayload:
+		m.ClearPayload()
+		return nil
+	case bidashboard.FieldChartCount:
+		m.ClearChartCount()
+		return nil
+	case bidashboard.FieldThemeKey:
+		m.ClearThemeKey()
+		return nil
+	case bidashboard.FieldThumbnail:
+		m.ClearThumbnail()
+		return nil
+	case bidashboard.FieldIsBuiltIn:
+		m.ClearIsBuiltIn()
+		return nil
+	case bidashboard.FieldIsPublic:
+		m.ClearIsPublic()
+		return nil
+	case bidashboard.FieldVersion:
+		m.ClearVersion()
+		return nil
+	}
+	return fmt.Errorf("unknown BiDashboard nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BiDashboardMutation) ResetField(name string) error {
+	switch name {
+	case bidashboard.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case bidashboard.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case bidashboard.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case bidashboard.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case bidashboard.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case bidashboard.FieldDeletedBy:
+		m.ResetDeletedBy()
+		return nil
+	case bidashboard.FieldIsEnabled:
+		m.ResetIsEnabled()
+		return nil
+	case bidashboard.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case bidashboard.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case bidashboard.FieldName:
+		m.ResetName()
+		return nil
+	case bidashboard.FieldCode:
+		m.ResetCode()
+		return nil
+	case bidashboard.FieldKind:
+		m.ResetKind()
+		return nil
+	case bidashboard.FieldRemark:
+		m.ResetRemark()
+		return nil
+	case bidashboard.FieldPayload:
+		m.ResetPayload()
+		return nil
+	case bidashboard.FieldChartCount:
+		m.ResetChartCount()
+		return nil
+	case bidashboard.FieldThemeKey:
+		m.ResetThemeKey()
+		return nil
+	case bidashboard.FieldThumbnail:
+		m.ResetThumbnail()
+		return nil
+	case bidashboard.FieldIsBuiltIn:
+		m.ResetIsBuiltIn()
+		return nil
+	case bidashboard.FieldIsPublic:
+		m.ResetIsPublic()
+		return nil
+	case bidashboard.FieldVersion:
+		m.ResetVersion()
+		return nil
+	}
+	return fmt.Errorf("unknown BiDashboard field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BiDashboardMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BiDashboardMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BiDashboardMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BiDashboardMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BiDashboardMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BiDashboardMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BiDashboardMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BiDashboard unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BiDashboardMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BiDashboard edge %s", name)
 }
 
 // DataAccessAuditLogMutation represents an operation that mutates the DataAccessAuditLog nodes in the graph.
@@ -73071,6 +75057,1628 @@ func (m *PositionMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *PositionMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Position edge %s", name)
+}
+
+// PrintTemplateMutation represents an operation that mutates the PrintTemplate nodes in the graph.
+type PrintTemplateMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uint32
+	created_at    *time.Time
+	updated_at    *time.Time
+	deleted_at    *time.Time
+	created_by    *uint32
+	addcreated_by *int32
+	updated_by    *uint32
+	addupdated_by *int32
+	deleted_by    *uint32
+	adddeleted_by *int32
+	is_enabled    *bool
+	sort_order    *uint32
+	addsort_order *int32
+	tenant_id     *uint32
+	addtenant_id  *int32
+	name          *string
+	code          *string
+	resource_key  *string
+	payload       *string
+	is_built_in   *bool
+	paper_size    *string
+	orientation   *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*PrintTemplate, error)
+	predicates    []predicate.PrintTemplate
+}
+
+var _ ent.Mutation = (*PrintTemplateMutation)(nil)
+
+// printtemplateOption allows management of the mutation configuration using functional options.
+type printtemplateOption func(*PrintTemplateMutation)
+
+// newPrintTemplateMutation creates new mutation for the PrintTemplate entity.
+func newPrintTemplateMutation(c config, op Op, opts ...printtemplateOption) *PrintTemplateMutation {
+	m := &PrintTemplateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePrintTemplate,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPrintTemplateID sets the ID field of the mutation.
+func withPrintTemplateID(id uint32) printtemplateOption {
+	return func(m *PrintTemplateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PrintTemplate
+		)
+		m.oldValue = func(ctx context.Context) (*PrintTemplate, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PrintTemplate.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPrintTemplate sets the old PrintTemplate of the mutation.
+func withPrintTemplate(node *PrintTemplate) printtemplateOption {
+	return func(m *PrintTemplateMutation) {
+		m.oldValue = func(context.Context) (*PrintTemplate, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PrintTemplateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PrintTemplateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of PrintTemplate entities.
+func (m *PrintTemplateMutation) SetID(id uint32) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PrintTemplateMutation) ID() (id uint32, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PrintTemplateMutation) IDs(ctx context.Context) ([]uint32, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint32{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PrintTemplate.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *PrintTemplateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PrintTemplateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldCreatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *PrintTemplateMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[printtemplate.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *PrintTemplateMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PrintTemplateMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, printtemplate.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *PrintTemplateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *PrintTemplateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *PrintTemplateMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[printtemplate.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *PrintTemplateMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *PrintTemplateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, printtemplate.FieldUpdatedAt)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *PrintTemplateMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *PrintTemplateMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *PrintTemplateMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[printtemplate.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *PrintTemplateMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *PrintTemplateMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, printtemplate.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *PrintTemplateMutation) SetCreatedBy(u uint32) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *PrintTemplateMutation) CreatedBy() (r uint32, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldCreatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *PrintTemplateMutation) AddCreatedBy(u int32) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *PrintTemplateMutation) AddedCreatedBy() (r int32, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *PrintTemplateMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	m.clearedFields[printtemplate.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *PrintTemplateMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *PrintTemplateMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+	delete(m.clearedFields, printtemplate.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *PrintTemplateMutation) SetUpdatedBy(u uint32) {
+	m.updated_by = &u
+	m.addupdated_by = nil
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *PrintTemplateMutation) UpdatedBy() (r uint32, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldUpdatedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// AddUpdatedBy adds u to the "updated_by" field.
+func (m *PrintTemplateMutation) AddUpdatedBy(u int32) {
+	if m.addupdated_by != nil {
+		*m.addupdated_by += u
+	} else {
+		m.addupdated_by = &u
+	}
+}
+
+// AddedUpdatedBy returns the value that was added to the "updated_by" field in this mutation.
+func (m *PrintTemplateMutation) AddedUpdatedBy() (r int32, exists bool) {
+	v := m.addupdated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *PrintTemplateMutation) ClearUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	m.clearedFields[printtemplate.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *PrintTemplateMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *PrintTemplateMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+	m.addupdated_by = nil
+	delete(m.clearedFields, printtemplate.FieldUpdatedBy)
+}
+
+// SetDeletedBy sets the "deleted_by" field.
+func (m *PrintTemplateMutation) SetDeletedBy(u uint32) {
+	m.deleted_by = &u
+	m.adddeleted_by = nil
+}
+
+// DeletedBy returns the value of the "deleted_by" field in the mutation.
+func (m *PrintTemplateMutation) DeletedBy() (r uint32, exists bool) {
+	v := m.deleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedBy returns the old "deleted_by" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldDeletedBy(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedBy: %w", err)
+	}
+	return oldValue.DeletedBy, nil
+}
+
+// AddDeletedBy adds u to the "deleted_by" field.
+func (m *PrintTemplateMutation) AddDeletedBy(u int32) {
+	if m.adddeleted_by != nil {
+		*m.adddeleted_by += u
+	} else {
+		m.adddeleted_by = &u
+	}
+}
+
+// AddedDeletedBy returns the value that was added to the "deleted_by" field in this mutation.
+func (m *PrintTemplateMutation) AddedDeletedBy() (r int32, exists bool) {
+	v := m.adddeleted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeletedBy clears the value of the "deleted_by" field.
+func (m *PrintTemplateMutation) ClearDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	m.clearedFields[printtemplate.FieldDeletedBy] = struct{}{}
+}
+
+// DeletedByCleared returns if the "deleted_by" field was cleared in this mutation.
+func (m *PrintTemplateMutation) DeletedByCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldDeletedBy]
+	return ok
+}
+
+// ResetDeletedBy resets all changes to the "deleted_by" field.
+func (m *PrintTemplateMutation) ResetDeletedBy() {
+	m.deleted_by = nil
+	m.adddeleted_by = nil
+	delete(m.clearedFields, printtemplate.FieldDeletedBy)
+}
+
+// SetIsEnabled sets the "is_enabled" field.
+func (m *PrintTemplateMutation) SetIsEnabled(b bool) {
+	m.is_enabled = &b
+}
+
+// IsEnabled returns the value of the "is_enabled" field in the mutation.
+func (m *PrintTemplateMutation) IsEnabled() (r bool, exists bool) {
+	v := m.is_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsEnabled returns the old "is_enabled" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldIsEnabled(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsEnabled: %w", err)
+	}
+	return oldValue.IsEnabled, nil
+}
+
+// ClearIsEnabled clears the value of the "is_enabled" field.
+func (m *PrintTemplateMutation) ClearIsEnabled() {
+	m.is_enabled = nil
+	m.clearedFields[printtemplate.FieldIsEnabled] = struct{}{}
+}
+
+// IsEnabledCleared returns if the "is_enabled" field was cleared in this mutation.
+func (m *PrintTemplateMutation) IsEnabledCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldIsEnabled]
+	return ok
+}
+
+// ResetIsEnabled resets all changes to the "is_enabled" field.
+func (m *PrintTemplateMutation) ResetIsEnabled() {
+	m.is_enabled = nil
+	delete(m.clearedFields, printtemplate.FieldIsEnabled)
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *PrintTemplateMutation) SetSortOrder(u uint32) {
+	m.sort_order = &u
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *PrintTemplateMutation) SortOrder() (r uint32, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldSortOrder(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds u to the "sort_order" field.
+func (m *PrintTemplateMutation) AddSortOrder(u int32) {
+	if m.addsort_order != nil {
+		*m.addsort_order += u
+	} else {
+		m.addsort_order = &u
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *PrintTemplateMutation) AddedSortOrder() (r int32, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSortOrder clears the value of the "sort_order" field.
+func (m *PrintTemplateMutation) ClearSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+	m.clearedFields[printtemplate.FieldSortOrder] = struct{}{}
+}
+
+// SortOrderCleared returns if the "sort_order" field was cleared in this mutation.
+func (m *PrintTemplateMutation) SortOrderCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldSortOrder]
+	return ok
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *PrintTemplateMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+	delete(m.clearedFields, printtemplate.FieldSortOrder)
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *PrintTemplateMutation) SetTenantID(u uint32) {
+	m.tenant_id = &u
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *PrintTemplateMutation) TenantID() (r uint32, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldTenantID(ctx context.Context) (v *uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds u to the "tenant_id" field.
+func (m *PrintTemplateMutation) AddTenantID(u int32) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += u
+	} else {
+		m.addtenant_id = &u
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *PrintTemplateMutation) AddedTenantID() (r int32, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *PrintTemplateMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	m.clearedFields[printtemplate.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *PrintTemplateMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *PrintTemplateMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+	delete(m.clearedFields, printtemplate.FieldTenantID)
+}
+
+// SetName sets the "name" field.
+func (m *PrintTemplateMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *PrintTemplateMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *PrintTemplateMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[printtemplate.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *PrintTemplateMutation) NameCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *PrintTemplateMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, printtemplate.FieldName)
+}
+
+// SetCode sets the "code" field.
+func (m *PrintTemplateMutation) SetCode(s string) {
+	m.code = &s
+}
+
+// Code returns the value of the "code" field in the mutation.
+func (m *PrintTemplateMutation) Code() (r string, exists bool) {
+	v := m.code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCode returns the old "code" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+	}
+	return oldValue.Code, nil
+}
+
+// ClearCode clears the value of the "code" field.
+func (m *PrintTemplateMutation) ClearCode() {
+	m.code = nil
+	m.clearedFields[printtemplate.FieldCode] = struct{}{}
+}
+
+// CodeCleared returns if the "code" field was cleared in this mutation.
+func (m *PrintTemplateMutation) CodeCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldCode]
+	return ok
+}
+
+// ResetCode resets all changes to the "code" field.
+func (m *PrintTemplateMutation) ResetCode() {
+	m.code = nil
+	delete(m.clearedFields, printtemplate.FieldCode)
+}
+
+// SetResourceKey sets the "resource_key" field.
+func (m *PrintTemplateMutation) SetResourceKey(s string) {
+	m.resource_key = &s
+}
+
+// ResourceKey returns the value of the "resource_key" field in the mutation.
+func (m *PrintTemplateMutation) ResourceKey() (r string, exists bool) {
+	v := m.resource_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResourceKey returns the old "resource_key" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldResourceKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResourceKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResourceKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResourceKey: %w", err)
+	}
+	return oldValue.ResourceKey, nil
+}
+
+// ClearResourceKey clears the value of the "resource_key" field.
+func (m *PrintTemplateMutation) ClearResourceKey() {
+	m.resource_key = nil
+	m.clearedFields[printtemplate.FieldResourceKey] = struct{}{}
+}
+
+// ResourceKeyCleared returns if the "resource_key" field was cleared in this mutation.
+func (m *PrintTemplateMutation) ResourceKeyCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldResourceKey]
+	return ok
+}
+
+// ResetResourceKey resets all changes to the "resource_key" field.
+func (m *PrintTemplateMutation) ResetResourceKey() {
+	m.resource_key = nil
+	delete(m.clearedFields, printtemplate.FieldResourceKey)
+}
+
+// SetPayload sets the "payload" field.
+func (m *PrintTemplateMutation) SetPayload(s string) {
+	m.payload = &s
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *PrintTemplateMutation) Payload() (r string, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldPayload(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (m *PrintTemplateMutation) ClearPayload() {
+	m.payload = nil
+	m.clearedFields[printtemplate.FieldPayload] = struct{}{}
+}
+
+// PayloadCleared returns if the "payload" field was cleared in this mutation.
+func (m *PrintTemplateMutation) PayloadCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldPayload]
+	return ok
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *PrintTemplateMutation) ResetPayload() {
+	m.payload = nil
+	delete(m.clearedFields, printtemplate.FieldPayload)
+}
+
+// SetIsBuiltIn sets the "is_built_in" field.
+func (m *PrintTemplateMutation) SetIsBuiltIn(b bool) {
+	m.is_built_in = &b
+}
+
+// IsBuiltIn returns the value of the "is_built_in" field in the mutation.
+func (m *PrintTemplateMutation) IsBuiltIn() (r bool, exists bool) {
+	v := m.is_built_in
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsBuiltIn returns the old "is_built_in" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldIsBuiltIn(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsBuiltIn is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsBuiltIn requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsBuiltIn: %w", err)
+	}
+	return oldValue.IsBuiltIn, nil
+}
+
+// ClearIsBuiltIn clears the value of the "is_built_in" field.
+func (m *PrintTemplateMutation) ClearIsBuiltIn() {
+	m.is_built_in = nil
+	m.clearedFields[printtemplate.FieldIsBuiltIn] = struct{}{}
+}
+
+// IsBuiltInCleared returns if the "is_built_in" field was cleared in this mutation.
+func (m *PrintTemplateMutation) IsBuiltInCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldIsBuiltIn]
+	return ok
+}
+
+// ResetIsBuiltIn resets all changes to the "is_built_in" field.
+func (m *PrintTemplateMutation) ResetIsBuiltIn() {
+	m.is_built_in = nil
+	delete(m.clearedFields, printtemplate.FieldIsBuiltIn)
+}
+
+// SetPaperSize sets the "paper_size" field.
+func (m *PrintTemplateMutation) SetPaperSize(s string) {
+	m.paper_size = &s
+}
+
+// PaperSize returns the value of the "paper_size" field in the mutation.
+func (m *PrintTemplateMutation) PaperSize() (r string, exists bool) {
+	v := m.paper_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaperSize returns the old "paper_size" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldPaperSize(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaperSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaperSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaperSize: %w", err)
+	}
+	return oldValue.PaperSize, nil
+}
+
+// ClearPaperSize clears the value of the "paper_size" field.
+func (m *PrintTemplateMutation) ClearPaperSize() {
+	m.paper_size = nil
+	m.clearedFields[printtemplate.FieldPaperSize] = struct{}{}
+}
+
+// PaperSizeCleared returns if the "paper_size" field was cleared in this mutation.
+func (m *PrintTemplateMutation) PaperSizeCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldPaperSize]
+	return ok
+}
+
+// ResetPaperSize resets all changes to the "paper_size" field.
+func (m *PrintTemplateMutation) ResetPaperSize() {
+	m.paper_size = nil
+	delete(m.clearedFields, printtemplate.FieldPaperSize)
+}
+
+// SetOrientation sets the "orientation" field.
+func (m *PrintTemplateMutation) SetOrientation(s string) {
+	m.orientation = &s
+}
+
+// Orientation returns the value of the "orientation" field in the mutation.
+func (m *PrintTemplateMutation) Orientation() (r string, exists bool) {
+	v := m.orientation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrientation returns the old "orientation" field's value of the PrintTemplate entity.
+// If the PrintTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintTemplateMutation) OldOrientation(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrientation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrientation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrientation: %w", err)
+	}
+	return oldValue.Orientation, nil
+}
+
+// ClearOrientation clears the value of the "orientation" field.
+func (m *PrintTemplateMutation) ClearOrientation() {
+	m.orientation = nil
+	m.clearedFields[printtemplate.FieldOrientation] = struct{}{}
+}
+
+// OrientationCleared returns if the "orientation" field was cleared in this mutation.
+func (m *PrintTemplateMutation) OrientationCleared() bool {
+	_, ok := m.clearedFields[printtemplate.FieldOrientation]
+	return ok
+}
+
+// ResetOrientation resets all changes to the "orientation" field.
+func (m *PrintTemplateMutation) ResetOrientation() {
+	m.orientation = nil
+	delete(m.clearedFields, printtemplate.FieldOrientation)
+}
+
+// Where appends a list predicates to the PrintTemplateMutation builder.
+func (m *PrintTemplateMutation) Where(ps ...predicate.PrintTemplate) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PrintTemplateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PrintTemplateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PrintTemplate, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PrintTemplateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PrintTemplateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PrintTemplate).
+func (m *PrintTemplateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PrintTemplateMutation) Fields() []string {
+	fields := make([]string, 0, 16)
+	if m.created_at != nil {
+		fields = append(fields, printtemplate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, printtemplate.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, printtemplate.FieldDeletedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, printtemplate.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, printtemplate.FieldUpdatedBy)
+	}
+	if m.deleted_by != nil {
+		fields = append(fields, printtemplate.FieldDeletedBy)
+	}
+	if m.is_enabled != nil {
+		fields = append(fields, printtemplate.FieldIsEnabled)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, printtemplate.FieldSortOrder)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, printtemplate.FieldTenantID)
+	}
+	if m.name != nil {
+		fields = append(fields, printtemplate.FieldName)
+	}
+	if m.code != nil {
+		fields = append(fields, printtemplate.FieldCode)
+	}
+	if m.resource_key != nil {
+		fields = append(fields, printtemplate.FieldResourceKey)
+	}
+	if m.payload != nil {
+		fields = append(fields, printtemplate.FieldPayload)
+	}
+	if m.is_built_in != nil {
+		fields = append(fields, printtemplate.FieldIsBuiltIn)
+	}
+	if m.paper_size != nil {
+		fields = append(fields, printtemplate.FieldPaperSize)
+	}
+	if m.orientation != nil {
+		fields = append(fields, printtemplate.FieldOrientation)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PrintTemplateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case printtemplate.FieldCreatedAt:
+		return m.CreatedAt()
+	case printtemplate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case printtemplate.FieldDeletedAt:
+		return m.DeletedAt()
+	case printtemplate.FieldCreatedBy:
+		return m.CreatedBy()
+	case printtemplate.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case printtemplate.FieldDeletedBy:
+		return m.DeletedBy()
+	case printtemplate.FieldIsEnabled:
+		return m.IsEnabled()
+	case printtemplate.FieldSortOrder:
+		return m.SortOrder()
+	case printtemplate.FieldTenantID:
+		return m.TenantID()
+	case printtemplate.FieldName:
+		return m.Name()
+	case printtemplate.FieldCode:
+		return m.Code()
+	case printtemplate.FieldResourceKey:
+		return m.ResourceKey()
+	case printtemplate.FieldPayload:
+		return m.Payload()
+	case printtemplate.FieldIsBuiltIn:
+		return m.IsBuiltIn()
+	case printtemplate.FieldPaperSize:
+		return m.PaperSize()
+	case printtemplate.FieldOrientation:
+		return m.Orientation()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PrintTemplateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case printtemplate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case printtemplate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case printtemplate.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case printtemplate.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case printtemplate.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case printtemplate.FieldDeletedBy:
+		return m.OldDeletedBy(ctx)
+	case printtemplate.FieldIsEnabled:
+		return m.OldIsEnabled(ctx)
+	case printtemplate.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case printtemplate.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case printtemplate.FieldName:
+		return m.OldName(ctx)
+	case printtemplate.FieldCode:
+		return m.OldCode(ctx)
+	case printtemplate.FieldResourceKey:
+		return m.OldResourceKey(ctx)
+	case printtemplate.FieldPayload:
+		return m.OldPayload(ctx)
+	case printtemplate.FieldIsBuiltIn:
+		return m.OldIsBuiltIn(ctx)
+	case printtemplate.FieldPaperSize:
+		return m.OldPaperSize(ctx)
+	case printtemplate.FieldOrientation:
+		return m.OldOrientation(ctx)
+	}
+	return nil, fmt.Errorf("unknown PrintTemplate field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PrintTemplateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case printtemplate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case printtemplate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case printtemplate.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case printtemplate.FieldCreatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case printtemplate.FieldUpdatedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case printtemplate.FieldDeletedBy:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedBy(v)
+		return nil
+	case printtemplate.FieldIsEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsEnabled(v)
+		return nil
+	case printtemplate.FieldSortOrder:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case printtemplate.FieldTenantID:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case printtemplate.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case printtemplate.FieldCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCode(v)
+		return nil
+	case printtemplate.FieldResourceKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResourceKey(v)
+		return nil
+	case printtemplate.FieldPayload:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	case printtemplate.FieldIsBuiltIn:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsBuiltIn(v)
+		return nil
+	case printtemplate.FieldPaperSize:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaperSize(v)
+		return nil
+	case printtemplate.FieldOrientation:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrientation(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PrintTemplate field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PrintTemplateMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, printtemplate.FieldCreatedBy)
+	}
+	if m.addupdated_by != nil {
+		fields = append(fields, printtemplate.FieldUpdatedBy)
+	}
+	if m.adddeleted_by != nil {
+		fields = append(fields, printtemplate.FieldDeletedBy)
+	}
+	if m.addsort_order != nil {
+		fields = append(fields, printtemplate.FieldSortOrder)
+	}
+	if m.addtenant_id != nil {
+		fields = append(fields, printtemplate.FieldTenantID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PrintTemplateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case printtemplate.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case printtemplate.FieldUpdatedBy:
+		return m.AddedUpdatedBy()
+	case printtemplate.FieldDeletedBy:
+		return m.AddedDeletedBy()
+	case printtemplate.FieldSortOrder:
+		return m.AddedSortOrder()
+	case printtemplate.FieldTenantID:
+		return m.AddedTenantID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PrintTemplateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case printtemplate.FieldCreatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case printtemplate.FieldUpdatedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdatedBy(v)
+		return nil
+	case printtemplate.FieldDeletedBy:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeletedBy(v)
+		return nil
+	case printtemplate.FieldSortOrder:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
+	case printtemplate.FieldTenantID:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PrintTemplate numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PrintTemplateMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(printtemplate.FieldCreatedAt) {
+		fields = append(fields, printtemplate.FieldCreatedAt)
+	}
+	if m.FieldCleared(printtemplate.FieldUpdatedAt) {
+		fields = append(fields, printtemplate.FieldUpdatedAt)
+	}
+	if m.FieldCleared(printtemplate.FieldDeletedAt) {
+		fields = append(fields, printtemplate.FieldDeletedAt)
+	}
+	if m.FieldCleared(printtemplate.FieldCreatedBy) {
+		fields = append(fields, printtemplate.FieldCreatedBy)
+	}
+	if m.FieldCleared(printtemplate.FieldUpdatedBy) {
+		fields = append(fields, printtemplate.FieldUpdatedBy)
+	}
+	if m.FieldCleared(printtemplate.FieldDeletedBy) {
+		fields = append(fields, printtemplate.FieldDeletedBy)
+	}
+	if m.FieldCleared(printtemplate.FieldIsEnabled) {
+		fields = append(fields, printtemplate.FieldIsEnabled)
+	}
+	if m.FieldCleared(printtemplate.FieldSortOrder) {
+		fields = append(fields, printtemplate.FieldSortOrder)
+	}
+	if m.FieldCleared(printtemplate.FieldTenantID) {
+		fields = append(fields, printtemplate.FieldTenantID)
+	}
+	if m.FieldCleared(printtemplate.FieldName) {
+		fields = append(fields, printtemplate.FieldName)
+	}
+	if m.FieldCleared(printtemplate.FieldCode) {
+		fields = append(fields, printtemplate.FieldCode)
+	}
+	if m.FieldCleared(printtemplate.FieldResourceKey) {
+		fields = append(fields, printtemplate.FieldResourceKey)
+	}
+	if m.FieldCleared(printtemplate.FieldPayload) {
+		fields = append(fields, printtemplate.FieldPayload)
+	}
+	if m.FieldCleared(printtemplate.FieldIsBuiltIn) {
+		fields = append(fields, printtemplate.FieldIsBuiltIn)
+	}
+	if m.FieldCleared(printtemplate.FieldPaperSize) {
+		fields = append(fields, printtemplate.FieldPaperSize)
+	}
+	if m.FieldCleared(printtemplate.FieldOrientation) {
+		fields = append(fields, printtemplate.FieldOrientation)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PrintTemplateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PrintTemplateMutation) ClearField(name string) error {
+	switch name {
+	case printtemplate.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case printtemplate.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case printtemplate.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case printtemplate.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case printtemplate.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case printtemplate.FieldDeletedBy:
+		m.ClearDeletedBy()
+		return nil
+	case printtemplate.FieldIsEnabled:
+		m.ClearIsEnabled()
+		return nil
+	case printtemplate.FieldSortOrder:
+		m.ClearSortOrder()
+		return nil
+	case printtemplate.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case printtemplate.FieldName:
+		m.ClearName()
+		return nil
+	case printtemplate.FieldCode:
+		m.ClearCode()
+		return nil
+	case printtemplate.FieldResourceKey:
+		m.ClearResourceKey()
+		return nil
+	case printtemplate.FieldPayload:
+		m.ClearPayload()
+		return nil
+	case printtemplate.FieldIsBuiltIn:
+		m.ClearIsBuiltIn()
+		return nil
+	case printtemplate.FieldPaperSize:
+		m.ClearPaperSize()
+		return nil
+	case printtemplate.FieldOrientation:
+		m.ClearOrientation()
+		return nil
+	}
+	return fmt.Errorf("unknown PrintTemplate nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PrintTemplateMutation) ResetField(name string) error {
+	switch name {
+	case printtemplate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case printtemplate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case printtemplate.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case printtemplate.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case printtemplate.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case printtemplate.FieldDeletedBy:
+		m.ResetDeletedBy()
+		return nil
+	case printtemplate.FieldIsEnabled:
+		m.ResetIsEnabled()
+		return nil
+	case printtemplate.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case printtemplate.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case printtemplate.FieldName:
+		m.ResetName()
+		return nil
+	case printtemplate.FieldCode:
+		m.ResetCode()
+		return nil
+	case printtemplate.FieldResourceKey:
+		m.ResetResourceKey()
+		return nil
+	case printtemplate.FieldPayload:
+		m.ResetPayload()
+		return nil
+	case printtemplate.FieldIsBuiltIn:
+		m.ResetIsBuiltIn()
+		return nil
+	case printtemplate.FieldPaperSize:
+		m.ResetPaperSize()
+		return nil
+	case printtemplate.FieldOrientation:
+		m.ResetOrientation()
+		return nil
+	}
+	return fmt.Errorf("unknown PrintTemplate field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PrintTemplateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PrintTemplateMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PrintTemplateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PrintTemplateMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PrintTemplateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PrintTemplateMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PrintTemplateMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown PrintTemplate unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PrintTemplateMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown PrintTemplate edge %s", name)
 }
 
 // RoleMutation represents an operation that mutates the Role nodes in the graph.

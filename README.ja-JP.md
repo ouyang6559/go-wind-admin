@@ -45,6 +45,18 @@
 
 ---
 
+## リポジトリ
+
+本プロジェクトは以下の 3 つのプラットフォームで同時公開しています。内容は同一ですので、クローン / スターはお好みのものをどうぞ：
+
+| プラットフォーム | URL |
+|------------------|-----|
+| GitHub | <https://github.com/tx7do/go-wind-admin> |
+| Gitee | <https://gitee.com/tx7do/go-wind-admin> |
+| AtomGit | <https://atomgit.com/tx7do/go-wind-admin> |
+
+---
+
 ## デモ
 
 3 つの URL は同じバックエンド機能の並列デモです。**それぞれ開いて比較し、1 つだけ選べばよい**：
@@ -67,7 +79,7 @@
 | ツール | バージョン |
 |--------|-----------|
 | Go | 1.26+（`backend/go.mod` に従う） |
-| Node.js | `^20.19.0 \|\| >=22.12.0` — 3 系の `engines` 共通範囲は vue-element が決める（vue-vben は `>=20.10.0`、react は未宣言）。**21.x は対象外**、20.18 以下も同様 |
+| Node.js | `^20.19.0 \|\| >=22.12.0` — 3 系の `engines` 共通範囲は vue-element が決める（vue-vben は `>=20.11.0`、react は未宣言）。**21.x は対象外**、20.18 以下も同様 |
 | pnpm | `>= 9.12.0`（下限は vue-vben の `engines.pnpm`）。vue-vben はさらに `packageManager` で `pnpm@11.18.0` を固定：corepack を有効化（`corepack enable`）すれば自動で切り替わる。有効化しない場合は `npm i -g pnpm@11.18.0` で手動インストール、少なくとも major を合わせる |
 | Docker | 20.0+ |
 
@@ -137,7 +149,7 @@ gow run admin
 |------------------|--------------|--------------|--------|
 | React | `frontend/admin/react` | `pnpm dev` | 15888 |
 | Vue Element | `frontend/admin/vue-element` | `pnpm dev` | 15777 |
-| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev:antd` | 15666 |
+| Vue Vben | `frontend/admin/vue-vben` | `pnpm dev` | 15666 |
 
 ```shell
 # 3 つのうち 1 つを選ぶ：まずそのフロントエンドへ cd してから install → 起動。
@@ -149,10 +161,10 @@ pnpm dev                    # ポート 15888
 
 # 残り 2 系：
 cd frontend/admin/vue-element && pnpm install && pnpm dev            # ポート 15777
-cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート 15666
+cd frontend/admin/vue-vben   && pnpm install && pnpm dev             # ポート 15666
 ```
 
-> vue-vben 自体が pnpm workspace（`pnpm-workspace.yaml` + `apps/` + `packages/`）なので、依存インストールは必ず**そのルート**で行う。`pnpm dev:antd` は workspace から `@vben/web-antd` app を選んで起動するだけ。`apps/admin` で単独 install すると catalog のバージョン固定を迂回する。
+> vue-vben は上流 Vben 5 のマルチパッケージ monorepo（`apps/` + `packages/`）を**単一パッケージ構成**へ統合済みです：アプリ本体は `src/`、フレームワーク殻は `framework/` にあり、`pnpm dev` で唯一のアプリを直接起動します。依存インストールは引き続き**そのルート**で行ってください——`pnpm-workspace.yaml` が catalog によるバージョン固定を保持しています。
 
 ---
 
@@ -162,7 +174,7 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート
 <tr><th>レイヤー</th><th>技術</th></tr>
 <tr><td><strong>バックエンドフレームワーク</strong></td><td><code>Golang</code> · <code>go-kratos v2</code> · <code>Protobuf / Buf</code></td></tr>
 <tr><td><strong>ORM</strong></td><td><code>Ent</code> / <code>GORM</code>（2 択 1、ビルドタグで切替、デフォルトは Ent） · <code>MySQL</code> · <code>PostgreSQL</code></td></tr>
-<tr><td><strong>ミドルウェア</strong></td><td><code>Redis</code>（compose は <code>bitnami/redis:latest</code> を取得、バージョン固定なし。コード側は Set/Expire/Publish などの長期コマンドのみで、Redis 8 専用コマンドは不使用） · <code>MinIO</code>（S3 互換オブジェクトストレージ）</td></tr>
+<tr><td><strong>ミドルウェア</strong></td><td><code>Redis</code>（compose は <code>bitnami/redis:latest</code> を取得、バージョン固定なし。コード側は Set/Expire/Publish などの長期コマンドのみで、Redis 8 専用コマンドは不使用） · <code>SeaweedFS</code>（S3 互換オブジェクトストレージ。MinIO コミュニティ版の保守終了後の代替で、コンテナサービス名は minio を継続使用）</td></tr>
 <tr><td><strong>認証・認可</strong></td><td><code>JWT</code>（認証） · <code>Casbin</code> / <code>OPA</code>（認可エンジン、2 択 1、デフォルトは全許可の noop）</td></tr>
 <tr><td><strong>リアルタイム通信</strong></td><td><code>SSE</code>（サーバープッシュ） · <code>Asynq</code>（非同期タスク）</td></tr>
 <tr><td><strong>スクリプトエンジン</strong></td><td><code>go-scripts</code> · <code>Lua</code>（gopher-lua） · <code>JavaScript</code>（goja） · 多言語 Hook プラグインシステム</td></tr>
@@ -231,6 +243,8 @@ cd frontend/admin/vue-vben   && pnpm install && pnpm dev:antd        # ポート
 | パラメータ管理 | プラットフォーム全体のシステムパラメータをキー / 値で管理（業務ディクショナリとは区別）。内蔵パラメータは起動時にシードされ、削除は不可。読み取りはサービス側のキャッシュ付き accessor を経由し、マルチインスタンス構成では変更が Redis パブリッシュ / サブスクライブでブロードキャストされて各インスタンスのキャッシュが失効される。 |
 | マシン資格情報（AK/SK） | テナントスコープの AccessKey / SecretKey 管理：作成時に Secret を一度だけ表示し、有効化 / 無効化・削除・シークレットのローテーションをサポート（ローテーションで旧 Secret は直ちに無効化）。AK / Secret はトークン交換エンドポイントでテナントスコープのマシン JWT（machine ロール、アクセストークンのみ）に交換可能。交換エンドポイントには IP + AK 単位の失敗レート制限が適用される。 |
 | 言語管理 | システムがサポートする多言語を管理し、言語名、言語コード、ネイティブ名、有効化およびデフォルト状態を設定。 |
+| 印刷テンプレート | 帳票印刷デザイナー：ドラッグ＆ドロップで印刷テンプレートを視覚的に設計（テキスト / テーブル / バーコード / QR コード、ミリメートル精度のレイアウト、複数ページの跨頁表頭繰り返し対応）。テンプレートはリソースにバインドされ、任意のリスト行を個別または一括（チェック行を 1 文書に統合）で印刷可能。ブラウザ印刷とサーバーサイド PDF（バックエンド Chromium レンダリング、デプロイ時に印刷ブラウザレイヤーを有効化 — [docs/print_template.md](./docs/print_template.md) 参照）に対応。 |
+| BI ダッシュボード | BI デザイナー（@go-wind/bi-*、ドラッグ＆ドロップ、クロスフィルタ、ドリルダウン、テーマプリセット）で作成したダッシュボード/スクリーンをデータベースに永続化（`bi_dashboards`、並行上書きを防ぐ楽観ロック、内置行は削除不可・複製可）。三端同型：ダッシュボード表示、デザイナー編集（管理ドロワーまたは独立ページ `?id=`）、管理一覧。デモデータは静的埋め込み、実データはホストがデータセット resolver を注入。詳細は [docs/bi_dashboard.md](./docs/bi_dashboard.md) |
 
 ### メッセージとログ
 
@@ -270,7 +284,7 @@ go-wind-admin/
 │   │   └── internal/               # ビジネスコア（data/service/server）
 │   ├── pkg/                        # 共通パッケージ
 │   │   ├── scripting/              # 多言語スクリプトエンジン（Lua + JavaScript）
-│   │   ├── oss/                    # オブジェクトストレージ（MinIO）
+│   │   ├── oss/                    # オブジェクトストレージ（S3 互換：SeaweedFS）
 │   │   ├── eventbus/               # イベントバス
 │   │   └── ...                     # その他ユーティリティパッケージ
 │   ├── scripts/                    # デプロイ・バックアップスクリプト（env/docker/deploy/backup）

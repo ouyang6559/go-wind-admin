@@ -56,7 +56,6 @@ import {
   useStartAllTasks,
   useStopAllTasks,
   useRestartAllTasks,
-  createPagedExportAction,
 } from "@/api/composables";
 import { PaginationQuery } from "@/core/transport/rest";
 import { $t } from "@/core/i18n";
@@ -122,7 +121,6 @@ const pageConfig = computed<ProPageConfig>(() => ({
     deleteAction: async (ids: string) => {
       await deleteTask({ id: ids as any });
     },
-    exportsAction: createPagedExportAction(fetchListTasks),
     toolbar: [
       {
         name: "sysTasks",
@@ -134,21 +132,21 @@ const pageConfig = computed<ProPageConfig>(() => ({
       {
         name: "startAll",
         label: $t("pages.task.button.startAll"),
-        attrs: { type: "success" },
+        attrs: { type: "success", plain: true, icon: "CaretRight" },
       } as ToolsButton,
       {
         name: "stopAll",
         label: $t("pages.task.button.stopAll"),
-        attrs: { type: "danger" },
+        attrs: { type: "danger", plain: true, icon: "VideoPause" },
       } as ToolsButton,
       {
         name: "restartAll",
         label: $t("pages.task.button.restartAll"),
-        attrs: { type: "primary" },
+        attrs: { type: "warning", plain: true, icon: "Refresh" },
       } as ToolsButton,
       "add",
     ],
-    defaultToolbar: ["refresh", "exports", "filter"],
+    defaultToolbar: ["exports", "refresh", "zoom", "filter"],
     pagination: false,
     tableAttrs: { border: true, stripe: false },
     columns: [
@@ -180,7 +178,7 @@ const pageConfig = computed<ProPageConfig>(() => ({
         prop: "action",
         label: $t("common.table.action"),
         fixed: "right",
-        width: 240,
+        width: 300,
         cellType: "tool",
         buttons: [
           { name: "edit", label: $t("common.button.edit"), icon: "lucide:pen-line" },

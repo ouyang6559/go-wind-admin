@@ -11,11 +11,13 @@ declare global {
   const AuthLayout: typeof import('../src/components/bussiness/AuthLayout/index').default
   const CodeBlockModal: typeof import('../src/components/common/Editor/src/TiptapEditor/modals').CodeBlockModal
   const CodeEditor: typeof import('../src/components/common/Editor/src/CodeEditor').default
+  const ColumnSlidersIcon: typeof import('../src/components/common/columnSettingIcon').ColumnSlidersIcon
   const CustomCodeBlockLowlight: typeof import('../src/components/common/Editor/src/TiptapEditor/index').CustomCodeBlockLowlight
   const CustomIframe: typeof import('../src/components/common/Editor/src/TiptapEditor/nodes').CustomIframe
   const CustomVideo: typeof import('../src/components/common/Editor/src/TiptapEditor/nodes').CustomVideo
-  const Editor: typeof import('../src/components/common/Editor/src/Editor').default
-  const EditorType: typeof import('../src/components/common/Editor/types').EditorType
+  const Editor: typeof import('../src/components/common/Editor/index').Editor
+  const EditorProvider: typeof import('../src/components/common/Editor/index').EditorProvider
+  const EditorType: typeof import('../src/components/common/Editor/index').EditorType
   const Fragment: typeof import('react').Fragment
   const IframeModal: typeof import('../src/components/common/Editor/src/TiptapEditor/modals').IframeModal
   const ImportModal: typeof import('../src/components/common/ImportModal/index').default
@@ -24,16 +26,20 @@ declare global {
   const LinkModal: typeof import('../src/components/common/Editor/src/TiptapEditor/index').LinkModal
   const ListTable: typeof import('../src/components/common/ListTable/index').default
   const Loading: typeof import('../src/components/common/Loading/index').default
+  const MIN_COLUMN_WIDTH: typeof import('../src/components/common/ListTable/ResizableHeaderCell').MIN_COLUMN_WIDTH
   const MarkdownEditor: typeof import('../src/components/common/Editor/src/MarkdownEditor').default
   const NavLink: typeof import('react-router-dom').NavLink
   const Navigate: typeof import('react-router-dom').Navigate
   const Outlet: typeof import('react-router-dom').Outlet
   const PlainTextEditor: typeof import('../src/components/common/Editor/src/PlainTextEditor').default
+  const ResizableHeaderCell: typeof import('../src/components/common/ListTable/ResizableHeaderCell').default
   const Route: typeof import('react-router-dom').Route
   const Routes: typeof import('react-router-dom').Routes
+  const SettingBoltIcon: typeof import('../src/components/common/settingBoltIcon').SettingBoltIcon
   const SloganIcon: typeof import('../src/components/bussiness/AuthLayout/icons/SloganIcon').default
   const StatusBar: typeof import('../src/components/common/Editor/src/TiptapEditor/index').StatusBar
   const Suspense: typeof import('react').Suspense
+  const TableActions: typeof import('../src/components/common/TableActions/index').default
   const TableExportButton: typeof import('../src/components/common/TableExportButton/index').default
   const TableSkeleton: typeof import('../src/components/common/ListTable/TableSkeleton').default
   const ThemeLoading: typeof import('../src/components/common/Loading/index').ThemeLoading
@@ -46,6 +52,7 @@ declare global {
   const createContext: typeof import('react').createContext
   const createRef: typeof import('react').createRef
   const defaultImageUpload: typeof import('../src/components/common/Editor/src/TiptapEditor/defaultImageUpload').defaultImageUpload
+  const defaultUploadImage: typeof import('../src/components/common/Editor/index').defaultUploadImage
   const disconnectSSEServer: typeof import('../src/hooks/useTokenRefresh').disconnectSSEServer
   const extractImageFiles: typeof import('../src/components/common/Editor/src/TiptapEditor/defaultImageUpload').extractImageFiles
   const fetchAllDictEntries: typeof import('../src/hooks/useDictCache').fetchAllDictEntries
@@ -56,13 +63,15 @@ declare global {
   const getDictEntryLabelByValue: typeof import('../src/hooks/useDictCache').getDictEntryLabelByValue
   const getDictTypes: typeof import('../src/hooks/useDictCache').getDictTypes
   const initMonacoWorkers: typeof import('../src/components/common/Editor/src/monaco-loader').initMonacoWorkers
-  const isDarkMode: typeof import('../src/components/common/Editor/src/utils').isDarkMode
+  const isDarkMode: typeof import('../src/components/common/Editor/index').isDarkMode
   const languages: typeof import('../src/components/common/Editor/src/TiptapEditor/index').languages
   const lazy: typeof import('react').lazy
   const memo: typeof import('react').memo
   const monacoLoader: typeof import('../src/components/common/Editor/src/monaco-loader').default
   const reconnectSSEServer: typeof import('../src/hooks/useTokenRefresh').reconnectSSEServer
   const resetDictCache: typeof import('../src/hooks/useDictCache').resetDictCache
+  const searchOptionRender: typeof import('../src/components/common/searchSubmitter').searchOptionRender
+  const setEditorLocale: typeof import('../src/components/common/Editor/index').setEditorLocale
   const startRefreshTimer: typeof import('../src/hooks/useTokenRefresh').startRefreshTimer
   const startTransition: typeof import('react').startTransition
   const stopRefreshTimer: typeof import('../src/hooks/useTokenRefresh').stopRefreshTimer
@@ -76,6 +85,7 @@ declare global {
   const useContext: typeof import('react').useContext
   const useDebugValue: typeof import('react').useDebugValue
   const useDeferredValue: typeof import('react').useDeferredValue
+  const useDrawerCloseGuard: typeof import('../src/components/common/use-drawer-close-guard').useDrawerCloseGuard
   const useEcharts: typeof import('../src/hooks/useEcharts').useEcharts
   const useEffect: typeof import('react').useEffect
   const useEffectEvent: typeof import('react').useEffectEvent
@@ -88,14 +98,17 @@ declare global {
   const useLayoutEffect: typeof import('react').useLayoutEffect
   const useLinkClickHandler: typeof import('react-router-dom').useLinkClickHandler
   const useLocation: typeof import('react-router-dom').useLocation
+  const useLockStore: typeof import('../src/stores/lock').useLockStore
   const useMemo: typeof import('react').useMemo
   const useNavigate: typeof import('react-router-dom').useNavigate
   const useNavigationType: typeof import('react-router-dom').useNavigationType
   const useOptimistic: typeof import('react').useOptimistic
   const useOutlet: typeof import('react-router-dom').useOutlet
   const useOutletContext: typeof import('react-router-dom').useOutletContext
+  const usePageFullscreen: typeof import('../src/hooks/usePageFullscreen').usePageFullscreen
   const usePageRefreshStore: typeof import('../src/stores/pageRefresh').usePageRefreshStore
   const useParams: typeof import('react-router-dom').useParams
+  const usePrintTemplateDialog: typeof import('../src/components/common/PrintTemplatePrint').usePrintTemplateDialog
   const useProTableScrollY: typeof import('../src/hooks/useProTableScrollY').useProTableScrollY
   const useReducer: typeof import('react').useReducer
   const useRef: typeof import('react').useRef
@@ -117,6 +130,6 @@ declare global {
 // for type re-export
 declare global {
   // @ts-ignore
-  export type { FC, ECOption, AuthLayoutProps, EditorProps, CodeEditorProps, JsonEditorProps, MarkdownEditorProps, PlainTextEditorProps, TiptapEditorProps, CodeBlockModalProps, VideoModalProps, IframeModalProps, ImportModalProps, TableSkeletonProps, ThemeLoadingProps, TableExportServerExport, TableExportButtonProps, TokenPayload, AuthState, UserState, TabItem } from './autoImports.d'
+  export type { EditorEnv, ResizableCellProps, TableActionConfirm, TableAction, FC, ECOption, AuthLayoutProps, EditorProps, CodeEditorProps, JsonEditorProps, MarkdownEditorProps, PlainTextEditorProps, TiptapEditorProps, CodeBlockModalProps, VideoModalProps, IframeModalProps, ImportModalProps, TableSkeletonProps, ThemeLoadingProps, TableExportServerExport, TableExportButtonProps, TokenPayload, AuthState, UserState, TabItem } from './autoImports.d'
   import('./autoImports.d')
 }

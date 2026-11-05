@@ -10,6 +10,40 @@
 
 ### 变更
 
+- **对象存储 MinIO → SeaweedFS**：MinIO 社区版已于 2026-04 停止维护并归档仓库，compose 依赖切换为
+  SeaweedFS（`chrislusf/seaweedfs:4.51`，S3 兼容网关单进程）。容器服务名/主机名沿用 `minio`、
+  S3 API 端口仍为 9000——`oss.yaml` 与 hosts 映射零改动；代码侧仍走 minio-go SDK 的标准 S3 语义，
+  Go 代码零改动。配套调整：凭证从镜像环境变量改为 compose 挂载的
+  `backend/scripts/docker/seaweedfs/s3.json`（identities，须与 `oss.yaml` 凭证一致）；Web UI 从
+  9001 迁至 9333；bucket 由应用侧 `EnsureBucketExists` 自动创建（`MINIO_DEFAULT_BUCKETS` 移除）。
+  全链路经 `pkg/oss` live test（19 用例，含真实 PutObject 流式签名、Range 直读、建桶后回读）与
+  预签名 PUT/GET 真实网络回放验证通过。存量 MinIO 数据用任意 S3 客户端按桶镜像迁移（如
+  `mc mirror`），详见 [docs/backend_file_upload.md](./docs/backend_file_upload.md)。
+
+## [1.5.0] - 2026-10-29
+
+### 新增
+
+- **BI 仪表盘（设计器 + 大屏渲染）**：图表可视化编排（@go-wind/bi-* 设计器：柱状/折线/
+  饼图/仪表盘/雷达等图型、拖拽网格、跨图联动、下钻、九套主题预设），仪表盘/大屏持久化
+  入库（`bi_dashboards` 表：payload 为设计器 schema JSON 服务端不解析、版本乐观锁防并发
+  覆盖、内置模板禁删可复制派生、租户隔离）。三端同构入口：「BI 分析」→ 仪表盘渲染
+  （`?id=N` 渲染库中行）、设计器（`?id=N` 加载库中仪表盘自动保存回写；无 id 本地草稿）、
+  仪表盘管理（列表 + 全屏设计器抽屉 + 复制/删除）。演示数据 static 内嵌；真实业务由宿主
+  经数据集 resolver 注入。页级全屏（仪表盘/设计器均可）。内置「基础仪表盘模板」启动播种。
+  详见 [docs/bi_dashboard.md](./docs/bi_dashboard.md)。
+- **打印模板（单据打印设计器）**：可视化拖拽设计打印模板（文本 / 表格 / 条码 / 二维码，毫米精确
+  布局，多页跨页表头），内核 fork 自 worm-vue3-print（MIT，go-wind-print 仓自维护）。模板按资源
+  绑定（resourceKey），任意列表行可一键打印——模板匹配精确绑定优先、通用模板（未绑定）兜底；
+  支持勾选行批量打印（合并为单文档，份间自动分页）。输出链：浏览器打印 / 服务端 PDF
+  （`POST /admin/v1/print-templates:render-pdf`，后端 Chromium 渲染，Docker 构建参数
+  `WITH_PRINT_BROWSER=1` 启用浏览器层）/ 静默打印（对接 worm 客户端）。三端管理页齐备
+  （暗色适配、复制内置模板派生），内置种子含通用 A4/A5 模板与用户工牌演示。设计/部署详见
+  [docs/print_template.md](./docs/print_template.md)；采用者给自己的模块接打印见
+  [docs/crud_module_guide](./docs/crud_module_guide/README.md) 行打印节。
+
+### 变更
+
 - 亮色模式首次拥有自己的设计 token（react）：此前浅色整端只有暗色一套 token，亮色全走
   antd `defaultAlgorithm` 的派生值——画布、容器、边框、大圆角没有一处是按规范落的，
   "亮色发平、卡片没有浮起感"的真因就在这里。现补 `lightTheme.ts` 与卡片静止/悬浮两档投影。
@@ -21,7 +55,8 @@
   45px / 21px / 13px——盒子对齐了、内容没对齐。现统一 20px 内缩，react 单行搜索卡高度
   117→85px。vue-element 的第三条间距来源藏在 JS 里（表格高度计算在 CSS padding 之外又预留
   20px，实测叠成 36px 空档），一并交回 CSS 管。
-- 搜索卡→列表卡、表格→分页的间距三端统一为 16px；分页器下方留白由卡片内缩提供，不再上下各写一份。
+- 搜索卡→列表卡、表格→分页的间距统一到 16px；分页器下方留白由卡片内缩提供，不再上下各写一份。
+  （其后按用户实测反馈把 vue-element 的搜索卡→列表卡收到 12px，这一档三端暂不同值，见 §2.6 该行注。）
 - vue-element 卡片圆角 8→12（§2.4 大容器档，三端里它是唯一离群者），骨架卡同步镜像，
   避免"骨架→真卡"切换时跳形；圆角阶梯保持外 > 内（卡片 12 > 输入 8 > 按钮 6 > 表格面 6）。
 - 侧栏折叠动效收成一条 240ms 时钟（react）：原先四项参与属性各自时长不同，图标位移 100ms 就
@@ -37,6 +72,29 @@
 - vue-element 的一条机制错判：`_element-plus.scss` 顶部 `@forward ... with (...)` 的设计 token
   map **到不了运行时**（EP 样式按预编译 CSS 引入），文档原记的"浅色边框 `#E4E4E7` 由该 map 落地"
   从未生效——卡片描边现由本端自建 `--gowind-card-border` 承担。
+- 暗色侧栏展开的子菜单面板不再比侧栏更暗（react）：一块 `rgba(0,0,0,.22)` 的"凹陷底"与
+  §4 的"父级展开链路只做文字/图标提亮，不铺底色"直接冲突，实测与侧栏只差 1.049:1——起不到
+  分组作用、又让三端里只有 react 的菜单看着多出一层。收平走 token 而非删 CSS：antd 出厂的
+  `darkSubMenuItemBg` 是 `#000c17`，只删那条 `!important` 反而会露出更黑的藏青井。
+- 聊天页两张卡不再挂浮层晕（vue-element）：`.chat-card` 与四张 Pro 卡并列为页面容器，却仍吃
+  `--el-box-shadow-light`——亮色 `0 0 12px 12% 黑`、暗色实测 `0 0 12px 72% 黑`，正是本端为
+  `.el-card` 定档时点名"会在窄间距卡片间叠出黑缝"的那一档。现改走 `--gowind-card-shadow` /
+  `--gowind-card-border`，与 Pro 卡同档（亮 `0 1px 2px 5%` + `#E4E4E7`、暗 `0 1px 2px 36%` + 8% 白），
+  明暗两态实测与 react 同值。设计文档原把"聊天页"记在浮层一档，一并纠正。
+- 浅色页签选中态不再铺中性灰底（react）：§4「温和配方」给浅色定的是**主色 15% 淡底**（vue-element 早已照做），
+  代码却写成 `rgba(128,128,128,.12)`——压白栏合成 `#F0F0F0`，与页面画布 `#F1F3F6` 只差 1.008:1，读起来像白栏
+  被抠了个洞而非"这页被选中"；且与 hover 的 `.08` 同色相、只差 α，选中与悬停糊成一片。现改吃 `color-mix`
+  淡蓝底（实测 `#D9E9FB`、对栏 1.24），描边退回透明、card 的字重一并收平；暗色那档本就是规范要求的中性灰，逐值未动。
+- 暗色认证页占位符不再兼任标签却按注记上色（react）：登录页四个字段与 MFA 的验证码框都没有 `Form.Item label`，
+  提示语是字段的唯一可读名称，却吃着全站 placeholder 的"退后"档——三级灰 `#6E7681` 在 L1 面板上只有 3.86:1。
+  现只在认证表单作用域、且只在暗色提到次要档 `#8B949E`（实测 5.77:1），全站 token 与暗色那条 `!important`
+  规则不动；浅色按用户判断保持原值（§2.2 本就记着 react 浅色 token 故意不含 `colorTextPlaceholder`）。
+  四个字段加 MFA 输入框同时补上 `aria-label`，让字段名不再只靠颜色传达。
+- 暗色折叠后弹出的子菜单浮层不再露出厂藏青（react）：那一层是浮层，按 §2.3 该吃 `#1C2128`，实测却是
+  antd 出厂 `darkPopupBg` = `#001529`——比本项目的暗色蓝黑系更暗、更偏蓝，和抽屉/下拉摆在一起能一眼分出
+  "两套黑"（不是可读性问题：`#F8FAFC` 在其上 17.61:1）。现给 `darkTheme.ts` 的 `Menu` 段补
+  `darkPopupBg: '#1C2128'`；`darkItemBg` 保持出厂未动，它只喂根 UL，而那层早已被 `SiderMenu` 的
+  inline `background: 'transparent'` 盖住。弹层的圆角 12 与黑 α 投影本就合规，逐值未改。
 
 ## [1.4.0] - 2026-10-15
 

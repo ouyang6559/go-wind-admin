@@ -19,8 +19,8 @@
   "senderName": "发送人",
   "createdAt": "创建时间",
   "action": "操作",
-  "create": "新建消息",
-  "edit": "编辑消息",
+  "create": "创建消息",
+  "edit": "更新消息",
   "drawerCreate": "新建消息",
   "drawerUpdate": "编辑消息",
   "deleteConfirmTitle": "确认删除",
@@ -49,5 +49,6 @@
   "sendScopeUsers": "指定用户",
   "targetUsers": "接收用户",
   "targetUsersPlaceholder": "请选择接收用户",
-  "requiredTargetUsers": "请选择接收用户"
+  "requiredTargetUsers": "请选择接收用户",
+  "requiredContent": "请输入消息内容"
 }

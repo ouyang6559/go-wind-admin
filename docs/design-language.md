@@ -134,6 +134,19 @@ vben 任务页"启动全部任务"= `#FAFAFA` on `#57D188` **1.85:1**；react �
 > 亮态仍为 `rgba(0,0,0,.25)`（合成 `#BFBFBF`，白底 2.57、分离 6.06 倍），**从未真的画出过 `#9CA3AF`**；
 > `#9CA3AF` 在 ele/vben 是写进变量的实值。这不是遗漏：占位档的判据是与已输入值的**分离度**，
 > antd 的 6.06 倍比 `#9CA3AF` 的 5.78 倍更"退后"，把浅色钉成 `#9CA3AF` 等于在浅色侧重犯暗色那轮刚修掉的毛病。
+>
+> **暗色认证页是唯一被拉出豁免的一处**（2026-10-18 已落；**浅色不在其内**）：登录页与 MFA 挑战页的那几个字段没有
+> `Form.Item label`，提示语就是字段的唯一可读名称——这时它要的是"读得出"而不是"退后"。所以只在这一个作用域把它
+> 提到次要档（暗 `#8B949E`：L1 `#111827` 上 3.86 → **5.77**），全站 token 与 `styles/pro-components-dark.css:238`
+> 那条 `!important` 档都不动。react 落点是 `layouts/UserLayout/UserLayout.style.less` 的
+> `.user-layout-wrapper:not(.light-mode) .user-form-section …::placeholder`（比那条全局暗色规则多两级类名，
+> 靠权重取胜而不是源码顺序）；字段名同时补 `aria-label`——着色救不了屏幕阅读器。
+> **浅色那一半被用户判回原值**：理由不是"白底 1.84:1 够读"，而是①这条豁免边界本就是浅色先定的（上面那段：
+> react 浅色 token **故意不含** `colorTextPlaceholder`，留 antd 更浅值），②用户这轮只点名暗色，"提一档、不改版式"
+> 的范围不该顺带扩到浅色。**教训**：用 `--gowind-secondary-text` 这类**两态都解析**的变量做"局部修复"，
+> 会把没被点名的那一态一起改掉——按主题收口的修复，选择器就要钉死在 `[data-theme]` / `.light-mode` 上。
+> **代价（暗色）**：与已输入值的分离度 4.39 → **2.94**，靠"登录表单一开始必空 + 聚焦后占位符消失"兜；
+> 这类字段一旦补上真 label，占位符就退回三级档。**ele / vben 的认证页同形问题待移植（暗色侧）。**
 
 灰阶统一走 Tailwind gray/slate 族（与暗色同一冷调体系），**次要档是唯一的例外**：`#676E7C` 不在 gray/slate
 的任一级上（gray-500 `#6B7280` 在淡底色上差 0.1~0.2，slate-500 `#64748B` 偏蓝过冷），按 2.1 的混色思路取冷灰。
@@ -175,8 +188,20 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 > `--gowind-card-shadow` / `--gowind-card-border`（定义在 `_element-plus.scss` 的 `:root` 与 `html.dark` 两块里，
 > 与 `--gowind-*-text` 同族：base.css 无同名项，不需要 `!important`）——亮 `0 1px 2px rgba(0,0,0,.05)` + `#E4E4E7`、
 > 暗 `0 1px 2px rgba(0,0,0,.36)` + 8% 白。三条支撑：
-> ① **不复用 `--el-box-shadow-light`**：改完之后它剩下的 7 处使用者全是浮层（下拉 / 通知 / 页签 / hover 展开的侧栏
-> 覆盖层 / 聊天页 / `.el-card`），浮层要的就是那圈 12px 晕。
+> ① **不复用 `--el-box-shadow-light`**：改完之后它剩下的使用者**并非"全是浮层"——本条原稿把聊天页和 `.el-card`
+> 一起算成浮层，是错的**（2026-10-18 纠正）。逐处核过（读的是选择器与所在规则的上下文，不是量像素）：真浮层五处保持那圈 12px 晕不动
+> （`.el-select-dropdown` 与 `.el-popper.is-light` `_element-plus.scss:380`、`.el-notification` `:422`、
+> `NoticeDropdown/index.vue:165`、
+> `LayoutTagsView.vue:1128` 右键菜单、`LeftLayout.vue:118` hover 展开的侧栏覆盖层）；**页面卡两处**——
+> `pages/app/ai/chat/index.vue` 的 `.chat-card` 与 `_element-plus.scss:282` 的 `.el-card`。
+> **`.chat-card` 已于 2026-10-18 改走 `--gowind-card-shadow` / `--gowind-card-border`**（明暗两态实测：
+> 亮 `0 1px 2px .05` + `#E4E4E7`、暗 `0 1px 2px .36` + 8% 白）。它原先暗色实测是 `0 0 12px rgba(0,0,0,.72)`
+> （EP 暗色把 `--el-box-shadow-light` 覆成 `#000000b8`），正是 ②里 `.el-card` 那一版点名"会在窄间距卡片间叠出黑缝"
+> 的同一档，而会话列表卡与对话卡之间正是窄间距。**`.el-card` 亮色仍是那圈 12px 晕**（暗色已被 `_dark-mode.scss:110`
+> 覆成静止档 ⇒ 同一组件两态不同档），属已知待决、本轮未批不动。
+> **另记一条工序教训**：react 的聊天卡在 2026-10-17 就由 `b903f8515` 落到静止档，而本端同一轮只覆盖了四张 Pro 卡，
+> 于是"文档说聊天页是浮层、react 代码把它当静止卡"这对矛盾当天就产生了、没人发现。**判"某处属于哪一档"要看那个元素
+> 是不是页面容器，不能看它吃的是哪个变量**——按变量名归类，等于把"谁还在用旧值"当成"谁该用旧值"。
 > ② **暗色那一档不是新发明**：`_dark-mode.scss:110` 的 `.el-card` 早已采用同一条值，注释原话是 EP 暗色
 > `--el-box-shadow` 为 72% 黑晕、会在窄间距卡片间叠出"黑缝"——那一版已经判过它不对，只是 Pro 卡没跟。
 > ③ **描边抬一档**：`--el-border-color-lighter` 亮 `#EBEEF5`、暗 6% 白，各比权威淡一档，暗侧那 6% 正落在
@@ -205,7 +230,8 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 - **文字**：主 `#F8FAFC`、次 `#8B949E`（L1 上 5.77 / 浮层 `#1C2128` 上 5.26，与 2.2 的浅色次要档 `#676E7C` 同为一档，
   2026-09-29 三端逐页实测对齐）、三级 `#6E7681`（L1 上 **3.86**，只给 12px 以上的非关键注记；2026-09-29 的三端逐页实测
   没有任何渲染文本取该值，真要用进正文得先提到次要档）、**placeholder `#6E7681`**（= 三级档，2026-10-16 由 `#9CA3AF` 下调；
-  判据是它与自己控件里**已输入值**的分离度而非它对底色的对比度，见 2.2 末注的暗色补充）；
+  判据是它与自己控件里**已输入值**的分离度而非它对底色的对比度，见 2.2 末注的暗色补充；
+  **例外**：字段没有真 label、占位符就是字段名时（认证页）上抬到次要档 `#8B949E`，判据与代价见 2.2「豁免边界」末段）；
   表单标签降一档用 `#DCE3ED`（值是主角）。
 - **暗色语义色文字档另算**：暗色下 antd/EP 自己派生一套语义色，浅色的"深墨前景"规则在暗色是倒退，
   详见 2.1「语义色当文字用」的两条踩坑结论。
@@ -269,7 +295,7 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 | 内容边距 | **16px** | 由各端页面容器统一施加；ele `src/styles/_layouts.scss:9-10` `.app-container { padding: 16px }` |
 | 表格 → 分页器 | **16px** | react `src/styles/pro-components-dark.css` 的 `.ant-pro-table .ant-pagination { margin: 16px 0 0 }`（2026-10-16 起；**antd 自带的 `margin: 16px 0` 在本项目落不了地**，见下方分页器条注）；ele `ProPagination/index.vue` 的 `padding: 16px 0 0`（暗色在 `_dark-mode.scss` 有一条同名 `!important` 覆写，两处必须一起改）；vben `framework/effects/plugins/vxe-table/style.css` 新增 `.vxe-grid--pager-wrapper { padding-top: 16px }`。**分页器到卡片底边不另写一份**：由该卡自己的内缩唯一提供（react/ele 20px、vben 8px 密度的 `p-2`），所以"上下对称"从来不是目标——上 16 是同级块间距、下 20 是卡片内缩 |
 | 搜索卡内缩 | **20px 四边，且只有一个来源** | react `src/styles/pro-components-dark.css`：`.ant-pro-table-search { padding: 20px }` 配上把 pro-components 自带的查询表单 `padding: 24px` 归零（2026-10-17 起，机制见下方"搜索卡打薄"条）；ele `ProSearch/index.vue` 的 `.pro-search { padding: 20px }`（EP 的 `ElForm` 自身不带 padding，本端只有一个内缩来源、无需归零）+ `ProPage/index.vue` 的 `.pro-page__content { padding: 20px }`；**vben 没有独立搜索卡**（搜索表单在 vxe-grid 的 `#form` 插槽里，与表格同处一张卡），这一档对它只意味着"内容与表格文字同一条竖线"，见同条注 |
-| 搜索卡 → 列表卡间距 | **16px** | react 同文件的 `.ant-pro-table .ant-pro-table-search { margin-bottom: 16px }`；ele `ProPage/index.vue` 的 `.pro-page { gap: 16px }`；vben 结构上不存在这一对卡片（卡内表单块用 `pb-4` = 16px，本来就同值） |
+| 搜索卡 → 列表卡间距 | **16px**（ele 已知分叉 12px，见右） | react 同文件的 `.ant-pro-table .ant-pro-table-search { margin-bottom: 16px }`；vben 结构上不存在这一对卡片（卡内表单块用 `pb-4` = 16px，本来就同值）；**ele `ProPage/index.vue` 现为 `gap: 12px`**——2026-10-17 用户实测反馈"16px 让两块离得太远、压缩列表数据显示空间"，先收到 8px 又判"两块贴一块"，落 12px。**这一档 ele 目前不满足本表**：是否把 12px 反向同步到 react/vben（或把 ele 收回 16px）属待决，改之前先修本行 |
 
 > **结案一条：`sidebar.collapsedShowTitle` 在 react/ele 不实现，48px 这条宽度也不改（2026-10-17 决定）**。
 > 先纠正一句早前的误记：**vben 并没有为这个开关加宽轨道**——它的折叠轨仍是 48
@@ -392,6 +418,13 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 > 全局动效开关（`preferences.transition.enable`）与 `prefers-reduced-motion` 都把这条折叠降到 `none`；
 > `.transition-disabled` 只挂在内容区 `.page-transition` 上，侧栏是它的兄弟节点，所以开关状态由 SiderMenu 自己落到 wrapper（`.sider-motion-off`）。
 >
+> **帧级复验（2026-10-18，`/dashboard/analytics` 暗色，逐帧 rAF 采样 + 每一次 `transitionend` 的 `elapsedTime` 逐元素登记）**：
+> 折叠与展开各一次，取每个 (元素, 属性) 的最大 elapsed —— 容器 `width` **240ms**、Logo 区与分组标题
+> `padding-left`/`padding-right` **240ms**（×18 = 9 个菜单项 × 两向）、站名与标签 `opacity`/`margin-left` **240ms**、
+> 图标 `font-size` **240ms**、箭头 `opacity` **240ms**。**没有一个属性落在 100ms 或 300ms 上**，上表那四条时钟已合成一条。
+> 宽度逐帧序列 48 → 74.1 → 195.3 → 221.1 → 224（约 148ms 起、340ms 落定，单调、无平台段、无回弹）。
+> 首轮另见 `transform` 300ms 与 `height` 200ms 各一次，复跑两轮均为 0 次 ⇒ 不属折叠参与者（submenu 箭头/子容器挂载的一次性动画），不处理。
+>
 > 另：点击**展开分组**（submenu）本身没有横向位移——只有箭头 `transform` 与子容器 height 动画，子项挂载即
 > 是最终的 `padding-left: 48px`。所以"菜单项向右展开"的观感来自侧栏折叠，不是分组展开。
 
@@ -405,7 +438,7 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 
 - 本项目 override 仅 `app.name` / `app.accessMode` / `app.defaultAvatar`（`src/preferences.ts`，2026-10-17 复核；
   头像是为了与 react/ele 用同一张 `/default-avatar.png`，与视觉规范无关），默认主题即本规范基准，**无强制迁移项**。
-- 2.1 的语义色文字档 + 2.2/2.3 的次要档落点：`packages/styles/src/antd/index.css` 末尾的 `--gowind-*-text` 段
+- 2.1 的语义色文字档 + 2.2/2.3 的次要档落点：`framework/styles/antd/index.css` 末尾的 `--gowind-*-text` 段
   （变量由 `hsl(var(--primary|success|warning|destructive))` 混色，跟随主题预设；规则带 `!important`，理由见 2.1 第 2 条）。
   **这一层是纯 CSS 且经 postcss 处理，注释只能写 `/* */`，写 `//` 会在 dev 直接 500（`Unknown word …`）。**
 - 曾经的"唯一开放项"已关闭：2.3 的 react 系暗色已被采纳——`framework/base/design/design-tokens/dark.css:4-11`
@@ -420,7 +453,7 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 |---|---|---|
 | 主色 / 语义色 2.1 | `src/core/preferences/config/default.ts:91`（success `:92`、warning `:93`、destructive `:90`） | `colorPrimary: "hsl(212 100% 45%)"` |
 | 圆角 2.4 | 同上 `:95`；大圆角在 `config/darkTheme.ts:72` | `radius: "8"`、`borderRadiusLG: 12` |
-| 暗色分层 2.3 | `config/darkTheme.ts:41,42,44,46` | `colorBgBase/colorBgLayout: '#0B0F19'`、`colorBgContainer: '#111827'`、`colorBgElevated: '#1C2128'` |
+| 暗色分层 2.3 | `config/darkTheme.ts:41,42,44,46`；折叠弹层另补 `:129` | `colorBgBase/colorBgLayout: '#0B0F19'`、`colorBgContainer: '#111827'`、`colorBgElevated: '#1C2128'`、`Menu.darkPopupBg: '#1C2128'`（antd 出厂 `#001529` 藏青，见 §4「侧边栏菜单交互态」末注） |
 | 主色 α（暗色） | `config/darkTheme.ts:91,107,108,109` | `activeShadow …0.12`、`rowHoverBg …0.08`、`rowSelectedBg …0.15`、`rowSelectedHoverBg …0.2`，全为 `rgba(0, 107, 230, …)` |
 | 顶栏 50 | `src/layouts/MainLayout/index.tsx:301` | `height: 50` |
 | 折叠 48 / 展开 224 | `src/layouts/MainLayout/components/SiderMenu/index.tsx:115` | `isCollapsed ? 48 : (sidebarConfig?.width ?? 224)` |
@@ -477,8 +510,14 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
 ## 4. 组件级视觉惯例（跨端一致）
 
 - **页面容器**：三端各自容器（react `PageContainer` / ele `ProPage` / vben `Page`），结构统一为：canvas 大底 → 搜索卡片（surface）→ 工具栏 → 表格卡片（surface + 阴影）。**两处口径本轮核准**：① 阴影按 §2.2 只在亮色铺卡片静止档，react 暗色实测 `none`（§2.3 暗色投影须黑 α，白 α 那条已从 `chat-page.css` 清掉）；ele 2026-10-17 起四张卡同取该档、暗色沿用本端 `.el-card` 的黑 α 轻投影——**暗色一端 `none`、一端有轻投影，是两端各自内部一致造成的差异，不是漂移**，理由见 §2.2 末注；② 卡片圆角曾是 ele 离群（它写 8、react/vben 写 12），**2026-10-17 已抬 ele 到 §2.4 的 12px 档并实测明暗两态**，落点与"骨架卡是真卡镜像"这条约束见 §2.4 注。
-- **表格**：无边框 + 斑马纹可选；表头独立色（浅 `#F0F2F5` 系 / 暗 `#1F2937`）；行 hover 用主色 8% α；行高紧凑（≤40px，ele 30px 现状可保留）。
+- **表格**：无边框 + 斑马纹可选；表头独立色（浅 `#F0F2F5` 系 / 暗 `#1F2937`）；行 hover 用主色 8% α；行高紧凑（≤40px，ele 30px 现状可保留）。**斑马纹值表（2026-10-18 定稿，明暗两态实测）**：ele/vben 的 vxe 全局默认开（ele `proTableConfig.ts:12` `stripe: true` 是共享 ProTable 默认值），react 原先全端唯一没条纹的一端，同日起 `ListTable` 加 `striped` **默认开**（`rowClassName` 挂 `ant-table-row-striped`，页面可显式关）。色值：亮 `var(--ant-color-fill-quaternary)`（≈`#FAFAFA`，与 vxe 亮档 `#F8F8F9` 同档，token 优先）；暗 `rgba(255,255,255,.03)` = §3 vxe 暗色斑马纹既有权威值——antd 同名 token 暗色是 `.06`、重一倍，故暗色显式落规范值不走 token。占位行（暂无数据）不吃条纹；固定列（sticky）的半透明条纹会透出压在下层的文字，与行 hover 透字同一处理：容器底色打底 + 条纹色走 `background-image`，hover 时 `background-image: none` 清掉（react 落点 `pro-components-dark.css`）。
 - **表格工具栏右侧图标钮（2026-10-08 定稿，react ProTable options 为基准 / ele 已对齐）**：无边框裸图标（hover 才铺 fill 底），颜色 = **主文本色阶**（react `colorText` / ele `--el-text-color-primary`，暗 `#F8FAFC` / 亮 `#1F2937`），不用 secondary——次级灰是为次要文字设计的，做图标唯一内容会显虚。**每枚图标必须带 Tooltip**（刷新/密度/列设置/全屏……）。图标名义 16px 是 antd 口径：antd 图标墨迹占 viewBox ≈90%，EP 图标仅 ≈75%，故 ele 的 EP 图标要放到 **18px** 补偿（等效墨迹 13.5px ≈ antd 16px），vben 若用 lucide 同理注意留白差异。
+- **列表操作列（2026-10-21 定稿，react 基准 / ele / vben 三端已全量落地）**：
+  - **行内按钮一律「图标 + 文本」的 link 弱化形态**，禁止纯图标（要靠 Tooltip 猜语义、暗色下高亮图标凌乱）也禁止纯文本（缺视觉锚点）。三端形态：react `Button type="link" size="small" icon={<XOutlined />}`（危险钮走 `danger`，不走内联颜色 style）；ele ToolCell `ElButton link size="small"` + `SvgIcon 14`；vben `a-button type="link" :icon="h(LucideX)"` + 文本子节点（vben 全局 `.ant-btn` flex 基座自带 8px 间距）。
+  - **按钮数 ≤3 全部行内；>3 行内只留前 3 个，其余进「更多」下拉**——下拉选项同款「图标 + 文字」，危险项红墨（antd Menu `danger` / ele `--el-color-danger` + hover 钉色）。「更多」触发 = 文本「更多」+ 下箭头（react `MoreOutlined` / ele `lucide:chevron-down` / vben `LucideChevronDown`，i18n 键 react `common:button.more` / ele `common.button.more` / vben `ui.button.more`）。
+  - **下拉里放不下 Popconfirm**：溢出到「更多」的确认类操作（重启/删除等）改弹窗确认——react `App.useApp().modal.confirm`（带 `okButtonProps:{danger:true}`）、vben `Modal.confirm`（`okType:'danger'`）、ele 下拉项复用页面 `@operate` 侧既有确认流（确认逻辑在页面 handleOperate，不随入参形态变化）。行内 ≤3 时确认方式不变（Popconfirm 原样保留）。
+  - **列宽随形、宁大勿小**（换行即失败）：2 钮 ≈150、3 钮 ≈200-220、溢出后（3 钮 + 更多）≈260，文案每多 2 个中文字符 +28。ele/vben 的 vxe 列已有 width 就调 width，用 minWidth 就调 minWidth。
+  - **三端的溢出都是组件单点（2026-10-21 组件化，页面只声明描述符）**：ele 共享 ToolCell（`ProTable/cellRendererRegistry.ts`，`col.buttons` 声明 name/label/icon/type/visible/auth，对 visible()+权限码判活后的按钮数做 >3 判定）；react `components/common/TableActions`、vben `components/TableActions.vue` 描述符同形（`key/label/icon/onClick/danger/success/confirm{title,description,okLoading}/tooltip/hidden`，行参数在点击时回传 `onClick(row)`，行级条件用 `hidden` 在计溢出前剔除）。语义对齐、形态随端（ele 随 EP `type`，antd 系用 `danger` prop）。react/vben 新页操作列一律写描述符，不再手写 Button/Popconfirm/Dropdown；样板：react `system/language`（≤3）/ `system/task`（溢出），vben 同两页。vben 行内标签用框架层纯文本键 `common.edit/common.delete` 与 `ui.button.detail/download/more`——**`ui.button.edit/delete/view` 是带 `{moduleName}` 的抽屉标题键，禁止当行内按钮文本**。
 - **列表加载态（2026-09-29 定稿，react 基准 / ele / vben 三端均已落地）**：三态分工按"形状是否已知 + 耗时是否够长"判，不是骨架/转圈二选一——**首屏**（一行数据都没有）= 表格形状骨架屏；**表内刷新/翻页**（已有数据）= Spin；**请求失败** = 错误态 + 重试入口。
   - 出场阈值统一 **250ms**（骨架与 Spin 共用一个常量）：本地接口常在 100~200ms 返回，早于阈值出现的加载态比"什么都不显示"更闪。实测 201ms 自然加载：骨架 0 帧、Spin 0 帧。
   - 骨架行数（react 口径）= 该页 `pagination.defaultPageSize`；`pagination={false}` 的树表/抽屉没有 pageSize 可依，取常量 10。**另两端的实际口径见下面「以可见区为准」条**。
@@ -507,8 +546,40 @@ Tailwind 灰阶（`slate-400` 在白底 2.60、在 `#F5F5F5` 上 2.38，`zinc-50
   **边界**：`is-loading` ≠ `is-disabled`（EP 只把 loading 记进 `ariaDisabled`/`disabled` 属性，类名不带 `is-disabled`），实测发送中按钮仍是 `#006BE6` 实底 + spinner，"去实底"不会把加载态一起画灰；`is-plain/is-text/is-link` 的禁用态走 EP 自己的淡档（light-9 底 + light-5 字，是显式声明不是变量），本次未接管（全仓仅 1 处 `plain` 按钮：`system/script/script-log-dialog.vue:37`）。
 - **认证页（登录/注册）**：画布深底 + 实底表面卡（24px 大圆角、主色柔影）；品牌插画带 vben 同款 float 动效（`translateY 0→-20px→0`，5s 循环，尊重 `prefers-reduced-motion`）。
 - **页签栏**：chrome 形态、38px。选中页签走"温和配方"（2026-09-16 修订，基准 = vben）：暗色 = 中性灰底（fill ≈ 白 10%）+ 正常亮文字，浅色 = 主色 15% 底 + 主色文字；**禁用主色描边 / 发光阴影 / 底部指示线 / 字重加粗**（形状本身即指示）；悬停 = 中性微底，关闭按钮跟随文字色不用主色。
+  - **浅色这一档 react 曾长期写成中性灰（2026-10-18 收口）**：`tabsbar.css` 的 chrome/card 选中底是
+    `rgba(128,128,128,.12)`，压白栏合成 **#F0F0F0**——与页面画布 #F1F3F6 只差 **1.008:1**（读出"白栏被抠了个洞"而不是
+    "这页被选中"），且与 hover 的 `.08`（#F5F5F5）同色相、只差 α，选中与悬停糊成一片。ele 早已按本条走 `color-mix`
+    （`LayoutTagsView.vue:1004`，注释还解释过为什么不能用 `primary-light-N`），react 是唯一偏离端。现浅色改吃
+    `color-mix(in srgb, var(--ant-color-primary) 15%, var(--ant-color-bg-container))` → 实测 **#D9E9FB**、对栏
+    **1.24**（原 1.14）；描边退回 `transparent`（底色已是标记通道，灰圈压淡蓝底只会再叠一层脏）；card 的字重 500 一并收平
+    （暗色那档早已覆成 400，留着会让同一风格两态字重不同，且本条明令禁用字重加粗）。**暗色零改动**：文件下方那组
+    `[data-theme='dark']` 的 `!important` 仍胜出，实测 #262D3A + 8% 白描边 + 字重 400 逐值与改前一致。
+    **一条要记住的代价**：淡蓝底把主色文字档 `--gowind-primary-text` 从灰底上的 5.00:1 压到 **4.63:1**——仍过 §2.1 的
+    4.5 底线，但只剩 0.13 余量 ⇒ **别再往上调淡底的比例**（20% 即破线）；要更强的标记，走文字/图标档，不要走底。
 - **默认头像**（2026-09-16 统一）：三端统一使用橘猫插画 `default-avatar.png`（react/ele public 同文件，vben 经 `src/preferences.ts` 覆盖框架默认的 webp——带 Vben 品牌字样已弃用）；用于导航栏当前用户、通知、锁屏等无头像兜底；用户列表/详情的"姓名首字 + 底色"兜底保留（承载身份信息）。
 - **侧边栏菜单交互态（2026-09-16 定稿，基准 = react antd Menu）**：悬停 = 中性灰遮罩（浅 `#F5F7FA` 系 / 暗 `rgba(255,255,255,.05~.08)`，8px 圆角）；选中 = 主色实底 + 白字（`--primary-foreground`）+ 8px 圆角药丸，不得用左侧竖条 / 淡色底 / 字重加粗来区分选中（vben 旧"选中与悬停同灰"、ele 旧"inset 蓝条 + light-9 淡底"均废弃）；父级展开链路只做文字/图标提亮，不铺底色。折叠后的弹出子菜单选中态同规则。横向顶部菜单暂不约束。
+- **"展开子菜单不铺底色"的落点（2026-10-18 补齐，此前只有 react 违规）**：react 侧栏曾由 `styles/pro-layout-overrides.css` 给
+  `[data-theme='dark'] .ant-menu-sub.ant-menu-inline` 铺 `rgba(0,0,0,.22)` + 8px 圆角 + `padding:4px 0`（2026-08-24 暗色色板那一轮写的，
+  早于上一条定稿、之后没回头对齐）。实测合成 `#0D131E` vs 侧栏 `#111827` = **1.049:1**——小到起不到分组作用、又足够被眼看成"不一致"；
+  且它只命中暗色、只命中展开态（折叠弹层是 `.ant-menu-vertical`，压根没进选择器），三端里 ele/vben 的子菜单都与侧栏同色。已删该规则。
+  **收平必须走 token，不能只删 CSS**：antd 出厂 `darkSubMenuItemBg: '#000c17'`（`es/menu/style/index.js:449`）比原规则更黑，
+  规则一撤就露出藏青井（实测删规则未改 token 时 `.ant-menu-sub` = `rgb(0,12,23)`）。落点 = `config/darkTheme.ts` 的
+  `Menu: { darkSubMenuItemBg, subMenuItemBg }` + `config/lightTheme.ts` 的 `Menu: { subMenuItemBg }`，两态均 `transparent`。
+  **两个键不是冗余**：cssVar 模式下它们喂不同变量——`.ant-menu-dark`（侧栏暗色走这个，`SiderMenu/index.tsx` 的 `theme=isDark?'dark':'light'`）
+  读 `--ant-menu-dark-sub-menu-item-bg` ← `darkSubMenuItemBg`；`.ant-menu-light` 读 `--ant-menu-sub-menu-item-bg` ← `subMenuItemBg`。
+  只写后者时暗色侧栏纹丝不动（实测 `--ant-menu-dark-sub-menu-item-bg` 仍 `#000c17`）。
+  同族的 `darkItemBg`/`darkPopupBg` 出厂都是 `#001529`（藏青）。根 UL 靠 `SiderMenu/index.tsx:229` 的 inline `background:'transparent'` 盖住了，
+  而**折叠态弹出的子菜单浮层没有这层保护**（2026-10-18 实测确认后已修）：让 Menu 真正进入 `ant-menu-inline-collapsed` 需要
+  `sidebar.expandOnHover=false` + `collapsed=true`（自动模式下点底部折叠按钮只改偏好，宽度由 hover 决定——此前"点了没折叠"是这条，不是缺陷），
+  此时 portal 里承载弹出的 `.ant-menu-submenu-popup > .ant-menu.ant-menu-sub.ant-menu-vertical` 计算底色 = `rgb(0,21,41)` = 出厂藏青；
+  它的圆角 12 与投影 `rgba(0,0,0,.45) 0 6px 16px + rgba(0,0,0,.3) 0 3px 6px` 本就分别合 §2.4 与 §2.3「投影必须用黑」，同层选中项也已是
+  `#035EC7` 实底 + `#F8FAFC` 字 ⇒ **露馅的只有浮层容器底一档**。这一档与 §2.3 浮层 `#1C2128` 的差不是可读性（`#F8FAFC` 在其上 17.61 vs 15.38）
+  而是**色系归属**：藏青比本项目的暗色蓝黑系更暗、更偏蓝，和抽屉/下拉摆在一起会分出"两套黑"。
+  **落点（2026-10-18，react）**= `config/darkTheme.ts` 的 `Menu.darkPopupBg: '#1C2128'` 一行；`darkItemBg` 未动——查过 antd 源码，
+  `darkPopupBg → popupBg`、`darkItemBg → itemBg` 是两个键，绘制弹层的那条规则现读
+  `:where(…).ant-menu-dark.ant-menu-submenu-popup > .ant-menu { background-color: var(--ant-menu-dark-popup-bg) }`，只由前者驱动。
+  仍缺的一环：可见态没有截图——内嵌面板 `visibilityState=hidden` 时那层 popup 停在 `ant-menu-submenu-hidden`（`display:none`），
+  合成 hover 与直调 fiber 的 `onMouseEnter` 都唤不开它，所以改前底色取自"antd 用来显示它的那个元素"的计算样式、改后由那条 var 与规则双向对上。
 - **实底主色标"位置"，不标"次级动作"（2026-09-29 定稿，基准 = react）**：实底主色块留给状态标识（上一条的导航选中、列表/分页的当前选中）与页面级主行动（提交、发送）；
   **列表面板里的"新建 X"这类次级动作按钮一律中性描边**——它和导航选中同色同形时，用户分不清哪个是菜单高亮、哪个是按钮。
   踩坑实测（ele `/ai/chat` 左栏）：`<ElButton type="primary" plain>` 浅色下是淡底 `#E6F0FD` + 文字档 `#0162D2`（4.96 ✓），
